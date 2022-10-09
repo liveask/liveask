@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Live-Ask</title>
+    <base href="/">
+
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <link data-trunk rel="sass" href="scss/all.scss" />
+    <link data-trunk rel="copy-dir" href="assets/" />
+    <link data-trunk rel="rust" data-wasm-opt="z" />
+    <link data-trunk rel="icon" href="favicon.ico" />
+
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+
+    <!-- Fathom - beautiful, simple website analytics -->
+    <script src="https://cdn.usefathom.com/script.js" data-site="OAMRSQQM" defer></script>
+    <!-- / Fathom -->
+
+    <script src="https://browser.sentry-cdn.com/7.14.2/bundle.min.js" crossorigin="anonymous">
+    </script>
+    <script type="text/javascript">
+        Sentry.init({ dsn: "https://2449cc52f1c847c6aa361dbde07e49c8@o4503948031426560.ingest.sentry.io/4503948034703360" });
+    </script>
+</head>
+
+<body>
+    <!-- Metrical -->
+    <script>
+        window.metrical = { "app": "2LaPi-sYg" }
+    </script>
+    <script async src="https://cdn.metrical.xyz/script.js" type="text/javascript">
+    </script>
+    <!-- / Metrical -->
+</body>
+
+</html>

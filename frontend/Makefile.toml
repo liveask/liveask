@@ -1,0 +1,46 @@
+# https://sagiegurari.github.io/cargo-make
+
+[env]
+RUSTFLAGS="--cfg=web_sys_unstable_apis"
+
+[tasks.cargo-check]
+command = "cargo"
+args = ["c","--target=wasm32-unknown-unknown"]
+
+[tasks.clippy]
+install_crate = "clippy"
+command = "cargo"
+args = ["clippy","--target=wasm32-unknown-unknown"]
+
+[tasks.format]
+install_crate = "fmt"
+command = "cargo"
+args = ["fmt","--","--check"]
+
+[tasks.la-check]
+dependencies = ["format","cargo-check","clippy"]
+
+[tasks.serve]
+install_crate = "trunk"
+command = "trunk"
+args = ["serve"]
+
+[tasks.serve-release]
+install_crate = "trunk"
+command = "trunk"
+args = ["serve","--release"]
+
+[tasks.build-release]
+install_crate = "trunk"
+command = "trunk"
+args = ["build","--release"]
+
+[tasks.check-size]
+script_runner = "@shell"
+dependencies = ["build-release"]
+script = '''
+ls -lh dist/*.wasm
+'''
+
+[tasks.build-and-check]
+dependencies = ["build-release","check-size"]

@@ -1,0 +1,49 @@
+@import 'colors';
+
+.button {
+    width: 285px;
+    height: 60px;
+
+    font-size: 14px;
+    letter-spacing: 0.22px;
+    line-height: 16px;
+    text-transform: uppercase;
+
+    display: block;
+    margin: auto;
+    color: white;
+
+    border-radius: 64px;
+    border-width: 1px;
+    border-style: solid;
+    cursor: pointer;
+
+    box-shadow: 0px 2px 4px 0 rgba(0, 0, 0, 0.07);
+}
+
+.button-red {
+    @extend .button;
+
+    margin-top: 30px;
+    background-color: $pink-bg;
+    border-color: transparent;
+}
+
+$button-border-color: rgba(255, 255, 255, 0.1);
+
+.button-dark {
+    @extend .button;
+
+    margin-top: 10px;
+    background-color: transparent;
+    border-color: $button-border-color;
+}
+
+.button-white {
+    @extend .button;
+
+    margin-top: 10px;
+    background-color: white;
+    color: $pink-button;
+    border-color: $button-border-color;
+}

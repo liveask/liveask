@@ -1,0 +1,120 @@
+@import 'colors';
+
+.newevent-bg {
+	@extend %mod-bg;
+
+	text-align: left;
+	top: 0;
+	display: flex;
+	justify-content: center;
+
+	.title {
+		position: absolute;
+		top: 98px;
+		width: 350px;
+		margin-left: 45px;
+
+		font-style: normal;
+		font-weight: 500;
+		line-height: normal;
+		font-size: 12px;
+		letter-spacing: 0.015625em;
+		text-transform: uppercase;
+
+		color: #FFFFFF;
+		mix-blend-mode: normal;
+		opacity: 0.6;
+	}
+}
+
+.form {
+	background-color: white;
+	position: relative;
+
+	width: 350px;
+	min-height: 300px;
+
+	border-radius: 4px;
+
+	margin-top: 150px;
+	margin-left: 10px;
+	margin-right: 10px;
+	margin-bottom: auto;
+
+	text-align: center;
+}
+
+.input-box {
+	margin-top: 30px;
+	margin-left: 45px;
+	margin-right: 45px;
+
+	flex-grow: 1;
+
+	border: 0;
+
+	color: #A0A0A0;
+
+	textarea {
+		min-height: 5em;
+		width: 100%;
+		color: #1E1E1E;
+		resize: none;
+
+		border: none;
+		border-radius: 0;
+		border-bottom: 1px solid #D4D4D4;
+
+		&:focus {
+			border-bottom: 2px solid $pink-bg;
+		}
+	}
+
+	input {
+		width: 100%;
+		color: #1E1E1E;
+
+		border: none;
+		border-radius: 0;
+		border-bottom: 1px solid #D4D4D4;
+
+		&:focus {
+			border-bottom: 2px solid $pink-bg;
+		}
+	}
+}
+
+.newevent {
+	display: flex;
+	flex-wrap: wrap;
+	flex-grow: 1;
+
+	.invalid {
+		color: red;
+		font-size: 70%;
+		margin-left: 48px;
+		margin-right: 48px;
+	}
+}
+
+.button-finish {
+	margin-top: 20px;
+	margin-bottom: 20px;
+
+	font-style: normal;
+	font-weight: 500;
+	line-height: normal;
+	font-size: 14px;
+	text-align: center;
+	letter-spacing: 0.015625em;
+	text-transform: uppercase;
+
+	color: $pink-button;
+	border: none;
+	background: transparent;
+	cursor: pointer;
+
+	&:disabled {
+		color: #A0A0A0;
+	}
+}

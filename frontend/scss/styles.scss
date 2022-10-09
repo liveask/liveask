@@ -1,0 +1,73 @@
+/* Master Styles */
+h1 {
+	color: #369;
+	font-size: 250%;
+}
+
+h2,
+h3 {
+	color: #444;
+	font-weight: lighter;
+}
+
+body {
+	margin: 0;
+}
+
+body.modal-open {
+	overflow: hidden;
+	position: fixed;
+	width: 100%;
+}
+
+body,
+button {
+	color: #888;
+	text-align: center;
+}
+
+button {
+	color: black;
+	font-size: medium;
+}
+
+button:disabled,
+button[disabled] {
+	color: #979797;
+}
+
+input,
+textarea {
+	-moz-box-sizing: border-box;
+	-webkit-box-sizing: border-box;
+	box-sizing: border-box;
+}
+
+a {
+	cursor: pointer;
+	-webkit-tap-highlight-color: transparent;
+	text-decoration: none;
+}
+
+/* everywhere else */
+* {
+	font-family: 'Roboto', sans-serif;
+	-webkit-font-smoothing: antialiased;
+}
+
+*:focus {
+	outline: none;
+}
+
+@media screen and (-webkit-min-device-pixel-ratio:0) {
+
+	select,
+	textarea,
+	input {
+		font-size: 16px;
+	}
+}
+
+[hidden] {
+	display: none !important;
+}

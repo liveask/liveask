@@ -1,0 +1,12 @@
+$event-bg: #282828;
+$pink-bg: #FF2C5E;
+$pink-button: #FB0A4C;
+$col-button-disabled: #A0A0A0;
+
+%mod-bg {
+	position: fixed;
+	width: 100%;
+	height: 100%;
+
+	background: linear-gradient($pink-bg, #e02852);
+}

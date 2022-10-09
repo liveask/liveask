@@ -1,0 +1,28 @@
+<svg width="55" height="55" viewBox="0 0 55 55" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="Canvas" transform="translate(-5309 0)">
+<g id="share email">
+<g id="Oval Copy 2">
+<mask id="mask0_outline_ins">
+<use xlink:href="#path0_fill" fill="white" transform="translate(5309 0)"/>
+</mask>
+<g mask="url(#mask0_outline_ins)">
+<use xlink:href="#path1_stroke_2x" transform="translate(5309 0)" fill="#FF2C5E"/>
+</g>
+</g>
+<g id="Page 1">
+<g id="Fill 1">
+<use xlink:href="#path2_fill" transform="translate(5325.23 18.9999)" fill="#FF2C5E"/>
+</g>
+<g id="Fill 2">
+<use xlink:href="#path3_fill" transform="translate(5324 20.5837)" fill="#FF2C5E"/>
+</g>
+</g>
+</g>
+</g>
+<defs>
+<path id="path0_fill" fill-rule="evenodd" d="M 27.5 55C 42.6878 55 55 42.6878 55 27.5C 55 12.3122 42.6878 0 27.5 0C 12.3122 0 0 12.3122 0 27.5C 0 42.6878 12.3122 55 27.5 55Z"/>
+<path id="path1_stroke_2x" d="M 27.5 56C 43.2401 56 56 43.2401 56 27.5L 54 27.5C 54 42.1355 42.1355 54 27.5 54L 27.5 56ZM 56 27.5C 56 11.7599 43.2401 -1 27.5 -1L 27.5 1C 42.1355 1 54 12.8645 54 27.5L 56 27.5ZM 27.5 -1C 11.7599 -1 -1 11.7599 -1 27.5L 1 27.5C 1 12.8645 12.8645 1 27.5 1L 27.5 -1ZM -1 27.5C -1 43.2401 11.7599 56 27.5 56L 27.5 54C 12.8645 54 1 42.1355 1 27.5L -1 27.5Z"/>
+<path id="path2_fill" fill-rule="evenodd" d="M 0 0L 11.165 10.455L 22.331 0L 0 0Z"/>
+<path id="path3_fill" fill-rule="evenodd" d="M 12.4 11.612L 0 0L 0 16.242L 24.8 16.242L 24.8 0L 12.4 11.612Z"/>
+</defs>
+</svg>

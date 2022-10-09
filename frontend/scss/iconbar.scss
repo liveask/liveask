@@ -1,0 +1,192 @@
+@import 'colors';
+
+.iconbar {
+  float: right;
+}
+
+@keyframes example {
+  20% {
+    transform: translate(0px, -6px);
+    animation-timing-function: ease-in-out;
+  }
+
+  40%,
+  100% {
+    transform: translate(0px, 0px);
+  }
+}
+
+#Oval-Copy-52 {
+  animation-name: example;
+  animation-duration: 2s;
+  animation-iteration-count: infinite;
+}
+
+#Oval-Copy-53 {
+  animation-name: example;
+  animation-duration: 2s;
+  animation-delay: 0.3s;
+  animation-iteration-count: infinite;
+}
+
+#Oval-Copy-54 {
+  animation-name: example;
+  animation-duration: 2s;
+  animation-delay: 0.6s;
+  animation-iteration-count: infinite;
+}
+
+.top-icon-svg {
+  width: 3em;
+  height: 3em;
+  zoom: 90%;
+}
+
+.topbar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 161px;
+  min-width: 224px;
+
+  text-align: left;
+  z-index: 1;
+  box-shadow: 0px 2px 4px 0 rgba(0, 0, 0, 0.07);
+  background-color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  transition: all 0.4s ease;
+}
+
+@media (min-width: 400px) {
+  .topbar {
+    height: 60px;
+  }
+}
+
+.topbar.shrink {
+  height: 60px;
+}
+
+.logo {
+  bottom: 31px;
+  position: absolute;
+  transition: all .4s ease;
+}
+
+.logo.shrink {
+  bottom: 7px;
+  position: absolute;
+}
+
+@media (min-width: 400px) {
+  .logo {
+    bottom: 7px;
+  }
+}
+
+.logo-letters-svg {
+  transition: all 0.4s ease;
+  margin-left: 10.73px;
+  margin-bottom: 9.77px;
+}
+
+@media (max-width: 400px) {
+  .logo-letters-svg.shrink {
+    opacity: 0;
+  }
+}
+
+.innerbox {
+  min-width: 226px;
+  width: 375px;
+  height: 100%;
+  position: static;
+}
+
+@media (min-width: 400px) {
+  .innerbox {
+    width: 800px;
+  }
+}
+
+.offline {
+  margin-top: 1.8em;
+}
+
+.logo-min-svg {
+  margin-left: 43px;
+  margin-top: 15px;
+}
+
+.sharebar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 62px;
+  width: 100%;
+  background-color: rgb(232, 232, 232);
+  text-align: left;
+  z-index: 2;
+  display: flex;
+}
+
+.createevent {
+  color: $pink-bg;
+  font-size: 14px;
+  letter-spacing: 0.22px;
+  line-height: 16px;
+  text-transform: uppercase;
+  margin-top: 23px;
+  margin-right: 30px;
+}
+
+.share {
+  font-size: 14px;
+  letter-spacing: 0.22px;
+  line-height: 16px;
+  text-transform: uppercase;
+  position: relative;
+  top: 21px;
+  left: 113px;
+}
+
+@media (min-width: 400px) and (max-width: 600px) {
+  .share {
+    left: 210px;
+  }
+}
+
+@media (min-width: 600px) {
+  .share {
+    left: 390px;
+  }
+}
+
+.sharebar-overlay {
+  position: fixed;
+  height: 100%;
+  width: 100%;
+  left: 0;
+  top: 0;
+  z-index: 1;
+  -webkit-tap-highlight-color: transparent;
+  display: none;
+}
+
+.sharebar-entry {
+  cursor: pointer;
+  flex-grow: 1;
+  /* center text right next to it */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.share-svg {
+  width: 40px;
+  margin-top: 0.5em;
+}

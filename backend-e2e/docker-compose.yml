@@ -1,0 +1,59 @@
+version: '3'
+services:
+
+  redis:
+    image: redis:alpine
+    restart: unless-stopped
+    ports:
+      - 6379:6379
+    networks:
+      - la-net
+
+  ddb:
+    image: dwmkerr/dynamodb
+    restart: unless-stopped
+    ports:
+      - 8000:8000
+    networks:
+      - la-net
+    command: -inMemory -sharedDb
+
+  liveask:
+    build: ../../backend/
+    image: liveask/local
+    command: dockerize -wait tcp://redis:6379 -wait tcp://ddb:8000 -timeout 10s bash -c "/liveask/bin/laserver"
+    ports:
+      - 8090:8090
+    environment:
+      - LA_BASE_URL=localhost
+      - MAILJET_KEY=foo
+      - MAILJET_PWD=pwd
+      - LA_GOOGLE_SHORTENER_KEY=bar
+      - LA_AUTOKILL_MEM_MB=100
+      - REDIS_HOST=redis
+      - LA_DYNAMODB_LOCAL_URL=http://ddb:8000
+    depends_on:
+      - redis
+      - ddb
+    networks:
+      - la-net
+
+  test:
+    build: 
+      context: ../
+      dockerfile: backend-e2e/Dockerfile
+    image: liveask/test
+    command: dockerize -wait tcp://liveask:8090 -wait tcp://redis:6379 -wait tcp://ddb:8000 -timeout 10s bash -c "./test"
+    environment:
+      - URL=http://liveask:8090
+      - SOCKET_URL=ws://liveask:8090
+    depends_on:
+      - liveask
+      - redis
+      - ddb
+    networks:
+      - la-net
+
+networks:
+  la-net:
+    driver: bridge

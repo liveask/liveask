@@ -1,0 +1,15 @@
+[package]
+name = "backend"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+axum = "0.5"
+mailjet-rs = "0.2" 
+reqwest = { version = "0.11", features = ["json"] }
+shared = { path = "../shared" }
+tinyurl-rs = "0.1"
+tokio = { version = "1", features = ["full"] }
+tower-http = { version = "0.3", features = ["cors", "trace"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }

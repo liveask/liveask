@@ -1,0 +1,40 @@
+.questions {
+  padding-bottom: 20px;
+  max-width: 700px;
+  margin: auto;
+
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.questions-move {
+  transition: transform 500ms;
+}
+
+.noquestions {
+  color: white;
+  font-size: 120%;
+  text-align: center;
+  margin-top: 24px;
+
+  &.modview {
+    color: black;
+  }
+}
+
+.questions-seperator {
+  font-size: 12px;
+  letter-spacing: 0.19px;
+  line-height: 14px;
+  text-transform: uppercase;
+
+  margin-top: 32px;
+  margin-bottom: 13px;
+
+  text-align: center;
+}
+
+.questions-seperator.modview {
+  color: white;
+}
