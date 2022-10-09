@@ -19,8 +19,4 @@
 * https://app.metrical.xyz/a/2LaPi-sYg/current
 * https://app.usefathom.com/?page=1&range=today&site=OAMRSQQM
 
-## in-active
-* https://liveask.matomo.cloud
-* https://liveask.piwik.pro/analytics
-
 see https://github.com/newTendermint/awesome-analytics#privacy-focused-analytics
