@@ -91,11 +91,86 @@ pub async fn getevent_handler(
 }
 
 #[instrument]
-pub async fn get_modevent_handler(
+pub async fn mod_get_event(
     Path((id, secret)): Path<(String, String)>,
     Extension(app): Extension<App>,
 ) -> Result<impl IntoResponse, StatusCode> {
     match app.get_event(id, Some(secret)).await {
+        Ok(res) => Ok(Json(res)),
+        Err(e) => {
+            tracing::error!("{}", e);
+            Err(StatusCode::BAD_REQUEST)
+        }
+    }
+}
+
+#[instrument]
+pub async fn mod_delete_event(
+    Path((id, secret)): Path<(String, String)>,
+    Extension(app): Extension<App>,
+) -> Result<impl IntoResponse, StatusCode> {
+    match app.delete_event(id, secret).await {
+        Ok(res) => Ok(Json(res)),
+        Err(e) => {
+            tracing::error!("{}", e);
+            Err(StatusCode::BAD_REQUEST)
+        }
+    }
+}
+
+#[instrument]
+pub async fn mod_get_question(
+    Path((id, secret, question_id)): Path<(String, String, i64)>,
+    Extension(app): Extension<App>,
+) -> Result<impl IntoResponse, StatusCode> {
+    match app.get_question(id, Some(secret), question_id).await {
+        Ok(res) => Ok(Json(res)),
+        Err(e) => {
+            tracing::error!("{}", e);
+            Err(StatusCode::BAD_REQUEST)
+        }
+    }
+}
+
+#[instrument]
+pub async fn get_question(
+    Path((id, question_id)): Path<(String, i64)>,
+    Extension(app): Extension<App>,
+) -> Result<impl IntoResponse, StatusCode> {
+    match app.get_question(id, None, question_id).await {
+        Ok(res) => Ok(Json(res)),
+        Err(e) => {
+            tracing::error!("{}", e);
+            Err(StatusCode::BAD_REQUEST)
+        }
+    }
+}
+
+#[instrument]
+pub async fn mod_edit_question(
+    Path((id, secret, question_id)): Path<(String, String, i64)>,
+    Json(payload): Json<shared::ModQuestion>,
+    Extension(app): Extension<App>,
+) -> Result<impl IntoResponse, StatusCode> {
+    match app
+        .mod_edit_question(id, secret, question_id, payload)
+        .await
+    {
+        Ok(res) => Ok(Json(res)),
+        Err(e) => {
+            tracing::error!("{}", e);
+            Err(StatusCode::BAD_REQUEST)
+        }
+    }
+}
+
+#[instrument]
+pub async fn mod_edit_state(
+    Path((id, secret)): Path<(String, String)>,
+    Json(payload): Json<shared::EventState>,
+    Extension(app): Extension<App>,
+) -> Result<impl IntoResponse, StatusCode> {
+    match app.edit_event_state(id, secret, payload).await {
         Ok(res) => Ok(Json(res)),
         Err(e) => {
             tracing::error!("{}", e);

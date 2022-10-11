@@ -5,7 +5,7 @@ use std::{
 
 use anyhow::{bail, Result};
 use axum::extract::ws::{Message, WebSocket};
-use shared::{AddEvent, EventInfo, EventTokens, Item};
+use shared::{AddEvent, EventInfo, EventState, EventTokens, Item, ModQuestion};
 use tokio::sync::{mpsc, RwLock};
 use ulid::Ulid;
 
@@ -30,6 +30,7 @@ impl App {
             create_time_utc: String::new(),
             deleted: false,
             questions: Vec::new(),
+            state: None,
             data: request.data,
             tokens: EventTokens {
                 public_token: Ulid::new().to_string(),
@@ -72,6 +73,137 @@ impl App {
         Ok(e)
     }
 
+    pub async fn get_question(
+        &self,
+        id: String,
+        secret: Option<String>,
+        question_id: i64,
+    ) -> Result<Item> {
+        let e = self
+            .events
+            .read()
+            .await
+            .get(&id)
+            .ok_or_else(|| anyhow::anyhow!("ev not found"))?
+            .clone();
+
+        let can_see_hidden = e
+            .tokens
+            .moderator_token
+            .clone()
+            .zip(secret.clone())
+            .map(|tokens| tokens.0 != tokens.1)
+            .unwrap_or_default();
+
+        let q = e
+            .questions
+            .iter()
+            .find(|q| q.id == question_id)
+            .ok_or_else(|| anyhow::anyhow!("q not found"))?
+            .clone();
+
+        if q.hidden && !can_see_hidden {
+            bail!("q not found")
+        }
+
+        self.notify_subscribers(id, None).await;
+
+        Ok(q)
+    }
+
+    pub async fn mod_edit_question(
+        &self,
+        id: String,
+        secret: String,
+        question_id: i64,
+        state: ModQuestion,
+    ) -> Result<EventInfo> {
+        let mut e = self
+            .events
+            .write()
+            .await
+            .get(&id)
+            .ok_or_else(|| anyhow::anyhow!("ev not found"))?
+            .clone();
+
+        if e.tokens
+            .moderator_token
+            .as_ref()
+            .map(|mod_token| mod_token != &secret)
+            .unwrap_or_default()
+        {
+            bail!("wrong mod token");
+        }
+
+        let q = e
+            .questions
+            .iter_mut()
+            .find(|q| q.id == question_id)
+            .ok_or_else(|| anyhow::anyhow!("q not found"))?;
+
+        q.hidden = state.hide;
+        q.answered = state.answered;
+
+        self.notify_subscribers(id, None).await;
+
+        Ok(e)
+    }
+
+    pub async fn edit_event_state(
+        &self,
+        id: String,
+        secret: String,
+        state: EventState,
+    ) -> Result<EventInfo> {
+        let mut e = self
+            .events
+            .write()
+            .await
+            .get(&id)
+            .ok_or_else(|| anyhow::anyhow!("ev not found"))?
+            .clone();
+
+        if e.tokens
+            .moderator_token
+            .as_ref()
+            .map(|mod_token| mod_token != &secret)
+            .unwrap_or_default()
+        {
+            bail!("wrong mod token");
+        }
+
+        e.state = Some(state);
+
+        self.notify_subscribers(id, None).await;
+
+        Ok(e)
+    }
+
+    pub async fn delete_event(&self, id: String, secret: String) -> Result<EventInfo> {
+        let mut e = self
+            .events
+            .write()
+            .await
+            .get(&id)
+            .ok_or_else(|| anyhow::anyhow!("ev not found"))?
+            .clone();
+
+        if e.tokens
+            .moderator_token
+            .as_ref()
+            .map(|mod_token| mod_token != &secret)
+            .unwrap_or_default()
+        {
+            bail!("wrong mod token");
+        }
+
+        e.deleted = true;
+
+        self.notify_subscribers(id, None).await;
+
+        Ok(e)
+    }
+
     pub async fn add_question(&self, id: String, question: shared::AddQuestion) -> Result<Item> {
         let mut events = self.events.write().await;
 
@@ -96,7 +228,7 @@ impl App {
             .questions
             .push(question.clone());
 
-        self.notify_subscribers(id, question_id).await;
+        self.notify_subscribers(id, Some(question_id)).await;
 
         Ok(question)
     }
@@ -179,8 +311,14 @@ impl App {
         sender
     }
 
-    async fn notify_subscribers(&self, event_id: String, question_id: i64) {
+    async fn notify_subscribers(&self, event_id: String, question_id: Option<i64>) {
         let channels = self.channels.clone();
+
+        let msg = if let Some(q) = question_id {
+            Message::Text(format!("q:{}", q))
+        } else {
+            Message::Text("e".to_string())
+        };
 
         tokio::spawn(async move {
             for (_user_id, (_id, c)) in channels
@@ -189,8 +327,7 @@ impl App {
                 .iter()
                 .filter(|(_, (id, _))| id == &event_id)
             {
-                c.send(Ok(Message::Text(format!("q:{}", question_id))))
-                    .unwrap();
+                c.send(Ok(msg.clone())).unwrap();
             }
         })
         .await

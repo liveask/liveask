@@ -66,6 +66,32 @@ async fn add_event(name: String) -> EventInfo {
     e
 }
 
+async fn delete_event(id: String, secret: String) -> EventInfo {
+    let res = reqwest::Client::new()
+        .get(format!(
+            "{}/api/mod/event/delete/{}/{}",
+            server_rest(),
+            id,
+            secret
+        ))
+        .send()
+        .await
+        .unwrap();
+
+    assert!(res
+        .headers()
+        .get(CONTENT_TYPE)
+        .unwrap()
+        .to_str()
+        .unwrap()
+        .starts_with("application/json"),);
+    assert_eq!(res.status(), StatusCode::OK);
+
+    let e = res.json::<EventInfo>().await.unwrap();
+
+    e
+}
+
 async fn add_question(event: String) -> shared::Item {
     let res = reqwest::Client::new()
         .post(format!("{}/api/event/addquestion/{}", server_rest(), event))
@@ -165,6 +191,18 @@ mod test {
         let q_before = add_question(e.tokens.public_token.clone()).await;
         let q_after = like_question(e.tokens.public_token, q_before.id, true).await;
         assert_eq!(q_after.likes, q_before.likes + 1);
+    }
+
+    #[tokio::test]
+    async fn test_delete_event() {
+        let e = add_event("foo".to_string()).await;
+        assert_eq!(e.deleted, false);
+        let e = delete_event(
+            e.tokens.public_token.clone(),
+            e.tokens.moderator_token.unwrap(),
+        )
+        .await;
+        assert_eq!(e.deleted, true);
     }
 
     #[tokio::test]

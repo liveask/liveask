@@ -45,7 +45,7 @@ pub struct EventInfo {
     #[serde(rename = "createTimeUTC")]
     pub create_time_utc: String,
     pub questions: Vec<Item>,
-    //TODO: event state
+    pub state: Option<EventState>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -66,4 +66,23 @@ pub struct EditLike {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct AddQuestion {
     pub text: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct ModQuestion {
+    pub hide: bool,
+    pub answered: bool,
+}
+
+///
+#[derive(Serialize, Deserialize, Debug, Copy, Clone, Eq, PartialEq)]
+pub enum States {
+    Open,
+    VotingOnly,
+    Closed,
+}
+
+#[derive(Serialize, Deserialize, Debug, Copy, Clone, Eq, PartialEq)]
+pub struct EventState {
+    pub state: States,
 }
