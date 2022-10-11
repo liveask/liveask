@@ -38,7 +38,16 @@ async fn main() {
     let app = Router::new()
         .route("/ping", get(handle::ping_handler))
         .route("/api/addevent", post(handle::addevent_handler))
+        .route("/api/event/editlike/:id", post(handle::editlike_handler))
+        .route(
+            "/api/event/addquestion/:id",
+            post(handle::addquestion_handler),
+        )
         .route("/api/event/:id", get(handle::getevent_handler))
+        .route(
+            "/api/mod/event/:id/:secret",
+            get(handle::get_modevent_handler),
+        )
         .layer(TraceLayer::new_for_http())
         .layer(setup_cors());
 
