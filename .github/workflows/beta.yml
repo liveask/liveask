@@ -39,10 +39,8 @@ jobs:
         components: clippy
 
     - name: Install cargo-make
-      uses: actions-rs/cargo@v1
-      with:
-        command: install
-        args: cargo-make
+      run: |
+        which cargo-make || cargo install cargo-make
 
     - name: Install Trunk
       run: |
