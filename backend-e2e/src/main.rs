@@ -2,10 +2,15 @@ fn main() {}
 
 #[cfg(test)]
 mod test {
-    use grillon::{
-        header::{self, HeaderValue, CONTENT_TYPE},
-        json, Grillon, StatusCode,
+    // use grillon::{
+    //     header::{self, HeaderValue, CONTENT_TYPE},
+    //     json, Grillon, StatusCode,
+    // };
+    use reqwest::{
+        header::{HeaderValue, CONTENT_TYPE},
+        StatusCode,
     };
+    use serde_json::json;
     use tungstenite::connect;
 
     fn server_rest() -> String {
@@ -17,26 +22,25 @@ mod test {
 
     #[tokio::test]
     async fn test_status() {
-        Grillon::new(&server_rest())
-            .unwrap()
-            .get("api/ping")
-            .assert()
+        // env_logger::init();
+
+        let resp = reqwest::get(format!("{}/api/ping", server_rest()))
             .await
-            .status_success()
-            .status(StatusCode::OK)
-            .headers_exist(vec![(
-                CONTENT_TYPE,
-                HeaderValue::from_static("application/json; charset=UTF-8"),
-            )])
-            .body(json!("pong"));
+            .unwrap();
+
+        assert_eq!(
+            resp.headers().get(CONTENT_TYPE).unwrap(),
+            HeaderValue::from_static("application/json; charset=UTF-8")
+        );
+        assert_eq!(resp.status(), StatusCode::OK);
+        assert_eq!(resp.json::<String>().await.unwrap(), "pong");
     }
 
     #[tokio::test]
     async fn test_add_event() {
-        let res = Grillon::new(&server_rest())
-            .unwrap()
-            .post("api/addevent")
-            .payload(json!({
+        let res = reqwest::Client::new()
+            .post(format!("{}/api/addevent", server_rest()))
+            .json(&json!({
                 "eventData":{
                     "maxLikes":0,
                     "name":"foobar foo",
@@ -45,32 +49,25 @@ mod test {
                     "longUrl":null},
                 "moderatorEmail": "",
             }))
-            .headers(vec![(
-                header::CONTENT_TYPE,
-                header::HeaderValue::from_static("application/json"),
-            )])
-            .assert()
+            .send()
             .await
-            .status_success()
-            .status(StatusCode::OK)
-            .headers_exist(vec![(
-                CONTENT_TYPE,
-                HeaderValue::from_static("application/json; charset=UTF-8"),
-            )])
-            .assert_fn(|assert| {
-                assert!(assert.json.is_some());
-            });
+            .unwrap();
 
-        let json = res.json.unwrap();
+        assert_eq!(
+            res.headers().get(CONTENT_TYPE).unwrap(),
+            HeaderValue::from_static("application/json; charset=UTF-8")
+        );
+        assert_eq!(res.status(), StatusCode::OK);
+
+        let json = res.json::<serde_json::Value>().await.unwrap();
 
         assert_eq!(json.get("data").unwrap().get("name").unwrap(), "foobar foo");
     }
 
     async fn add_event() -> String {
-        let res = Grillon::new(&server_rest())
-            .unwrap()
-            .post("api/addevent")
-            .payload(json!({
+        let res = reqwest::Client::new()
+            .post(format!("{}/api/addevent", server_rest()))
+            .json(&json!({
                 "eventData":{
                     "maxLikes":0,
                     "name":"foobar foo",
@@ -79,25 +76,19 @@ mod test {
                     "longUrl":null},
                 "moderatorEmail": "",
             }))
-            .headers(vec![(
-                header::CONTENT_TYPE,
-                header::HeaderValue::from_static("application/json"),
-            )])
-            .assert()
+            .send()
             .await
-            .status_success()
-            .status(StatusCode::OK)
-            .headers_exist(vec![(
-                CONTENT_TYPE,
-                HeaderValue::from_static("application/json; charset=UTF-8"),
-            )])
-            .assert_fn(|assert| {
-                assert!(assert.json.is_some());
-            });
+            .unwrap();
 
-        let res = res.json.unwrap();
+        assert_eq!(
+            res.headers().get(CONTENT_TYPE).unwrap(),
+            HeaderValue::from_static("application/json; charset=UTF-8")
+        );
+        assert_eq!(res.status(), StatusCode::OK);
 
-        res.get("tokens")
+        let json = res.json::<serde_json::Value>().await.unwrap();
+
+        json.get("tokens")
             .unwrap()
             .get("publicToken")
             .unwrap()
@@ -107,46 +98,32 @@ mod test {
     }
 
     async fn add_question(event: String) -> String {
-        let res = Grillon::new(&server_rest())
-            .unwrap()
-            .post(&format!("api/event/addquestion/{}", event))
-            .payload(json!({
+        let res = reqwest::Client::new()
+            .post(format!("{}/api/event/addquestion/{}", server_rest(), event))
+            .json(&json!({
                 "text":"test"
             }))
-            .headers(vec![(
-                header::CONTENT_TYPE,
-                header::HeaderValue::from_static("application/json"),
-            )])
-            .assert()
+            .send()
             .await
-            .status_success()
-            .status(StatusCode::OK)
-            .headers_exist(vec![(
-                CONTENT_TYPE,
-                HeaderValue::from_static("application/json; charset=UTF-8"),
-            )])
-            .assert_fn(|assert| {
-                assert!(assert.json.is_some());
-                assert_eq!(
-                    assert
-                        .json
-                        .as_ref()
-                        .unwrap()
-                        .get("text")
-                        .unwrap()
-                        .as_str()
-                        .unwrap(),
-                    "test"
-                );
-            });
+            .unwrap();
 
-        let res = res.json.unwrap();
+        assert_eq!(
+            res.headers().get(CONTENT_TYPE).unwrap(),
+            HeaderValue::from_static("application/json; charset=UTF-8")
+        );
+        assert_eq!(res.status(), StatusCode::OK);
 
-        res.get("id").unwrap().to_string()
+        let json = res.json::<serde_json::Value>().await.unwrap();
+
+        assert_eq!(json.get("text").unwrap().as_str().unwrap(), "test");
+
+        json.get("id").unwrap().to_string()
     }
 
     #[tokio::test]
     async fn test_websockets() {
+        env_logger::init();
+
         let event = add_event().await;
 
         let (mut socket, response) =
