@@ -10,7 +10,7 @@ use std::net::SocketAddr;
 use tower_http::{cors::CorsLayer, trace::TraceLayer};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
-use crate::app::App;
+use crate::{app::App, handle::push_handler};
 
 #[cfg(not(debug_assertions))]
 fn setup_cors() -> CorsLayer {
@@ -53,6 +53,7 @@ async fn main() {
             "/api/mod/event/:id/:secret",
             get(handle::get_modevent_handler),
         )
+        .route("/push/:id", get(push_handler))
         .layer(TraceLayer::new_for_http())
         .layer(setup_cors())
         .layer(Extension(app));

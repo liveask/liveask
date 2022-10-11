@@ -4,14 +4,16 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-axum = "0.5"
 anyhow = "1.0"
-ulid = "1.0"
+axum = { version = "0.5", features = ["ws"] }
+futures-util = "0.3"
 mailjet-rs = "0.2" 
 reqwest = { version = "0.11", features = ["json"] }
 shared = { path = "../shared" }
 tinyurl-rs = "0.1"
 tokio = { version = "1", features = ["full"] }
+tokio-stream = "0.1"
 tower-http = { version = "0.3", features = ["cors", "trace"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+ulid = "1.0"

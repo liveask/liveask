@@ -1,5 +1,5 @@
 use axum::{
-    extract::Path,
+    extract::{ws::WebSocket, Path, WebSocketUpgrade},
     http::StatusCode,
     response::{Html, IntoResponse},
     Extension, Json,
@@ -7,6 +7,22 @@ use axum::{
 use tracing::instrument;
 
 use crate::app::App;
+
+//TODO: not sure why we need this
+async fn socket_handler(ws: WebSocket, id: String, app: App) {
+    app.push_subscriber(ws, id).await
+}
+
+#[instrument]
+pub async fn push_handler(
+    ws: WebSocketUpgrade,
+    Path(id): Path<String>,
+    Extension(app): Extension<App>,
+) -> impl IntoResponse {
+    tracing::info!("push subscriber: {}", id);
+
+    ws.on_upgrade(|ws| socket_handler(ws, id, app))
+}
 
 #[instrument]
 pub async fn editlike_handler(
