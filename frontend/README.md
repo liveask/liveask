@@ -1,5 +1,7 @@
 # TODO
 
+## 2.0 (relaunch based on yew)
+
 - [ ] mod: delete, answered, hide
 - [ ] popup fucks up background in wide screen
 - [ ] show red highlight animation
@@ -7,11 +9,16 @@
 - [ ] reconnects / offline indicator
 - [ ] event print view
 - [ ] home version text
+
+## 2.1 (missing non escential features)
+
 - [ ] cache local likes of current event in memory
 - [ ] autosize question textfield
 - [ ] fix mime type `application/wasm`
 - [ ] scss scoped classes
 - [ ] collapsable event desc
+- [ ] tutorial
+- [ ] email forwarding and DNS entries cleanup
 
 # analytics
 
