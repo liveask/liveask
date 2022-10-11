@@ -1,7 +1,10 @@
 mod handle;
 mod mail;
 
-use axum::{routing::get, Router};
+use axum::{
+    routing::{get, post},
+    Router,
+};
 use std::net::SocketAddr;
 use tower_http::{cors::CorsLayer, trace::TraceLayer};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
@@ -13,6 +16,8 @@ fn setup_cors() -> CorsLayer {
 
 #[cfg(debug_assertions)]
 fn setup_cors() -> CorsLayer {
+    tracing::info!("cors setup");
+
     use axum::http::HeaderValue;
     use tower_http::cors::Any;
 
@@ -32,6 +37,7 @@ async fn main() {
 
     let app = Router::new()
         .route("/ping", get(handle::ping_handler))
+        .route("/api/addevent", post(handle::addevent_handler))
         .route("/api/event/:id", get(handle::getevent_handler))
         .layer(TraceLayer::new_for_http())
         .layer(setup_cors());

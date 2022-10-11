@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 axum = "0.5"
+ulid = "1.0"
 mailjet-rs = "0.2" 
 reqwest = { version = "0.11", features = ["json"] }
 shared = { path = "../shared" }
