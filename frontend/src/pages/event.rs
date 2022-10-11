@@ -391,10 +391,7 @@ impl Event {
             let mut questions = e.questions.clone();
             questions.sort_by(|a, b| b.likes.cmp(&a.likes));
 
-            let (not_hidden, hidden) = questions
-                .into_iter()
-                .map(|i| Rc::new(i))
-                .split(|i| i.hidden);
+            let (not_hidden, hidden) = questions.into_iter().map(Rc::new).split(|i| i.hidden);
 
             let (unanswered, answered) = not_hidden.into_iter().split(|i| i.answered);
 
