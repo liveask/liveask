@@ -5,7 +5,7 @@ use std::{
 
 use anyhow::{bail, Result};
 use axum::extract::ws::{Message, WebSocket};
-use shared::{AddEvent, EventInfo, EventState, EventTokens, Item, ModQuestion};
+use shared::{AddEvent, EventInfo, EventState, EventTokens, Item, ModQuestion, States};
 use tokio::sync::{mpsc, RwLock};
 use ulid::Ulid;
 
@@ -30,7 +30,9 @@ impl App {
             create_time_utc: String::new(),
             deleted: false,
             questions: Vec::new(),
-            state: None,
+            state: EventState {
+                state: States::Open,
+            },
             data: request.data,
             tokens: EventTokens {
                 public_token: Ulid::new().to_string(),
@@ -66,8 +68,18 @@ impl App {
             }
         }
 
+        if e.deleted {
+            bail!("ev not found");
+        }
+
         if secret.is_none() {
             e.tokens.moderator_token = Some(String::new());
+
+            e.questions = e
+                .questions
+                .into_iter()
+                .filter(|q| !q.hidden)
+                .collect::<Vec<_>>();
         }
 
         Ok(e)
@@ -118,13 +130,12 @@ impl App {
         question_id: i64,
         state: ModQuestion,
     ) -> Result<EventInfo> {
-        let mut e = self
-            .events
-            .write()
-            .await
-            .get(&id)
-            .ok_or_else(|| anyhow::anyhow!("ev not found"))?
-            .clone();
+        tracing::info!("mod_edit_question: {:?}", state);
+
+        let mut events = self.events.write().await;
+        let e = events
+            .get_mut(&id)
+            .ok_or_else(|| anyhow::anyhow!("ev not found"))?;
 
         if e.tokens
             .moderator_token
@@ -143,6 +154,8 @@ impl App {
 
         q.hidden = state.hide;
         q.answered = state.answered;
+
+        let e = e.clone();
 
         self.notify_subscribers(id, None).await;
 
@@ -172,7 +185,7 @@ impl App {
             bail!("wrong mod token");
         }
 
-        e.state = Some(state);
+        e.state = state;
 
         self.notify_subscribers(id, None).await;
 
@@ -180,13 +193,11 @@ impl App {
     }
 
     pub async fn delete_event(&self, id: String, secret: String) -> Result<EventInfo> {
-        let mut e = self
-            .events
-            .write()
-            .await
-            .get(&id)
-            .ok_or_else(|| anyhow::anyhow!("ev not found"))?
-            .clone();
+        let mut events = self.events.write().await;
+
+        let e = events
+            .get_mut(&id)
+            .ok_or_else(|| anyhow::anyhow!("ev not found"))?;
 
         if e.tokens
             .moderator_token
@@ -198,6 +209,8 @@ impl App {
         }
 
         e.deleted = true;
+
+        let e = e.clone();
 
         self.notify_subscribers(id, None).await;
 

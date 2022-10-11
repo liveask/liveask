@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use serde_repr::{Deserialize_repr, Serialize_repr};
 
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq)]
 pub struct EventTokens {
@@ -45,7 +46,7 @@ pub struct EventInfo {
     #[serde(rename = "createTimeUTC")]
     pub create_time_utc: String,
     pub questions: Vec<Item>,
-    pub state: Option<EventState>,
+    pub state: EventState,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -75,11 +76,12 @@ pub struct ModQuestion {
 }
 
 ///
-#[derive(Serialize, Deserialize, Debug, Copy, Clone, Eq, PartialEq)]
+#[derive(Serialize_repr, Deserialize_repr, Debug, Copy, Clone, Eq, PartialEq)]
+#[repr(u8)]
 pub enum States {
-    Open,
-    VotingOnly,
-    Closed,
+    Open = 0,
+    VotingOnly = 1,
+    Closed = 2,
 }
 
 #[derive(Serialize, Deserialize, Debug, Copy, Clone, Eq, PartialEq)]

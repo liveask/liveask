@@ -13,7 +13,7 @@ fn server_socket() -> String {
     std::env::var("SOCKET_URL").unwrap_or_else(|_| "ws://localhost:8090".into())
 }
 
-async fn get_event(public: String, secret: Option<String>) -> EventInfo {
+async fn get_event(public: String, secret: Option<String>) -> Option<EventInfo> {
     let url = if let Some(secret) = secret {
         format!("{}/api/mod/event/{}/{}", server_rest(), public, secret)
     } else {
@@ -22,16 +22,23 @@ async fn get_event(public: String, secret: Option<String>) -> EventInfo {
 
     let res = reqwest::Client::new().get(url).send().await.unwrap();
 
-    assert!(dbg!(res.headers().get(CONTENT_TYPE).unwrap().to_str())
-        .unwrap()
-        .starts_with("application/json"),);
-    assert_eq!(res.status(), StatusCode::OK);
+    if res.status() == StatusCode::OK {
+        assert!(res
+            .headers()
+            .get(CONTENT_TYPE)
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .starts_with("application/json"),);
 
-    let e = res.json::<EventInfo>().await.unwrap();
+        let e = res.json::<EventInfo>().await.unwrap();
 
-    assert_eq!(e.tokens.public_token, public);
+        assert_eq!(e.tokens.public_token, public);
 
-    e
+        Some(e)
+    } else {
+        None
+    }
 }
 
 async fn add_event(name: String) -> EventInfo {
@@ -50,6 +57,7 @@ async fn add_event(name: String) -> EventInfo {
         .await
         .unwrap();
 
+    assert_eq!(res.status(), StatusCode::OK);
     assert!(res
         .headers()
         .get(CONTENT_TYPE)
@@ -57,7 +65,6 @@ async fn add_event(name: String) -> EventInfo {
         .to_str()
         .unwrap()
         .starts_with("application/json"),);
-    assert_eq!(res.status(), StatusCode::OK);
 
     let e = res.json::<EventInfo>().await.unwrap();
 
@@ -66,7 +73,7 @@ async fn add_event(name: String) -> EventInfo {
     e
 }
 
-async fn delete_event(id: String, secret: String) -> EventInfo {
+async fn delete_event(id: String, secret: String) {
     let res = reqwest::Client::new()
         .get(format!(
             "{}/api/mod/event/delete/{}/{}",
@@ -78,18 +85,7 @@ async fn delete_event(id: String, secret: String) -> EventInfo {
         .await
         .unwrap();
 
-    assert!(res
-        .headers()
-        .get(CONTENT_TYPE)
-        .unwrap()
-        .to_str()
-        .unwrap()
-        .starts_with("application/json"),);
     assert_eq!(res.status(), StatusCode::OK);
-
-    let e = res.json::<EventInfo>().await.unwrap();
-
-    e
 }
 
 async fn add_question(event: String) -> shared::Item {
@@ -102,6 +98,7 @@ async fn add_question(event: String) -> shared::Item {
         .await
         .unwrap();
 
+    assert_eq!(res.status(), StatusCode::OK);
     assert!(res
         .headers()
         .get(CONTENT_TYPE)
@@ -109,7 +106,6 @@ async fn add_question(event: String) -> shared::Item {
         .to_str()
         .unwrap()
         .starts_with("application/json"),);
-    assert_eq!(res.status(), StatusCode::OK);
 
     let q = res.json::<shared::Item>().await.unwrap();
 
@@ -120,7 +116,6 @@ async fn add_question(event: String) -> shared::Item {
 
 async fn like_question(event: String, question_id: i64, like: bool) -> shared::Item {
     let body = shared::EditLike { question_id, like };
-
     let res = reqwest::Client::new()
         .post(format!("{}/api/event/editlike/{}", server_rest(), event))
         .json(&body)
@@ -128,6 +123,7 @@ async fn like_question(event: String, question_id: i64, like: bool) -> shared::I
         .await
         .unwrap();
 
+    assert_eq!(res.status(), StatusCode::OK);
     assert!(res
         .headers()
         .get(CONTENT_TYPE)
@@ -135,11 +131,30 @@ async fn like_question(event: String, question_id: i64, like: bool) -> shared::I
         .to_str()
         .unwrap()
         .starts_with("application/json"),);
+
+    res.json::<shared::Item>().await.unwrap()
+}
+
+async fn hide_question(event: String, secret: String, question_id: i64) {
+    let body = shared::ModQuestion {
+        answered: false,
+        hide: true,
+    };
+
+    let res = reqwest::Client::new()
+        .post(format!(
+            "{}/api/mod/event/questionmod/{}/{}/{}",
+            server_rest(),
+            event,
+            secret,
+            question_id
+        ))
+        .json(&body)
+        .send()
+        .await
+        .unwrap();
+
     assert_eq!(res.status(), StatusCode::OK);
-
-    let q = res.json::<shared::Item>().await.unwrap();
-
-    q
 }
 
 #[cfg(test)]
@@ -170,18 +185,15 @@ mod test {
         let e = add_event("foo".to_string()).await;
         assert_eq!(e.data.name, "foo");
 
-        eprintln!("e: {:?}", e);
-
         let e2 = get_event(
             e.tokens.public_token.clone(),
             e.tokens.moderator_token.clone(),
         )
-        .await;
-
-        eprintln!("e2: {:?}", e2);
+        .await
+        .unwrap();
 
         assert_eq!(e2, e);
-        let e3 = get_event(e.tokens.public_token, None).await;
+        let e3 = get_event(e.tokens.public_token, None).await.unwrap();
         assert_eq!(e3.tokens.moderator_token, Some(String::new()));
     }
 
@@ -195,14 +207,46 @@ mod test {
 
     #[tokio::test]
     async fn test_delete_event() {
+        // env_logger::init();
+
         let e = add_event("foo".to_string()).await;
         assert_eq!(e.deleted, false);
-        let e = delete_event(
+
+        delete_event(
             e.tokens.public_token.clone(),
-            e.tokens.moderator_token.unwrap(),
+            e.tokens.moderator_token.clone().unwrap(),
         )
         .await;
-        assert_eq!(e.deleted, true);
+
+        let e = get_event(e.tokens.public_token.clone(), e.tokens.moderator_token).await;
+
+        assert_eq!(e, None);
+    }
+
+    #[tokio::test]
+    async fn test_hide_question() {
+        let e_mod = add_event("foo".to_string()).await;
+
+        let q_before = add_question(e_mod.tokens.public_token.clone()).await;
+
+        hide_question(
+            e_mod.tokens.public_token.clone(),
+            e_mod.tokens.moderator_token.clone().unwrap(),
+            q_before.id,
+        )
+        .await;
+
+        let e = get_event(e_mod.tokens.public_token.clone(), None)
+            .await
+            .unwrap();
+        assert_eq!(e.questions.len(), 0);
+        let e = get_event(
+            e_mod.tokens.public_token.clone(),
+            e_mod.tokens.moderator_token,
+        )
+        .await
+        .unwrap();
+        assert_eq!(e.questions.len(), 1);
     }
 
     #[tokio::test]

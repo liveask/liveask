@@ -45,7 +45,7 @@ async fn main() {
         .route("/:id/:secret", get(handle::mod_get_event))
         .route("/delete/:id/:secret", get(handle::mod_delete_event))
         .route("/question/:id/:secret/:question_id", get(handle::mod_get_question))
-        .route("/questionmod/:id/:secret/:question_id", get(handle::mod_edit_question))
+        .route("/questionmod/:id/:secret/:question_id", post(handle::mod_edit_question))
         .route("/state/:id/:secret", post(handle::mod_edit_state));
 
     #[rustfmt::skip]

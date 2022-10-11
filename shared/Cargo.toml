@@ -5,3 +5,4 @@ edition = "2018"
 
 [dependencies]
 serde = { version = "1", features = ["derive"] }
+serde_repr = "0.1"
