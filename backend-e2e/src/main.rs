@@ -1,24 +1,124 @@
+#![allow(dead_code)]
+
+use reqwest::{
+    header::{HeaderValue, CONTENT_TYPE},
+    StatusCode,
+};
+use serde_json::json;
+use shared::EventInfo;
+
 fn main() {}
+
+fn server_rest() -> String {
+    std::env::var("URL").unwrap_or_else(|_| "http://localhost:8090".into())
+}
+fn server_socket() -> String {
+    std::env::var("SOCKET_URL").unwrap_or_else(|_| "ws://localhost:8090".into())
+}
+
+async fn get_event(public: String, secret: Option<String>) -> EventInfo {
+    let url = if let Some(secret) = secret {
+        format!("{}/api/mod/event/{}/{}", server_rest(), public, secret)
+    } else {
+        format!("{}/api/event/{}", server_rest(), public)
+    };
+
+    let res = reqwest::Client::new().get(url).send().await.unwrap();
+
+    assert_eq!(
+        res.headers().get(CONTENT_TYPE).unwrap(),
+        HeaderValue::from_static("application/json; charset=UTF-8")
+    );
+    assert_eq!(res.status(), StatusCode::OK);
+
+    let e = res.json::<EventInfo>().await.unwrap();
+
+    assert_eq!(e.tokens.public_token, public);
+
+    e
+}
+
+async fn add_event(name: String) -> EventInfo {
+    let res = reqwest::Client::new()
+        .post(format!("{}/api/addevent", server_rest()))
+        .json(&json!({
+            "eventData":{
+                "maxLikes":0,
+                "name":name,
+                "description":"fancy description",
+                "shortUrl":"",
+                "longUrl":null},
+            "moderatorEmail": "",
+        }))
+        .send()
+        .await
+        .unwrap();
+
+    assert_eq!(
+        res.headers().get(CONTENT_TYPE).unwrap(),
+        HeaderValue::from_static("application/json; charset=UTF-8")
+    );
+    assert_eq!(res.status(), StatusCode::OK);
+
+    let e = res.json::<EventInfo>().await.unwrap();
+
+    assert_eq!(e.data.name, name);
+
+    e
+}
+
+async fn add_question(event: String) -> shared::Item {
+    let res = reqwest::Client::new()
+        .post(format!("{}/api/event/addquestion/{}", server_rest(), event))
+        .json(&json!({
+            "text":"test"
+        }))
+        .send()
+        .await
+        .unwrap();
+
+    assert_eq!(
+        res.headers().get(CONTENT_TYPE).unwrap(),
+        HeaderValue::from_static("application/json; charset=UTF-8")
+    );
+    assert_eq!(res.status(), StatusCode::OK);
+
+    let q = res.json::<shared::Item>().await.unwrap();
+
+    assert_eq!(q.text, "test");
+
+    q
+}
+
+async fn like_question(event: String, question_id: i64, like: bool) -> shared::Item {
+    let body = shared::EditLike { question_id, like };
+
+    let res = reqwest::Client::new()
+        .post(format!("{}/api/event/editlike/{}", server_rest(), event))
+        .json(&body)
+        .send()
+        .await
+        .unwrap();
+
+    assert_eq!(
+        res.headers().get(CONTENT_TYPE).unwrap(),
+        HeaderValue::from_static("application/json; charset=UTF-8")
+    );
+    assert_eq!(res.status(), StatusCode::OK);
+
+    let q = res.json::<shared::Item>().await.unwrap();
+
+    q
+}
 
 #[cfg(test)]
 mod test {
-    // use grillon::{
-    //     header::{self, HeaderValue, CONTENT_TYPE},
-    //     json, Grillon, StatusCode,
-    // };
+    use super::*;
     use reqwest::{
         header::{HeaderValue, CONTENT_TYPE},
         StatusCode,
     };
-    use serde_json::json;
     use tungstenite::connect;
-
-    fn server_rest() -> String {
-        std::env::var("URL").unwrap_or_else(|_| "http://localhost:8090".into())
-    }
-    fn server_socket() -> String {
-        std::env::var("SOCKET_URL").unwrap_or_else(|_| "ws://localhost:8090".into())
-    }
 
     #[tokio::test]
     async fn test_status() {
@@ -38,93 +138,37 @@ mod test {
 
     #[tokio::test]
     async fn test_add_event() {
-        let res = reqwest::Client::new()
-            .post(format!("{}/api/addevent", server_rest()))
-            .json(&json!({
-                "eventData":{
-                    "maxLikes":0,
-                    "name":"foobar foo",
-                    "description":"fancy description",
-                    "shortUrl":"",
-                    "longUrl":null},
-                "moderatorEmail": "",
-            }))
-            .send()
-            .await
-            .unwrap();
-
-        assert_eq!(
-            res.headers().get(CONTENT_TYPE).unwrap(),
-            HeaderValue::from_static("application/json; charset=UTF-8")
-        );
-        assert_eq!(res.status(), StatusCode::OK);
-
-        let json = res.json::<serde_json::Value>().await.unwrap();
-
-        assert_eq!(json.get("data").unwrap().get("name").unwrap(), "foobar foo");
+        let e = add_event("foo".to_string()).await;
+        assert_eq!(e.data.name, "foo");
     }
 
-    async fn add_event() -> String {
-        let res = reqwest::Client::new()
-            .post(format!("{}/api/addevent", server_rest()))
-            .json(&json!({
-                "eventData":{
-                    "maxLikes":0,
-                    "name":"foobar foo",
-                    "description":"fancy description",
-                    "shortUrl":"",
-                    "longUrl":null},
-                "moderatorEmail": "",
-            }))
-            .send()
-            .await
-            .unwrap();
-
-        assert_eq!(
-            res.headers().get(CONTENT_TYPE).unwrap(),
-            HeaderValue::from_static("application/json; charset=UTF-8")
-        );
-        assert_eq!(res.status(), StatusCode::OK);
-
-        let json = res.json::<serde_json::Value>().await.unwrap();
-
-        json.get("tokens")
-            .unwrap()
-            .get("publicToken")
-            .unwrap()
-            .as_str()
-            .unwrap()
-            .into()
+    #[tokio::test]
+    async fn test_get_event() {
+        let e = add_event("foo".to_string()).await;
+        assert_eq!(e.data.name, "foo");
+        let e2 = get_event(
+            e.tokens.public_token.clone(),
+            e.tokens.moderator_token.clone(),
+        )
+        .await;
+        assert_eq!(e2, e);
+        let e3 = get_event(e.tokens.public_token, None).await;
+        assert_eq!(e3.tokens.moderator_token, Some(String::new()));
     }
 
-    async fn add_question(event: String) -> String {
-        let res = reqwest::Client::new()
-            .post(format!("{}/api/event/addquestion/{}", server_rest(), event))
-            .json(&json!({
-                "text":"test"
-            }))
-            .send()
-            .await
-            .unwrap();
-
-        assert_eq!(
-            res.headers().get(CONTENT_TYPE).unwrap(),
-            HeaderValue::from_static("application/json; charset=UTF-8")
-        );
-        assert_eq!(res.status(), StatusCode::OK);
-
-        let json = res.json::<serde_json::Value>().await.unwrap();
-
-        assert_eq!(json.get("text").unwrap().as_str().unwrap(), "test");
-
-        json.get("id").unwrap().to_string()
+    #[tokio::test]
+    async fn test_like_question() {
+        let e = add_event("foo".to_string()).await;
+        let q_before = add_question(e.tokens.public_token.clone()).await;
+        let q_after = like_question(e.tokens.public_token, q_before.id, true).await;
+        assert_eq!(q_after.likes, q_before.likes + 1);
     }
 
     #[tokio::test]
     async fn test_websockets() {
-        env_logger::init();
+        // env_logger::init();
 
-        let event = add_event().await;
+        let event = add_event("foo".to_string()).await.tokens.public_token;
 
         let (mut socket, response) =
             connect(&format!("{}/push/{}", server_socket(), event)).expect("Can't connect");
@@ -134,6 +178,6 @@ mod test {
         let question = add_question(event).await;
 
         let msg = socket.read_message().expect("Error reading message");
-        assert_eq!(msg.into_text().unwrap(), format!("q:{}", question));
+        assert_eq!(msg.into_text().unwrap(), format!("q:{}", question.id));
     }
 }
