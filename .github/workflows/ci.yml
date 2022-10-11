@@ -49,7 +49,7 @@ jobs:
       uses: actions-rs/cargo@v1
       with:
         command: install
-        args: --debug cargo-make
+        args: cargo-make
 
     - name: Check
       run: |

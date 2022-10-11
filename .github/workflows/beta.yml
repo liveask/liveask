@@ -11,6 +11,8 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
+    environment: beta
+    url: http://beta.live-ask.com
 
     steps:
     - uses: actions/checkout@v2
@@ -40,7 +42,7 @@ jobs:
       uses: actions-rs/cargo@v1
       with:
         command: install
-        args: --debug cargo-make
+        args: cargo-make
 
     - name: Install Trunk
       run: |
