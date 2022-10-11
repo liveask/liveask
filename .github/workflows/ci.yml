@@ -51,7 +51,7 @@ jobs:
 
     - name: Install Test Runner
       run: |
-        cargo install wasm-bindgen-cli
+        which wasm-bindgen-test-runner || cargo install wasm-bindgen-cli
 
     - name: Check
       run: |
