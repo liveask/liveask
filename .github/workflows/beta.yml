@@ -4,6 +4,7 @@ on:
   push:
     branches: [ master ]
   workflow_dispatch:
+    branches: [ '*' ]
 
 env:
   CARGO_TERM_COLOR: always
