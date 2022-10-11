@@ -2,7 +2,7 @@ name: Beta CD
 
 on:
   push:
-    branches: [ master ]
+    branches: [ main ]
   workflow_dispatch:
     branches: [ '*' ]
 
