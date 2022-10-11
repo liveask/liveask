@@ -9,4 +9,4 @@ test-create-question:
 	echo '{"text": "test"}' | xh POST "${URL}/api/event/addquestion/${EVENT}" content-type:application/json
 
 e2e-test-remote:
-	URL=https://api.www.live-ask.com/ SOCKET_URL="wss://api.www.live-ask.com/push/" cargo test
+	RUST_LOG=debug URL=https://api.www.live-ask.com SOCKET_URL="wss://api.www.live-ask.com" cargo test
