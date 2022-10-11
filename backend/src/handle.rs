@@ -2,11 +2,12 @@ use axum::{
     extract::Path,
     http::StatusCode,
     response::{Html, IntoResponse},
-    Json,
+    Extension, Json,
 };
-use shared::{EventData, EventInfo, EventTokens, Item};
+use shared::Item;
 use tracing::instrument;
-use ulid::Ulid;
+
+use crate::app::App;
 
 #[instrument]
 pub async fn editlike_handler(
@@ -30,24 +31,17 @@ pub async fn editlike_handler(
 #[instrument]
 pub async fn addevent_handler(
     Json(payload): Json<shared::AddEvent>,
+    Extension(app): Extension<App>,
 ) -> Result<impl IntoResponse, StatusCode> {
     tracing::info!("create event: {}", payload.data.name);
 
-    let ev = EventInfo {
-        create_time_unix: 0,
-        delete_time_unix: 0,
-        last_edit_unix: 0,
-        create_time_utc: String::new(),
-        deleted: false,
-        questions: Vec::new(),
-        data: payload.data,
-        tokens: EventTokens {
-            public_token: Ulid::new().to_string(),
-            moderator_token: Some(Ulid::new().to_string()),
-        },
-    };
-
-    Ok(Json(ev))
+    match app.create_event(payload).await {
+        Ok(res) => Ok(Json(res)),
+        Err(e) => {
+            tracing::error!("{}", e);
+            Err(StatusCode::BAD_REQUEST)
+        }
+    }
 }
 
 #[instrument]
@@ -70,60 +64,33 @@ pub async fn addquestion_handler(
 }
 
 #[instrument]
-pub async fn getevent_handler(Path(id): Path<String>) -> Result<impl IntoResponse, StatusCode> {
+pub async fn getevent_handler(
+    Path(id): Path<String>,
+    Extension(app): Extension<App>,
+) -> Result<impl IntoResponse, StatusCode> {
     tracing::info!("get event:  {}", id);
 
-    let ev = EventInfo {
-        create_time_unix: 0,
-        delete_time_unix: 0,
-        last_edit_unix: 0,
-        create_time_utc: String::new(),
-        deleted: false,
-        questions: Vec::new(),
-        data: EventData {
-            max_likes: 10,
-            name: String::from("foo"),
-            description: String::from("bar"),
-            short_url: String::new(),
-            long_url: None,
-        },
-        tokens: EventTokens {
-            public_token: String::new(),
-            moderator_token: None,
-        },
-    };
-
-    Ok(Json(ev))
+    match app.get_event(id, None).await {
+        Ok(res) => Ok(Json(res)),
+        Err(e) => {
+            tracing::error!("{}", e);
+            Err(StatusCode::BAD_REQUEST)
+        }
+    }
 }
 
 #[instrument]
 pub async fn get_modevent_handler(
-    Path(id): Path<String>,
-    Path(secret): Path<String>,
+    Path((id, secret)): Path<(String, String)>,
+    Extension(app): Extension<App>,
 ) -> Result<impl IntoResponse, StatusCode> {
-    tracing::info!("get mod event:  {}/{}", id, secret);
-
-    let ev = EventInfo {
-        create_time_unix: 0,
-        delete_time_unix: 0,
-        last_edit_unix: 0,
-        create_time_utc: String::new(),
-        deleted: false,
-        questions: Vec::new(),
-        data: EventData {
-            max_likes: 10,
-            name: String::from("foo"),
-            description: String::from("bar"),
-            short_url: String::new(),
-            long_url: None,
-        },
-        tokens: EventTokens {
-            public_token: String::new(),
-            moderator_token: None,
-        },
-    };
-
-    Ok(Json(ev))
+    match app.get_event(id, Some(secret)).await {
+        Ok(res) => Ok(Json(res)),
+        Err(e) => {
+            tracing::error!("{}", e);
+            Err(StatusCode::BAD_REQUEST)
+        }
+    }
 }
 
 #[instrument]

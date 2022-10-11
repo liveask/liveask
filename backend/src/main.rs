@@ -1,13 +1,16 @@
+mod app;
 mod handle;
 mod mail;
 
 use axum::{
     routing::{get, post},
-    Router,
+    Extension, Router,
 };
 use std::net::SocketAddr;
 use tower_http::{cors::CorsLayer, trace::TraceLayer};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
+
+use crate::app::App;
 
 #[cfg(not(debug_assertions))]
 fn setup_cors() -> CorsLayer {
@@ -35,8 +38,10 @@ async fn main() {
         .with(tracing_subscriber::fmt::layer())
         .init();
 
-    let app = Router::new()
-        .route("/ping", get(handle::ping_handler))
+    let app = App::default();
+
+    let router = Router::new()
+        .route("/api/ping", get(handle::ping_handler))
         .route("/api/addevent", post(handle::addevent_handler))
         .route("/api/event/editlike/:id", post(handle::editlike_handler))
         .route(
@@ -49,14 +54,15 @@ async fn main() {
             get(handle::get_modevent_handler),
         )
         .layer(TraceLayer::new_for_http())
-        .layer(setup_cors());
+        .layer(setup_cors())
+        .layer(Extension(app));
 
     let addr = SocketAddr::from(([0, 0, 0, 0], 8090));
 
     tracing::info!("listening on {}", addr);
 
     axum::Server::bind(&addr)
-        .serve(app.into_make_service())
+        .serve(router.into_make_service())
         .await
         .unwrap();
 }

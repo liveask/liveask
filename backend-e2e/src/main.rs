@@ -1,9 +1,6 @@
 #![allow(dead_code)]
 
-use reqwest::{
-    header::{HeaderValue, CONTENT_TYPE},
-    StatusCode,
-};
+use reqwest::{header::CONTENT_TYPE, StatusCode};
 use serde_json::json;
 use shared::EventInfo;
 
@@ -25,10 +22,9 @@ async fn get_event(public: String, secret: Option<String>) -> EventInfo {
 
     let res = reqwest::Client::new().get(url).send().await.unwrap();
 
-    assert_eq!(
-        res.headers().get(CONTENT_TYPE).unwrap(),
-        HeaderValue::from_static("application/json; charset=UTF-8")
-    );
+    assert!(dbg!(res.headers().get(CONTENT_TYPE).unwrap().to_str())
+        .unwrap()
+        .starts_with("application/json"),);
     assert_eq!(res.status(), StatusCode::OK);
 
     let e = res.json::<EventInfo>().await.unwrap();
@@ -54,10 +50,13 @@ async fn add_event(name: String) -> EventInfo {
         .await
         .unwrap();
 
-    assert_eq!(
-        res.headers().get(CONTENT_TYPE).unwrap(),
-        HeaderValue::from_static("application/json; charset=UTF-8")
-    );
+    assert!(res
+        .headers()
+        .get(CONTENT_TYPE)
+        .unwrap()
+        .to_str()
+        .unwrap()
+        .starts_with("application/json"),);
     assert_eq!(res.status(), StatusCode::OK);
 
     let e = res.json::<EventInfo>().await.unwrap();
@@ -77,10 +76,13 @@ async fn add_question(event: String) -> shared::Item {
         .await
         .unwrap();
 
-    assert_eq!(
-        res.headers().get(CONTENT_TYPE).unwrap(),
-        HeaderValue::from_static("application/json; charset=UTF-8")
-    );
+    assert!(res
+        .headers()
+        .get(CONTENT_TYPE)
+        .unwrap()
+        .to_str()
+        .unwrap()
+        .starts_with("application/json"),);
     assert_eq!(res.status(), StatusCode::OK);
 
     let q = res.json::<shared::Item>().await.unwrap();
@@ -100,10 +102,13 @@ async fn like_question(event: String, question_id: i64, like: bool) -> shared::I
         .await
         .unwrap();
 
-    assert_eq!(
-        res.headers().get(CONTENT_TYPE).unwrap(),
-        HeaderValue::from_static("application/json; charset=UTF-8")
-    );
+    assert!(res
+        .headers()
+        .get(CONTENT_TYPE)
+        .unwrap()
+        .to_str()
+        .unwrap()
+        .starts_with("application/json"),);
     assert_eq!(res.status(), StatusCode::OK);
 
     let q = res.json::<shared::Item>().await.unwrap();
@@ -114,26 +119,16 @@ async fn like_question(event: String, question_id: i64, like: bool) -> shared::I
 #[cfg(test)]
 mod test {
     use super::*;
-    use reqwest::{
-        header::{HeaderValue, CONTENT_TYPE},
-        StatusCode,
-    };
+    use reqwest::StatusCode;
     use tungstenite::connect;
 
     #[tokio::test]
     async fn test_status() {
-        // env_logger::init();
-
-        let resp = reqwest::get(format!("{}/api/ping", server_rest()))
+        let res = reqwest::get(format!("{}/api/ping", server_rest()))
             .await
             .unwrap();
 
-        assert_eq!(
-            resp.headers().get(CONTENT_TYPE).unwrap(),
-            HeaderValue::from_static("application/json; charset=UTF-8")
-        );
-        assert_eq!(resp.status(), StatusCode::OK);
-        assert_eq!(resp.json::<String>().await.unwrap(), "pong");
+        assert_eq!(res.status(), StatusCode::OK);
     }
 
     #[tokio::test]
@@ -144,13 +139,21 @@ mod test {
 
     #[tokio::test]
     async fn test_get_event() {
+        // env_logger::init();
+
         let e = add_event("foo".to_string()).await;
         assert_eq!(e.data.name, "foo");
+
+        eprintln!("e: {:?}", e);
+
         let e2 = get_event(
             e.tokens.public_token.clone(),
             e.tokens.moderator_token.clone(),
         )
         .await;
+
+        eprintln!("e2: {:?}", e2);
+
         assert_eq!(e2, e);
         let e3 = get_event(e.tokens.public_token, None).await;
         assert_eq!(e3.tokens.moderator_token, Some(String::new()));
