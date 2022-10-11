@@ -1,7 +1,7 @@
 use std::{collections::HashMap, sync::Arc};
 
 use anyhow::{bail, Result};
-use shared::{AddEvent, EventInfo, EventTokens};
+use shared::{AddEvent, EventInfo, EventTokens, Item};
 use tokio::sync::RwLock;
 use ulid::Ulid;
 
@@ -60,5 +60,58 @@ impl App {
         }
 
         Ok(e)
+    }
+
+    pub async fn add_question(&self, id: String, question: shared::AddQuestion) -> Result<Item> {
+        let mut events = self.events.write().await;
+
+        let question_id = events
+            .get(&id)
+            .ok_or_else(|| anyhow::anyhow!("ev not found"))?
+            .questions
+            .len() as i64;
+
+        let question = shared::Item {
+            text: question.text,
+            answered: false,
+            create_time_unix: 0,
+            hidden: false,
+            id: question_id,
+            likes: 1,
+        };
+
+        events
+            .get_mut(&id)
+            .ok_or_else(|| anyhow::anyhow!("ev not found"))?
+            .questions
+            .push(question.clone());
+
+        Ok(question)
+    }
+
+    pub async fn edit_like(&self, id: String, edit: shared::EditLike) -> Result<Item> {
+        let mut e = self
+            .events
+            .read()
+            .await
+            .get(&id)
+            .ok_or_else(|| anyhow::anyhow!("ev not found"))?
+            .clone();
+
+        if let Some(f) = e.questions.iter_mut().find(|e| e.id == edit.question_id) {
+            f.likes = if edit.like {
+                f.likes + 1
+            } else {
+                f.likes.saturating_sub(1)
+            };
+
+            let res = f.clone();
+
+            self.events.write().await.insert(id, e.clone());
+
+            Ok(res)
+        } else {
+            bail!("question not found")
+        }
     }
 }

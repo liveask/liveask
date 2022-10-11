@@ -4,7 +4,6 @@ use axum::{
     response::{Html, IntoResponse},
     Extension, Json,
 };
-use shared::Item;
 use tracing::instrument;
 
 use crate::app::App;
@@ -13,19 +12,17 @@ use crate::app::App;
 pub async fn editlike_handler(
     Json(payload): Json<shared::EditLike>,
     Path(id): Path<String>,
+    Extension(app): Extension<App>,
 ) -> Result<impl IntoResponse, StatusCode> {
     tracing::info!("edit like: {}/{}", payload.question_id, id);
 
-    let res = Item {
-        answered: false,
-        create_time_unix: 0,
-        hidden: false,
-        id: 0,
-        likes: 1,
-        text: String::new(),
-    };
-
-    Ok(Json(res))
+    match app.edit_like(id, payload).await {
+        Ok(res) => Ok(Json(res)),
+        Err(e) => {
+            tracing::error!("{}", e);
+            Err(StatusCode::BAD_REQUEST)
+        }
+    }
 }
 
 #[instrument]
@@ -48,19 +45,17 @@ pub async fn addevent_handler(
 pub async fn addquestion_handler(
     Json(payload): Json<shared::AddQuestion>,
     Path(id): Path<String>,
+    Extension(app): Extension<App>,
 ) -> Result<impl IntoResponse, StatusCode> {
     tracing::info!("add question: {} in event:  {}", payload.text, id);
 
-    let res = Item {
-        answered: false,
-        create_time_unix: 0,
-        hidden: false,
-        id: 0,
-        likes: 1,
-        text: payload.text,
-    };
-
-    Ok(Json(res))
+    match app.add_question(id, payload).await {
+        Ok(res) => Ok(Json(res)),
+        Err(e) => {
+            tracing::error!("{}", e);
+            Err(StatusCode::BAD_REQUEST)
+        }
+    }
 }
 
 #[instrument]
