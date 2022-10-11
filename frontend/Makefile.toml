@@ -12,6 +12,10 @@ install_crate = "clippy"
 command = "cargo"
 args = ["clippy","--target=wasm32-unknown-unknown"]
 
+[tasks.test]
+command = "cargo"
+args = ["test","--target=wasm32-unknown-unknown"]
+
 [tasks.format]
 install_crate = "fmt"
 command = "cargo"

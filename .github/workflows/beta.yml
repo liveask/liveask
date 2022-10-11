@@ -51,3 +51,9 @@ jobs:
       run: |
         cd frontend
         cargo make build-and-check
+
+    - name: Deploy
+      run: |
+        cd frontend/dist
+        aws s3 sync . s3://beta.live-ask.com --acl public-read --no-progress --delete --cache-control "public, max-age=5184000" --exclude app.html
+        aws s3 cp ./index.html s3://beta.live-ask.com --acl public-read --no-progress --cache-control "public, max-age=21600"

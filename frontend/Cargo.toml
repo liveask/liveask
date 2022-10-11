@@ -46,3 +46,6 @@ features = [
     "Response",
     "Headers",
     "DomTokenList"]
+
+[dev-dependencies]
+wasm-bindgen-test = "0.3.0"
