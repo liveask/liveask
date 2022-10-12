@@ -136,7 +136,7 @@ impl Component for Home {
                         {"Privacy Policy"}
                     </a>
 
-                    <a class="about" href="http://blog.extrawurst.org/general/webdev/2018/04/02/liveask.html">
+                    <a class="about" href="https://github.com/liveask/liveask">
                         {"About"}
                     </a>
 
