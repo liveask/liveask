@@ -1,0 +1,17 @@
+# https://sagiegurari.github.io/cargo-make
+
+env_files = [
+    "./default.env"
+]
+
+[env]
+BASE_URL = "http://localhost:8080"
+
+[tasks.run]
+command = "cargo"
+args = ["r"]
+
+[tasks.run-release]
+command = "cargo"
+args = ["r","--release"]
+

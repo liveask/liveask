@@ -13,7 +13,7 @@ async fn socket_handler(ws: WebSocket, id: String, app: App) {
     app.push_subscriber(ws, id).await
 }
 
-#[instrument]
+#[instrument(skip(app, ws))]
 pub async fn push_handler(
     ws: WebSocketUpgrade,
     Path(id): Path<String>,
@@ -24,7 +24,7 @@ pub async fn push_handler(
     ws.on_upgrade(|ws| socket_handler(ws, id, app))
 }
 
-#[instrument]
+#[instrument(skip(app))]
 pub async fn editlike_handler(
     Json(payload): Json<shared::EditLike>,
     Path(id): Path<String>,
@@ -41,7 +41,7 @@ pub async fn editlike_handler(
     }
 }
 
-#[instrument]
+#[instrument(skip(app))]
 pub async fn addevent_handler(
     Json(payload): Json<shared::AddEvent>,
     Extension(app): Extension<App>,
@@ -57,7 +57,7 @@ pub async fn addevent_handler(
     }
 }
 
-#[instrument]
+#[instrument(skip(app))]
 pub async fn addquestion_handler(
     Json(payload): Json<shared::AddQuestion>,
     Path(id): Path<String>,
@@ -74,7 +74,7 @@ pub async fn addquestion_handler(
     }
 }
 
-#[instrument]
+#[instrument(skip(app))]
 pub async fn getevent_handler(
     Path(id): Path<String>,
     Extension(app): Extension<App>,
@@ -90,7 +90,7 @@ pub async fn getevent_handler(
     }
 }
 
-#[instrument]
+#[instrument(skip(app))]
 pub async fn mod_get_event(
     Path((id, secret)): Path<(String, String)>,
     Extension(app): Extension<App>,
@@ -104,7 +104,7 @@ pub async fn mod_get_event(
     }
 }
 
-#[instrument]
+#[instrument(skip(app))]
 pub async fn mod_delete_event(
     Path((id, secret)): Path<(String, String)>,
     Extension(app): Extension<App>,
@@ -118,7 +118,7 @@ pub async fn mod_delete_event(
     }
 }
 
-#[instrument]
+#[instrument(skip(app))]
 pub async fn mod_get_question(
     Path((id, secret, question_id)): Path<(String, String, i64)>,
     Extension(app): Extension<App>,
@@ -132,7 +132,7 @@ pub async fn mod_get_question(
     }
 }
 
-#[instrument]
+#[instrument(skip(app))]
 pub async fn get_question(
     Path((id, question_id)): Path<(String, i64)>,
     Extension(app): Extension<App>,
@@ -146,7 +146,7 @@ pub async fn get_question(
     }
 }
 
-#[instrument]
+#[instrument(skip(app))]
 pub async fn mod_edit_question(
     Path((id, secret, question_id)): Path<(String, String, i64)>,
     Json(payload): Json<shared::ModQuestion>,
@@ -164,7 +164,7 @@ pub async fn mod_edit_question(
     }
 }
 
-#[instrument]
+#[instrument(skip(app))]
 pub async fn mod_edit_state(
     Path((id, secret)): Path<(String, String)>,
     Json(payload): Json<shared::EventState>,

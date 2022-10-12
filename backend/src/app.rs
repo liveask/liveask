@@ -1,18 +1,35 @@
 use std::{
     collections::HashMap,
     sync::{atomic::AtomicUsize, Arc},
+    time::Instant,
 };
 
 use anyhow::{bail, Result};
 use axum::extract::ws::{Message, WebSocket};
 use shared::{AddEvent, EventInfo, EventState, EventTokens, Item, ModQuestion, States};
+use tinyurl_rs::{CreateRequest, TinyUrlAPI, TinyUrlOpenAPI};
 use tokio::sync::{mpsc, RwLock};
+use tracing::instrument;
 use ulid::Ulid;
 
 #[derive(Clone, Default, Debug)]
 pub struct App {
     events: Arc<RwLock<HashMap<String, EventInfo>>>,
     channels: Arc<RwLock<HashMap<usize, (String, OutBoundChannel)>>>,
+    base_url: String,
+    tiny_url_token: String,
+}
+
+impl App {
+    pub fn new() -> Self {
+        Self {
+            events: Default::default(),
+            channels: Default::default(),
+            base_url: std::env::var("BASE_URL")
+                .unwrap_or_else(|_| "https://www.live-ask.com".into()),
+            tiny_url_token: std::env::var("TINY_URL_TOKEN").unwrap_or_default(),
+        }
+    }
 }
 
 static NEXT_USER_ID: AtomicUsize = AtomicUsize::new(1);
@@ -21,8 +38,26 @@ type OutBoundChannel =
     mpsc::UnboundedSender<std::result::Result<axum::extract::ws::Message, axum::Error>>;
 
 impl App {
+    #[instrument(skip(self))]
+    async fn shorten_url(&self, url: &str) -> String {
+        let tiny = TinyUrlAPI {
+            token: self.tiny_url_token.clone(),
+        };
+
+        let now = Instant::now();
+        let res = tiny
+            .create(CreateRequest::new(url.to_string()))
+            .await
+            .map(|res| res.data.unwrap().tiny_url)
+            .unwrap_or_default();
+
+        tracing::info!("tiny url: '{}' (in {}ms)", res, now.elapsed().as_millis());
+
+        res
+    }
+
     pub async fn create_event(&self, request: AddEvent) -> Result<EventInfo> {
-        let e = EventInfo {
+        let mut e = EventInfo {
             //TODO:
             create_time_unix: 0,
             delete_time_unix: 0,
@@ -39,6 +74,11 @@ impl App {
                 moderator_token: Some(Ulid::new().to_string()),
             },
         };
+
+        let url = format!("{}/event/{}", self.base_url, e.tokens.public_token);
+
+        e.data.short_url = self.shorten_url(&url).await;
+        e.data.long_url = Some(url);
 
         self.events
             .write()

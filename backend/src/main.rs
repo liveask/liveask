@@ -20,13 +20,7 @@ fn setup_cors() -> CorsLayer {
 #[cfg(debug_assertions)]
 fn setup_cors() -> CorsLayer {
     tracing::info!("cors setup");
-
-    use axum::http::HeaderValue;
-    use tower_http::cors::Any;
-
-    CorsLayer::new()
-        .allow_origin("*".parse::<HeaderValue>().unwrap())
-        .allow_methods(Any)
+    CorsLayer::very_permissive()
 }
 
 #[tokio::main]
@@ -38,7 +32,7 @@ async fn main() {
         .with(tracing_subscriber::fmt::layer())
         .init();
 
-    let app = App::default();
+    let app = App::new();
 
     #[rustfmt::skip]
     let mod_routes = Router::new()
