@@ -165,7 +165,7 @@ impl Component for NewEvent {
                     </div>
                     <button
                         class="button-finish"
-                        disabled={self.errors.has_errors()}
+                        disabled={!self.can_create()}
                         onclick={ctx.link().callback(|_| Msg::Create)}>
                         {"finish"}
                     </button>
@@ -176,5 +176,7 @@ impl Component for NewEvent {
 }
 
 impl NewEvent {
-    // fn validate(&mut self) {}
+    fn can_create(&self) -> bool {
+        !self.errors.has_errors() && !self.name.is_empty() && !self.desc.is_empty()
+    }
 }

@@ -4,7 +4,6 @@
 
 - [ ] mod: delete, answered, hide
 - [ ] popup fucks up background in wide screen
-- [ ] show red highlight animation
 - [ ] after popup jump to location on page
 - [ ] reconnects / offline indicator
 - [ ] event print view
@@ -12,6 +11,7 @@
 
 ## 2.1 (missing non escential features)
 
+- [ ] show red highlight animation
 - [ ] cache local likes of current event in memory
 - [ ] autosize question textfield
 - [ ] fix mime type `application/wasm`
