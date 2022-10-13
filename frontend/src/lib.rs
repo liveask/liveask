@@ -44,6 +44,11 @@ impl Component for AppRoot {
     type Properties = ();
 
     fn create(ctx: &Context<Self>) -> Self {
+        log::info!(
+            "host: {}",
+            gloo_utils::document().location().unwrap().host().unwrap()
+        );
+
         Self {
             _dispatch: Dispatch::<State>::subscribe(ctx.link().callback(Msg::State)),
             state: Default::default(),
