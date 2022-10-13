@@ -334,18 +334,15 @@ impl App {
             .await
             .insert(user_id, (id.clone(), send_channel));
 
-        while let Some(result) = ws_receiver.next().await {
-            let _msg = match result {
-                Ok(msg) => msg,
+        if let Some(result) = ws_receiver.next().await {
+            match result {
+                Ok(_) => (),
                 Err(e) => {
                     tracing::warn!("websocket receive err (id={}): '{}'", user_id, e);
-                    break;
                 }
-            };
+            }
 
             tracing::warn!("user:{} sent data, disconnecting", user_id);
-
-            break;
         }
 
         tracing::debug!("user disconnected: {}", user_id);

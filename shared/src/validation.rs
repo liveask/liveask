@@ -29,7 +29,7 @@ impl CreateEventErrors {
 
     fn check_name(v: &str) -> Option<ValidationError> {
         let trimmed_len = v.trim().len();
-        let words = v.trim().split_whitespace().count();
+        let words = v.split_whitespace().count();
 
         if trimmed_len == 0 {
             Some(ValidationError::Empty)
