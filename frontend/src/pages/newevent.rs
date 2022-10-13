@@ -1,4 +1,4 @@
-use shared::EventInfo;
+use shared::{CreateEventErrors, EventInfo, ValidationError};
 use wasm_bindgen::JsCast;
 use web_sys::{Element, HtmlInputElement, HtmlTextAreaElement};
 use yew::prelude::*;
@@ -6,24 +6,12 @@ use yew_router::prelude::*;
 
 use crate::{fetch, routes::Route};
 
-#[derive(Default)]
-pub struct Errors {
-    pub name: Option<String>,
-    pub desc: Option<String>,
-}
-
-impl Errors {
-    const fn has_errors(&self) -> bool {
-        self.name.is_some() || self.desc.is_some()
-    }
-}
-
 pub struct NewEvent {
     name: String,
     desc: String,
     email: String,
     name_ref: NodeRef,
-    errors: Errors,
+    errors: CreateEventErrors,
 }
 
 #[derive(Debug)]
@@ -51,7 +39,7 @@ impl Component for NewEvent {
             desc: String::new(),
             email: String::new(),
             name_ref: NodeRef::default(),
-            errors: Errors::default(),
+            errors: CreateEventErrors::default(),
         }
     }
 
@@ -95,15 +83,9 @@ impl Component for NewEvent {
                         let e = self.name_ref.cast::<Element>().unwrap();
                         let e: HtmlInputElement = e.dyn_into().unwrap();
 
-                        let valid = e.check_validity();
-
-                        self.errors.name = None;
-
-                        if !valid {
-                            self.errors.name = e.validation_message().ok();
-                        }
-
                         self.name = e.value();
+
+                        self.errors.check(&self.name, &self.desc);
                     }
                     Input::Email => {
                         let target: HtmlInputElement = c.target_dyn_into().unwrap();
@@ -111,7 +93,9 @@ impl Component for NewEvent {
                     }
                     Input::Desc => {
                         let target: HtmlTextAreaElement = c.target_dyn_into().unwrap();
-                        self.desc = target.value()
+                        self.desc = target.value();
+
+                        self.errors.check(&self.name, &self.desc);
                     }
                 }
 
@@ -133,19 +117,22 @@ impl Component for NewEvent {
                                 ref={self.name_ref.clone()}
                                 type="text"
                                 name="eventname"
-                                value={self.name.clone()} placeholder="event name"
-                                minlength="8" maxlength="30" maxwordlength="13"
-                                autocomplete="off" required=true
+                                placeholder="event name"
+                                value={self.name.clone()}
+                                maxlength="30"
+                                // autocomplete="off"
+                                required=true
                                 oninput={ctx.link().callback(|input| Msg::InputChange(Input::Name,input))}/>
                         </div>
                         <div hidden={self.errors.name.is_none()} class="invalid">
-                            {self.errors.name.clone().unwrap_or_default()}
+                            {self.name_error().unwrap_or_default()}
                         </div>
                         <div class="input-box">
                             <input
                                 type="email"
                                 name="mail"
-                                value={self.email.clone()} placeholder="email (optional)"
+                                placeholder="email (optional)"
+                                value={self.email.clone()}
                                 maxlength="100"
                                 oninput={ctx.link().callback(|input| Msg::InputChange(Input::Email,input))}/>
                         </div>
@@ -153,14 +140,16 @@ impl Component for NewEvent {
                             <textarea
                                 id="input-desc"
                                 name="desc"
-                                value={self.desc.clone()} placeholder="event description"
-                                mintrimlength="10" maxlength="1000"
+                                placeholder="event description"
+                                value={self.desc.clone()}
+                                // mintrimlength="10"
+                                maxlength="1000"
                                 required=true
                                 oninput={ctx.link().callback(|input| Msg::InputChange(Input::Desc,input))}>
                             </textarea>
                         </div>
                         <div hidden={self.errors.desc.is_none()} class="invalid">
-                            {self.errors.desc.clone().unwrap_or_default()}
+                            {self.desc_error().unwrap_or_default()}
                         </div>
                     </div>
                     <button
@@ -177,6 +166,39 @@ impl Component for NewEvent {
 
 impl NewEvent {
     fn can_create(&self) -> bool {
-        !self.errors.has_errors() && !self.name.is_empty() && !self.desc.is_empty()
+        !self.errors.has_any() && !self.name.is_empty() && !self.desc.is_empty()
+    }
+
+    fn desc_error(&self) -> Option<String> {
+        match self.errors.desc {
+            Some(ValidationError::Empty) => Some("Description cannot be empty".to_string()),
+            Some(ValidationError::MinLength(len, max)) => Some(format!(
+                "Description must be at least {} characters long. ({})",
+                max, len
+            )),
+            Some(ValidationError::MaxLength(_, max)) => Some(format!(
+                "Description cannot be longer than {} characters.",
+                max
+            )),
+            Some(_) => Some("unknown error".to_string()),
+            None => None,
+        }
+    }
+
+    fn name_error(&self) -> Option<String> {
+        match self.errors.name {
+            Some(ValidationError::Empty) => Some("Name is required.".to_string()),
+            Some(ValidationError::MinLength(len, max)) => Some(format!(
+                "Name must be at least {} characters long. ({})",
+                max, len
+            )),
+            Some(ValidationError::MaxLength(_, max)) => {
+                Some(format!("Name cannot be longer than {} characters.", max))
+            }
+            Some(ValidationError::MaxWords(_, max)) => {
+                Some(format!("Name must not contain more than {} words.", max))
+            }
+            None => None,
+        }
     }
 }

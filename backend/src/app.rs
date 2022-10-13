@@ -57,6 +57,14 @@ impl App {
     }
 
     pub async fn create_event(&self, request: AddEvent) -> Result<EventInfo> {
+        let mut validation = shared::CreateEventErrors::default();
+
+        validation.check(&request.data.name, &request.data.description);
+
+        if validation.has_any() {
+            bail!("request validation failed");
+        }
+
         let mut e = EventInfo {
             //TODO:
             create_time_unix: 0,

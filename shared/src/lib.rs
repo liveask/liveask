@@ -1,5 +1,8 @@
+mod validation;
+
 use serde::{Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
+pub use validation::{CreateEventErrors, ValidationError};
 
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq)]
 pub struct EventTokens {
