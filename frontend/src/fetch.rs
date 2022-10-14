@@ -1,4 +1,5 @@
 use gloo_utils::format::JsValueSerdeExt;
+use shared::{AddEvent, AddQuestion, EditLike, EventData, EventInfo, Item};
 use std::{
     error::Error,
     fmt::{self, Debug, Display, Formatter},
@@ -6,8 +7,6 @@ use std::{
 use wasm_bindgen::{JsCast, JsValue};
 use wasm_bindgen_futures::JsFuture;
 use web_sys::{Request, RequestInit, RequestMode, Response};
-
-use shared::{AddEvent, AddQuestion, EditLike, EventData, EventInfo, Item};
 
 /// Something wrong has occurred while fetching an external resource.
 #[derive(Debug)]
@@ -36,14 +35,15 @@ impl From<serde_json::error::Error> for FetchError {
     }
 }
 
-const BASE: &str = "https://api.www.live-ask.com";
-// const BASE: &str = "http://localhost:8090";
-
-pub async fn fetch_event(id: String, secret: Option<String>) -> Result<EventInfo, FetchError> {
+pub async fn fetch_event(
+    base_api: &str,
+    id: String,
+    secret: Option<String>,
+) -> Result<EventInfo, FetchError> {
     let url = if let Some(secret) = secret {
-        format!("{}/api/mod/event/{}/{}", BASE, id, secret)
+        format!("{}/api/mod/event/{}/{}", base_api, id, secret)
     } else {
-        format!("{}/api/event/{}", BASE, id)
+        format!("{}/api/event/{}", base_api, id)
     };
 
     let mut opts = RequestInit::new();
@@ -63,6 +63,7 @@ pub async fn fetch_event(id: String, secret: Option<String>) -> Result<EventInfo
 }
 
 pub async fn like_question(
+    base_api: &str,
     event_id: String,
     question_id: i64,
     like: bool,
@@ -71,7 +72,7 @@ pub async fn like_question(
     let body = serde_json::to_string(&body)?;
     let body = JsValue::from_str(&body);
 
-    let url = format!("{}/api/event/editlike/{}", BASE, event_id);
+    let url = format!("{}/api/event/editlike/{}", base_api, event_id);
 
     let mut opts = RequestInit::new();
     opts.method("POST");
@@ -90,12 +91,16 @@ pub async fn like_question(
     Ok(res)
 }
 
-pub async fn add_question(event_id: String, text: String) -> Result<Item, FetchError> {
+pub async fn add_question(
+    base_api: &str,
+    event_id: String,
+    text: String,
+) -> Result<Item, FetchError> {
     let body = AddQuestion { text };
     let body = serde_json::to_string(&body)?;
     let body = JsValue::from_str(&body);
 
-    let url = format!("{}/api/event/addquestion/{}", BASE, event_id);
+    let url = format!("{}/api/event/addquestion/{}", base_api, event_id);
 
     let mut opts = RequestInit::new();
     opts.method("POST");
@@ -115,6 +120,7 @@ pub async fn add_question(event_id: String, text: String) -> Result<Item, FetchE
 }
 
 pub async fn create_event(
+    base_api: &str,
     name: String,
     desc: String,
     email: String,
@@ -136,7 +142,7 @@ pub async fn create_event(
     opts.method("POST");
     opts.body(Some(&body));
 
-    let request = Request::new_with_str_and_init(&format!("{}/api/addevent", BASE), &opts)?;
+    let request = Request::new_with_str_and_init(&format!("{}/api/addevent", base_api), &opts)?;
     request.headers().set("content-type", "application/json")?;
 
     let window = web_sys::window().unwrap();

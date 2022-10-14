@@ -6,6 +6,8 @@ use yew_router::prelude::*;
 
 use crate::{fetch, routes::Route};
 
+use super::event::BASE_API;
+
 pub struct NewEvent {
     name: String,
     desc: String,
@@ -50,7 +52,7 @@ impl Component for NewEvent {
                 let desc = self.desc.clone();
                 let email = self.email.clone();
                 ctx.link().send_future(async move {
-                    let res = fetch::create_event(name, desc, email).await;
+                    let res = fetch::create_event(BASE_API, name, desc, email).await;
 
                     match res {
                         Ok(e) => Msg::CreatedResult(Some(e)),

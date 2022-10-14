@@ -3,6 +3,7 @@ use crate::{
     components::Popup,
     fetch,
     local_cache::LocalCache,
+    pages::BASE_API,
 };
 use web_sys::HtmlTextAreaElement;
 use yew::prelude::*;
@@ -65,7 +66,7 @@ impl Component for QuestionPopup {
                 let event_id = ctx.props().event.clone();
                 let text = self.text.clone();
                 ctx.link().send_future(async move {
-                    if let Ok(item) = fetch::add_question(event_id.clone(), text).await {
+                    if let Ok(item) = fetch::add_question(BASE_API, event_id.clone(), text).await {
                         LocalCache::set_like_state(&event_id, item.id, true);
                     }
                     Msg::Sent

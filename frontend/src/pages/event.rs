@@ -32,6 +32,11 @@ enum LoadingState {
     NotFound,
 }
 
+// const BASE_API: &str = "https://api.www.live-ask.com";
+pub const BASE_API: &str = "http://localhost:8090";
+// const BASE_SOCKET: &str = "wss://api.www.live-ask.com";
+pub const BASE_SOCKET: &str = "ws://localhost:8090";
+
 pub struct Event {
     event_id: String,
     mode: Mode,
@@ -65,9 +70,8 @@ impl Component for Event {
         //TODO: this leads to socket events like OnConnect also fetching event again
         let mut ws = WebSocketAgent::bridge(ctx.link().callback(|_msg| Msg::SocketMsg));
         ws.send(SocketInput::Connect(format!(
-            "wss://api.www.live-ask.com/push/{}",
-            // "ws://localhost:8090/push/{}",
-            event_id
+            "{}/push/{}",
+            BASE_SOCKET, event_id
         )));
 
         Self {
@@ -157,14 +161,16 @@ impl Component for Event {
 
 fn request_like(event: String, id: i64, like: bool, link: &html::Scope<Event>) {
     link.send_future(async move {
-        let _res = fetch::like_question(event, id, like).await.unwrap();
+        let _res = fetch::like_question(BASE_API, event, id, like)
+            .await
+            .unwrap();
         Msg::Liked
     });
 }
 
 fn request_fetch(id: String, secret: Option<String>, link: &html::Scope<Event>) {
     link.send_future(async move {
-        let res = fetch::fetch_event(id, secret).await;
+        let res = fetch::fetch_event(BASE_API, id, secret).await;
 
         if let Ok(val) = res {
             Msg::Fetched(Some(val))
