@@ -40,11 +40,23 @@ impl Component for Home {
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
-        let twitter_svg = include_str!("../../inline-assets/twitter.svg");
-        let div = gloo_utils::document().create_element("div").unwrap();
-        div.set_inner_html(twitter_svg);
-        div.set_id("twitter");
-        let twitter_svg = Html::VRef(div.into());
+        let twitter_svg = {
+            let svg = include_str!("../../inline-assets/twitter.svg");
+            let div = gloo_utils::document().create_element("div").unwrap();
+            div.set_inner_html(svg);
+            div.set_id("twitter");
+            div.set_class_name("social");
+            Html::VRef(div.into())
+        };
+
+        let github_svg = {
+            let svg = include_str!("../../inline-assets/github.svg");
+            let div = gloo_utils::document().create_element("div").unwrap();
+            div.set_inner_html(svg);
+            div.set_id("github");
+            div.set_class_name("social");
+            Html::VRef(div.into())
+        };
 
         html! {
             <div id="home">
@@ -130,6 +142,9 @@ impl Component for Home {
 
                     <a href="https://twitter.com/liveask1">
                         {twitter_svg}
+                    </a>
+                    <a href="https://github.com/liveask/liveask">
+                        {github_svg}
                     </a>
 
                     <a class="about" onclick={ctx.link().callback(|_| Msg::Privacy)}>

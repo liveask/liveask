@@ -8,6 +8,7 @@
 - [ ] reconnects / offline indicator
 - [ ] event print view
 - [ ] home version text
+- [ ] donation button
 
 ## 2.1 (missing non escential features)
 
@@ -19,6 +20,7 @@
 - [ ] collapsable event desc
 - [ ] tutorial
 - [ ] email forwarding and DNS entries cleanup
+- [ ] footer on each page
 
 # analytics
 

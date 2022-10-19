@@ -39,6 +39,16 @@
 
     padding-top: 57px;
   }
+  
+  .social {
+    margin-top: 20px;
+    margin-left: 5px;
+    margin-right: 5px;
+    width: 1em;
+    display: inline-block;
+    position: relative;
+    top: 2px;
+  }
 }
 
 .feature-dark h1 {
@@ -87,14 +97,6 @@
   margin-top: 20px;
   text-decoration: none;
   display: block;
-}
-
-#twitter {
-  margin-top: 20px;
-  width: 1em;
-  display: inline-block;
-  position: relative;
-  top: 2px;
 }
 
 .version {
