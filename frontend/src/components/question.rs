@@ -7,13 +7,19 @@ use yew::prelude::*;
 
 use shared::Item;
 
+pub enum QuestionClickType {
+    Like,
+    Hide,
+    Answer,
+}
+
 #[derive(Clone, Debug, PartialEq, Properties)]
 pub struct Props {
     pub item: Rc<Item>,
     pub mod_view: bool,
     pub index: usize,
     pub local_like: bool,
-    pub on_click: Callback<i64>,
+    pub on_click: Callback<(i64, QuestionClickType)>,
 }
 
 pub struct Question {
@@ -27,6 +33,8 @@ pub struct Question {
 pub enum Msg {
     UpdateAge,
     Like,
+    ToggleHide,
+    ToggleAnswered,
     /// used to start the reorder animation
     StartAnimation,
     EndAnimation,
@@ -55,11 +63,25 @@ impl Component for Question {
         match msg {
             Msg::Like => {
                 if !self.data.item.answered && !self.data.item.hidden {
-                    ctx.props().on_click.emit(self.data.item.id);
+                    ctx.props()
+                        .on_click
+                        .emit((self.data.item.id, QuestionClickType::Like));
                     true
                 } else {
                     false
                 }
+            }
+            Msg::ToggleHide => {
+                ctx.props()
+                    .on_click
+                    .emit((self.data.item.id, QuestionClickType::Hide));
+                true
+            }
+            Msg::ToggleAnswered => {
+                ctx.props()
+                    .on_click
+                    .emit((self.data.item.id, QuestionClickType::Answer));
+                true
             }
             Msg::UpdateAge => self.animation_time.is_none(),
             Msg::EndAnimation => {
@@ -156,7 +178,7 @@ impl Component for Question {
 
                 {
                     if mod_view{
-                        self.view_mod()
+                        self.view_mod(ctx)
                     } else {
                         html!{}
                     }
@@ -177,24 +199,36 @@ impl Question {
         self.timeout = None;
     }
 
-    fn view_mod(&self) -> Html {
+    fn view_mod(&self, ctx: &Context<Self>) -> Html {
         html! {
             <div class="options">
                 <button class="button-hide"
-                    // [class.reverse]="question.hidden" (click)="onClickHide()" *ngIf="!question.answered"
+                    onclick={ctx.link().callback(|_| Msg::ToggleHide)}
+                    hidden={self.data.item.answered}
+                    //TODO: reverse?
+                    // [class.reverse]="question.hidden"
                     >
                     {
-                        //TODO: impl mod features
-                        // {question.hidden ? 'unhide' : 'hide'}
-                        "hide"
+                        if self.data.item.hidden {
+                            html!{"unhide"}
+                        }else{
+                            html!{"hide"}
+                        }
                     }
                 </button>
+
                 <button class="button-answered"
-                    // [class.reverse]="question.answered" (click)="onClickAnswered()" *ngIf="!question.hidden"
+                    onclick={ctx.link().callback(|_| Msg::ToggleAnswered)}
+                    //TODO: reverse?
+                    // [class.reverse]="question.answered"
+                    hidden={self.data.item.hidden}
                     >
                     {
-                        // {question.answered ? 'not answered' : 'answered'}
-                        "answered"
+                        if self.data.item.answered {
+                            html!{"answered"}
+                        }else{
+                            html!{"not answered"}
+                        }
                     }
                 </button>
             </div>

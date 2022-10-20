@@ -1,5 +1,5 @@
 use chrono::{DateTime, Duration, NaiveDateTime, Utc};
-use shared::{EventInfo, Item, States};
+use shared::{EventInfo, Item, ModQuestion, States};
 use std::{rc::Rc, str::FromStr};
 use yew::prelude::*;
 use yew_agent::{Bridge, Bridged};
@@ -7,7 +7,7 @@ use yewdux::prelude::*;
 
 use crate::{
     agents::{EventAgent, GlobalEvent, SocketInput, WebSocketAgent},
-    components::{Question, QuestionPopup, SharePopup},
+    components::{Question, QuestionClickType, QuestionPopup, SharePopup},
     fetch,
     local_cache::LocalCache,
     State,
@@ -56,8 +56,8 @@ pub enum Msg {
     AskQuestionClick,
     Fetched(Option<EventInfo>),
     SocketMsg,
-    Like(i64),
-    Liked,
+    QuestionClick((i64, QuestionClickType)),
+    QuestionUpdated(i64),
     ModDelete,
     ModStateChange(yew::Event),
     StateChanged,
@@ -97,13 +97,38 @@ impl Component for Event {
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
-            Msg::Like(id) => {
-                let liked = LocalCache::is_liked(&self.event_id, id);
-                LocalCache::set_like_state(&self.event_id, id, !liked);
-                request_like(self.event_id.clone(), id, !liked, ctx.link());
+            Msg::QuestionClick((id, kind)) => {
+                match kind {
+                    QuestionClickType::Like => {
+                        let liked = LocalCache::is_liked(&self.event_id, id);
+                        LocalCache::set_like_state(&self.event_id, id, !liked);
+                        request_like(self.event_id.clone(), id, !liked, ctx.link());
+                    }
+                    QuestionClickType::Hide => {
+                        if let Some(q) = self.state.event.as_ref().unwrap().get_question(id) {
+                            request_toggle_hide(
+                                self.event_id.clone(),
+                                ctx.props().secret.clone().unwrap(),
+                                q,
+                                ctx.link(),
+                            )
+                        }
+                    }
+                    QuestionClickType::Answer => {
+                        if let Some(q) = self.state.event.as_ref().unwrap().get_question(id) {
+                            request_toggle_answered(
+                                self.event_id.clone(),
+                                ctx.props().secret.clone().unwrap(),
+                                q,
+                                ctx.link(),
+                            )
+                        }
+                    }
+                }
+
                 false
             }
-            Msg::Liked => {
+            Msg::QuestionUpdated(_id) => {
                 request_fetch(
                     self.event_id.clone(),
                     ctx.props().secret.clone(),
@@ -182,13 +207,41 @@ impl Component for Event {
     }
 }
 
+fn request_toggle_hide(event: String, secret: String, item: Item, link: &html::Scope<Event>) {
+    link.send_future(async move {
+        let modify = ModQuestion {
+            hide: !item.hidden,
+            answered: item.answered,
+        };
+        let _res = fetch::mod_question(BASE_API, event, secret, item.id, modify)
+            .await
+            .unwrap();
+
+        Msg::QuestionUpdated(item.id)
+    });
+}
+
+fn request_toggle_answered(event: String, secret: String, item: Item, link: &html::Scope<Event>) {
+    link.send_future(async move {
+        let modify = ModQuestion {
+            hide: item.hidden,
+            answered: !item.answered,
+        };
+        let _res = fetch::mod_question(BASE_API, event, secret, item.id, modify)
+            .await
+            .unwrap();
+
+        Msg::QuestionUpdated(item.id)
+    });
+}
+
 fn request_like(event: String, id: i64, like: bool, link: &html::Scope<Event>) {
     link.send_future(async move {
         let _res = fetch::like_question(BASE_API, event, id, like)
             .await
             .unwrap();
 
-        Msg::Liked
+        Msg::QuestionUpdated(id)
     });
 }
 
@@ -354,7 +407,7 @@ impl Event {
         let mod_view = matches!(self.mode, Mode::Moderator);
 
         html! {
-            <Question {item} {index} key={item.id} {local_like} {mod_view} on_click={ctx.link().callback(Msg::Like)}/>
+            <Question {item} {index} key={item.id} {local_like} {mod_view} on_click={ctx.link().callback(|params|Msg::QuestionClick(params))}/>
         }
     }
 

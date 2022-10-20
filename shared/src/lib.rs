@@ -54,6 +54,12 @@ pub struct EventInfo {
     pub state: EventState,
 }
 
+impl EventInfo {
+    pub fn get_question(&self, id: i64) -> Option<Item> {
+        self.questions.iter().find(|i| i.id == id).cloned()
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug)]
 pub struct AddEvent {
     #[serde(rename = "eventData")]

@@ -1,5 +1,7 @@
 use gloo_utils::format::JsValueSerdeExt;
-use shared::{AddEvent, AddQuestion, EditLike, EventData, EventInfo, EventState, Item, States};
+use shared::{
+    AddEvent, AddQuestion, EditLike, EventData, EventInfo, EventState, Item, ModQuestion, States,
+};
 use std::{
     error::Error,
     fmt::{self, Debug, Display, Formatter},
@@ -116,6 +118,38 @@ pub async fn like_question(
 
     let json = JsFuture::from(resp.json()?).await?;
     let res = JsValueSerdeExt::into_serde::<Item>(&json)?;
+
+    Ok(res)
+}
+
+pub async fn mod_question(
+    base_api: &str,
+    event_id: String,
+    event_secret: String,
+    question_id: i64,
+    modify: ModQuestion,
+) -> Result<EventInfo, FetchError> {
+    let body = serde_json::to_string(&modify)?;
+    let body = JsValue::from_str(&body);
+
+    let url = format!(
+        "{}/api/mod/event/questionmod/{}/{}/{}",
+        base_api, event_id, event_secret, question_id
+    );
+
+    let mut opts = RequestInit::new();
+    opts.method("POST");
+    opts.body(Some(&body));
+
+    let request = Request::new_with_str_and_init(&url, &opts)?;
+    request.headers().set("content-type", "application/json")?;
+
+    let window = gloo_utils::window();
+    let resp_value = JsFuture::from(window.fetch_with_request(&request)).await?;
+    let resp: Response = resp_value.dyn_into()?;
+
+    let json = JsFuture::from(resp.json()?).await?;
+    let res = JsValueSerdeExt::into_serde::<EventInfo>(&json)?;
 
     Ok(res)
 }
