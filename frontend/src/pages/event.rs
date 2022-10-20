@@ -32,10 +32,10 @@ enum LoadingState {
     NotFound,
 }
 
-// const BASE_API: &str = "https://api.www.live-ask.com";
-pub const BASE_API: &str = "http://localhost:8090";
-// const BASE_SOCKET: &str = "wss://api.www.live-ask.com";
-pub const BASE_SOCKET: &str = "ws://localhost:8090";
+pub const BASE_API: &str = "https://api.www.live-ask.com";
+// pub const BASE_API: &str = "http://localhost:8090";
+pub const BASE_SOCKET: &str = "wss://api.www.live-ask.com";
+// pub const BASE_SOCKET: &str = "ws://localhost:8090";
 
 pub struct Event {
     event_id: String,
