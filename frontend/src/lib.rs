@@ -21,6 +21,8 @@ use crate::{
     pages::{Event, Home, NewEvent, Privacy},
 };
 
+pub const VERSION_STR: &str = "2.0.0";
+
 // Use `wee_alloc` as the global allocator.
 #[global_allocator]
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;

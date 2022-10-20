@@ -7,7 +7,6 @@
 - [ ] after popup jump to location on page
 - [ ] reconnects / offline indicator
 - [ ] event print view
-- [ ] home version text
 - [ ] donation button
 
 ## 2.1 (missing non escential features)

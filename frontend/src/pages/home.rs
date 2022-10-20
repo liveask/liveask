@@ -1,7 +1,7 @@
 use yew::prelude::*;
 use yew_router::prelude::*;
 
-use crate::routes::Route;
+use crate::{routes::Route, VERSION_STR};
 
 #[derive(Clone, Debug, Eq, PartialEq, Properties)]
 pub struct HomeProps;
@@ -56,6 +56,12 @@ impl Component for Home {
             div.set_id("github");
             div.set_class_name("social");
             Html::VRef(div.into())
+        };
+
+        let branch = if env!("GIT_BRANCH") == "main" {
+            "".to_string()
+        } else {
+            format!("({})", env!("GIT_BRANCH"))
         };
 
         html! {
@@ -156,7 +162,7 @@ impl Component for Home {
                     </a>
 
                     <div class="version">
-                        {"v.TODO"}
+                        { format!("v.{VERSION_STR}-{} {branch}",env!("GIT_HASH")) }
                     </div>
                 </div>
             </div>
