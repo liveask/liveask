@@ -167,10 +167,10 @@ pub async fn mod_edit_question(
 #[instrument(skip(app))]
 pub async fn mod_edit_state(
     Path((id, secret)): Path<(String, String)>,
-    Json(payload): Json<shared::EventState>,
+    Json(payload): Json<shared::ModEventState>,
     Extension(app): Extension<App>,
 ) -> Result<impl IntoResponse, StatusCode> {
-    match app.edit_event_state(id, secret, payload).await {
+    match app.edit_event_state(id, secret, payload.state).await {
         Ok(res) => Ok(Json(res)),
         Err(e) => {
             tracing::error!("{}", e);

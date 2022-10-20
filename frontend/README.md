@@ -2,7 +2,7 @@
 
 ## 2.0 (relaunch based on yew)
 
-- [ ] mod: delete
+- [ ] mod: delete, question answer/hide-reverse
 - [ ] popup fucks up background in wide screen
 - [ ] after popup jump to location on page
 - [ ] reconnects / offline indicator

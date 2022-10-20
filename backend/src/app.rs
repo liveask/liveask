@@ -219,7 +219,7 @@ impl App {
             .events
             .write()
             .await
-            .get(&id)
+            .get_mut(&id)
             .ok_or_else(|| anyhow::anyhow!("ev not found"))?
             .clone();
 

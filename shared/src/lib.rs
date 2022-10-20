@@ -109,6 +109,11 @@ impl FromStr for States {
 }
 
 #[derive(Serialize, Deserialize, Debug, Copy, Clone, Eq, PartialEq)]
+pub struct ModEventState {
+    pub state: EventState,
+}
+
+#[derive(Serialize, Deserialize, Debug, Copy, Clone, Eq, PartialEq)]
 pub struct EventState {
     pub state: States,
 }

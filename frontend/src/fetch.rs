@@ -1,6 +1,7 @@
 use gloo_utils::format::JsValueSerdeExt;
 use shared::{
-    AddEvent, AddQuestion, EditLike, EventData, EventInfo, EventState, Item, ModQuestion, States,
+    AddEvent, AddQuestion, EditLike, EventData, EventInfo, EventState, Item, ModEventState,
+    ModQuestion, States,
 };
 use std::{
     error::Error,
@@ -70,7 +71,9 @@ pub async fn mod_state_change(
     secret: String,
     state: States,
 ) -> Result<EventInfo, FetchError> {
-    let body = EventState { state };
+    let body = ModEventState {
+        state: EventState { state },
+    };
     let body = serde_json::to_string(&body)?;
     let body = JsValue::from_str(&body);
 

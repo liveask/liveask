@@ -225,9 +225,9 @@ impl Question {
                     >
                     {
                         if self.data.item.answered {
-                            html!{"answered"}
-                        }else{
                             html!{"not answered"}
+                        }else{
+                            html!{"answered"}
                         }
                     }
                 </button>
