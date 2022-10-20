@@ -1,5 +1,6 @@
 use std::rc::Rc;
 
+use chrono::{DateTime, Duration, NaiveDateTime, Utc};
 use shared::{EventInfo, Item};
 use yew::prelude::*;
 use yew_agent::{Bridge, Bridged};
@@ -236,7 +237,7 @@ impl Event {
                         </div>
 
                         {
-                            self.mod_view()
+                            self.mod_view(e)
                         }
                     </div>
 
@@ -323,12 +324,12 @@ impl Event {
         }
     }
 
-    fn mod_view(&self) -> Html {
+    fn mod_view(&self, e: &EventInfo) -> Html {
         if matches!(self.mode, Mode::Moderator) {
             html! {
             <div class="deadline">
                 {"Currently an event is valid for 30 days. Your event will close on "}
-                <span>{self.get_event_timeout()}</span>
+                <span>{Self::get_event_timeout(e)}</span>
                 {". Please "}
                 <a href="mailto:mail@live-ask.com">
                 {"contact us"}
@@ -383,9 +384,15 @@ impl Event {
             .unwrap_or_default()
     }
 
-    fn get_event_timeout(&self) -> Html {
-        //TODO: get_event_timeout
-        html! {"1.2.1970"}
+    //TODO: put event duration into object from backend
+    fn get_event_timeout(e: &EventInfo) -> Html {
+        let event_duration = Duration::days(30);
+
+        let create_time =
+            DateTime::<Utc>::from_utc(NaiveDateTime::from_timestamp(e.create_time_unix, 0), Utc);
+        let end_time = create_time + event_duration;
+
+        html! {end_time.format("%F")}
     }
 
     fn init_event(&mut self) {
