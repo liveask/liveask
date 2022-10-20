@@ -1,12 +1,11 @@
+use anyhow::{bail, Result};
+use axum::extract::ws::{Message, WebSocket};
+use shared::{AddEvent, EventInfo, EventState, EventTokens, Item, ModQuestion, States};
 use std::{
     collections::HashMap,
     sync::{atomic::AtomicUsize, Arc},
     time::Instant,
 };
-
-use anyhow::{bail, Result};
-use axum::extract::ws::{Message, WebSocket};
-use shared::{AddEvent, EventInfo, EventState, EventTokens, Item, ModQuestion, States};
 use tinyurl_rs::{CreateRequest, TinyUrlAPI, TinyUrlOpenAPI};
 use tokio::sync::{mpsc, RwLock};
 use tracing::instrument;
@@ -334,15 +333,24 @@ impl App {
             .await
             .insert(user_id, (id.clone(), send_channel));
 
-        if let Some(result) = ws_receiver.next().await {
-            match result {
-                Ok(_) => (),
+        while let Some(result) = ws_receiver.next().await {
+            let msg = match result {
+                Ok(msg) => msg,
                 Err(e) => {
                     tracing::warn!("websocket receive err (id={}): '{}'", user_id, e);
+                    break;
                 }
-            }
+            };
 
             tracing::warn!("user:{} sent data, disconnecting", user_id);
+
+            match msg {
+                Message::Ping(_) => tracing::warn!("received msg:ping"),
+                Message::Pong(_) => tracing::warn!("received msg:pong"),
+                Message::Text(txt) => tracing::warn!("received msg:text: '{txt}'"),
+                Message::Binary(bin) => tracing::warn!("received msg:binary: {}b", bin.len()),
+                Message::Close(frame) => tracing::warn!("received msg:close: {frame:?}"),
+            }
         }
 
         tracing::debug!("user disconnected: {}", user_id);
