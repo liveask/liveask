@@ -46,7 +46,8 @@ features = [
     "RequestMode",
     "Response",
     "Headers",
-    "DomTokenList"]
+    "DomTokenList",
+    "HtmlSelectElement"]
 
 [dev-dependencies]
 wasm-bindgen-test = "0.3.0"

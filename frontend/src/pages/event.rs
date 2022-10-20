@@ -1,7 +1,6 @@
-use std::rc::Rc;
-
 use chrono::{DateTime, Duration, NaiveDateTime, Utc};
-use shared::{EventInfo, Item};
+use shared::{EventInfo, Item, States};
+use std::{rc::Rc, str::FromStr};
 use yew::prelude::*;
 use yew_agent::{Bridge, Bridged};
 use yewdux::prelude::*;
@@ -59,6 +58,9 @@ pub enum Msg {
     SocketMsg,
     Like(i64),
     Liked,
+    ModDelete,
+    ModStateChange(yew::Event),
+    StateChanged,
 }
 impl Component for Event {
     type Message = Msg;
@@ -117,6 +119,26 @@ impl Component for Event {
                 );
                 false
             }
+            Msg::StateChanged => false, // nothing needs to happen here
+            Msg::ModStateChange(ev) => {
+                use wasm_bindgen::JsCast;
+
+                let e: web_sys::HtmlSelectElement = ev.target().unwrap().dyn_into().unwrap();
+                let new_state = States::from_str(e.value().as_str()).unwrap();
+
+                request_state_change(
+                    self.event_id.clone(),
+                    ctx.props().secret.clone(),
+                    new_state,
+                    ctx.link(),
+                );
+
+                false
+            }
+            Msg::ModDelete => {
+                //TODO
+                false
+            }
             Msg::ShareEventClick => {
                 self.events.send(GlobalEvent::OpenSharePopup);
                 false
@@ -165,6 +187,7 @@ fn request_like(event: String, id: i64, like: bool, link: &html::Scope<Event>) {
         let _res = fetch::like_question(BASE_API, event, id, like)
             .await
             .unwrap();
+
         Msg::Liked
     });
 }
@@ -178,6 +201,21 @@ fn request_fetch(id: String, secret: Option<String>, link: &html::Scope<Event>) 
         } else {
             Msg::Fetched(None)
         }
+    });
+}
+
+fn request_state_change(
+    id: String,
+    secret: Option<String>,
+    state: States,
+    link: &html::Scope<Event>,
+) {
+    link.send_future(async move {
+        if let Err(e) = fetch::mod_state_change(BASE_API, id, secret.unwrap(), state).await {
+            log::error!("mod_state_change error: {e}");
+        }
+
+        Msg::StateChanged
     });
 }
 
@@ -237,7 +275,7 @@ impl Event {
                         </div>
 
                         {
-                            self.mod_view(e)
+                            self.mod_view(ctx,e)
                         }
                     </div>
 
@@ -250,11 +288,7 @@ impl Event {
                             html!{}
                         }else{
                             html!{
-                                <div
-                                    //TODO:
-                                    // *ngIf="!canModerate && isEventOpen(event)"
-                                    class="addquestion"
-                                    >
+                                <div class="addquestion" hidden={!e.state.is_open()}>
                                     <button class="button-red" onclick={ctx.link().callback(|_| Msg::AskQuestionClick)}>
                                         {"Ask a Question"}
                                     </button>
@@ -324,9 +358,25 @@ impl Event {
         }
     }
 
-    fn mod_view(&self, e: &EventInfo) -> Html {
+    fn mod_view(&self, ctx: &Context<Self>, e: &EventInfo) -> Html {
         if matches!(self.mode, Mode::Moderator) {
             html! {
+            <>
+            <div class="mod-panel" >
+                // <delete-event-popup [(show)]="showDelete" [tokens]="event.tokens"></delete-event-popup>
+
+                <div class="state">
+                    <select onchange={ctx.link().callback(|e| Msg::ModStateChange(e))} >
+                        <option value="0" selected={e.state.is_open()}>{"Event open"}</option>
+                        <option value="1" selected={e.state.is_vote_only()}>{"Event vote only"}</option>
+                        <option value="2" selected={e.state.is_closed()}>{"Event closed"}</option>
+                    </select>
+                </div>
+                <button class="button-white" onclick={ctx.link().callback(|_|Msg::ModDelete)} >
+                    {"Delete Event"}
+                </button>
+            </div>
+
             <div class="deadline">
                 {"Currently an event is valid for 30 days. Your event will close on "}
                 <span>{Self::get_event_timeout(e)}</span>
@@ -336,6 +386,7 @@ impl Event {
                 </a>
                 {" if you need your event to persist."}
             </div>
+            </>
             }
         } else {
             html! {}

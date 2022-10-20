@@ -1,5 +1,7 @@
 mod validation;
 
+use std::str::FromStr;
+
 use serde::{Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
 pub use validation::{CreateEventErrors, ValidationError};
@@ -87,7 +89,32 @@ pub enum States {
     Closed = 2,
 }
 
+impl FromStr for States {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "0" => Ok(Self::Open),
+            "1" => Ok(Self::VotingOnly),
+            "2" => Ok(Self::Closed),
+            _ => Err(()),
+        }
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug, Copy, Clone, Eq, PartialEq)]
 pub struct EventState {
     pub state: States,
+}
+
+impl EventState {
+    pub const fn is_open(&self) -> bool {
+        matches!(self.state, States::Open)
+    }
+    pub const fn is_vote_only(&self) -> bool {
+        matches!(self.state, States::VotingOnly)
+    }
+    pub const fn is_closed(&self) -> bool {
+        matches!(self.state, States::Closed)
+    }
 }
