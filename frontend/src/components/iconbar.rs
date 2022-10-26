@@ -1,5 +1,4 @@
 use std::rc::Rc;
-
 use yew::prelude::*;
 use yew_agent::{Bridge, Bridged};
 use yew_router::prelude::*;
@@ -132,13 +131,22 @@ impl Component for IconBar {
 
 impl IconBar {
     fn view_ask_question(&self, ctx: &Context<Self>) -> Html {
-        //TODO: check if event is closed
-        html! {
-            <a>
-                <div class="createevent" onclick={ctx.link().callback(|_| Msg::Ask)}>
-                    {"Ask a question"}
-                </div>
-            </a>
+        let is_open = self
+            .state
+            .event
+            .as_ref()
+            .map(|e| e.state.is_open())
+            .unwrap_or_default();
+
+        if is_open {
+            return html! {
+                <a>
+                    <div class="createevent" onclick={ctx.link().callback(|_| Msg::Ask)}>
+                        {"Ask a question"}
+                    </div>
+                </a>
+            };
         }
+        html! {}
     }
 }

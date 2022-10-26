@@ -2,7 +2,6 @@
 
 ## 2.0 (relaunch based on yew)
 
-- [ ] do not allow questions ins closed event
 - [ ] mod: delete
 - [ ] popup fucks up background in wide screen
 - [ ] after popup jump to location on page
