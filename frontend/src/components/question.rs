@@ -173,7 +173,7 @@ impl Component for Question {
 
                     {self.view_like(liked,mod_view)}
 
-                    {self.view_checkmark()}
+                    {self.view_checkmark(mod_view)}
                 </a>
 
                 {
@@ -200,9 +200,19 @@ impl Question {
     }
 
     fn view_mod(&self, ctx: &Context<Self>) -> Html {
+        let mut btn_hide_classes = classes!("button-hide");
+        if self.data.item.hidden {
+            btn_hide_classes.push(classes!("reverse"));
+        }
+
+        let mut btn_answered_classes = classes!("button-answered");
+        if self.data.item.answered {
+            btn_answered_classes.push(classes!("reverse"));
+        }
+
         html! {
             <div class="options">
-                <button class="button-hide"
+                <button class={btn_hide_classes}
                     onclick={ctx.link().callback(|_| Msg::ToggleHide)}
                     hidden={self.data.item.answered}
                     //TODO: reverse?
@@ -217,7 +227,7 @@ impl Question {
                     }
                 </button>
 
-                <button class="button-answered"
+                <button class={btn_answered_classes}
                     onclick={ctx.link().callback(|_| Msg::ToggleAnswered)}
                     //TODO: reverse?
                     // [class.reverse]="question.answered"
@@ -301,8 +311,8 @@ impl Question {
         }
     }
 
-    fn view_checkmark(&self) -> Html {
-        if self.data.item.answered {
+    fn view_checkmark(&self, mod_view: bool) -> Html {
+        if !mod_view && self.data.item.answered {
             return html! {
             <div class="checkmark">
                 <svg width="12px" height="8px" viewBox="0 0 12 8">
@@ -315,6 +325,7 @@ impl Question {
             </div>
             };
         }
+
         html! {}
     }
 

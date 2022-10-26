@@ -213,9 +213,9 @@ fn request_toggle_hide(event: String, secret: String, item: Item, link: &html::S
             hide: !item.hidden,
             answered: item.answered,
         };
-        let _res = fetch::mod_question(BASE_API, event, secret, item.id, modify)
-            .await
-            .unwrap();
+        if let Err(res) = fetch::mod_question(BASE_API, event, secret, item.id, modify).await {
+            log::error!("hide error: {}", res);
+        }
 
         Msg::QuestionUpdated(item.id)
     });

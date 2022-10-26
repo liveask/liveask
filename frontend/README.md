@@ -2,7 +2,8 @@
 
 ## 2.0 (relaunch based on yew)
 
-- [ ] mod: delete, question answer/hide-reverse
+- [ ] do not allow questions ins closed event
+- [ ] mod: delete
 - [ ] popup fucks up background in wide screen
 - [ ] after popup jump to location on page
 - [ ] reconnects / offline indicator

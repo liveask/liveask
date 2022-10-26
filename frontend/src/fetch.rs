@@ -131,7 +131,7 @@ pub async fn mod_question(
     event_secret: String,
     question_id: i64,
     modify: ModQuestion,
-) -> Result<EventInfo, FetchError> {
+) -> Result<(), FetchError> {
     let body = serde_json::to_string(&modify)?;
     let body = JsValue::from_str(&body);
 
@@ -148,13 +148,9 @@ pub async fn mod_question(
     request.headers().set("content-type", "application/json")?;
 
     let window = gloo_utils::window();
-    let resp_value = JsFuture::from(window.fetch_with_request(&request)).await?;
-    let resp: Response = resp_value.dyn_into()?;
+    let _resp_value = JsFuture::from(window.fetch_with_request(&request)).await?;
 
-    let json = JsFuture::from(resp.json()?).await?;
-    let res = JsValueSerdeExt::into_serde::<EventInfo>(&json)?;
-
-    Ok(res)
+    Ok(())
 }
 
 pub async fn add_question(
