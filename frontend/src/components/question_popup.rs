@@ -73,7 +73,10 @@ impl Component for QuestionPopup {
                 });
                 true
             }
-            Msg::Sent => false,
+            Msg::Sent => {
+                self.text.clear();
+                true
+            }
             Msg::InputChanged(ev) => {
                 let target: HtmlTextAreaElement = ev.target_dyn_into().unwrap();
 
