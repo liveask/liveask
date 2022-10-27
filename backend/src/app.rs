@@ -239,7 +239,7 @@ impl App {
         Ok(e)
     }
 
-    pub async fn delete_event(&self, id: String, secret: String) -> Result<EventInfo> {
+    pub async fn delete_event(&self, id: String, secret: String) -> Result<()> {
         let mut events = self.events.write().await;
 
         let e = events
@@ -257,11 +257,9 @@ impl App {
 
         e.deleted = true;
 
-        let e = e.clone();
-
         self.notify_subscribers(id, None).await;
 
-        Ok(e)
+        Ok(())
     }
 
     pub async fn add_question(&self, id: String, question: shared::AddQuestion) -> Result<Item> {
