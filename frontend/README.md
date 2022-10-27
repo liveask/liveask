@@ -2,13 +2,13 @@
 
 ## 2.0 (relaunch based on yew)
 
-- [ ] mod: delete
 - [ ] popup fucks up background in wide screen
 - [ ] after popup jump to location on page
 - [ ] reconnects / offline indicator
 - [ ] event print view
 - [ ] mod view copy link to clipboard
 - [ ] donation button
+- [ ] scroll to new question after send
 
 ## 2.1 (missing non escential features)
 

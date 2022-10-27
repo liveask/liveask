@@ -216,3 +216,22 @@ pub async fn create_event(
 
     Ok(res)
 }
+
+pub async fn delete_event(
+    base_api: &str,
+    event_id: String,
+    secret: String,
+) -> Result<(), FetchError> {
+    let url = format!("{}/api/mod/event/delete/{}/{}", base_api, event_id, secret);
+
+    let mut opts = RequestInit::new();
+    opts.method("GET");
+    opts.mode(RequestMode::Cors);
+
+    let request = Request::new_with_str_and_init(&url, &opts)?;
+
+    let window = gloo_utils::window();
+    let _resp_value = JsFuture::from(window.fetch_with_request(&request)).await?;
+
+    Ok(())
+}

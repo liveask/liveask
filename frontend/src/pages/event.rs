@@ -7,7 +7,7 @@ use yewdux::prelude::*;
 
 use crate::{
     agents::{EventAgent, GlobalEvent, SocketInput, WebSocketAgent},
-    components::{Question, QuestionClickType, QuestionPopup, SharePopup},
+    components::{DeletePopup, Question, QuestionClickType, QuestionPopup, SharePopup},
     fetch,
     local_cache::LocalCache,
     State,
@@ -161,7 +161,7 @@ impl Component for Event {
                 false
             }
             Msg::ModDelete => {
-                //TODO
+                self.events.send(GlobalEvent::DeletePopup);
                 false
             }
             Msg::ShareEventClick => {
@@ -227,7 +227,8 @@ fn request_toggle_answered(event: String, secret: String, item: Item, link: &htm
             hide: item.hidden,
             answered: !item.answered,
         };
-        let _res = fetch::mod_question(BASE_API, event, secret, item.id, modify)
+
+        fetch::mod_question(BASE_API, event, secret, item.id, modify)
             .await
             .unwrap();
 
@@ -407,7 +408,7 @@ impl Event {
         let mod_view = matches!(self.mode, Mode::Moderator);
 
         html! {
-            <Question {item} {index} key={item.id} {local_like} {mod_view} on_click={ctx.link().callback(|params|Msg::QuestionClick(params))}/>
+            <Question {item} {index} key={item.id} {local_like} {mod_view} on_click={ctx.link().callback(Msg::QuestionClick)}/>
         }
     }
 
@@ -416,10 +417,10 @@ impl Event {
             html! {
             <>
             <div class="mod-panel" >
-                // <delete-event-popup [(show)]="showDelete" [tokens]="event.tokens"></delete-event-popup>
+                <DeletePopup tokens={e.tokens.clone()} />
 
                 <div class="state">
-                    <select onchange={ctx.link().callback(|e| Msg::ModStateChange(e))} >
+                    <select onchange={ctx.link().callback(Msg::ModStateChange)} >
                         <option value="0" selected={e.state.is_open()}>{"Event open"}</option>
                         <option value="1" selected={e.state.is_vote_only()}>{"Event vote only"}</option>
                         <option value="2" selected={e.state.is_closed()}>{"Event closed"}</option>

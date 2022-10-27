@@ -2,10 +2,12 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use yew_agent::{Agent, AgentLink, HandlerId};
 
+#[allow(clippy::enum_variant_names)]
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub enum GlobalEvent {
     OpenSharePopup,
     OpenQuestionPopup,
+    DeletePopup,
 }
 
 pub struct EventAgent {

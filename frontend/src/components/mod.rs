@@ -1,9 +1,11 @@
+mod delete_popup;
 mod iconbar;
 mod popup;
 mod question;
 mod question_popup;
 mod share_popup;
 
+pub use delete_popup::DeletePopup;
 pub use iconbar::IconBar;
 pub use popup::Popup;
 pub use question::{Question, QuestionClickType};
