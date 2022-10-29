@@ -151,7 +151,7 @@ impl Component for Event {
                         //TODO: do we want to act differently here? only fetch q on "q"?
                         if msg == "e" {
                             log::info!("received event update");
-                        } else if msg.starts_with("q") {
+                        } else if msg.starts_with('q') {
                             log::info!("received question update: {}", msg);
                         }
 

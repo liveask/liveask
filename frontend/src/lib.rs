@@ -50,7 +50,7 @@ impl Component for AppRoot {
     type Properties = ();
 
     fn create(ctx: &Context<Self>) -> Self {
-        let events = EventAgent::bridge(ctx.link().callback(|msg| Msg::Event(msg)));
+        let events = EventAgent::bridge(ctx.link().callback(Msg::Event));
 
         Self {
             _dispatch: Dispatch::<State>::subscribe(ctx.link().callback(Msg::State)),

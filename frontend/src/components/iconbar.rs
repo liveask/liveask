@@ -47,7 +47,7 @@ impl Component for IconBar {
             Interval::new(500, move || link.send_message(Msg::ReconnectTimer))
         };
 
-        let events = EventAgent::bridge(ctx.link().callback(|msg| Msg::Event(msg)));
+        let events = EventAgent::bridge(ctx.link().callback(Msg::Event));
 
         Self {
             _dispatch: Dispatch::<State>::subscribe(ctx.link().callback(Msg::State)),

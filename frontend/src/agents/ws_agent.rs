@@ -172,13 +172,13 @@ impl WebSocketAgent {
         let interval = {
             let link = self.link.clone();
             Interval::new(duration.num_milliseconds().try_into().unwrap(), move || {
-                link.send_message(Msg::Reconnect)
+                link.send_message(Msg::Reconnect);
             })
         };
 
         log::info!("ws set reconnect timeout: {}", duration);
 
-        self.reconnect_interval = Some((duration.clone(), interval));
+        self.reconnect_interval = Some((duration, interval));
 
         duration
     }

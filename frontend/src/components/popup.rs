@@ -87,10 +87,7 @@ impl Component for Popup {
 }
 
 fn toggle_modal(enable: bool) {
-    let body: HtmlElement = gloo_utils::document()
-        .body()
-        .expect("no body node found")
-        .into();
+    let body: HtmlElement = gloo_utils::document().body().expect("no body node found");
 
     if enable {
         body.class_list().add_1("modal-open").unwrap();
