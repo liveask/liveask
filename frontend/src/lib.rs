@@ -9,10 +9,12 @@ mod routes;
 
 use std::rc::Rc;
 
+use agents::{EventAgent, GlobalEvent};
 use routes::Route;
 use shared::EventInfo;
 use wasm_bindgen::prelude::*;
 use yew::prelude::*;
+use yew_agent::{Bridge, Bridged};
 use yew_router::prelude::*;
 use yewdux::{prelude::Dispatch, store::Store};
 
@@ -34,20 +36,27 @@ pub struct State {
 
 pub enum Msg {
     State(Rc<State>),
+    Event(GlobalEvent),
 }
 
 struct AppRoot {
+    connected: bool,
     state: Rc<State>,
     _dispatch: Dispatch<State>,
+    _events: Box<dyn Bridge<EventAgent>>,
 }
 impl Component for AppRoot {
     type Message = Msg;
     type Properties = ();
 
     fn create(ctx: &Context<Self>) -> Self {
+        let events = EventAgent::bridge(ctx.link().callback(|msg| Msg::Event(msg)));
+
         Self {
             _dispatch: Dispatch::<State>::subscribe(ctx.link().callback(Msg::State)),
             state: Default::default(),
+            _events: events,
+            connected: true,
         }
     }
 
@@ -57,14 +66,26 @@ impl Component for AppRoot {
                 self.state = state;
                 false
             }
+            Msg::Event(e) => match e {
+                GlobalEvent::SocketStatus(status) => {
+                    self.connected = status;
+                    true
+                }
+                _ => false,
+            },
         }
     }
 
     fn view(&self, _: &Context<Self>) -> Html {
+        let mut main_classes = classes!("main");
+        if !self.connected {
+            main_classes.push(classes!("offline"));
+        }
+
         html! {
             <BrowserRouter>
                 <div class="app-host">
-                    <div class="main">
+                    <div class={main_classes}>
                         <IconBar />
 
                         <div class="router">

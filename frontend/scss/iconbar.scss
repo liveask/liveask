@@ -59,16 +59,20 @@
   align-items: center;
 
   transition: all 0.4s ease;
+
+  &.offline {
+    margin-top: 1.8em;
+  }
+
+  &.shrink {
+    height: 60px;
+  }
 }
 
 @media (min-width: 400px) {
   .topbar {
     height: 60px;
   }
-}
-
-.topbar.shrink {
-  height: 60px;
 }
 
 .logo {
@@ -111,10 +115,6 @@
   .innerbox {
     width: 800px;
   }
-}
-
-.offline {
-  margin-top: 1.8em;
 }
 
 .logo-min-svg {

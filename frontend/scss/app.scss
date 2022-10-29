@@ -8,6 +8,10 @@
   margin-top: 62px;
   display: flex;
   justify-content: center;
+
+  &.offline {
+    padding-top: 1.8em;
+  }
 }
 
 .router {
@@ -30,7 +34,3 @@
 //   margin-top: 0;
 //   padding-top: 0;
 // }
-
-.offline {
-  padding-top: 1.8em;
-}
