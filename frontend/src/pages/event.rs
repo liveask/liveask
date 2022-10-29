@@ -39,6 +39,7 @@ pub const BASE_SOCKET: &str = "wss://api.www.live-ask.com";
 
 pub struct Event {
     event_id: String,
+    copied_to_clipboard: bool,
     mode: Mode,
     state: Rc<State>,
     unanswered: Vec<Rc<Item>>,
@@ -61,6 +62,7 @@ pub enum Msg {
     ModDelete,
     ModStateChange(yew::Event),
     StateChanged,
+    CopyLink,
 }
 impl Component for Event {
     type Message = Msg;
@@ -79,6 +81,7 @@ impl Component for Event {
 
         Self {
             event_id,
+            copied_to_clipboard: false,
             mode: if ctx.props().secret.is_some() {
                 Mode::Moderator
             } else {
@@ -135,6 +138,14 @@ impl Component for Event {
                     ctx.link(),
                 );
                 false
+            }
+            Msg::CopyLink => {
+                self.copied_to_clipboard = true;
+                gloo_utils::window()
+                    .navigator()
+                    .clipboard()
+                    .map(|c| c.write_text(&self.moderator_url()));
+                true
             }
             Msg::SocketMsg => {
                 request_fetch(
@@ -465,11 +476,9 @@ impl Event {
                         <div class="linkbox-url">
                             <div>{self.moderator_url()}</div>
                         </div>
-                        <div class="linkbox-copy" >{
-                            //TODO:
-                            // {copiedLinkToClipboard?'Copied':'Copy'}
-                            {"Copy"}
-                        }</div>
+                        <div class="linkbox-copy" onclick={ctx.link().callback(|_| Msg::CopyLink)}>
+                            {if self.copied_to_clipboard {"Copied"}else{"Copy"}}
+                        </div>
                     </div>
 
                     <div class="floating-share">
