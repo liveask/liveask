@@ -331,6 +331,15 @@ impl Event {
                         {
                             self.mod_view(ctx,e)
                         }
+
+                        <div class="not-open" hidden={!e.state.is_closed()}>
+                            {"This event was closed by the moderator. You cannot add or vote questions anymore."}
+                            <br/>
+                            {"Updates by the moderator are still seen in real-time."}
+                        </div>
+                        <div class="not-open" hidden={!e.state.is_vote_only()}>
+                            {"This event is set to vote-only by the moderator. You cannot add new questions. You can still vote though."}
+                        </div>
                     </div>
 
                     {self.mod_urls(ctx)}
