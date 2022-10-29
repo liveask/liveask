@@ -12,6 +12,7 @@ use super::EventAgent;
 pub enum SocketInput {
     Connect(String),
     Disconnect,
+    Reconnect,
 }
 
 #[derive(Debug)]
@@ -30,6 +31,7 @@ pub enum WsResponse {
 }
 
 pub struct WebSocketAgent {
+    url: String,
     link: AgentLink<Self>,
     ws: Option<wasm_sockets::EventClient>,
     subscribers: HashSet<HandlerId>,
@@ -53,6 +55,7 @@ impl Agent for WebSocketAgent {
         };
 
         Self {
+            url: String::new(),
             link,
             ws: None,
             subscribers: HashSet::new(),
@@ -74,12 +77,8 @@ impl Agent for WebSocketAgent {
             Msg::Disconnected => {
                 self.events.send(GlobalEvent::SocketStatus(false));
 
-                let url: String = self.ws.as_ref().unwrap().url.borrow().clone();
-
                 self.disconnect();
                 self.respond_to_all(&WsResponse::Disconnected);
-
-                self.connect(&url);
             }
             Msg::MessageReceived(res) => {
                 // log::info!("ws msg: {:?}", res);
@@ -97,7 +96,15 @@ impl Agent for WebSocketAgent {
     fn handle_input(&mut self, msg: Self::Input, _id: HandlerId) {
         match msg {
             SocketInput::Connect(url) => {
-                self.connect(&url);
+                self.url = url;
+                self.connect();
+            }
+            SocketInput::Reconnect => {
+                if self.connected {
+                    log::warn!("still connected, wont reconnect");
+                } else {
+                    self.connect();
+                }
             }
             SocketInput::Disconnect => {
                 log::info!("ws disconnect");
@@ -139,15 +146,15 @@ impl WebSocketAgent {
         self.ws = None;
     }
 
-    fn connect(&mut self, url: &str) {
-        log::info!("ws connect: {}", url);
+    fn connect(&mut self) {
+        log::info!("ws connect: {}", self.url);
 
         let ws_err_callback = self.link.callback(|_| Msg::Disconnected);
         let ws_close_callback = self.link.callback(|_| Msg::Disconnected);
         let ws_connected_callback = self.link.callback(|_| Msg::Connected);
         let ws_msg_callback = self.link.callback(Msg::MessageReceived);
 
-        let mut client = wasm_sockets::EventClient::new(url).unwrap();
+        let mut client = wasm_sockets::EventClient::new(&self.url).unwrap();
 
         client.set_on_error(Some(Box::new(move |error| {
             log::info!("ws on_error: {:#?}", error);

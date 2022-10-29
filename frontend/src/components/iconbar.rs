@@ -5,7 +5,7 @@ use yew_router::prelude::*;
 use yewdux::prelude::*;
 
 use crate::{
-    agents::{EventAgent, GlobalEvent},
+    agents::{EventAgent, GlobalEvent, SocketInput, WebSocketAgent},
     not,
     routes::Route,
     State,
@@ -17,6 +17,7 @@ pub enum Msg {
     Event(GlobalEvent),
     Ask,
     Home,
+    Reconnect,
 }
 
 #[derive(Properties, PartialEq, Eq)]
@@ -28,6 +29,7 @@ pub struct IconBar {
     _dispatch: Dispatch<State>,
     #[allow(dead_code)]
     events: Box<dyn Bridge<EventAgent>>,
+    socket_agent: Box<dyn Bridge<WebSocketAgent>>,
 }
 impl Component for IconBar {
     type Message = Msg;
@@ -41,6 +43,7 @@ impl Component for IconBar {
             events,
             state: Default::default(),
             connected: true,
+            socket_agent: WebSocketAgent::bridge(Callback::noop()),
         }
     }
 
@@ -60,6 +63,10 @@ impl Component for IconBar {
             }
             Msg::Home => {
                 ctx.link().history().unwrap().push(Route::Home);
+                false
+            }
+            Msg::Reconnect => {
+                self.socket_agent.send(SocketInput::Reconnect);
                 false
             }
             //ignore global events
@@ -100,7 +107,7 @@ impl Component for IconBar {
             <div class={classes!(vec!["topbar", "shrink"],not(self.connected).then_some("offline"))}
                 /*[class.shrink]="isShrink()"*/>
                 {
-                    self.view_offline_bar()
+                    self.view_offline_bar(ctx)
                 }
 
                 <div class="innerbox">
@@ -165,14 +172,17 @@ impl IconBar {
         html! {}
     }
 
-    fn view_offline_bar(&self) -> Html {
+    fn view_offline_bar(&self, ctx: &Context<Self>) -> Html {
         let is_online = self.connected;
 
         html! {
-            <div id="ico-offline" class={classes!(is_online.then_some("hidden"))}>
+            <div id="ico-offline"
+                class={classes!(is_online.then_some("hidden"))}
+                onclick={ctx.link().callback(|_| Msg::Reconnect)}
+                >
                 <img hidden={is_online} src="/assets/offline.svg" />
                 //TODO: reconnect timer
-                <div hidden={is_online} class="timeout">{format!("{}",0)}{"s"}</div>
+                // <div hidden={is_online} class="timeout">{format!("{}",0)}{"s"}</div>
             </div>
         }
     }
