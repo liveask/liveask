@@ -1,3 +1,4 @@
+use web_sys::HtmlElement;
 use yew::prelude::*;
 use yewdux::prelude::Dispatch;
 
@@ -28,8 +29,9 @@ impl Component for Popup {
     fn create(_ctx: &Context<Self>) -> Self {
         let dispatch = Dispatch::<State>::subscribe(Callback::noop());
 
+        toggle_modal(true);
+
         dispatch.reduce(|state| State {
-            modal_open: true,
             event: state.event.clone(),
         });
 
@@ -50,8 +52,9 @@ impl Component for Popup {
     }
 
     fn destroy(&mut self, _ctx: &Context<Self>) {
+        toggle_modal(false);
+
         self.dispatch.reduce(|state| State {
-            modal_open: false,
             event: state.event.clone(),
         });
     }
@@ -80,5 +83,18 @@ impl Component for Popup {
                 </div>
             </div>
         }
+    }
+}
+
+fn toggle_modal(enable: bool) {
+    let body: HtmlElement = gloo_utils::document()
+        .body()
+        .expect("no body node found")
+        .into();
+
+    if enable {
+        body.class_list().add_1("modal-open").unwrap();
+    } else {
+        body.class_list().remove_1("modal-open").unwrap();
     }
 }

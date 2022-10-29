@@ -30,7 +30,6 @@ static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 #[derive(Default, Clone, Eq, PartialEq, Store)]
 pub struct State {
     pub event: Option<EventInfo>,
-    pub modal_open: bool,
 }
 
 pub enum Msg {
@@ -55,31 +54,21 @@ impl Component for AppRoot {
     fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
             Msg::State(state) => {
-                let modal_state_changed = self.state.modal_open != state.modal_open;
                 self.state = state;
-                modal_state_changed
+                false
             }
         }
     }
 
     fn view(&self, _: &Context<Self>) -> Html {
-        let mut c = classes!("app-host");
-        if self.state.modal_open {
-            c.push(classes!("modal-open"));
-        }
-
         html! {
             <BrowserRouter>
-                <div class={classes!(c)}>
+                <div class="app-host">
                     <div class="main">
                         <IconBar />
 
                         <div class="router">
                             <Switch<Route> render={Switch::render(switch)} />
-                            // render={AppRouter::render(Self::switch)}
-                            // redirect=AppRouter::redirect(|route: Route| {
-                            //     AppRoute::PageNotFound(Permissive(Some(route.route))).into_public()
-                            // })
                         </div>
                     </div>
                 </div>

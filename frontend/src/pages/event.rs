@@ -191,9 +191,8 @@ impl Component for Event {
                 };
 
                 if matches!(self.loading_state, LoadingState::Loaded) {
-                    self.dispatch.reduce(|old| State {
+                    self.dispatch.reduce(|_old| State {
                         event: Some(res.clone().unwrap()),
-                        modal_open: old.modal_open,
                     });
                     self.state = self.dispatch.get();
                 }

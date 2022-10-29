@@ -2,8 +2,6 @@
 
 ## 2.0 (relaunch based on yew)
 
-- [ ] popup fucks up background in wide screen
-- [ ] after popup jump to location on page
 - [ ] reconnects / offline indicator
 - [ ] event print view
 - [ ] donation button
