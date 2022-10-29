@@ -1,11 +1,17 @@
-use std::collections::HashSet;
-
+use gloo::timers::callback::Interval;
 use serde::{Deserialize, Serialize};
-use yew_agent::{Agent, AgentLink, HandlerId};
+use std::collections::HashSet;
+use yew::Callback;
+use yew_agent::{Agent, AgentLink, Bridge, Bridged, HandlerId};
+
+use crate::agents::GlobalEvent;
+
+use super::EventAgent;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub enum SocketInput {
     Connect(String),
+    Disconnect,
 }
 
 #[derive(Debug)]
@@ -13,6 +19,7 @@ pub enum Msg {
     MessageReceived(String),
     Connected,
     Disconnected,
+    Ping,
 }
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
@@ -27,6 +34,10 @@ pub struct WebSocketAgent {
     ws: Option<wasm_sockets::EventClient>,
     subscribers: HashSet<HandlerId>,
     connected: bool,
+    #[allow(dead_code)]
+    ping_interval: Interval,
+    #[allow(dead_code)]
+    events: Box<dyn Bridge<EventAgent>>,
 }
 
 impl Agent for WebSocketAgent {
@@ -36,29 +47,49 @@ impl Agent for WebSocketAgent {
     type Output = WsResponse;
 
     fn create(link: AgentLink<Self>) -> Self {
+        let ping_interval = {
+            let link = link.clone();
+            Interval::new(3000, move || link.send_message(Msg::Ping))
+        };
+
         Self {
             link,
             ws: None,
             subscribers: HashSet::new(),
             connected: false,
+            ping_interval,
+            events: EventAgent::bridge(Callback::noop()),
         }
     }
 
     fn update(&mut self, msg: Self::Message) {
         match msg {
             Msg::Connected => {
+                log::info!("ws connected");
+
                 self.connected = true;
+                self.events.send(GlobalEvent::SocketStatus(true));
                 self.respond_to_all(&WsResponse::Ready);
             }
             Msg::Disconnected => {
-                self.connected = false;
-                self.ws = None;
+                self.events.send(GlobalEvent::SocketStatus(false));
 
+                let url: String = self.ws.as_ref().unwrap().url.borrow().clone();
+
+                self.disconnect();
                 self.respond_to_all(&WsResponse::Disconnected);
+
+                self.connect(&url);
             }
             Msg::MessageReceived(res) => {
                 // log::info!("ws msg: {:?}", res);
                 self.respond_to_all(&WsResponse::Message(res));
+            }
+            Msg::Ping => {
+                if self.connected {
+                    log::info!("ws send ping");
+                    self.ws.as_ref().map(|ws| ws.send_string("p"));
+                }
             }
         }
     }
@@ -67,6 +98,10 @@ impl Agent for WebSocketAgent {
         match msg {
             SocketInput::Connect(url) => {
                 self.connect(&url);
+            }
+            SocketInput::Disconnect => {
+                log::info!("ws disconnect");
+                self.disconnect();
             }
         }
     }
@@ -99,6 +134,11 @@ impl WebSocketAgent {
         }
     }
 
+    fn disconnect(&mut self) {
+        self.connected = false;
+        self.ws = None;
+    }
+
     fn connect(&mut self, url: &str) {
         log::info!("ws connect: {}", url);
 
@@ -108,18 +148,18 @@ impl WebSocketAgent {
         let ws_msg_callback = self.link.callback(Msg::MessageReceived);
 
         let mut client = wasm_sockets::EventClient::new(url).unwrap();
+
         client.set_on_error(Some(Box::new(move |error| {
-            log::error!("ws error: {:#?}", error);
+            log::info!("ws on_error: {:#?}", error);
             ws_err_callback.emit(());
         })));
         client.set_on_connection(Some(Box::new(
             move |_client: &wasm_sockets::EventClient| {
-                // log::info!("{:#?}", client.status);
                 ws_connected_callback.emit(());
             },
         )));
         client.set_on_close(Some(Box::new(move || {
-            // log::info!("Connection closed");
+            log::info!("ws on_close");
             ws_close_callback.emit(());
         })));
         client.set_on_message(Some(Box::new(

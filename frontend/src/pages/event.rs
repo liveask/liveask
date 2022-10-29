@@ -206,6 +206,7 @@ impl Component for Event {
 
     fn destroy(&mut self, _ctx: &Context<Self>) {
         self.dispatch.reduce(|_| State::default());
+        self.socket_agent.send(SocketInput::Disconnect);
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {

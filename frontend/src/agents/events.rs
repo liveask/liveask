@@ -5,6 +5,7 @@ use yew_agent::{Agent, AgentLink, HandlerId};
 #[allow(clippy::enum_variant_names)]
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub enum GlobalEvent {
+    SocketStatus(bool),
     OpenSharePopup,
     OpenQuestionPopup,
     DeletePopup,

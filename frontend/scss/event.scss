@@ -294,3 +294,33 @@
     margin-left: 30px;
   }
 }
+
+#ico-offline {
+  height: 1.8em;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background-color: red;
+  z-index: 1;
+  text-align: center;
+  transition: top 0.4s ease;
+  transition-property: top, background-color;
+
+  img {
+    height: 100%;
+  }
+
+  div.timeout {
+    font-size: 120%;
+    color: black;
+    top: -5px;
+    display: inline;
+    position: relative;
+  }
+
+  &.hidden {
+    top: -30px;
+    background-color: white;
+  }
+}

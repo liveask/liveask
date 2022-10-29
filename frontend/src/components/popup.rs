@@ -78,7 +78,7 @@ impl Component for Popup {
 
         html! {
             <div class="popup-bg" onclick={click_outside}>
-                <div class={classes!(c)} onclick={click_inside}>
+                <div class={c} onclick={click_inside}>
                     { for children.iter() }
                 </div>
             </div>

@@ -13,7 +13,7 @@ use crate::{
 pub enum Msg {
     State(Rc<State>),
     Share,
-    Event,
+    Event(GlobalEvent),
     Ask,
     Home,
 }
@@ -22,6 +22,7 @@ pub enum Msg {
 pub struct IconBarProps;
 
 pub struct IconBar {
+    connected: bool,
     state: Rc<State>,
     _dispatch: Dispatch<State>,
     #[allow(dead_code)]
@@ -32,12 +33,13 @@ impl Component for IconBar {
     type Properties = IconBarProps;
 
     fn create(ctx: &Context<Self>) -> Self {
-        let events = EventAgent::bridge(ctx.link().callback(|_msg| Msg::Event));
+        let events = EventAgent::bridge(ctx.link().callback(|msg| Msg::Event(msg)));
 
         Self {
             _dispatch: Dispatch::<State>::subscribe(ctx.link().callback(Msg::State)),
             events,
             state: Default::default(),
+            connected: true,
         }
     }
 
@@ -60,7 +62,13 @@ impl Component for IconBar {
                 false
             }
             //ignore global events
-            Msg::Event => false,
+            Msg::Event(msg) => match msg {
+                GlobalEvent::SocketStatus(connected) => {
+                    self.connected = connected;
+                    true
+                }
+                _ => false,
+            },
         }
     }
 
@@ -86,8 +94,18 @@ impl Component for IconBar {
 
         let has_event = self.state.event.is_some();
 
+        let mut topbar_clasess = classes!(vec!["topbar", "shrink"]);
+        if !self.connected {
+            topbar_clasess.push(classes!("offline"));
+        }
+
         html! {
-            <div class="topbar shrink" /*[class.offline]="isOffline()" [class.shrink]="isShrink()"*/>
+            //TODO: shrink?
+            <div class={topbar_clasess} /*[class.shrink]="isShrink()"*/>
+                {
+                    self.view_offline_bar()
+                }
+
                 <div class="innerbox">
                     <a
                         class="logo shrink"
@@ -148,5 +166,22 @@ impl IconBar {
             };
         }
         html! {}
+    }
+
+    fn view_offline_bar(&self) -> Html {
+        let is_online = self.connected;
+
+        let mut c = classes!();
+        if is_online {
+            c.push(classes!("hidden"));
+        }
+
+        html! {
+            <div id="ico-offline" class={c}>
+                <img hidden={is_online} src="/assets/offline.svg" />
+                //TODO: reconnect timer
+                <div hidden={is_online} class="timeout">{format!("{}",0)}{"s"}</div>
+            </div>
+        }
     }
 }
