@@ -27,12 +27,12 @@ dependencies = ["format","cargo-check","clippy"]
 [tasks.serve]
 install_crate = "trunk"
 command = "trunk"
-args = ["serve"]
+args = ["serve","--no-autoreload"]
 
 [tasks.serve-release]
 install_crate = "trunk"
 command = "trunk"
-args = ["serve","--release"]
+args = ["serve","--release","--no-autoreload"]
 
 [tasks.build-release]
 install_crate = "trunk"

@@ -2,7 +2,7 @@
 
 ## 2.0 (relaunch based on yew)
 
-- [ ] reconnects / offline indicator
+- [ ] reconnect interval
 - [ ] event print view
 - [ ] donation button
 - [ ] scroll to new question after send

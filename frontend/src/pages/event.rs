@@ -6,7 +6,7 @@ use yew_agent::{Bridge, Bridged};
 use yewdux::prelude::*;
 
 use crate::{
-    agents::{EventAgent, GlobalEvent, SocketInput, WebSocketAgent},
+    agents::{EventAgent, GlobalEvent, SocketInput, WebSocketAgent, WsResponse},
     components::{DeletePopup, Question, QuestionClickType, QuestionPopup, SharePopup},
     fetch,
     local_cache::LocalCache,
@@ -32,10 +32,10 @@ enum LoadingState {
     NotFound,
 }
 
-pub const BASE_API: &str = "https://api.www.live-ask.com";
 // pub const BASE_API: &str = "http://localhost:8090";
-pub const BASE_SOCKET: &str = "wss://api.www.live-ask.com";
 // pub const BASE_SOCKET: &str = "ws://localhost:8090";
+pub const BASE_API: &str = "https://api.www.live-ask.com";
+pub const BASE_SOCKET: &str = "wss://api.www.live-ask.com";
 
 pub struct Event {
     event_id: String,
@@ -56,7 +56,7 @@ pub enum Msg {
     ShareEventClick,
     AskQuestionClick,
     Fetched(Option<EventInfo>),
-    SocketMsg,
+    SocketMsg(WsResponse),
     QuestionClick((i64, QuestionClickType)),
     QuestionUpdated(i64),
     ModDelete,
@@ -69,11 +69,12 @@ impl Component for Event {
     type Properties = Props;
 
     fn create(ctx: &Context<Self>) -> Self {
+        log::info!("event create");
+
         let event_id = ctx.props().id.clone();
         request_fetch(event_id.clone(), ctx.props().secret.clone(), ctx.link());
 
-        //TODO: this leads to socket events like OnConnect also fetching event again
-        let mut ws = WebSocketAgent::bridge(ctx.link().callback(|_msg| Msg::SocketMsg));
+        let mut ws = WebSocketAgent::bridge(ctx.link().callback(Msg::SocketMsg));
         ws.send(SocketInput::Connect(format!(
             "{}/push/{}",
             BASE_SOCKET, event_id
@@ -132,11 +133,7 @@ impl Component for Event {
                 false
             }
             Msg::QuestionUpdated(_id) => {
-                request_fetch(
-                    self.event_id.clone(),
-                    ctx.props().secret.clone(),
-                    ctx.link(),
-                );
+                //Note: we wait for the question socket event to poll
                 false
             }
             Msg::CopyLink => {
@@ -147,12 +144,25 @@ impl Component for Event {
                     .map(|c| c.write_text(&self.moderator_url()));
                 true
             }
-            Msg::SocketMsg => {
-                request_fetch(
-                    self.event_id.clone(),
-                    ctx.props().secret.clone(),
-                    ctx.link(),
-                );
+            Msg::SocketMsg(msg) => {
+                match msg {
+                    WsResponse::Ready | WsResponse::Disconnected => {}
+                    WsResponse::Message(msg) => {
+                        //TODO: do we want to act differently here? only fetch q on "q"?
+                        if msg == "e" {
+                            log::info!("received event update");
+                        } else if msg.starts_with("q") {
+                            log::info!("received question update: {}", msg);
+                        }
+
+                        request_fetch(
+                            self.event_id.clone(),
+                            ctx.props().secret.clone(),
+                            ctx.link(),
+                        );
+                    }
+                }
+
                 false
             }
             Msg::StateChanged => false, // nothing needs to happen here
@@ -184,20 +194,31 @@ impl Component for Event {
                 false
             }
             Msg::Fetched(res) => {
-                self.loading_state = if res.is_none() {
-                    LoadingState::NotFound
-                } else {
-                    LoadingState::Loaded
-                };
+                log::info!("fetched");
 
-                if matches!(self.loading_state, LoadingState::Loaded) {
+                //TODO: in subsequent fetches only update data if succesfully fetched
+
+                if matches!(
+                    self.loading_state,
+                    LoadingState::Loading | LoadingState::NotFound
+                ) {
+                    log::info!("fetched -> loading");
+
+                    self.loading_state = if res.is_none() {
+                        LoadingState::NotFound
+                    } else {
+                        LoadingState::Loaded
+                    };
+                }
+
+                if res.is_some() {
                     self.dispatch.reduce(|_old| State {
                         event: Some(res.clone().unwrap()),
                     });
                     self.state = self.dispatch.get();
-                }
 
-                self.init_event();
+                    self.init_event();
+                }
 
                 true
             }
@@ -205,6 +226,8 @@ impl Component for Event {
     }
 
     fn destroy(&mut self, _ctx: &Context<Self>) {
+        log::info!("event destroy");
+
         self.dispatch.reduce(|_| State::default());
         self.socket_agent.send(SocketInput::Disconnect);
     }
@@ -258,6 +281,8 @@ fn request_like(event: String, id: i64, like: bool, link: &html::Scope<Event>) {
 }
 
 fn request_fetch(id: String, secret: Option<String>, link: &html::Scope<Event>) {
+    log::info!("request_fetch");
+
     link.send_future(async move {
         let res = fetch::fetch_event(BASE_API, id, secret).await;
 
@@ -519,6 +544,8 @@ impl Event {
     }
 
     fn init_event(&mut self) {
+        log::info!("event questions updated");
+
         use split_iter::Splittable;
 
         self.unanswered.clear();
