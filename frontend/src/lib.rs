@@ -77,15 +77,10 @@ impl Component for AppRoot {
     }
 
     fn view(&self, _: &Context<Self>) -> Html {
-        let mut main_classes = classes!("main");
-        if !self.connected {
-            main_classes.push(classes!("offline"));
-        }
-
         html! {
             <BrowserRouter>
                 <div class="app-host">
-                    <div class={main_classes}>
+                    <div class={classes!("main",not(self.connected).then_some("offline"))}>
                         <IconBar />
 
                         <div class="router">
@@ -96,6 +91,10 @@ impl Component for AppRoot {
             </BrowserRouter>
         }
     }
+}
+
+pub fn not(b: bool) -> bool {
+    !b
 }
 
 fn switch(switch: &Route) -> Html {

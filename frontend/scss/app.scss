@@ -9,6 +9,8 @@
   display: flex;
   justify-content: center;
 
+  transition: padding-top 0.4s ease;
+
   &.offline {
     padding-top: 1.8em;
   }

@@ -6,6 +6,7 @@ use yewdux::prelude::*;
 
 use crate::{
     agents::{EventAgent, GlobalEvent},
+    not,
     routes::Route,
     State,
 };
@@ -94,14 +95,10 @@ impl Component for IconBar {
 
         let has_event = self.state.event.is_some();
 
-        let mut topbar_clasess = classes!(vec!["topbar", "shrink"]);
-        if !self.connected {
-            topbar_clasess.push(classes!("offline"));
-        }
-
         html! {
             //TODO: shrink?
-            <div class={topbar_clasess} /*[class.shrink]="isShrink()"*/>
+            <div class={classes!(vec!["topbar", "shrink"],not(self.connected).then_some("offline"))}
+                /*[class.shrink]="isShrink()"*/>
                 {
                     self.view_offline_bar()
                 }
@@ -171,13 +168,8 @@ impl IconBar {
     fn view_offline_bar(&self) -> Html {
         let is_online = self.connected;
 
-        let mut c = classes!();
-        if is_online {
-            c.push(classes!("hidden"));
-        }
-
         html! {
-            <div id="ico-offline" class={c}>
+            <div id="ico-offline" class={classes!(is_online.then_some("hidden"))}>
                 <img hidden={is_online} src="/assets/offline.svg" />
                 //TODO: reconnect timer
                 <div hidden={is_online} class="timeout">{format!("{}",0)}{"s"}</div>

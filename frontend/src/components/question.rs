@@ -200,19 +200,9 @@ impl Question {
     }
 
     fn view_mod(&self, ctx: &Context<Self>) -> Html {
-        let mut btn_hide_classes = classes!("button-hide");
-        if self.data.item.hidden {
-            btn_hide_classes.push(classes!("reverse"));
-        }
-
-        let mut btn_answered_classes = classes!("button-answered");
-        if self.data.item.answered {
-            btn_answered_classes.push(classes!("reverse"));
-        }
-
         html! {
             <div class="options">
-                <button class={btn_hide_classes}
+                <button class={classes!("button-hide",self.data.item.hidden.then_some("reverse"))}
                     onclick={ctx.link().callback(|_| Msg::ToggleHide)}
                     hidden={self.data.item.answered}
                     //TODO: reverse?
@@ -227,7 +217,7 @@ impl Question {
                     }
                 </button>
 
-                <button class={btn_answered_classes}
+                <button class={classes!("button-answered",self.data.item.answered.then_some("reverse"))}
                     onclick={ctx.link().callback(|_| Msg::ToggleAnswered)}
                     //TODO: reverse?
                     // [class.reverse]="question.answered"
