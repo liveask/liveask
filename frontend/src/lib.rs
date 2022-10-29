@@ -67,8 +67,8 @@ impl Component for AppRoot {
                 false
             }
             Msg::Event(e) => match e {
-                GlobalEvent::SocketStatus(status) => {
-                    self.connected = status;
+                GlobalEvent::SocketStatus { connected, .. } => {
+                    self.connected = connected;
                     true
                 }
                 _ => false,

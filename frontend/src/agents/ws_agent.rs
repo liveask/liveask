@@ -1,3 +1,4 @@
+use chrono::Duration;
 use gloo::timers::callback::Interval;
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
@@ -21,6 +22,7 @@ pub enum Msg {
     Connected,
     Disconnected,
     Ping,
+    Reconnect,
 }
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
@@ -40,6 +42,7 @@ pub struct WebSocketAgent {
     ping_interval: Interval,
     #[allow(dead_code)]
     events: Box<dyn Bridge<EventAgent>>,
+    reconnect_interval: Option<(Duration, Interval)>,
 }
 
 impl Agent for WebSocketAgent {
@@ -62,6 +65,7 @@ impl Agent for WebSocketAgent {
             connected: false,
             ping_interval,
             events: EventAgent::bridge(Callback::noop()),
+            reconnect_interval: None,
         }
     }
 
@@ -71,14 +75,23 @@ impl Agent for WebSocketAgent {
                 log::info!("ws connected");
 
                 self.connected = true;
-                self.events.send(GlobalEvent::SocketStatus(true));
+                self.reconnect_interval = None;
+                self.events.send(GlobalEvent::SocketStatus {
+                    connected: true,
+                    timeout_secs: None,
+                });
                 self.respond_to_all(&WsResponse::Ready);
             }
             Msg::Disconnected => {
-                self.events.send(GlobalEvent::SocketStatus(false));
-
                 self.disconnect();
                 self.respond_to_all(&WsResponse::Disconnected);
+
+                let duration = self.set_reconnect();
+
+                self.events.send(GlobalEvent::SocketStatus {
+                    connected: false,
+                    timeout_secs: Some(duration.num_seconds()),
+                });
             }
             Msg::MessageReceived(res) => {
                 // log::info!("ws msg: {:?}", res);
@@ -88,6 +101,12 @@ impl Agent for WebSocketAgent {
                 if self.connected {
                     log::info!("ws send ping");
                     self.ws.as_ref().map(|ws| ws.send_string("p"));
+                }
+            }
+            Msg::Reconnect => {
+                log::info!("ws reconnect timeout");
+                if self.reconnect_interval.is_some() && !self.connected {
+                    self.connect();
                 }
             }
         }
@@ -146,19 +165,36 @@ impl WebSocketAgent {
         self.ws = None;
     }
 
+    fn set_reconnect(&mut self) -> Duration {
+        //TODO: base duration on previous one
+        let duration = Duration::seconds(4);
+
+        let interval = {
+            let link = self.link.clone();
+            Interval::new(duration.num_milliseconds().try_into().unwrap(), move || {
+                link.send_message(Msg::Reconnect)
+            })
+        };
+
+        log::info!("ws set reconnect timeout: {}", duration);
+
+        self.reconnect_interval = Some((duration.clone(), interval));
+
+        duration
+    }
+
     fn connect(&mut self) {
         log::info!("ws connect: {}", self.url);
 
-        let ws_err_callback = self.link.callback(|_| Msg::Disconnected);
         let ws_close_callback = self.link.callback(|_| Msg::Disconnected);
         let ws_connected_callback = self.link.callback(|_| Msg::Connected);
         let ws_msg_callback = self.link.callback(Msg::MessageReceived);
 
         let mut client = wasm_sockets::EventClient::new(&self.url).unwrap();
 
-        client.set_on_error(Some(Box::new(move |error| {
-            log::info!("ws on_error: {:#?}", error);
-            ws_err_callback.emit(());
+        client.set_on_error(Some(Box::new(move |_error| {
+            // log::info!("ws on_error: {:#?}", error);
+            log::info!("ws on_error");
         })));
         client.set_on_connection(Some(Box::new(
             move |_client: &wasm_sockets::EventClient| {

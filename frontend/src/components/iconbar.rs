@@ -1,3 +1,5 @@
+use chrono::{Duration, Utc};
+use gloo::timers::callback::Interval;
 use std::rc::Rc;
 use yew::prelude::*;
 use yew_agent::{Bridge, Bridged};
@@ -18,6 +20,7 @@ pub enum Msg {
     Ask,
     Home,
     Reconnect,
+    ReconnectTimer,
 }
 
 #[derive(Properties, PartialEq, Eq)]
@@ -25,17 +28,25 @@ pub struct IconBarProps;
 
 pub struct IconBar {
     connected: bool,
+    reconnect_timeout: Option<chrono::DateTime<Utc>>,
     state: Rc<State>,
     _dispatch: Dispatch<State>,
     #[allow(dead_code)]
     events: Box<dyn Bridge<EventAgent>>,
     socket_agent: Box<dyn Bridge<WebSocketAgent>>,
+    _interal: Interval,
 }
 impl Component for IconBar {
     type Message = Msg;
     type Properties = IconBarProps;
 
     fn create(ctx: &Context<Self>) -> Self {
+        //TODO: only set once a timeout is initiated
+        let timer_interval = {
+            let link = ctx.link().clone();
+            Interval::new(500, move || link.send_message(Msg::ReconnectTimer))
+        };
+
         let events = EventAgent::bridge(ctx.link().callback(|msg| Msg::Event(msg)));
 
         Self {
@@ -44,6 +55,8 @@ impl Component for IconBar {
             state: Default::default(),
             connected: true,
             socket_agent: WebSocketAgent::bridge(Callback::noop()),
+            reconnect_timeout: None,
+            _interal: timer_interval,
         }
     }
 
@@ -71,12 +84,23 @@ impl Component for IconBar {
             }
             //ignore global events
             Msg::Event(msg) => match msg {
-                GlobalEvent::SocketStatus(connected) => {
+                GlobalEvent::SocketStatus {
+                    connected,
+                    timeout_secs,
+                } => {
                     self.connected = connected;
+                    self.reconnect_timeout = None;
+                    if let Some(timeout_secs) = timeout_secs {
+                        self.reconnect_timeout = Some(Utc::now() + Duration::seconds(timeout_secs));
+                    }
                     true
                 }
                 _ => false,
             },
+            Msg::ReconnectTimer => {
+                //TODO: refresh only during timeout being set
+                self.reconnect_timeout.is_some()
+            }
         }
     }
 
@@ -175,14 +199,19 @@ impl IconBar {
     fn view_offline_bar(&self, ctx: &Context<Self>) -> Html {
         let is_online = self.connected;
 
+        let seconds_till_reconnect = self
+            .reconnect_timeout
+            .map(|timeout| (timeout - Utc::now()).num_seconds())
+            .unwrap_or_default()
+            .max(0);
+
         html! {
             <div id="ico-offline"
                 class={classes!(is_online.then_some("hidden"))}
                 onclick={ctx.link().callback(|_| Msg::Reconnect)}
                 >
                 <img hidden={is_online} src="/assets/offline.svg" />
-                //TODO: reconnect timer
-                // <div hidden={is_online} class="timeout">{format!("{}",0)}{"s"}</div>
+                <div hidden={is_online} class="timeout">{format!("{}s",seconds_till_reconnect)}</div>
             </div>
         }
     }

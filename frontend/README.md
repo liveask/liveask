@@ -2,7 +2,6 @@
 
 ## 2.0 (relaunch based on yew)
 
-- [ ] reconnect interval
 - [ ] event print view
 - [ ] donation button
 - [ ] scroll to new question after send
