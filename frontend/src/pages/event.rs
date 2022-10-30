@@ -46,11 +46,9 @@ pub struct Event {
     answered: Vec<Rc<Item>>,
     hidden: Vec<Rc<Item>>,
     loading_state: LoadingState,
-    #[allow(dead_code)]
-    socket_agent: Box<dyn Bridge<WebSocketAgent>>,
-    #[allow(dead_code)]
-    events: Box<dyn Bridge<EventAgent>>,
     dispatch: Dispatch<State>,
+    _socket_agent: Box<dyn Bridge<WebSocketAgent>>,
+    _events: Box<dyn Bridge<EventAgent>>,
 }
 pub enum Msg {
     ShareEventClick,
@@ -88,14 +86,15 @@ impl Component for Event {
             } else {
                 Mode::Viewer
             },
-            events: EventAgent::bridge(Callback::noop()),
+
             loading_state: LoadingState::Loading,
             state: Default::default(),
             unanswered: Vec::new(),
             answered: Vec::new(),
             hidden: Vec::new(),
-            socket_agent: ws,
             dispatch: Dispatch::<State>::subscribe(Callback::noop()),
+            _socket_agent: ws,
+            _events: EventAgent::bridge(Callback::noop()),
         }
     }
 
@@ -182,15 +181,15 @@ impl Component for Event {
                 false
             }
             Msg::ModDelete => {
-                self.events.send(GlobalEvent::DeletePopup);
+                self._events.send(GlobalEvent::DeletePopup);
                 false
             }
             Msg::ShareEventClick => {
-                self.events.send(GlobalEvent::OpenSharePopup);
+                self._events.send(GlobalEvent::OpenSharePopup);
                 false
             }
             Msg::AskQuestionClick => {
-                self.events.send(GlobalEvent::OpenQuestionPopup);
+                self._events.send(GlobalEvent::OpenQuestionPopup);
                 false
             }
             Msg::Fetched(res) => {
@@ -229,7 +228,7 @@ impl Component for Event {
         log::info!("event destroy");
 
         self.dispatch.reduce(|_| State::default());
-        self.socket_agent.send(SocketInput::Disconnect);
+        self._socket_agent.send(SocketInput::Disconnect);
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {

@@ -4,11 +4,11 @@
 
 - [ ] scroll to new question after send
 - [ ] event print view
-- [ ] donation button
 - [ ] copy to clipboard on mobile broken
 
 ## 2.1 (missing non escential features)
 
+- [ ] donation button
 - [ ] show red highlight animation
 - [ ] cache local likes of current event in memory
 - [ ] autosize question textfield
@@ -18,6 +18,7 @@
 - [ ] tutorial
 - [ ] email forwarding and DNS entries cleanup
 - [ ] footer on each page
+- [ ] break down event into sub components
 
 # analytics
 
