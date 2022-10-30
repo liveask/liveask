@@ -61,3 +61,4 @@ jobs:
         cd frontend/dist
         aws s3 sync . s3://beta.live-ask.com --acl public-read --no-progress --delete --cache-control "public, max-age=5184000" --exclude app.html
         aws s3 cp ./index.html s3://beta.live-ask.com --acl public-read --no-progress --cache-control "public, max-age=21600"
+        aws cloudfront create-invalidation --distribution-id EJFNBPSNYQSP9 --paths /index.html

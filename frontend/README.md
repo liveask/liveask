@@ -2,7 +2,8 @@
 
 ## 2.0 (relaunch based on yew)
 
-- [ ] copy to clipboard on mobile broken
+- [ ] testing
+- [ ] CD
 
 ## 2.1 (missing non escential features)
 
