@@ -1,6 +1,7 @@
 use crate::{
     agents::{EventAgent, GlobalEvent},
     components::Popup,
+    components::Qr,
     routes::Route,
 };
 use yew::prelude::*;
@@ -35,7 +36,6 @@ pub struct SharePopup {
     url: String,
     #[allow(dead_code)]
     events: Box<dyn Bridge<EventAgent>>,
-    qr_image: String,
 }
 
 impl Component for SharePopup {
@@ -45,18 +45,7 @@ impl Component for SharePopup {
     fn create(ctx: &Context<Self>) -> Self {
         let events = EventAgent::bridge(ctx.link().callback(Msg::GlobalEvent));
 
-        use qrcode::{render::svg, EcLevel, QrCode, Version};
-        let code =
-            QrCode::with_version(ctx.props().url.clone(), Version::Normal(6), EcLevel::M).unwrap();
-        let qr_image = code
-            .render()
-            .min_dimensions(100, 100)
-            .dark_color(svg::Color("#000000"))
-            .light_color(svg::Color("#ffffff"))
-            .build();
-
         Self {
-            qr_image,
             url: ctx.props().url.clone(),
             show: false,
             copied_to_clipboard: false,
@@ -118,10 +107,6 @@ impl Component for SharePopup {
 
     fn view(&self, ctx: &Context<Self>) -> Html {
         if self.show {
-            let div = gloo_utils::document().create_element("div").unwrap();
-            div.set_inner_html(&self.qr_image);
-            let qr_svg = Html::VRef(div.into());
-
             let on_close = ctx.link().callback(|_| Msg::Close);
             let on_click_copy = ctx.link().callback(|_| Msg::Copy);
             let on_click_share_twitter = ctx.link().callback(|_| Msg::Share(ShareLink::Twitter));
@@ -167,7 +152,7 @@ impl Component for SharePopup {
                     </div>
 
                     <div class="qr">
-                        {qr_svg}
+                        <Qr url={self.url.clone()} dimensions={100} />
                     </div>
 
                     <div class="print" onclick={on_click_print}>

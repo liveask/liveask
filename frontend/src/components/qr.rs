@@ -30,10 +30,6 @@ impl Component for Qr {
         Self { qr_image }
     }
 
-    fn update(&mut self, _ctx: &Context<Self>, _msg: Self::Message) -> bool {
-        false
-    }
-
     fn view(&self, _ctx: &Context<Self>) -> Html {
         let div = gloo_utils::document().create_element("div").unwrap();
         div.set_inner_html(&self.qr_image);

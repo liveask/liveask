@@ -21,7 +21,7 @@ impl Component for Print {
 
     fn create(ctx: &Context<Self>) -> Self {
         let event_id = ctx.props().id.clone();
-        request_fetch(event_id.clone(), ctx.link());
+        request_fetch(event_id, ctx.link());
 
         Self {
             loading_state: LoadingState::Loading,
