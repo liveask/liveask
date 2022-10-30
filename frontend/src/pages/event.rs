@@ -363,9 +363,7 @@ impl Event {
                             {{&e.data.description.clone()}}
                         </div>
 
-                        {
-                            self.mod_view(ctx,e)
-                        }
+                        {self.mod_view(ctx,e)}
 
                         <div class="not-open" hidden={!e.state.is_closed()}>
                             {"This event was closed by the moderator. You cannot add or vote questions anymore."}
@@ -381,23 +379,25 @@ impl Event {
 
                     {self.view_questions(ctx,e)}
 
-                    {
-                        if mod_view {
-                            html!{}
-                        }else{
-                            html!{
-                                <div class="addquestion" hidden={!e.state.is_open()}>
-                                    <button class="button-red" onclick={ctx.link().callback(|_| Msg::AskQuestionClick)}>
-                                        {"Ask a Question"}
-                                    </button>
-                                </div>
-                            }
-                        }
-                    }
+                    {self.view_ask_question(mod_view,ctx,e)}
                 </div>
             }
         } else {
             html! {}
+        }
+    }
+
+    fn view_ask_question(&self, mod_view: bool, ctx: &Context<Self>, e: &EventInfo) -> Html {
+        if mod_view {
+            html! {}
+        } else {
+            html! {
+                <div class="addquestion" hidden={!e.state.is_open()}>
+                    <button class="button-red" onclick={ctx.link().callback(|_| Msg::AskQuestionClick)}>
+                        {"Ask a Question"}
+                    </button>
+                </div>
+            }
         }
     }
 
@@ -410,9 +410,9 @@ impl Event {
             });
 
             html! {
-            <div class={no_questions_classes}>
-                {"no questions yet"}
-            </div>
+                <div class={no_questions_classes}>
+                    {"no questions yet"}
+                </div>
             }
         } else {
             html! {
@@ -434,7 +434,9 @@ impl Event {
 
             return html! {
                 <div>
-                    <div class={title_classes}>{title}</div>
+                    <div class={title_classes}>
+                        {title}
+                    </div>
                     <div class="questions">
                         {
                             for items.iter().enumerate().map(|(e,i)|self.view_item(ctx,e,i))
@@ -452,7 +454,14 @@ impl Event {
         let mod_view = matches!(self.mode, Mode::Moderator);
 
         html! {
-            <Question {item} {index} key={item.id} {local_like} {mod_view} on_click={ctx.link().callback(Msg::QuestionClick)}/>
+            <Question
+                {item}
+                {index}
+                key={item.id}
+                {local_like}
+                {mod_view}
+                on_click={ctx.link().callback(Msg::QuestionClick)}
+                />
         }
     }
 
