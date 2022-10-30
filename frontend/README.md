@@ -2,9 +2,10 @@
 
 ## 2.0 (relaunch based on yew)
 
+- [ ] scroll to new question after send
 - [ ] event print view
 - [ ] donation button
-- [ ] scroll to new question after send
+- [ ] copy to clipboard on mobile broken
 
 ## 2.1 (missing non escential features)
 

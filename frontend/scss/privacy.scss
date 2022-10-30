@@ -1,12 +1,18 @@
-#ppBody {
+.privacy {
     font-size: 11pt;
     color: black;
     margin: 30px;
     text-align: justify;
-}
 
-#ppHeader {
-    font-size: 21pt;
-    color: black;
-    margin: 30px;
+    h1 {
+        font-size: 21pt;
+        color: black;
+        margin: 30px;
+    }
+
+    h2 {
+        font-size: 17pt;
+        color: black;
+        margin: 30px;
+    }
 }
