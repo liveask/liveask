@@ -61,6 +61,7 @@ pub enum Msg {
     ModStateChange(yew::Event),
     StateChanged,
     CopyLink,
+    GlobalEvent(GlobalEvent),
 }
 impl Component for Event {
     type Message = Msg;
@@ -94,7 +95,7 @@ impl Component for Event {
             hidden: Vec::new(),
             dispatch: Dispatch::<State>::subscribe(Callback::noop()),
             _socket_agent: ws,
-            _events: EventAgent::bridge(Callback::noop()),
+            _events: EventAgent::bridge(ctx.link().callback(Msg::GlobalEvent)),
         }
     }
 
@@ -211,8 +212,9 @@ impl Component for Event {
                 }
 
                 if res.is_some() {
-                    self.dispatch.reduce(|_old| State {
+                    self.dispatch.reduce(|old| State {
                         event: Some(res.clone().unwrap()),
+                        new_question: old.new_question,
                     });
                     self.state = self.dispatch.get();
 
@@ -221,6 +223,17 @@ impl Component for Event {
 
                 true
             }
+            Msg::GlobalEvent(ev) => match ev {
+                GlobalEvent::QuestionCreated(id) => {
+                    self.dispatch.reduce(|old| State {
+                        event: old.event.clone(),
+                        new_question: Some(id),
+                    });
+                    self.state = self.dispatch.get();
+                    true
+                }
+                _ => false,
+            },
         }
     }
 
@@ -452,11 +465,17 @@ impl Event {
     fn view_item(&self, ctx: &Context<Self>, index: usize, item: &Rc<Item>) -> Html {
         let local_like = LocalCache::is_liked(&self.event_id, item.id);
         let mod_view = matches!(self.mode, Mode::Moderator);
+        let is_new = self
+            .state
+            .new_question
+            .map(|id| id == item.id)
+            .unwrap_or_default();
 
         html! {
             <Question
                 {item}
                 {index}
+                {is_new}
                 key={item.id}
                 {local_like}
                 {mod_view}

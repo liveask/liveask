@@ -1,8 +1,5 @@
 use web_sys::HtmlElement;
 use yew::prelude::*;
-use yewdux::prelude::Dispatch;
-
-use crate::State;
 
 #[derive(Properties, PartialEq)]
 pub struct PopupProps {
@@ -18,24 +15,15 @@ pub enum Msg {
     ClickInside,
 }
 
-pub struct Popup {
-    dispatch: Dispatch<State>,
-}
+pub struct Popup {}
 
 impl Component for Popup {
     type Message = Msg;
     type Properties = PopupProps;
 
     fn create(_ctx: &Context<Self>) -> Self {
-        let dispatch = Dispatch::<State>::subscribe(Callback::noop());
-
         toggle_modal(true);
-
-        dispatch.reduce(|state| State {
-            event: state.event.clone(),
-        });
-
-        Self { dispatch }
+        Self {}
     }
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
@@ -53,10 +41,6 @@ impl Component for Popup {
 
     fn destroy(&mut self, _ctx: &Context<Self>) {
         toggle_modal(false);
-
-        self.dispatch.reduce(|state| State {
-            event: state.event.clone(),
-        });
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {

@@ -32,6 +32,7 @@ static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 #[derive(Default, Clone, Eq, PartialEq, Store)]
 pub struct State {
     pub event: Option<EventInfo>,
+    pub new_question: Option<i64>,
 }
 
 pub enum Msg {

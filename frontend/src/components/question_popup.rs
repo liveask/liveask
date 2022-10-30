@@ -12,7 +12,7 @@ use yew_agent::{Bridge, Bridged};
 pub enum Msg {
     GlobalEvent(GlobalEvent),
     Send,
-    Sent,
+    QuestionCreated(Option<i64>),
     Close,
     InputChanged(InputEvent),
 }
@@ -21,7 +21,6 @@ pub struct QuestionPopup {
     show: bool,
     text: String,
     error: Option<String>,
-    #[allow(dead_code)]
     events: Box<dyn Bridge<EventAgent>>,
 }
 
@@ -62,19 +61,27 @@ impl Component for QuestionPopup {
                 true
             }
             Msg::Send => {
-                self.show = false;
                 let event_id = ctx.props().event.clone();
                 let text = self.text.clone();
+
                 ctx.link().send_future(async move {
                     if let Ok(item) = fetch::add_question(BASE_API, event_id.clone(), text).await {
                         LocalCache::set_like_state(&event_id, item.id, true);
+                        Msg::QuestionCreated(Some(item.id))
+                    } else {
+                        Msg::QuestionCreated(None)
                     }
-                    Msg::Sent
                 });
+
+                self.show = false;
+                self.text.clear();
+
                 true
             }
-            Msg::Sent => {
-                self.text.clear();
+            Msg::QuestionCreated(id) => {
+                if let Some(id) = id {
+                    self.events.send(GlobalEvent::QuestionCreated(id));
+                }
                 true
             }
             Msg::InputChanged(ev) => {

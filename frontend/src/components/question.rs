@@ -1,11 +1,12 @@
 use chrono::Utc;
-use gloo::timers::callback::{Interval, Timeout};
+use gloo::timers::callback::Interval;
+use gloo::timers::callback::Timeout;
+use shared::Item;
 use std::rc::Rc;
 use wasm_bindgen::JsCast;
-use web_sys::{Element, HtmlElement};
+use web_sys::Element;
+use web_sys::HtmlElement;
 use yew::prelude::*;
-
-use shared::Item;
 
 pub enum QuestionClickType {
     Like,
@@ -16,8 +17,9 @@ pub enum QuestionClickType {
 #[derive(Clone, Debug, PartialEq, Properties)]
 pub struct Props {
     pub item: Rc<Item>,
-    pub mod_view: bool,
     pub index: usize,
+    pub mod_view: bool,
+    pub is_new: bool,
     pub local_like: bool,
     pub on_click: Callback<(i64, QuestionClickType)>,
 }
@@ -114,14 +116,14 @@ impl Component for Question {
         }
     }
 
-    fn rendered(&mut self, ctx: &Context<Self>, _first_render: bool) {
+    fn rendered(&mut self, ctx: &Context<Self>, first_render: bool) {
         let (elem, element_y) = self.get_elem_y();
+        let elem: HtmlElement = elem.dyn_into::<HtmlElement>().unwrap();
 
         if let Some(last_pos) = self.last_pos {
             if self.animation_time.is_none() && self.timeout.is_none() && last_pos != element_y {
                 let diff = last_pos - element_y;
 
-                let elem: HtmlElement = elem.dyn_into::<HtmlElement>().unwrap();
                 let style = elem.style();
 
                 style.set_property("transition-duration", "0s").unwrap();
@@ -141,6 +143,10 @@ impl Component for Question {
         //do not save pos while animating
         if self.animation_time.is_none() {
             self.last_pos = Some(element_y);
+        }
+
+        if first_render && self.data.is_new {
+            elem.scroll_into_view();
         }
     }
 
@@ -205,8 +211,6 @@ impl Question {
                 <button class={classes!("button-hide",self.data.item.hidden.then_some("reverse"))}
                     onclick={ctx.link().callback(|_| Msg::ToggleHide)}
                     hidden={self.data.item.answered}
-                    //TODO: reverse?
-                    // [class.reverse]="question.hidden"
                     >
                     {
                         if self.data.item.hidden {
@@ -219,8 +223,6 @@ impl Question {
 
                 <button class={classes!("button-answered",self.data.item.answered.then_some("reverse"))}
                     onclick={ctx.link().callback(|_| Msg::ToggleAnswered)}
-                    //TODO: reverse?
-                    // [class.reverse]="question.answered"
                     hidden={self.data.item.hidden}
                     >
                     {

@@ -2,7 +2,6 @@
 
 ## 2.0 (relaunch based on yew)
 
-- [ ] scroll to new question after send
 - [ ] event print view
 - [ ] copy to clipboard on mobile broken
 

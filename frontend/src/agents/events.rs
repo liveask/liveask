@@ -12,6 +12,7 @@ pub enum GlobalEvent {
     OpenSharePopup,
     OpenQuestionPopup,
     DeletePopup,
+    QuestionCreated(i64),
 }
 
 pub struct EventAgent {
