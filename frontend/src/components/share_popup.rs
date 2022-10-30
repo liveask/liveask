@@ -1,13 +1,16 @@
 use crate::{
     agents::{EventAgent, GlobalEvent},
     components::Popup,
+    routes::Route,
 };
 use yew::prelude::*;
 use yew_agent::{Bridge, Bridged};
+use yew_router::{prelude::History, scope_ext::RouterScopeExt};
 
 #[derive(Clone, Debug, Eq, PartialEq, Properties)]
 pub struct ShareProps {
     pub url: String,
+    pub event_id: String,
 }
 
 #[derive(Debug)]
@@ -23,6 +26,7 @@ pub enum Msg {
     Close,
     Copy,
     Share(ShareLink),
+    OpenPrint,
 }
 
 pub struct SharePopup {
@@ -60,7 +64,7 @@ impl Component for SharePopup {
         }
     }
 
-    fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
+    fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
             Msg::GlobalEvent(e) => {
                 if matches!(e, GlobalEvent::OpenSharePopup) {
@@ -71,6 +75,13 @@ impl Component for SharePopup {
             }
             Msg::Close => {
                 self.show = false;
+                true
+            }
+            Msg::OpenPrint => {
+                self.show = false;
+                ctx.link().history().unwrap().push(Route::Print {
+                    id: ctx.props().event_id.clone(),
+                });
                 true
             }
             Msg::Copy => {
@@ -117,6 +128,7 @@ impl Component for SharePopup {
             let on_click_share_mail = ctx.link().callback(|_| Msg::Share(ShareLink::Mail));
             let on_click_share_whatsapp = ctx.link().callback(|_| Msg::Share(ShareLink::Whatsapp));
             let on_click_share_sms = ctx.link().callback(|_| Msg::Share(ShareLink::Sms));
+            let on_click_print = ctx.link().callback(|_| Msg::OpenPrint);
 
             html! {
                 <Popup class="share-popup" {on_close}>
@@ -158,7 +170,7 @@ impl Component for SharePopup {
                         {qr_svg}
                     </div>
 
-                    <div class="print">
+                    <div class="print" onclick={on_click_print}>
                         {"Show print version"}
                     </div>
                 </Popup>

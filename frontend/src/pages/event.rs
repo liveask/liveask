@@ -13,9 +13,7 @@ use crate::{
     State,
 };
 
-#[allow(dead_code)]
 enum Mode {
-    Print,
     Moderator,
     Viewer,
 }
@@ -26,7 +24,7 @@ pub struct Props {
     pub secret: Option<String>,
 }
 
-enum LoadingState {
+pub enum LoadingState {
     Loading,
     Loaded,
     NotFound,
@@ -351,7 +349,6 @@ impl Event {
             };
 
             let background = classes!(match self.mode {
-                Mode::Print => "bg-print",
                 Mode::Moderator => "bg-mod",
                 Mode::Viewer => "bg-event",
             });
@@ -364,15 +361,13 @@ impl Event {
                     </div>
 
                     <QuestionPopup event={e.tokens.public_token.clone()} />
-                    <SharePopup url={share_url} />
+                    <SharePopup url={share_url} event_id={e.tokens.public_token.clone()}/>
 
                     <div class="event-block">
                         <div class="event-name-label">{"The Event"}</div>
                         <div class="event-name">{&e.data.name.clone()}</div>
                         //TODO: collapsable event desc
-                        <div class="event-desc"
-                            // [class.printable]="printable"
-                            >
+                        <div class="event-desc">
                             {{&e.data.description.clone()}}
                         </div>
 
@@ -417,7 +412,6 @@ impl Event {
     fn view_questions(&self, ctx: &Context<Self>, e: &EventInfo) -> Html {
         if e.questions.is_empty() {
             let no_questions_classes = classes!(match self.mode {
-                Mode::Print => "bg-print",
                 Mode::Moderator => "noquestions modview",
                 _ => "noquestions",
             });

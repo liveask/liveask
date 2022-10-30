@@ -7,11 +7,10 @@ mod local_cache;
 mod pages;
 mod routes;
 
-use std::rc::Rc;
-
 use agents::{EventAgent, GlobalEvent};
 use routes::Route;
 use shared::EventInfo;
+use std::rc::Rc;
 use wasm_bindgen::prelude::*;
 use yew::prelude::*;
 use yew_agent::{Bridge, Bridged};
@@ -20,7 +19,7 @@ use yewdux::{prelude::Dispatch, store::Store};
 
 use crate::{
     components::IconBar,
-    pages::{Event, Home, NewEvent, Privacy},
+    pages::{Event, Home, NewEvent, Print, Privacy},
 };
 
 pub const VERSION_STR: &str = "2.0.0";
@@ -102,6 +101,9 @@ fn switch(switch: &Route) -> Html {
     match switch {
         Route::Event { id } => {
             html! { <Event id={id.clone()} /> }
+        }
+        Route::Print { id } => {
+            html! { <Print id={id.clone()} /> }
         }
         Route::EventMod { id, secret } => {
             html! { <Event id={id.clone()} secret={secret.clone()} /> }

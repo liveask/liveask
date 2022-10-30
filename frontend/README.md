@@ -2,7 +2,6 @@
 
 ## 2.0 (relaunch based on yew)
 
-- [ ] event print view
 - [ ] copy to clipboard on mobile broken
 
 ## 2.1 (missing non escential features)
