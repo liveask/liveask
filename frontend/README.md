@@ -18,6 +18,13 @@
 - [ ] email forwarding and DNS entries cleanup
 - [ ] footer on each page
 - [ ] break down event into sub components
+- [ ] do not show "create event" inside create-event page
+- [ ] show "create event" in closed events like the example
+
+## 2.2 - future work
+
+- [ ] do not show sms button on PC
+- [ ] do not show hand on non clickable questions vote bubble
 
 # analytics
 
