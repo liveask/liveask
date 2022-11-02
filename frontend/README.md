@@ -5,7 +5,6 @@
 - [ ] CD based on tags/branch, use cargo version?
 - [ ] bug: "unlike" still visible in closed events
 - [ ] event delete should go to homepage
-- [ ] bug: text justification in delete popup
 
 ## 2.1 (missing non escential features)
 

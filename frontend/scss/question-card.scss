@@ -11,6 +11,24 @@
   border-radius: 4px;
 
   box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.07);
+
+  .text {
+    color: #282828;
+    width: 80%;
+    margin-top: 39px;
+    margin-bottom: 20px;
+    margin-left: 20px;
+
+    font-size: 16px;
+    letter-spacing: 0.25px;
+    line-height: 20px;
+
+    text-align: left;
+
+    &.answered {
+      color: #8CC63F;
+    }
+  }
 }
 
 .questionanchor {
@@ -41,24 +59,6 @@
   font-size: 10px;
   letter-spacing: 0.16px;
   line-height: 11px;
-}
-
-.text {
-  color: #282828;
-  width: 80%;
-  margin-top: 39px;
-  margin-bottom: 20px;
-  margin-left: 20px;
-
-  font-size: 16px;
-  letter-spacing: 0.25px;
-  line-height: 20px;
-
-  text-align: left;
-}
-
-.text.answered {
-  color: #8CC63F;
 }
 
 .like-action {
