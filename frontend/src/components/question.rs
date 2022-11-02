@@ -21,6 +21,7 @@ pub struct Props {
     pub mod_view: bool,
     pub is_new: bool,
     pub local_like: bool,
+    pub can_vote: bool,
     pub on_click: Callback<(i64, QuestionClickType)>,
 }
 
@@ -64,7 +65,7 @@ impl Component for Question {
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
             Msg::Like => {
-                if !self.data.item.answered && !self.data.item.hidden {
+                if ctx.props().can_vote && !self.data.item.answered && !self.data.item.hidden {
                     ctx.props()
                         .on_click
                         .emit((self.data.item.id, QuestionClickType::Like));
@@ -177,7 +178,7 @@ impl Component for Question {
                         {&self.data.item.text}
                     </div>
 
-                    {self.view_like(liked,mod_view)}
+                    {self.view_like(ctx.props().can_vote,liked,mod_view)}
 
                     {self.view_checkmark(mod_view)}
                 </a>
@@ -321,8 +322,8 @@ impl Question {
         html! {}
     }
 
-    fn view_like(&self, liked: bool, mod_view: bool) -> Html {
-        if !self.data.item.answered && !mod_view {
+    fn view_like(&self, can_like: bool, liked: bool, mod_view: bool) -> Html {
+        if can_like && !self.data.item.answered && !mod_view {
             return html! {
                 <div class="like-action">
                     {

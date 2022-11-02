@@ -422,17 +422,24 @@ impl Event {
                 </div>
             }
         } else {
+            let can_vote = !e.state.is_closed();
             html! {
                 <>
-                    {self.view_items(ctx,&self.unanswered,"Hot Questions")}
-                    {self.view_items(ctx,&self.answered,"Answered")}
-                    {self.view_items(ctx,&self.hidden,"Hidden")}
+                    {self.view_items(ctx,&self.unanswered,"Hot Questions",can_vote)}
+                    {self.view_items(ctx,&self.answered,"Answered",can_vote)}
+                    {self.view_items(ctx,&self.hidden,"Hidden",can_vote)}
                 </>
             }
         }
     }
 
-    fn view_items(&self, ctx: &Context<Self>, items: &[Rc<Item>], title: &str) -> Html {
+    fn view_items(
+        &self,
+        ctx: &Context<Self>,
+        items: &[Rc<Item>],
+        title: &str,
+        can_vote: bool,
+    ) -> Html {
         if !items.is_empty() {
             let title_classes = classes!(match self.mode {
                 Mode::Moderator => "questions-seperator modview",
@@ -446,7 +453,7 @@ impl Event {
                     </div>
                     <div class="questions">
                         {
-                            for items.iter().enumerate().map(|(e,i)|self.view_item(ctx,e,i))
+                            for items.iter().enumerate().map(|(e,i)|self.view_item(ctx,can_vote,e,i))
                         }
                     </div>
                 </div>
@@ -456,7 +463,13 @@ impl Event {
         html! {}
     }
 
-    fn view_item(&self, ctx: &Context<Self>, index: usize, item: &Rc<Item>) -> Html {
+    fn view_item(
+        &self,
+        ctx: &Context<Self>,
+        can_vote: bool,
+        index: usize,
+        item: &Rc<Item>,
+    ) -> Html {
         let local_like = LocalCache::is_liked(&self.event_id, item.id);
         let mod_view = matches!(self.mode, Mode::Moderator);
         let is_new = self
@@ -470,6 +483,7 @@ impl Event {
                 {item}
                 {index}
                 {is_new}
+                {can_vote}
                 key={item.id}
                 {local_like}
                 {mod_view}

@@ -3,7 +3,6 @@
 ## 2.0 (relaunch based on yew)
 
 - [ ] CD based on tags/branch, use cargo version?
-- [ ] bug: "unlike" still visible in closed events
 - [ ] event delete should go to homepage
 
 ## 2.1 (missing non escential features)
@@ -21,6 +20,7 @@
 - [ ] break down event into sub components
 - [ ] do not show "create event" inside create-event page
 - [ ] show "create event" in closed events like the example
+- [ ] pointy hand on vote bubble even if i cannot vote (closed event)
 
 ## 2.2 - future work
 
