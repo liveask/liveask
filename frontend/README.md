@@ -3,7 +3,6 @@
 ## 2.0 (relaunch based on yew)
 
 - [ ] CD based on tags/branch, use cargo version?
-- [ ] event delete should go to homepage
 
 ## 2.1 (missing non escential features)
 
