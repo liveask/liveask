@@ -16,10 +16,8 @@
 - [ ] tutorial
 - [ ] email forwarding and DNS entries cleanup
 - [ ] footer on each page
-- [ ] break down event into sub components
-- [ ] do not show "create event" inside create-event page
+- [ ] refactoring: break down event into sub components
 - [ ] show "create event" in closed events like the example
-- [ ] pointy hand on vote bubble even if i cannot vote (closed event)
 
 ## 2.2 - future work
 

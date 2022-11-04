@@ -76,12 +76,12 @@ impl Component for AppRoot {
         }
     }
 
-    fn view(&self, _: &Context<Self>) -> Html {
+    fn view(&self, _ctx: &Context<Self>) -> Html {
         html! {
             <BrowserRouter>
                 <div class="app-host">
                     <div class={classes!("main",not(self.connected).then_some("offline"))}>
-                        <IconBar />
+                        <IconBar/>
 
                         <div class="router">
                             <Switch<Route> render={Switch::render(switch)} />

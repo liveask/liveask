@@ -3,7 +3,7 @@ use gloo::timers::callback::Interval;
 use std::rc::Rc;
 use yew::prelude::*;
 use yew_agent::{Bridge, Bridged};
-use yew_router::prelude::*;
+use yew_router::{prelude::*, scope_ext::HistoryHandle};
 use yewdux::prelude::*;
 
 use crate::{
@@ -21,6 +21,7 @@ pub enum Msg {
     Home,
     Reconnect,
     ReconnectTimer,
+    RouteChange,
 }
 
 #[derive(Properties, PartialEq, Eq)]
@@ -31,10 +32,10 @@ pub struct IconBar {
     reconnect_timeout: Option<chrono::DateTime<Utc>>,
     state: Rc<State>,
     _dispatch: Dispatch<State>,
-    #[allow(dead_code)]
     events: Box<dyn Bridge<EventAgent>>,
     socket_agent: Box<dyn Bridge<WebSocketAgent>>,
     _interal: Interval,
+    _route_listener: HistoryHandle,
 }
 impl Component for IconBar {
     type Message = Msg;
@@ -57,6 +58,10 @@ impl Component for IconBar {
             socket_agent: WebSocketAgent::bridge(Callback::noop()),
             reconnect_timeout: None,
             _interal: timer_interval,
+            _route_listener: ctx
+                .link()
+                .add_history_listener(ctx.link().callback(|_history| Msg::RouteChange))
+                .unwrap(),
         }
     }
 
@@ -101,6 +106,7 @@ impl Component for IconBar {
                 //TODO: refresh only during timeout being set
                 self.reconnect_timeout.is_some()
             }
+            Msg::RouteChange => true,
         }
     }
 
@@ -125,6 +131,12 @@ impl Component for IconBar {
         };
 
         let has_event = self.state.event.is_some();
+        let is_newevent_page = ctx
+            .link()
+            .route::<Route>()
+            .as_ref()
+            .map(|route| route == &Route::NewEvent)
+            .unwrap_or_default();
 
         html! {
             //TODO: shrink?
@@ -160,13 +172,14 @@ impl Component for IconBar {
                             if has_event {
                                 self.view_ask_question(ctx)
                             }
-                            else{html!{
+                            else if !is_newevent_page {html!{
                             <Link<Route> to={Route::NewEvent}>
                                 <div class="createevent">
                                     {"Create Event"}
                                 </div>
                             </Link<Route>>
                             }}
+                            else{html!()}
                         }
                     </div>
                 </div>
