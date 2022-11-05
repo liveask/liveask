@@ -72,8 +72,6 @@ impl Agent for WebSocketAgent {
     fn update(&mut self, msg: Self::Message) {
         match msg {
             Msg::Connected => {
-                log::info!("ws connected");
-
                 self.connected = true;
                 self.reconnect_interval = None;
                 self.events.send(GlobalEvent::SocketStatus {
@@ -94,17 +92,14 @@ impl Agent for WebSocketAgent {
                 });
             }
             Msg::MessageReceived(res) => {
-                // log::info!("ws msg: {:?}", res);
                 self.respond_to_all(&WsResponse::Message(res));
             }
             Msg::Ping => {
                 if self.connected {
-                    log::info!("ws send ping");
                     self.ws.as_ref().map(|ws| ws.send_string("p"));
                 }
             }
             Msg::Reconnect => {
-                log::info!("ws reconnect timeout");
                 if self.reconnect_interval.is_some() && !self.connected {
                     self.connect();
                 }
@@ -126,7 +121,6 @@ impl Agent for WebSocketAgent {
                 }
             }
             SocketInput::Disconnect => {
-                log::info!("ws disconnect");
                 self.disconnect();
             }
         }

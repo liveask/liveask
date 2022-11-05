@@ -66,8 +66,6 @@ impl Component for Event {
     type Properties = Props;
 
     fn create(ctx: &Context<Self>) -> Self {
-        log::info!("event create");
-
         let event_id = ctx.props().id.clone();
         request_fetch(event_id.clone(), ctx.props().secret.clone(), ctx.link());
 
@@ -192,16 +190,12 @@ impl Component for Event {
                 false
             }
             Msg::Fetched(res) => {
-                log::info!("fetched");
-
                 //TODO: in subsequent fetches only update data if succesfully fetched
 
                 if matches!(
                     self.loading_state,
                     LoadingState::Loading | LoadingState::NotFound
                 ) {
-                    log::info!("fetched -> loading");
-
                     self.loading_state = if res.is_none() {
                         LoadingState::NotFound
                     } else {
@@ -236,8 +230,6 @@ impl Component for Event {
     }
 
     fn destroy(&mut self, _ctx: &Context<Self>) {
-        log::info!("event destroy");
-
         self.dispatch.reduce(|_| State::default());
         self._socket_agent.send(SocketInput::Disconnect);
     }
@@ -290,9 +282,8 @@ fn request_like(event: String, id: i64, like: bool, link: &html::Scope<Event>) {
     });
 }
 
+//TODO: dedup
 fn request_fetch(id: String, secret: Option<String>, link: &html::Scope<Event>) {
-    log::info!("request_fetch");
-
     link.send_future(async move {
         let res = fetch::fetch_event(BASE_API, id, secret).await;
 
@@ -579,8 +570,6 @@ impl Event {
     }
 
     fn init_event(&mut self) {
-        log::info!("event questions updated");
-
         use split_iter::Splittable;
 
         self.unanswered.clear();

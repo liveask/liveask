@@ -58,8 +58,6 @@ impl Component for Print {
 
 //TODO: un-dup
 fn request_fetch(id: String, link: &html::Scope<Print>) {
-    log::info!("request_fetch");
-
     link.send_future(async move {
         let res = fetch::fetch_event(BASE_API, id, None).await;
 
