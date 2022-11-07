@@ -15,15 +15,20 @@ pub enum Msg {
     ClickInside,
 }
 
-pub struct Popup {}
+pub struct Popup {
+    body: HtmlElement,
+}
 
 impl Component for Popup {
     type Message = Msg;
     type Properties = PopupProps;
 
     fn create(_ctx: &Context<Self>) -> Self {
-        toggle_modal(true);
-        Self {}
+        let body: HtmlElement = gloo_utils::document().body().expect("no body node found");
+
+        let result = Self { body };
+        result.toggle_modal(true);
+        result
     }
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
@@ -40,7 +45,7 @@ impl Component for Popup {
     }
 
     fn destroy(&mut self, _ctx: &Context<Self>) {
-        toggle_modal(false);
+        self.toggle_modal(false);
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
@@ -70,12 +75,12 @@ impl Component for Popup {
     }
 }
 
-fn toggle_modal(enable: bool) {
-    let body: HtmlElement = gloo_utils::document().body().expect("no body node found");
-
-    if enable {
-        body.class_list().add_1("modal-open").unwrap();
-    } else {
-        body.class_list().remove_1("modal-open").unwrap();
+impl Popup {
+    fn toggle_modal(&self, enable: bool) {
+        if enable {
+            self.body.class_list().add_1("modal-open").unwrap();
+        } else {
+            self.body.class_list().remove_1("modal-open").unwrap();
+        }
     }
 }
