@@ -156,6 +156,12 @@ impl WebSocketAgent {
 
     fn disconnect(&mut self) {
         self.connected = false;
+        if let Some(client) = &mut self.ws {
+            client.set_on_error(None);
+            client.set_on_connection(None);
+            client.set_on_close(None);
+            client.set_on_message(None);
+        }
         self.ws = None;
     }
 
