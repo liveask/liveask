@@ -3,6 +3,7 @@
 ## 2.0 (relaunch based on yew)
 
 - [ ] CD based on tags/branch, use cargo version?
+- [ ] exchange env based stuff: sentry, metrical, fathom
 
 ## 2.1 (missing non escential features)
 
@@ -18,6 +19,7 @@
 - [ ] footer on each page
 - [ ] refactoring: break down event into sub components
 - [ ] show "create event" in closed events like the example
+- [ ] deploy robots.txt correctly
 
 ## 2.2 - future work
 
