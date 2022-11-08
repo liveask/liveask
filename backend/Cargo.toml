@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1.0"
+async-trait = "0.1"
 aws-config = "0.51"
 aws-sdk-dynamodb = "0.21"
 axum = { version = "0.5", features = ["ws"] }

@@ -1,4 +1,5 @@
 mod app;
+mod eventsdb;
 mod handle;
 mod mail;
 
@@ -14,7 +15,8 @@ use axum::{
     routing::{get, post},
     Extension, Router,
 };
-use std::net::SocketAddr;
+use eventsdb::InMemoryEventsDB;
+use std::{net::SocketAddr, sync::Arc};
 use tower_http::{cors::CorsLayer, trace::TraceLayer};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
@@ -96,7 +98,7 @@ async fn main() {
 
     test_aws().await;
 
-    let app = App::new();
+    let app = App::new(Arc::new(InMemoryEventsDB::default()));
 
     #[rustfmt::skip]
     let mod_routes = Router::new()
