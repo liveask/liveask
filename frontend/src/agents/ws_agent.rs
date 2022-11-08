@@ -81,15 +81,19 @@ impl Agent for WebSocketAgent {
                 self.respond_to_all(&WsResponse::Ready);
             }
             Msg::Disconnected => {
+                let do_reconnect = self.connected;
+
                 self.disconnect();
                 self.respond_to_all(&WsResponse::Disconnected);
 
-                let duration = self.set_reconnect();
+                if do_reconnect {
+                    let duration = self.set_reconnect();
 
-                self.events.send(GlobalEvent::SocketStatus {
-                    connected: false,
-                    timeout_secs: Some(duration.num_seconds()),
-                });
+                    self.events.send(GlobalEvent::SocketStatus {
+                        connected: false,
+                        timeout_secs: Some(duration.num_seconds()),
+                    });
+                }
             }
             Msg::MessageReceived(res) => {
                 self.respond_to_all(&WsResponse::Message(res));
@@ -155,11 +159,14 @@ impl WebSocketAgent {
     }
 
     fn disconnect(&mut self) {
+        // log::info!("ws disconnect");
+
         self.connected = false;
         if let Some(client) = &mut self.ws {
             client.set_on_error(None);
             client.set_on_connection(None);
-            client.set_on_close(None);
+            //Note: doing this will lead to borrow panics
+            // client.set_on_close(None);
             client.set_on_message(None);
         }
         self.ws = None;
