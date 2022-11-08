@@ -1,0 +1,41 @@
+version: '2.2'
+services:
+
+  ddb:
+    image: dwmkerr/dynamodb
+    restart: unless-stopped
+    ports:
+      - 8000:8000
+    volumes:
+      - ./db:/var/lib/db
+    command: -port 8000 -sharedDb -dbPath /var/lib/db
+
+  dbadmin:
+    image: aaronshaf/dynamodb-admin
+    ports:
+      - 8800:8800
+    command:
+      - "node"
+      - "bin/dynamodb-admin.js"
+      - "-p 8800"
+    depends_on:
+      - ddb
+    environment:
+      - DYNAMO_ENDPOINT=ddb:8000
+
+  redis:
+    image: redis:alpine
+    restart: unless-stopped
+    ports:
+      - 6379:6379
+    command: redis-server --appendonly yes
+
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    restart: unless-stopped
+    ports:
+      - 8081:8081
+    depends_on:
+      - redis
+    environment:
+      - REDIS_HOSTS=local:redis:6379
