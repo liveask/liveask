@@ -414,6 +414,8 @@ dependencies = [
  "futures-util",
  "mailjet-rs",
  "reqwest",
+ "serde",
+ "serde_json",
  "shared",
  "tinyurl-rs",
  "tokio",

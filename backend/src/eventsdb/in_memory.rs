@@ -1,4 +1,4 @@
-use super::{EventEntry, EventsDB};
+use super::{event_key, EventEntry, EventsDB};
 use anyhow::Result;
 use async_trait::async_trait;
 use std::{collections::HashMap, sync::Arc};
@@ -16,7 +16,7 @@ impl EventsDB for InMemoryEventsDB {
     async fn get(&self, key: &str) -> Result<EventEntry> {
         let db = self.db.lock().await;
 
-        let key = key.to_string();
+        let key = event_key(key);
 
         db.get(&key)
             .cloned()
@@ -25,9 +25,11 @@ impl EventsDB for InMemoryEventsDB {
 
     #[instrument(skip(self), err)]
     async fn put(&self, event: EventEntry) -> Result<()> {
+        let key = event_key(&event.event.tokens.public_token);
+
         let mut db = self.db.lock().await;
 
-        if let Some(db_event) = db.get_mut(&event.event.tokens.public_token) {
+        if let Some(db_event) = db.get_mut(&key) {
             if event.version <= db_event.version {
                 anyhow::bail!("version mismatch, bump version before writing it back to db");
             }
