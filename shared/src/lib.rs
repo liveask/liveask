@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
 pub use validation::{CreateEventErrors, ValidationError};
 
-#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Default)]
 pub struct EventTokens {
     #[serde(rename = "publicToken")]
     pub public_token: String,
@@ -37,7 +37,7 @@ pub struct Item {
     pub create_time_unix: i64,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq)]
+#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, Default)]
 pub struct EventInfo {
     pub tokens: EventTokens,
     pub data: EventData,
@@ -87,9 +87,10 @@ pub struct ModQuestion {
 }
 
 ///
-#[derive(Serialize_repr, Deserialize_repr, Debug, Copy, Clone, Eq, PartialEq)]
+#[derive(Serialize_repr, Deserialize_repr, Debug, Copy, Clone, Eq, PartialEq, Default)]
 #[repr(u8)]
 pub enum States {
+    #[default]
     Open = 0,
     VotingOnly = 1,
     Closed = 2,
@@ -113,7 +114,7 @@ pub struct ModEventState {
     pub state: EventState,
 }
 
-#[derive(Serialize, Deserialize, Debug, Copy, Clone, Eq, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Copy, Clone, Eq, PartialEq, Default)]
 pub struct EventState {
     pub state: States,
 }

@@ -11,22 +11,27 @@ use tokio::sync::{mpsc, RwLock};
 use tracing::instrument;
 use ulid::Ulid;
 
-#[derive(Clone, Default, Debug)]
+use crate::{
+    env,
+    eventsdb::{EventEntry, EventsDB},
+};
+
+#[derive(Clone)]
 pub struct App {
-    events: Arc<RwLock<HashMap<String, EventInfo>>>,
+    eventsdb: Arc<dyn EventsDB>,
     channels: Arc<RwLock<HashMap<usize, (String, OutBoundChannel)>>>,
     base_url: String,
     tiny_url_token: String,
 }
 
 impl App {
-    pub fn new() -> Self {
+    pub fn new(eventsdb: Arc<dyn EventsDB>) -> Self {
         Self {
-            events: Default::default(),
+            eventsdb,
             channels: Default::default(),
-            base_url: std::env::var("BASE_URL")
+            base_url: std::env::var(env::ENV_BASE_URL)
                 .unwrap_or_else(|_| "https://www.live-ask.com".into()),
-            tiny_url_token: std::env::var("TINY_URL_TOKEN").unwrap_or_default(),
+            tiny_url_token: std::env::var(env::ENV_TINY_TOKEN).unwrap_or_default(),
         }
     }
 }
@@ -87,22 +92,15 @@ impl App {
         e.data.short_url = self.shorten_url(&url).await;
         e.data.long_url = Some(url);
 
-        self.events
-            .write()
-            .await
-            .insert(e.tokens.public_token.clone(), e.clone());
+        let result = e.clone();
 
-        Ok(e)
+        self.eventsdb.put(EventEntry::new(e)).await?;
+
+        Ok(result)
     }
 
     pub async fn get_event(&self, id: String, secret: Option<String>) -> Result<EventInfo> {
-        let mut e = self
-            .events
-            .read()
-            .await
-            .get(&id)
-            .ok_or_else(|| anyhow::anyhow!("ev not found"))?
-            .clone();
+        let mut e = self.eventsdb.get(&id).await?.event;
 
         if let Some(secret) = &secret {
             if e.tokens
@@ -138,13 +136,7 @@ impl App {
         secret: Option<String>,
         question_id: i64,
     ) -> Result<Item> {
-        let e = self
-            .events
-            .read()
-            .await
-            .get(&id)
-            .ok_or_else(|| anyhow::anyhow!("ev not found"))?
-            .clone();
+        let e = self.eventsdb.get(&id).await?.event;
 
         let can_see_hidden = e
             .tokens
@@ -179,30 +171,34 @@ impl App {
     ) -> Result<EventInfo> {
         tracing::info!("mod_edit_question: {:?}", state);
 
-        let mut events = self.events.write().await;
-        let e = events
-            .get_mut(&id)
-            .ok_or_else(|| anyhow::anyhow!("ev not found"))?;
-
-        if e.tokens
-            .moderator_token
-            .as_ref()
-            .map(|mod_token| mod_token != &secret)
-            .unwrap_or_default()
+        let mut entry = self.eventsdb.get(&id).await?;
         {
-            bail!("wrong mod token");
+            let e = &mut entry.event;
+
+            if e.tokens
+                .moderator_token
+                .as_ref()
+                .map(|mod_token| mod_token != &secret)
+                .unwrap_or_default()
+            {
+                bail!("wrong mod token");
+            }
+
+            let q = e
+                .questions
+                .iter_mut()
+                .find(|q| q.id == question_id)
+                .ok_or_else(|| anyhow::anyhow!("q not found"))?;
+
+            q.hidden = state.hide;
+            q.answered = state.answered;
         }
 
-        let q = e
-            .questions
-            .iter_mut()
-            .find(|q| q.id == question_id)
-            .ok_or_else(|| anyhow::anyhow!("q not found"))?;
+        entry.bump_version();
 
-        q.hidden = state.hide;
-        q.answered = state.answered;
+        let e = entry.event.clone();
 
-        let e = e.clone();
+        self.eventsdb.put(entry).await?;
 
         self.notify_subscribers(id, None).await;
 
@@ -215,14 +211,9 @@ impl App {
         secret: String,
         state: EventState,
     ) -> Result<EventInfo> {
-        let mut e = self
-            .events
-            .write()
-            .await
-            .get_mut(&id)
-            .ok_or_else(|| anyhow::anyhow!("ev not found"))?
-            .clone();
+        let mut entry = self.eventsdb.get(&id).await?.clone();
 
+        let e = &mut entry.event;
         if e.tokens
             .moderator_token
             .as_ref()
@@ -234,17 +225,21 @@ impl App {
 
         e.state = state;
 
+        let result = e.clone();
+
+        entry.bump_version();
+
+        self.eventsdb.put(entry).await?;
+
         self.notify_subscribers(id, None).await;
 
-        Ok(e)
+        Ok(result)
     }
 
     pub async fn delete_event(&self, id: String, secret: String) -> Result<()> {
-        let mut events = self.events.write().await;
+        let mut entry = self.eventsdb.get(&id).await?;
 
-        let e = events
-            .get_mut(&id)
-            .ok_or_else(|| anyhow::anyhow!("ev not found"))?;
+        let e = &mut entry.event;
 
         if e.tokens
             .moderator_token
@@ -257,19 +252,21 @@ impl App {
 
         e.deleted = true;
 
+        entry.bump_version();
+
+        self.eventsdb.put(entry).await?;
+
         self.notify_subscribers(id, None).await;
 
         Ok(())
     }
 
     pub async fn add_question(&self, id: String, question: shared::AddQuestion) -> Result<Item> {
-        let mut events = self.events.write().await;
+        let mut entry = self.eventsdb.get(&id).await?;
 
-        let question_id = events
-            .get(&id)
-            .ok_or_else(|| anyhow::anyhow!("ev not found"))?
-            .questions
-            .len() as i64;
+        let e = &mut entry.event;
+
+        let question_id = e.questions.len() as i64;
 
         let question = shared::Item {
             text: question.text,
@@ -280,11 +277,11 @@ impl App {
             likes: 1,
         };
 
-        events
-            .get_mut(&id)
-            .ok_or_else(|| anyhow::anyhow!("ev not found"))?
-            .questions
-            .push(question.clone());
+        e.questions.push(question.clone());
+
+        entry.bump_version();
+
+        self.eventsdb.put(entry).await?;
 
         self.notify_subscribers(id, Some(question_id)).await;
 
@@ -292,13 +289,9 @@ impl App {
     }
 
     pub async fn edit_like(&self, id: String, edit: shared::EditLike) -> Result<Item> {
-        let mut e = self
-            .events
-            .read()
-            .await
-            .get(&id)
-            .ok_or_else(|| anyhow::anyhow!("ev not found"))?
-            .clone();
+        let mut entry = self.eventsdb.get(&id).await?.clone();
+
+        let e = &mut entry.event;
 
         if let Some(f) = e.questions.iter_mut().find(|e| e.id == edit.question_id) {
             f.likes = if edit.like {
@@ -309,7 +302,9 @@ impl App {
 
             let res = f.clone();
 
-            self.events.write().await.insert(id, e.clone());
+            entry.bump_version();
+
+            self.eventsdb.put(entry).await?;
 
             Ok(res)
         } else {

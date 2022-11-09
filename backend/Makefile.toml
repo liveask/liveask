@@ -6,6 +6,7 @@ env_files = [
 
 [env]
 BASE_URL = "http://localhost:8080"
+DDB_LOCAL = 1
 
 [tasks.run]
 command = "cargo"

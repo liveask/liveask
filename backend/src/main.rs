@@ -1,16 +1,21 @@
 mod app;
+mod env;
+mod eventsdb;
 mod handle;
 mod mail;
 
+use aws_config::meta::region::RegionProviderChain;
+use aws_sdk_dynamodb::{Credentials, Endpoint};
 use axum::{
+    http::Uri,
     routing::{get, post},
     Extension, Router,
 };
-use std::net::SocketAddr;
+use std::{net::SocketAddr, sync::Arc};
 use tower_http::{cors::CorsLayer, trace::TraceLayer};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
-use crate::{app::App, handle::push_handler};
+use crate::{app::App, eventsdb::DynamoEventsDB, handle::push_handler};
 
 #[cfg(not(debug_assertions))]
 fn setup_cors() -> CorsLayer {
@@ -23,6 +28,39 @@ fn setup_cors() -> CorsLayer {
     CorsLayer::very_permissive()
 }
 
+fn use_local_db() -> bool {
+    std::env::var(env::ENV_DB_LOCAL).is_ok()
+}
+
+async fn dynamo_client() -> aws_sdk_dynamodb::Client {
+    use aws_sdk_dynamodb::Client;
+
+    let region_provider = RegionProviderChain::default_provider().or_else("us-west-1");
+    let config = aws_config::from_env().region(region_provider);
+
+    let config = if use_local_db() {
+        let url = if let Ok(env) = std::env::var(env::ENV_DB_URL) {
+            env
+        } else {
+            "http://localhost:8000".into()
+        };
+
+        tracing::info!("ddb url: {}", url);
+
+        config
+            .credentials_provider(Credentials::new("aid", "sid", None, None, "local"))
+            .endpoint_resolver(Endpoint::immutable(Uri::from_static(
+                "http://localhost:8000",
+            )))
+    } else {
+        config
+    };
+
+    let config = config.load().await;
+
+    Client::new(&config)
+}
+
 #[tokio::main]
 async fn main() {
     tracing_subscriber::registry()
@@ -32,7 +70,9 @@ async fn main() {
         .with(tracing_subscriber::fmt::layer())
         .init();
 
-    let app = App::new();
+    let app = App::new(Arc::new(
+        DynamoEventsDB::new(dynamo_client().await).await.unwrap(),
+    ));
 
     #[rustfmt::skip]
     let mod_routes = Router::new()
