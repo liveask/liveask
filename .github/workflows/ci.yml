@@ -53,10 +53,15 @@ jobs:
       run: |
         which wasm-bindgen-test-runner || cargo install wasm-bindgen-cli
 
-    - name: Check
+    - name: Check FE
       run: |
         cd frontend
         cargo make la-check
+
+    - name: Check BE
+      run: |
+        cd backend
+        cargo make check
 
     - name: Test
       run: |
