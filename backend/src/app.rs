@@ -100,7 +100,7 @@ impl App {
     }
 
     pub async fn get_event(&self, id: String, secret: Option<String>) -> Result<EventInfo> {
-        let mut e = self.eventsdb.get(&id).await?.clone().event;
+        let mut e = self.eventsdb.get(&id).await?.event;
 
         if let Some(secret) = &secret {
             if e.tokens
@@ -136,7 +136,7 @@ impl App {
         secret: Option<String>,
         question_id: i64,
     ) -> Result<Item> {
-        let e = self.eventsdb.get(&id).await?.clone().event;
+        let e = self.eventsdb.get(&id).await?.event;
 
         let can_see_hidden = e
             .tokens

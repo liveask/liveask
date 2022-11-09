@@ -27,13 +27,13 @@ impl EventsDB for DynamoEventsDB {
             .db
             .get_item()
             .table_name(&self.table)
-            .key("key", AttributeValue::S(key.into()))
+            .key("key", AttributeValue::S(key))
             .send()
             .await?;
 
         let item = res.item().unwrap();
 
-        let version = item["v".into()].as_n().unwrap().parse::<usize>()?;
+        let version = item["v"].as_n().unwrap().parse::<usize>()?;
 
         let value = item["value"].as_s().unwrap();
 
