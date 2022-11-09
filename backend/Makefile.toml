@@ -12,6 +12,10 @@ DDB_LOCAL = 1
 command = "cargo"
 args = ["r"]
 
+[tasks.check]
+command = "cargo"
+args = ["clippy"]
+
 [tasks.run-release]
 command = "cargo"
 args = ["r","--release"]

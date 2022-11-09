@@ -1,3 +1,5 @@
+#![deny(clippy::unwrap_used)]
+
 mod app;
 mod env;
 mod eventsdb;
@@ -62,7 +64,7 @@ async fn dynamo_client() -> aws_sdk_dynamodb::Client {
 }
 
 #[tokio::main]
-async fn main() {
+async fn main() -> anyhow::Result<()> {
     tracing_subscriber::registry()
         .with(tracing_subscriber::EnvFilter::new(
             std::env::var("RUST_LOG").unwrap_or_else(|_| "backend=debug,tower_http=debug".into()),
@@ -70,9 +72,7 @@ async fn main() {
         .with(tracing_subscriber::fmt::layer())
         .init();
 
-    let app = App::new(Arc::new(
-        DynamoEventsDB::new(dynamo_client().await).await.unwrap(),
-    ));
+    let app = App::new(Arc::new(DynamoEventsDB::new(dynamo_client().await).await?));
 
     #[rustfmt::skip]
     let mod_routes = Router::new()
@@ -102,6 +102,7 @@ async fn main() {
 
     axum::Server::bind(&addr)
         .serve(router.into_make_service())
-        .await
-        .unwrap();
+        .await?;
+
+    Ok(())
 }

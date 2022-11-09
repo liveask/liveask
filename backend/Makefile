@@ -5,3 +5,6 @@ test-create-event:
 
 run:
 	cargo make run
+
+check:
+	cargo make check

@@ -20,7 +20,7 @@ pub struct DynamoEventsDB {
 #[async_trait]
 impl EventsDB for DynamoEventsDB {
     #[instrument(skip(self), err)]
-    async fn get(&self, key: &str) -> Result<EventEntry> {
+    async fn get(&self, key: &str) -> anyhow::Result<EventEntry> {
         let key = event_key(key);
 
         let res = self
@@ -31,11 +31,18 @@ impl EventsDB for DynamoEventsDB {
             .send()
             .await?;
 
-        let item = res.item().unwrap();
+        let item = res
+            .item()
+            .ok_or_else(|| anyhow::anyhow!("event not found"))?;
 
-        let version = item["v"].as_n().unwrap().parse::<usize>()?;
+        let version = item["v"]
+            .as_n()
+            .map_err(|_| anyhow::anyhow!("malformed event: v"))?
+            .parse::<usize>()?;
 
-        let value = item["value"].as_s().unwrap();
+        let value = item["value"]
+            .as_s()
+            .map_err(|_| anyhow::anyhow!("malformed event: value"))?;
 
         let event: EventInfo = serde_json::from_str(value)?;
 
@@ -73,7 +80,7 @@ const DB_TABLE_NAME: &str = "liveask";
 
 impl DynamoEventsDB {
     pub async fn new(db: aws_sdk_dynamodb::Client) -> Result<Self> {
-        let resp = db.list_tables().send().await.unwrap();
+        let resp = db.list_tables().send().await?;
         let names = resp.table_names().unwrap_or_default();
 
         tracing::trace!("tables: {}", names.join(","));
@@ -81,7 +88,7 @@ impl DynamoEventsDB {
         if !names.contains(&DB_TABLE_NAME.into()) {
             tracing::info!("table not found, creating now");
 
-            create_table(&db, DB_TABLE_NAME.into(), "key".into()).await;
+            create_table(&db, DB_TABLE_NAME.into(), "key".into()).await?;
         }
 
         Ok(Self {
@@ -91,8 +98,11 @@ impl DynamoEventsDB {
     }
 }
 
-//TODO: error handling
-async fn create_table(client: &aws_sdk_dynamodb::Client, table_name: String, key_name: String) {
+async fn create_table(
+    client: &aws_sdk_dynamodb::Client,
+    table_name: String,
+    key_name: String,
+) -> Result<()> {
     let ad = AttributeDefinition::builder()
         .attribute_name(&key_name)
         .attribute_type(ScalarAttributeType::S)
@@ -115,6 +125,7 @@ async fn create_table(client: &aws_sdk_dynamodb::Client, table_name: String, key
         .key_schema(ks)
         .provisioned_throughput(pt)
         .send()
-        .await
-        .unwrap();
+        .await?;
+
+    Ok(())
 }

@@ -52,7 +52,7 @@ impl App {
         let res = tiny
             .create(CreateRequest::new(url.to_string()))
             .await
-            .map(|res| res.data.unwrap().tiny_url)
+            .map(|res| res.data.map(|url| url.tiny_url).unwrap_or_default())
             .unwrap_or_default();
 
         tracing::info!("tiny url: '{}' (in {}ms)", res, now.elapsed().as_millis());
@@ -157,7 +157,7 @@ impl App {
             bail!("q not found")
         }
 
-        self.notify_subscribers(id, None).await;
+        self.notify_subscribers(id, None).await?;
 
         Ok(q)
     }
@@ -200,7 +200,7 @@ impl App {
 
         self.eventsdb.put(entry).await?;
 
-        self.notify_subscribers(id, None).await;
+        self.notify_subscribers(id, None).await?;
 
         Ok(e)
     }
@@ -231,7 +231,7 @@ impl App {
 
         self.eventsdb.put(entry).await?;
 
-        self.notify_subscribers(id, None).await;
+        self.notify_subscribers(id, None).await?;
 
         Ok(result)
     }
@@ -256,7 +256,7 @@ impl App {
 
         self.eventsdb.put(entry).await?;
 
-        self.notify_subscribers(id, None).await;
+        self.notify_subscribers(id, None).await?;
 
         Ok(())
     }
@@ -283,7 +283,7 @@ impl App {
 
         self.eventsdb.put(entry).await?;
 
-        self.notify_subscribers(id, Some(question_id)).await;
+        self.notify_subscribers(id, Some(question_id)).await?;
 
         Ok(question)
     }
@@ -370,7 +370,7 @@ impl App {
         sender
     }
 
-    async fn notify_subscribers(&self, event_id: String, question_id: Option<i64>) {
+    async fn notify_subscribers(&self, event_id: String, question_id: Option<i64>) -> Result<()> {
         let channels = self.channels.clone();
 
         let msg = if let Some(q) = question_id {
@@ -386,10 +386,13 @@ impl App {
                 .iter()
                 .filter(|(_, (id, _))| id == &event_id)
             {
-                c.send(Ok(msg.clone())).unwrap();
+                if let Err(e) = c.send(Ok(msg.clone())) {
+                    tracing::error!("pubsub send error: {}", e);
+                }
             }
         })
-        .await
-        .unwrap();
+        .await?;
+
+        Ok(())
     }
 }
