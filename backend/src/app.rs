@@ -11,7 +11,10 @@ use tokio::sync::{mpsc, RwLock};
 use tracing::instrument;
 use ulid::Ulid;
 
-use crate::eventsdb::{EventEntry, EventsDB};
+use crate::{
+    env,
+    eventsdb::{EventEntry, EventsDB},
+};
 
 #[derive(Clone)]
 pub struct App {
@@ -26,9 +29,9 @@ impl App {
         Self {
             eventsdb,
             channels: Default::default(),
-            base_url: std::env::var("BASE_URL")
+            base_url: std::env::var(env::ENV_BASE_URL)
                 .unwrap_or_else(|_| "https://www.live-ask.com".into()),
-            tiny_url_token: std::env::var("TINY_URL_TOKEN").unwrap_or_default(),
+            tiny_url_token: std::env::var(env::ENV_TINY_TOKEN).unwrap_or_default(),
         }
     }
 }
