@@ -46,18 +46,22 @@ impl EventsDB for DynamoEventsDB {
     async fn put(&self, event: EventEntry) -> Result<()> {
         let event_av = AttributeValue::S(serde_json::to_string(&event.event)?);
         let version_av = AttributeValue::N(event.version.to_string());
-        let old_version_av = AttributeValue::N((event.version - 1).to_string());
         let key_av = AttributeValue::S(event_key(&event.event.tokens.public_token));
 
-        let request = self
+        let mut request = self
             .db
             .put_item()
             .table_name(&self.table)
-            .condition_expression("v = :ver")
-            .expression_attribute_values(":ver", old_version_av)
             .item("key", key_av)
             .item("v", version_av)
             .item("value", event_av);
+
+        if event.version > 0 {
+            let old_version_av = AttributeValue::N(event.version.saturating_sub(1).to_string());
+            request = request
+                .condition_expression("v = :ver")
+                .expression_attribute_values(":ver", old_version_av);
+        }
 
         let _resp = request.send().await?;
 
