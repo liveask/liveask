@@ -1,11 +1,9 @@
-# TODO
-
-## 2.0 (relaunch based on yew)
+# 2.0 (relaunch based on yew)
 
 - [ ] CD based on tags/branch, use cargo version?
 - [ ] exchange env based stuff: sentry, metrical, fathom
 
-## 2.1 (missing non escential features)
+# 2.1 (missing non escential features)
 
 - [ ] tutorial
 - [ ] autosize question/event-desc. textarea
@@ -21,15 +19,7 @@
 - [ ] show "create event" in closed events like the example
 - [ ] deploy robots.txt correctly
 
-## 2.2 - future work
+# 2.2 - future work
 
 - [ ] do not show sms button on PC
 - [ ] do not show hand on non-clickable questions vote bubble
-
-# analytics
-
-## active
-* https://app.metrical.xyz/a/2LaPi-sYg/current
-* https://app.usefathom.com/?page=1&range=today&site=OAMRSQQM
-
-see https://github.com/newTendermint/awesome-analytics#privacy-focused-analytics
