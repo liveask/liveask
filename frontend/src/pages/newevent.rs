@@ -175,12 +175,10 @@ impl NewEvent {
         match self.errors.desc {
             Some(ValidationError::Empty) => Some("Description cannot be empty".to_string()),
             Some(ValidationError::MinLength(len, max)) => Some(format!(
-                "Description must be at least {} characters long. ({})",
-                max, len
+                "Description must be at least {max} characters long. ({len}/{max})",
             )),
             Some(ValidationError::MaxLength(_, max)) => Some(format!(
-                "Description cannot be longer than {} characters.",
-                max
+                "Description cannot be longer than {max} characters.",
             )),
             Some(_) => Some("unknown error".to_string()),
             None => None,
@@ -191,14 +189,13 @@ impl NewEvent {
         match self.errors.name {
             Some(ValidationError::Empty) => Some("Name is required.".to_string()),
             Some(ValidationError::MinLength(len, max)) => Some(format!(
-                "Name must be at least {} characters long. ({})",
-                max, len
+                "Name must be at least {max} characters long. ({len}/{max})"
             )),
             Some(ValidationError::MaxLength(_, max)) => {
-                Some(format!("Name cannot be longer than {} characters.", max))
+                Some(format!("Name cannot be longer than {max} characters."))
             }
             Some(ValidationError::MaxWords(_, max)) => {
-                Some(format!("Name must not contain more than {} words.", max))
+                Some(format!("Name must not contain more than {max} words."))
             }
             None => None,
         }
