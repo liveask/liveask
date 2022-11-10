@@ -50,7 +50,7 @@ jobs:
     - name: Build
       run: |
         cd frontend
-        cargo make build-and-check
+        IS_BETA=1 cargo make build-and-check
 
     - name: Deploy
       env:
