@@ -1,7 +1,6 @@
 # 2.0 (relaunch based on yew)
 
 - [ ] CD based on tags/branch, use cargo version?
-- [ ] use correct api endpoint based on env
 
 # 2.1 (missing non essential features)
 
@@ -18,6 +17,7 @@
 - [ ] refactoring: break down event into sub components
 - [ ] show "create event" in closed events like the example
 - [ ] deploy robots.txt correctly
+- [ ] use correct api endpoint based on env
 
 # 2.2 - future work
 
