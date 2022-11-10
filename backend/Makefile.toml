@@ -1,9 +1,5 @@
 # https://sagiegurari.github.io/cargo-make
 
-env_files = [
-    "./default.env"
-]
-
 [env]
 BASE_URL = "http://localhost:8080"
 DDB_LOCAL = 1
@@ -19,4 +15,3 @@ args = ["clippy"]
 [tasks.run-release]
 command = "cargo"
 args = ["r","--release"]
-
