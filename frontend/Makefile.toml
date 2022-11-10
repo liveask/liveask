@@ -2,6 +2,8 @@
 
 [env]
 RUSTFLAGS="--cfg=web_sys_unstable_apis"
+# IS_PROD = "1"
+# IS_BETA = "1"
 
 [tasks.cargo-check]
 command = "cargo"

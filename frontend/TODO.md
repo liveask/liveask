@@ -1,7 +1,7 @@
 # 2.0 (relaunch based on yew)
 
 - [ ] CD based on tags/branch, use cargo version?
-- [ ] exchange env based stuff: sentry, metrical, fathom
+- [ ] use correct api endpoint based on env
 
 # 2.1 (missing non essential features)
 

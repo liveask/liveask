@@ -51,3 +51,6 @@ features = [
 
 [dev-dependencies]
 wasm-bindgen-test = "0.3.0"
+
+[build-dependencies]
+handlebars = "4.3"
