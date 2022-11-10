@@ -3,7 +3,7 @@
 - [ ] CD based on tags/branch, use cargo version?
 - [ ] exchange env based stuff: sentry, metrical, fathom
 
-# 2.1 (missing non escential features)
+# 2.1 (missing non essential features)
 
 - [ ] tutorial
 - [ ] autosize question/event-desc. textarea
