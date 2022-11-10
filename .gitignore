@@ -1,4 +1,2 @@
 .DS_Store
 target/
-backend/default.env
-backend/db/shared-local-instance.db
