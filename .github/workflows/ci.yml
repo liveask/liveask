@@ -12,13 +12,14 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  frontend:
+  build:
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]
         rust: [nightly, stable]
     runs-on: ${{ matrix.os }}
+    # nightly is ok to fail
     continue-on-error: ${{ matrix.rust == 'nightly' }}
 
     steps:
