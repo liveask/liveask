@@ -1,18 +1,12 @@
-name: Beta CD
+name: FE Prod CD
 
 on:
-  push:
-    branches: [ main ]
   workflow_dispatch:
-    branches: [ '*' ]
-
-env:
-  CARGO_TERM_COLOR: always
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    environment: beta
+    environment: prod
 
     steps:
     - uses: actions/checkout@v2
@@ -36,7 +30,6 @@ jobs:
         target: wasm32-unknown-unknown
         default: true
         profile: minimal
-        components: clippy
 
     - name: Install cargo-make
       run: |
@@ -49,10 +42,10 @@ jobs:
 
     - name: Build
       env:
-        IS_BETA: 1
+        IS_PROD: 1
       run: |
         cd frontend
-        #TODO: un-dupe once we have a better solution to 
+        #TODO: un-dupe once we have a better solution to change FE configs
         cargo make cargo-check
         cargo make build-and-check
 
@@ -63,6 +56,6 @@ jobs:
         AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
       run: |
         cd frontend/dist
-        aws s3 sync . s3://beta.live-ask.com --acl public-read --no-progress --delete --cache-control "public, max-age=5184000" --exclude index.html
-        aws s3 cp ./index.html s3://beta.live-ask.com --acl public-read --no-progress --cache-control "public, max-age=21600"
-        aws cloudfront create-invalidation --distribution-id EJFNBPSNYQSP9 --paths /index.html
+        aws s3 sync . s3://www.live-ask.com --no-progress --delete --cache-control "public, max-age=5184000" --exclude index.html
+        aws s3 cp ./index.html s3://www.live-ask.com --no-progress --cache-control "public, max-age=21600"
+        aws cloudfront create-invalidation --distribution-id E3VSL6KHSMRDI2 --paths /index.html
