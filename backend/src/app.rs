@@ -22,17 +22,23 @@ pub struct App {
     eventsdb: Arc<dyn EventsDB>,
     channels: Arc<RwLock<HashMap<usize, (String, OutBoundChannel)>>>,
     base_url: String,
-    tiny_url_token: String,
+    tiny_url_token: Option<String>,
 }
 
 impl App {
     pub fn new(eventsdb: Arc<dyn EventsDB>) -> Self {
+        let tiny_url_token = std::env::var(env::ENV_TINY_TOKEN).ok();
+
+        if tiny_url_token.is_none() {
+            tracing::warn!("no url shorten token set, use `ENV_TINY_TOKEN` to do so");
+        }
+
         Self {
             eventsdb,
             channels: Default::default(),
             base_url: std::env::var(env::ENV_BASE_URL)
                 .unwrap_or_else(|_| "https://www.live-ask.com".into()),
-            tiny_url_token: std::env::var(env::ENV_TINY_TOKEN).unwrap_or_default(),
+            tiny_url_token,
         }
     }
 }
@@ -45,20 +51,26 @@ type OutBoundChannel =
 impl App {
     #[instrument(skip(self))]
     async fn shorten_url(&self, url: &str) -> String {
-        let tiny = TinyUrlAPI {
-            token: self.tiny_url_token.clone(),
-        };
+        if let Some(tiny_url_token) = &self.tiny_url_token {
+            let tiny = TinyUrlAPI {
+                token: tiny_url_token.clone(),
+            };
 
-        let now = Instant::now();
-        let res = tiny
-            .create(CreateRequest::new(url.to_string()))
-            .await
-            .map(|res| res.data.map(|url| url.tiny_url).unwrap_or_default())
-            .unwrap_or_default();
+            let now = Instant::now();
+            let res = tiny
+                .create(CreateRequest::new(url.to_string()))
+                .await
+                .map(|res| res.data.map(|url| url.tiny_url).unwrap_or_default())
+                .unwrap_or_default();
 
-        tracing::info!("tiny url: '{}' (in {}ms)", res, now.elapsed().as_millis());
+            tracing::info!("tiny url: '{}' (in {}ms)", res, now.elapsed().as_millis());
 
-        res
+            res
+        } else {
+            tracing::warn!("no url shorten token set");
+
+            url.to_owned()
+        }
     }
 
     #[instrument(skip(self, request))]

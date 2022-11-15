@@ -1,8 +1,7 @@
 
 # 2.0 rust rewrite
 
-- [ ] allow turning off url shortener
-- [ ] mailjet integration
+- [ ] mailjet integration, allow disabling
 - [ ] websocket support
 - [ ] run e2e local in CI
 - [ ] build docker image in CI
