@@ -4,7 +4,6 @@
 - [ ] websocket warn on receive ping
 - [ ] pubsub support
 - [ ] run e2e-local in CI
-- [ ] build docker image in CI
 - [ ] spin up beta env 
 
 # beyond
