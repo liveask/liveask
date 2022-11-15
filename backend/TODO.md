@@ -1,7 +1,6 @@
 
 # 2.0 rust rewrite
 
-- [ ] mailjet integration, allow disabling
 - [ ] websocket support
 - [ ] run e2e local in CI
 - [ ] build docker image in CI

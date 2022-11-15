@@ -14,6 +14,7 @@ use ulid::Ulid;
 use crate::{
     env,
     eventsdb::{EventEntry, EventsDB},
+    mail::MailjetConfig,
     utils::{format_timestamp, timestamp_now},
 };
 
@@ -23,6 +24,7 @@ pub struct App {
     channels: Arc<RwLock<HashMap<usize, (String, OutBoundChannel)>>>,
     base_url: String,
     tiny_url_token: Option<String>,
+    mailjet_config: Option<MailjetConfig>,
 }
 
 impl App {
@@ -33,12 +35,20 @@ impl App {
             tracing::warn!("no url shorten token set, use `ENV_TINY_TOKEN` to do so");
         }
 
+        let mailjet_config = MailjetConfig::new();
+
+        match mailjet_config {
+            Some(_) => tracing::info!("mail configured"),
+            None => tracing::warn!("mail not configured"),
+        };
+
         Self {
             eventsdb,
             channels: Default::default(),
             base_url: std::env::var(env::ENV_BASE_URL)
                 .unwrap_or_else(|_| "https://www.live-ask.com".into()),
             tiny_url_token,
+            mailjet_config,
         }
     }
 }
@@ -86,6 +96,8 @@ impl App {
 
         let now = timestamp_now();
 
+        let mod_token = Ulid::new().to_string();
+
         let mut e = EventInfo {
             create_time_unix: now,
             delete_time_unix: 0,
@@ -99,7 +111,7 @@ impl App {
             data: request.data,
             tokens: EventTokens {
                 public_token: Ulid::new().to_string(),
-                moderator_token: Some(Ulid::new().to_string()),
+                moderator_token: Some(mod_token.clone()),
             },
         };
 
@@ -111,6 +123,17 @@ impl App {
         let result = e.clone();
 
         self.eventsdb.put(EventEntry::new(e)).await?;
+
+        self.send_mail(
+            request.moderator_email,
+            result.data.name.clone(),
+            result.data.short_url.clone(),
+            format!(
+                "{}/eventmod/{}/{}",
+                self.base_url, result.tokens.public_token, mod_token
+            ),
+        )
+        .await;
 
         Ok(result)
     }
@@ -416,5 +439,32 @@ impl App {
         .await?;
 
         Ok(())
+    }
+
+    async fn send_mail(
+        &self,
+        receiver: String,
+        event_name: String,
+        public_link: String,
+        mod_link: String,
+    ) {
+        if receiver.trim().is_empty() {
+            return;
+        }
+
+        if let Some(mail) = self.mailjet_config.clone() {
+            tracing::debug!("mail sending to: {receiver}");
+
+            tokio::spawn(async move {
+                if let Err(e) = mail
+                    .send_mail(receiver.clone(), event_name, public_link, mod_link)
+                    .await
+                {
+                    tracing::error!("mail send error: {e}");
+                }
+            });
+        } else {
+            tracing::warn!("mail not send: not configured");
+        }
     }
 }

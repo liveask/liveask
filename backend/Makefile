@@ -7,7 +7,7 @@ docker-compose:
 	docker compose -f docker-compose.local.yml up
 
 run:
-	cargo make run --env-file=./env/local.env
+	cargo make --env-file=env/local.env run
 
 check:
-	cargo make check --env-file=./env/local.env
+	cargo make check

@@ -3,51 +3,75 @@ use mailjet_rs::v3::Message;
 use mailjet_rs::{Client, SendAPIVersion};
 use mailjet_rs::{Map, Value};
 
+use crate::env;
+
+#[derive(Clone, Debug)]
 pub struct MailJetCredentials {
     pub public_key: String,
     pub private_key: String,
 }
 
-#[allow(dead_code)]
-async fn send_mail(
-    receiver: String,
-    event_name: String,
-    public_link: String,
-    mod_link: String,
-    mailjet_template_id: usize, //std::env::var("MAILJET_TEMPLATE_ID").unwrap().parse::<usize>().unwrap()
-    //TODO:
-    //std::env::var("MAILJET_KEY").unwrap()
-    //std::env::var("MAILJET_SECRET").unwrap()
-    mailjet_credentials: MailJetCredentials,
-) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    let client = Client::new(
-        SendAPIVersion::V3,
-        &mailjet_credentials.public_key,
-        &mailjet_credentials.private_key,
-    );
+#[derive(Clone, Debug)]
+pub struct MailjetConfig {
+    pub credentials: MailJetCredentials,
+    pub template_id: usize,
+}
 
-    // Create your a `Message` instance with the minimum required values
-    let mut message = Message::new(
-        "mail@live-ask.com",
-        "liveask",
-        Some("New Event Created".to_string()),
-        None,
-    );
-    message.push_recipient(Recipient::new(&receiver));
+impl MailjetConfig {
+    pub fn new() -> Option<Self> {
+        let template_id = std::env::var(env::ENV_MAILJET_TEMPLATE_ID)
+            .ok()?
+            .parse::<usize>()
+            .ok()?;
 
-    message.set_template_id(mailjet_template_id);
+        let key = std::env::var(env::ENV_MAILJET_KEY).ok()?;
+        let secret = std::env::var(env::ENV_MAILJET_SECRET).ok()?;
 
-    let mut vars = Map::new();
+        Some(Self {
+            template_id,
+            credentials: MailJetCredentials {
+                public_key: key,
+                private_key: secret,
+            },
+        })
+    }
 
-    vars.insert(String::from("eventname"), Value::from(event_name));
-    vars.insert(String::from("publiclink"), Value::from(public_link));
-    vars.insert(String::from("moderatorlink"), Value::from(mod_link));
+    pub async fn send_mail(
+        &self,
+        receiver: String,
+        event_name: String,
+        public_link: String,
+        mod_link: String,
+    ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let client = Client::new(
+            SendAPIVersion::V3,
+            &self.credentials.public_key,
+            &self.credentials.private_key,
+        );
 
-    message.vars = Some(vars);
+        // Create your a `Message` instance with the minimum required values
+        let mut message = Message::new(
+            "mail@live-ask.com",
+            "liveask",
+            Some("New Event Created".to_string()),
+            None,
+        );
+        message.push_recipient(Recipient::new(&receiver));
 
-    let response = client.send(message).await;
+        message.set_template_id(self.template_id);
 
-    tracing::debug!("mailjet response: {:?}", response);
+        let mut vars = Map::new();
 
-    Ok(())
+        vars.insert(String::from("eventname"), Value::from(event_name));
+        vars.insert(String::from("publiclink"), Value::from(public_link));
+        vars.insert(String::from("moderatorlink"), Value::from(mod_link));
+
+        message.vars = Some(vars);
+
+        let response = client.send(message).await;
+
+        tracing::debug!("mailjet response: {:?}", response);
+
+        Ok(())
+    }
 }
