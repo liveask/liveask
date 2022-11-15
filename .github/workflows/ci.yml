@@ -90,13 +90,12 @@ jobs:
           ~/.cargo/git
           ~/.cargo/bin
           target
-        key: ${{ matrix.os }}-${{ env.cache-name }}-${{ matrix.rust }}-${{ hashFiles('Cargo.lock') }}
+        key: ${{ env.cache-name }}-${{ hashFiles('Cargo.lock') }}
 
     - name: Install Rust
       uses: actions-rs/toolchain@v1
       with:
-        toolchain: ${{ matrix.rust }}
-        target: wasm32-unknown-unknown
+        toolchain: stable
         default: true
         profile: minimal
 
