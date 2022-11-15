@@ -1,4 +1,4 @@
-name: ci
+name: e2e
 
 on:
   schedule:
@@ -12,14 +12,13 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  build:
+  backend-e2e:
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]
-        rust: [nightly, stable]
+        rust: [stable]
     runs-on: ${{ matrix.os }}
-    # nightly is ok to fail
     continue-on-error: ${{ matrix.rust == 'nightly' }}
 
     steps:
@@ -35,41 +34,16 @@ jobs:
           ~/.cargo/git
           ~/.cargo/bin
           target
-        key: ${{ matrix.os }}-${{ env.cache-name }}-${{ matrix.rust }}-${{ hashFiles('Cargo.lock') }}
+        key: be-${{ matrix.os }}-${{ env.cache-name }}-${{ matrix.rust }}-${{ hashFiles('Cargo.lock') }}
 
     - name: Install Rust
       uses: actions-rs/toolchain@v1
       with:
         toolchain: ${{ matrix.rust }}
-        target: wasm32-unknown-unknown
         default: true
         profile: minimal
-        components: clippy
 
-    - name: Install cargo-make
+    - name: Test
       run: |
-        which cargo-make || cargo install cargo-make
-
-    - name: Install Test Runner
-      run: |
-        which wasm-bindgen-test-runner || cargo install wasm-bindgen-cli
-
-    - name: Check FE
-      run: |
-        cd frontend
-        cargo make la-check
-
-    - name: Check BE
-      run: |
-        cd backend
-        cargo make check
-
-    - name: Test FE
-      run: |
-        cd frontend
-        cargo make test
-
-    - name: Test BE
-      run: |
-        cd backend
-        cargo t
+        cd backend-e2e
+        make e2e-test-remote
