@@ -75,12 +75,7 @@ jobs:
     #     cargo t
 
   be_build:
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest]
-        rust: [stable]
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v2
@@ -115,4 +110,13 @@ jobs:
     - name: BE release build
       run: |
         cd backend
-        docker build .
+        docker build -t liveask/server:latest .
+
+    - name: Login to Docker Hub
+      run: |
+        docker login \
+        -u ${{ secrets.DOCKER_USERNAME }} \
+        -p ${{ secrets.DOCKER_PASSWORD }}
+
+    - name: Publish Docker image
+      run: docker push liveask/server
