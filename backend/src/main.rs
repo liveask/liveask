@@ -5,6 +5,7 @@ mod env;
 mod eventsdb;
 mod handle;
 mod mail;
+mod utils;
 
 use aws_config::meta::region::RegionProviderChain;
 use aws_sdk_dynamodb::{Credentials, Endpoint};

@@ -64,10 +64,15 @@ jobs:
         cd backend
         cargo make check
 
-    - name: Test
+    - name: Test FE
       run: |
         cd frontend
         cargo make test
+
+    - name: Test BE
+      run: |
+        cd backend
+        cargo t
 
   backend-e2e:
     strategy:

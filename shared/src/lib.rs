@@ -48,6 +48,7 @@ pub struct EventInfo {
     pub deleted: bool,
     #[serde(rename = "lastEditUnix")]
     pub last_edit_unix: i64,
+    //TODO: is this still needed in the new FE?
     #[serde(rename = "createTimeUTC")]
     pub create_time_utc: String,
     pub questions: Vec<Item>,

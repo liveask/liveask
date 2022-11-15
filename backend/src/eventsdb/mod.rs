@@ -8,6 +8,8 @@ use anyhow::Result;
 use async_trait::async_trait;
 use shared::EventInfo;
 
+use crate::utils::timestamp_now;
+
 #[derive(Clone, Debug, Eq, PartialEq, Default)]
 pub struct EventEntry {
     pub event: EventInfo,
@@ -19,8 +21,9 @@ impl EventEntry {
         Self { event, version: 0 }
     }
 
-    pub fn bump_version(&mut self) {
+    pub fn bump(&mut self) {
         self.version += 1;
+        self.event.last_edit_unix = timestamp_now();
     }
 }
 

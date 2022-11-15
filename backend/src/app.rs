@@ -14,6 +14,7 @@ use ulid::Ulid;
 use crate::{
     env,
     eventsdb::{EventEntry, EventsDB},
+    utils::{format_timestamp, timestamp_now},
 };
 
 #[derive(Clone)]
@@ -69,12 +70,13 @@ impl App {
             bail!("request validation failed");
         }
 
+        let now = timestamp_now();
+
         let mut e = EventInfo {
-            //TODO:
-            create_time_unix: 0,
+            create_time_unix: now,
             delete_time_unix: 0,
-            last_edit_unix: 0,
-            create_time_utc: String::new(),
+            last_edit_unix: now,
+            create_time_utc: format_timestamp(now),
             deleted: false,
             questions: Vec::new(),
             state: EventState {
@@ -130,6 +132,7 @@ impl App {
         Ok(e)
     }
 
+    //TODO: validate event is not deleted
     pub async fn get_question(
         &self,
         id: String,
@@ -162,6 +165,7 @@ impl App {
         Ok(q)
     }
 
+    //TODO: validate event is not deleted
     pub async fn mod_edit_question(
         &self,
         id: String,
@@ -194,7 +198,7 @@ impl App {
             q.answered = state.answered;
         }
 
-        entry.bump_version();
+        entry.bump();
 
         let e = entry.event.clone();
 
@@ -205,6 +209,7 @@ impl App {
         Ok(e)
     }
 
+    //TODO: validate event is not deleted
     pub async fn edit_event_state(
         &self,
         id: String,
@@ -227,7 +232,7 @@ impl App {
 
         let result = e.clone();
 
-        entry.bump_version();
+        entry.bump();
 
         self.eventsdb.put(entry).await?;
 
@@ -251,8 +256,9 @@ impl App {
         }
 
         e.deleted = true;
+        e.delete_time_unix = timestamp_now();
 
-        entry.bump_version();
+        entry.bump();
 
         self.eventsdb.put(entry).await?;
 
@@ -261,6 +267,7 @@ impl App {
         Ok(())
     }
 
+    //TODO: validate event is still open
     pub async fn add_question(&self, id: String, question: shared::AddQuestion) -> Result<Item> {
         let mut entry = self.eventsdb.get(&id).await?;
 
@@ -279,7 +286,7 @@ impl App {
 
         e.questions.push(question.clone());
 
-        entry.bump_version();
+        entry.bump();
 
         self.eventsdb.put(entry).await?;
 
@@ -288,6 +295,7 @@ impl App {
         Ok(question)
     }
 
+    //TODO: validate event is still votable
     pub async fn edit_like(&self, id: String, edit: shared::EditLike) -> Result<Item> {
         let mut entry = self.eventsdb.get(&id).await?.clone();
 
@@ -302,7 +310,7 @@ impl App {
 
             let res = f.clone();
 
-            entry.bump_version();
+            entry.bump();
 
             self.eventsdb.put(entry).await?;
 
