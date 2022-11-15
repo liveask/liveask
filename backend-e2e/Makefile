@@ -10,3 +10,6 @@ test-create-question:
 
 e2e-test-remote:
 	RUST_LOG=debug URL=https://api.www.live-ask.com SOCKET_URL="wss://api.www.live-ask.com" cargo test
+
+e2e-local:
+	RUST_LOG=debug cargo test

@@ -4,6 +4,9 @@ use reqwest::{header::CONTENT_TYPE, StatusCode};
 use serde_json::json;
 use shared::EventInfo;
 
+const MIN_DESC: &str = "minimum desc length possible!!";
+const MIN_NAME: &str = "min name";
+
 fn main() {}
 
 fn server_rest() -> String {
@@ -48,7 +51,7 @@ async fn add_event(name: String) -> EventInfo {
             "eventData":{
                 "maxLikes":0,
                 "name":name,
-                "description":"fancy description",
+                "description":MIN_DESC,
                 "shortUrl":"",
                 "longUrl":null},
             "moderatorEmail": "",
@@ -174,16 +177,16 @@ mod test {
 
     #[tokio::test]
     async fn test_add_event() {
-        let e = add_event("foo".to_string()).await;
-        assert_eq!(e.data.name, "foo");
+        let e = add_event(MIN_NAME.to_string()).await;
+        assert_eq!(e.data.name, MIN_NAME);
     }
 
     #[tokio::test]
     async fn test_get_event() {
         // env_logger::init();
 
-        let e = add_event("foo".to_string()).await;
-        assert_eq!(e.data.name, "foo");
+        let e = add_event(MIN_NAME.to_string()).await;
+        assert_eq!(e.data.name, MIN_NAME);
 
         let e2 = get_event(
             e.tokens.public_token.clone(),
@@ -199,7 +202,7 @@ mod test {
 
     #[tokio::test]
     async fn test_like_question() {
-        let e = add_event("foo".to_string()).await;
+        let e = add_event(MIN_NAME.to_string()).await;
         let q_before = add_question(e.tokens.public_token.clone()).await;
         let q_after = like_question(e.tokens.public_token, q_before.id, true).await;
         assert_eq!(q_after.likes, q_before.likes + 1);
@@ -209,7 +212,7 @@ mod test {
     async fn test_delete_event() {
         // env_logger::init();
 
-        let e = add_event("foo".to_string()).await;
+        let e = add_event(MIN_NAME.to_string()).await;
         assert_eq!(e.deleted, false);
 
         delete_event(
@@ -225,7 +228,7 @@ mod test {
 
     #[tokio::test]
     async fn test_hide_question() {
-        let e_mod = add_event("foo".to_string()).await;
+        let e_mod = add_event(MIN_NAME.to_string()).await;
 
         let q_before = add_question(e_mod.tokens.public_token.clone()).await;
 
@@ -253,7 +256,7 @@ mod test {
     async fn test_websockets() {
         // env_logger::init();
 
-        let event = add_event("foo".to_string()).await.tokens.public_token;
+        let event = add_event(MIN_NAME.to_string()).await.tokens.public_token;
 
         let (mut socket, response) =
             connect(&format!("{}/push/{}", server_socket(), event)).expect("Can't connect");

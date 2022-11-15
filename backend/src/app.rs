@@ -61,12 +61,14 @@ impl App {
         res
     }
 
+    #[instrument(skip(self, request))]
     pub async fn create_event(&self, request: AddEvent) -> Result<EventInfo> {
         let mut validation = shared::CreateEventErrors::default();
 
         validation.check(&request.data.name, &request.data.description);
 
         if validation.has_any() {
+            tracing::debug!("validation error: {:?}", validation);
             bail!("request validation failed");
         }
 

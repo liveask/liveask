@@ -1,4 +1,5 @@
 ///
+#[derive(Debug)]
 pub enum ValidationError {
     Empty,
     MaxLength(usize, usize),
@@ -11,7 +12,7 @@ pub const NAME_TRIMMED_MIN_LEN: usize = 8;
 pub const NAME_TRIMMED_MAX_LEN: usize = 30;
 pub const NAME_TRIMMED_MAX_WORDS: usize = 13;
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct CreateEventErrors {
     pub name: Option<ValidationError>,
     pub desc: Option<ValidationError>,
