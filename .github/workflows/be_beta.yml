@@ -1,0 +1,59 @@
+name: be_beta
+
+on:
+  schedule:
+    - cron: '0 2 * * *' # run at 2 AM UTC
+  push:
+    branches: [ '*' ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Restore cargo cache
+      uses: actions/cache@v2
+      env:
+        cache-name: ci
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          ~/.cargo/bin
+          target
+        key: ${{ env.cache-name }}-${{ hashFiles('Cargo.lock') }}
+
+    - name: Install Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        default: true
+        profile: minimal
+
+    - name: BE release build
+      run: |
+        cd backend
+        cargo build --release
+        mkdir linux_bin
+        cp ../target/release/liveask-server linux_bin/server
+
+    - name: BE release build
+      run: |
+        cd backend
+        docker build -t liveask/server:latest .
+
+    - name: Login to Docker Hub
+      run: |
+        docker login \
+        -u liveask \
+        -p ${{ secrets.DOCKER_PASSWORD }}
+
+    - name: Publish Docker image
+      run: docker push liveask/server

@@ -12,70 +12,15 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  # build:
-  #   strategy:
-  #     fail-fast: false
-  #     matrix:
-  #       os: [ubuntu-latest]
-  #       rust: [nightly, stable]
-  #   runs-on: ${{ matrix.os }}
-  #   # nightly is ok to fail
-  #   continue-on-error: ${{ matrix.rust == 'nightly' }}
-
-  #   steps:
-  #   - uses: actions/checkout@v2
-
-  #   - name: Restore cargo cache
-  #     uses: actions/cache@v2
-  #     env:
-  #       cache-name: ci
-  #     with:
-  #       path: |
-  #         ~/.cargo/registry
-  #         ~/.cargo/git
-  #         ~/.cargo/bin
-  #         target
-  #       key: ${{ matrix.os }}-${{ env.cache-name }}-${{ matrix.rust }}-${{ hashFiles('Cargo.lock') }}
-
-  #   - name: Install Rust
-  #     uses: actions-rs/toolchain@v1
-  #     with:
-  #       toolchain: ${{ matrix.rust }}
-  #       target: wasm32-unknown-unknown
-  #       default: true
-  #       profile: minimal
-  #       components: clippy
-
-  #   - name: Install cargo-make
-  #     run: |
-  #       which cargo-make || cargo install cargo-make
-
-    # - name: Install Test Runner
-    #   run: |
-    #     which wasm-bindgen-test-runner || cargo install wasm-bindgen-cli
-
-    # - name: Check FE
-    #   run: |
-    #     cd frontend
-    #     cargo make la-check
-
-    # - name: Check BE
-    #   run: |
-    #     cd backend
-    #     cargo make check
-
-    # - name: Test FE
-    #   run: |
-    #     cd frontend
-    #     cargo make test
-
-    # - name: Test BE
-    #   run: |
-    #     cd backend
-    #     cargo t
-
-  be_build:
-    runs-on: ubuntu-latest
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        rust: [nightly, stable]
+    runs-on: ${{ matrix.os }}
+    # nightly is ok to fail
+    continue-on-error: ${{ matrix.rust == 'nightly' }}
 
     steps:
     - uses: actions/checkout@v2
@@ -90,32 +35,41 @@ jobs:
           ~/.cargo/git
           ~/.cargo/bin
           target
-        key: ${{ env.cache-name }}-${{ hashFiles('Cargo.lock') }}
+        key: ${{ matrix.os }}-${{ env.cache-name }}-${{ matrix.rust }}-${{ hashFiles('Cargo.lock') }}
 
     - name: Install Rust
       uses: actions-rs/toolchain@v1
       with:
-        toolchain: stable
+        toolchain: ${{ matrix.rust }}
+        target: wasm32-unknown-unknown
         default: true
         profile: minimal
+        components: clippy
 
-    - name: BE release build
+    - name: Install cargo-make
+      run: |
+        which cargo-make || cargo install cargo-make
+
+    - name: Install Test Runner
+      run: |
+        which wasm-bindgen-test-runner || cargo install wasm-bindgen-cli
+
+    - name: Check FE
+      run: |
+        cd frontend
+        cargo make la-check
+
+    - name: Check BE
       run: |
         cd backend
-        cargo build --release
-        mkdir linux_bin
-        cp ../target/release/liveask-server linux_bin/liveask-server
+        cargo make check
 
-    - name: BE release build
+    - name: Test FE
+      run: |
+        cd frontend
+        cargo make test
+
+    - name: Test BE
       run: |
         cd backend
-        docker build -t liveask/server:latest .
-
-    - name: Login to Docker Hub
-      run: |
-        docker login \
-        -u ${{ secrets.DOCKER_USERNAME }} \
-        -p ${{ secrets.DOCKER_PASSWORD }}
-
-    - name: Publish Docker image
-      run: docker push liveask/server
+        cargo t
