@@ -1,6 +1,3 @@
-# 2.0 (relaunch based on yew)
-
-- [ ] CD based on tags/branch, use cargo version?
 
 # 2.1 (missing non essential features)
 
