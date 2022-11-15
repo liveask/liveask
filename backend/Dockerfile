@@ -1,4 +1,4 @@
-FROM debian:buster-slim
+FROM debian:bullseye-slim
 LABEL maintainer="extrawurst"
 RUN apt-get update \
     && apt-get install -y openssl ca-certificates curl
