@@ -1,4 +1,4 @@
-name: CI
+name: ci
 
 on:
   schedule:
@@ -12,15 +12,75 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  build:
+  # build:
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       os: [ubuntu-latest]
+  #       rust: [nightly, stable]
+  #   runs-on: ${{ matrix.os }}
+  #   # nightly is ok to fail
+  #   continue-on-error: ${{ matrix.rust == 'nightly' }}
+
+  #   steps:
+  #   - uses: actions/checkout@v2
+
+  #   - name: Restore cargo cache
+  #     uses: actions/cache@v2
+  #     env:
+  #       cache-name: ci
+  #     with:
+  #       path: |
+  #         ~/.cargo/registry
+  #         ~/.cargo/git
+  #         ~/.cargo/bin
+  #         target
+  #       key: ${{ matrix.os }}-${{ env.cache-name }}-${{ matrix.rust }}-${{ hashFiles('Cargo.lock') }}
+
+  #   - name: Install Rust
+  #     uses: actions-rs/toolchain@v1
+  #     with:
+  #       toolchain: ${{ matrix.rust }}
+  #       target: wasm32-unknown-unknown
+  #       default: true
+  #       profile: minimal
+  #       components: clippy
+
+  #   - name: Install cargo-make
+  #     run: |
+  #       which cargo-make || cargo install cargo-make
+
+    # - name: Install Test Runner
+    #   run: |
+    #     which wasm-bindgen-test-runner || cargo install wasm-bindgen-cli
+
+    # - name: Check FE
+    #   run: |
+    #     cd frontend
+    #     cargo make la-check
+
+    # - name: Check BE
+    #   run: |
+    #     cd backend
+    #     cargo make check
+
+    # - name: Test FE
+    #   run: |
+    #     cd frontend
+    #     cargo make test
+
+    # - name: Test BE
+    #   run: |
+    #     cd backend
+    #     cargo t
+
+  be_build:
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]
-        rust: [nightly, stable]
+        rust: [stable]
     runs-on: ${{ matrix.os }}
-    # nightly is ok to fail
-    continue-on-error: ${{ matrix.rust == 'nightly' }}
 
     steps:
     - uses: actions/checkout@v2
@@ -44,68 +104,15 @@ jobs:
         target: wasm32-unknown-unknown
         default: true
         profile: minimal
-        components: clippy
 
-    - name: Install cargo-make
-      run: |
-        which cargo-make || cargo install cargo-make
-
-    - name: Install Test Runner
-      run: |
-        which wasm-bindgen-test-runner || cargo install wasm-bindgen-cli
-
-    - name: Check FE
-      run: |
-        cd frontend
-        cargo make la-check
-
-    - name: Check BE
+    - name: BE release build
       run: |
         cd backend
-        cargo make check
+        cargo build --release
+        mkdir linux_bin
+        cp ../target/release/liveask-server linux_bin/liveask-server
 
-    - name: Test FE
-      run: |
-        cd frontend
-        cargo make test
-
-    - name: Test BE
+    - name: BE release build
       run: |
         cd backend
-        cargo t
-
-  backend-e2e:
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest]
-        rust: [stable]
-    runs-on: ${{ matrix.os }}
-    continue-on-error: ${{ matrix.rust == 'nightly' }}
-
-    steps:
-    - uses: actions/checkout@v2
-
-    - name: Restore cargo cache
-      uses: actions/cache@v2
-      env:
-        cache-name: ci
-      with:
-        path: |
-          ~/.cargo/registry
-          ~/.cargo/git
-          ~/.cargo/bin
-          target
-        key: be-${{ matrix.os }}-${{ env.cache-name }}-${{ matrix.rust }}-${{ hashFiles('Cargo.lock') }}
-
-    - name: Install Rust
-      uses: actions-rs/toolchain@v1
-      with:
-        toolchain: ${{ matrix.rust }}
-        default: true
-        profile: minimal
-
-    - name: Test
-      run: |
-        cd backend-e2e
-        make e2e-test-remote
+        docker build .

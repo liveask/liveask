@@ -403,32 +403,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "backend"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "async-trait",
- "aws-config",
- "aws-sdk-dynamodb",
- "axum",
- "chrono",
- "futures-util",
- "mailjet-rs",
- "pretty_assertions",
- "reqwest",
- "serde",
- "serde_json",
- "shared",
- "tinyurl-rs",
- "tokio",
- "tokio-stream",
- "tower-http",
- "tracing",
- "tracing-subscriber",
- "ulid",
-]
-
-[[package]]
 name = "backend_tests"
 version = "0.1.0"
 dependencies = [
@@ -1271,6 +1245,32 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9272ab7b96c9046fbc5bc56c06c117cb639fe2d509df0c421cad82d2915cf369"
 dependencies = [
  "cc",
+]
+
+[[package]]
+name = "liveask-server"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "aws-config",
+ "aws-sdk-dynamodb",
+ "axum",
+ "chrono",
+ "futures-util",
+ "mailjet-rs",
+ "pretty_assertions",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "shared",
+ "tinyurl-rs",
+ "tokio",
+ "tokio-stream",
+ "tower-http",
+ "tracing",
+ "tracing-subscriber",
+ "ulid",
 ]
 
 [[package]]
