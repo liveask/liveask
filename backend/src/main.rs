@@ -5,6 +5,8 @@ mod env;
 mod eventsdb;
 mod handle;
 mod mail;
+mod pubsub;
+mod redis_pool;
 mod utils;
 
 use aws_config::meta::region::RegionProviderChain;
@@ -18,7 +20,13 @@ use std::{net::SocketAddr, str::FromStr, sync::Arc};
 use tower_http::{cors::CorsLayer, trace::TraceLayer};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
-use crate::{app::App, eventsdb::DynamoEventsDB, handle::push_handler};
+use crate::{
+    app::App,
+    eventsdb::DynamoEventsDB,
+    handle::push_handler,
+    pubsub::PubSubInMemory,
+    redis_pool::{create_pool, ping_test_redis},
+};
 
 fn setup_cors() -> CorsLayer {
     if use_relaxed_cors() {
@@ -76,7 +84,17 @@ async fn main() -> anyhow::Result<()> {
         .with(tracing_subscriber::fmt::layer())
         .init();
 
-    let app = App::new(Arc::new(DynamoEventsDB::new(dynamo_client().await).await?));
+    let redis_pool = create_pool("redis://localhost:6379")?;
+    ping_test_redis(&redis_pool).await?;
+
+    let pubsub = Arc::new(PubSubInMemory::default());
+
+    let app = Arc::new(App::new(
+        Arc::new(DynamoEventsDB::new(dynamo_client().await).await?),
+        pubsub.clone(),
+    ));
+
+    pubsub.set_receiver(app.clone()).await;
 
     #[rustfmt::skip]
     let mod_routes = Router::new()

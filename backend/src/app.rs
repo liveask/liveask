@@ -1,4 +1,5 @@
 use anyhow::{bail, Result};
+use async_trait::async_trait;
 use axum::extract::ws::{Message, WebSocket};
 use shared::{AddEvent, EventInfo, EventState, EventTokens, Item, ModQuestion, States};
 use std::{
@@ -15,20 +16,24 @@ use crate::{
     env,
     eventsdb::{EventEntry, EventsDB},
     mail::MailjetConfig,
+    pubsub::{PubSubPublish, PubSubReceiver},
     utils::{format_timestamp, timestamp_now},
 };
+
+pub type SharedApp = Arc<App>;
 
 #[derive(Clone)]
 pub struct App {
     eventsdb: Arc<dyn EventsDB>,
     channels: Arc<RwLock<HashMap<usize, (String, OutBoundChannel)>>>,
+    pubsub_publish: Arc<dyn PubSubPublish>,
     base_url: String,
     tiny_url_token: Option<String>,
     mailjet_config: Option<MailjetConfig>,
 }
 
 impl App {
-    pub fn new(eventsdb: Arc<dyn EventsDB>) -> Self {
+    pub fn new(eventsdb: Arc<dyn EventsDB>, pubsub_publish: Arc<dyn PubSubPublish>) -> Self {
         let tiny_url_token = std::env::var(env::ENV_TINY_TOKEN).ok();
 
         if tiny_url_token.is_none() {
@@ -44,6 +49,7 @@ impl App {
 
         Self {
             eventsdb,
+            pubsub_publish,
             channels: Default::default(),
             base_url: std::env::var(env::ENV_BASE_URL)
                 .unwrap_or_else(|_| "https://www.live-ask.com".into()),
@@ -197,7 +203,7 @@ impl App {
             bail!("q not found")
         }
 
-        self.notify_subscribers(id, None).await?;
+        self.notify_subscribers(id, None).await;
 
         Ok(q)
     }
@@ -241,7 +247,7 @@ impl App {
 
         self.eventsdb.put(entry).await?;
 
-        self.notify_subscribers(id, None).await?;
+        self.notify_subscribers(id, None).await;
 
         Ok(e)
     }
@@ -273,7 +279,7 @@ impl App {
 
         self.eventsdb.put(entry).await?;
 
-        self.notify_subscribers(id, None).await?;
+        self.notify_subscribers(id, None).await;
 
         Ok(result)
     }
@@ -299,7 +305,7 @@ impl App {
 
         self.eventsdb.put(entry).await?;
 
-        self.notify_subscribers(id, None).await?;
+        self.notify_subscribers(id, None).await;
 
         Ok(())
     }
@@ -327,7 +333,7 @@ impl App {
 
         self.eventsdb.put(entry).await?;
 
-        self.notify_subscribers(id, Some(question_id)).await?;
+        self.notify_subscribers(id, Some(question_id)).await;
 
         Ok(question)
     }
@@ -351,7 +357,7 @@ impl App {
 
             self.eventsdb.put(entry).await?;
 
-            self.notify_subscribers(id, Some(edit.question_id)).await?;
+            self.notify_subscribers(id, Some(edit.question_id)).await;
 
             Ok(res)
         } else {
@@ -443,30 +449,14 @@ impl App {
         sender
     }
 
-    async fn notify_subscribers(&self, event_id: String, question_id: Option<i64>) -> Result<()> {
-        let channels = self.channels.clone();
-
+    async fn notify_subscribers(&self, event_id: String, question_id: Option<i64>) {
         let msg = if let Some(q) = question_id {
-            Message::Text(format!("q:{}", q))
+            format!("q:{}", q)
         } else {
-            Message::Text("e".to_string())
+            "e".to_string()
         };
 
-        tokio::spawn(async move {
-            for (_user_id, (_id, c)) in channels
-                .read()
-                .await
-                .iter()
-                .filter(|(_, (id, _))| id == &event_id)
-            {
-                if let Err(e) = c.send(Ok(msg.clone())) {
-                    tracing::error!("pubsub send error: {}", e);
-                }
-            }
-        })
-        .await?;
-
-        Ok(())
+        self.pubsub_publish.publish(&event_id, &msg).await;
     }
 
     async fn send_mail(
@@ -493,6 +483,33 @@ impl App {
             });
         } else {
             tracing::warn!("mail not send: not configured");
+        }
+    }
+}
+
+#[async_trait]
+impl PubSubReceiver for App {
+    async fn notify(&self, topic: &str, payload: &str) {
+        let topic = topic.to_string();
+        let msg = Message::Text(payload.to_string());
+
+        let channels = self.channels.clone();
+
+        if let Err(e) = tokio::spawn(async move {
+            for (_user_id, (_id, c)) in channels
+                .read()
+                .await
+                .iter()
+                .filter(|(_, (id, _))| id == &topic)
+            {
+                if let Err(e) = c.send(Ok(msg.clone())) {
+                    tracing::error!("pubsub send error: {}", e);
+                }
+            }
+        })
+        .await
+        {
+            tracing::error!("pubsub notify error: {e}");
         }
     }
 }
