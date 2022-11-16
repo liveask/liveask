@@ -380,18 +380,38 @@ impl App {
                 }
             };
 
-            tracing::warn!("user:{} sent data, disconnecting", user_id);
+            //allow receiving `p` for app based pings
+            if matches!(&msg, Message::Text(text) if text=="p") {
+                continue;
+            }
 
-            match msg {
+            match &msg {
                 Message::Ping(_) => tracing::warn!("received msg:ping"),
                 Message::Pong(_) => tracing::warn!("received msg:pong"),
                 Message::Text(txt) => tracing::warn!("received msg:text: '{txt}'"),
                 Message::Binary(bin) => tracing::warn!("received msg:binary: {}b", bin.len()),
-                Message::Close(frame) => tracing::warn!("received msg:close: {frame:?}"),
+                Message::Close(frame) => tracing::info!("received msg:close: {frame:?}"),
+            }
+
+            let (disconnect, sent_data) = match msg {
+                Message::Ping(_) | Message::Pong(_) => (false, false),
+                Message::Close(_) => (true, false),
+                _ => (true, true),
+            };
+
+            if disconnect {
+                if sent_data {
+                    tracing::warn!("user:{} sent data, disconnecting", user_id);
+                }
+                break;
             }
         }
 
-        tracing::debug!("user disconnected: {}", user_id);
+        tracing::info!(
+            "user disconnected: {} ({} remain)",
+            user_id,
+            self.channels.read().await.len().saturating_sub(1)
+        );
 
         self.channels.write().await.remove(&user_id);
     }
