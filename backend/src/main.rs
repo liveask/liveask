@@ -14,7 +14,7 @@ use axum::{
     routing::{get, post},
     Extension, Router,
 };
-use std::{net::SocketAddr, sync::Arc};
+use std::{net::SocketAddr, str::FromStr, sync::Arc};
 use tower_http::{cors::CorsLayer, trace::TraceLayer};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
@@ -48,13 +48,11 @@ async fn dynamo_client() -> aws_sdk_dynamodb::Client {
             "http://localhost:8000".into()
         };
 
-        tracing::info!("ddb url: {}", url);
+        tracing::info!("ddb local url: {}", url);
 
         config
             .credentials_provider(Credentials::new("aid", "sid", None, None, "local"))
-            .endpoint_resolver(Endpoint::immutable(Uri::from_static(
-                "http://localhost:8000",
-            )))
+            .endpoint_resolver(Endpoint::immutable(Uri::from_str(&url).expect("TODO")))
     } else {
         config
     };
