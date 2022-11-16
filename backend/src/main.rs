@@ -22,9 +22,10 @@ use crate::{app::App, eventsdb::DynamoEventsDB, handle::push_handler};
 
 fn setup_cors() -> CorsLayer {
     if use_relaxed_cors() {
-        tracing::info!("cors setup very_permissive");
+        tracing::info!("cors setup: very_permissive");
         CorsLayer::very_permissive()
     } else {
+        tracing::info!("cors setup: default");
         CorsLayer::new()
     }
 }
