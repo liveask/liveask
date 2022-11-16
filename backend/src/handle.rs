@@ -6,10 +6,10 @@ use axum::{
 };
 use tracing::instrument;
 
-use crate::app::App;
+use crate::app::SharedApp;
 
 //TODO: not sure why we need this
-async fn socket_handler(ws: WebSocket, id: String, app: App) {
+async fn socket_handler(ws: WebSocket, id: String, app: SharedApp) {
     app.push_subscriber(ws, id).await
 }
 
@@ -17,7 +17,7 @@ async fn socket_handler(ws: WebSocket, id: String, app: App) {
 pub async fn push_handler(
     ws: WebSocketUpgrade,
     Path(id): Path<String>,
-    Extension(app): Extension<App>,
+    Extension(app): Extension<SharedApp>,
 ) -> impl IntoResponse {
     tracing::info!("push subscriber: {}", id);
 
@@ -28,7 +28,7 @@ pub async fn push_handler(
 pub async fn editlike_handler(
     Json(payload): Json<shared::EditLike>,
     Path(id): Path<String>,
-    Extension(app): Extension<App>,
+    Extension(app): Extension<SharedApp>,
 ) -> Result<impl IntoResponse, StatusCode> {
     tracing::info!("edit like: {}/{}", payload.question_id, id);
 
@@ -44,7 +44,7 @@ pub async fn editlike_handler(
 #[instrument(skip(app))]
 pub async fn addevent_handler(
     Json(payload): Json<shared::AddEvent>,
-    Extension(app): Extension<App>,
+    Extension(app): Extension<SharedApp>,
 ) -> Result<impl IntoResponse, StatusCode> {
     tracing::info!("create event: {}", payload.data.name);
 
@@ -61,7 +61,7 @@ pub async fn addevent_handler(
 pub async fn addquestion_handler(
     Json(payload): Json<shared::AddQuestion>,
     Path(id): Path<String>,
-    Extension(app): Extension<App>,
+    Extension(app): Extension<SharedApp>,
 ) -> Result<impl IntoResponse, StatusCode> {
     tracing::info!("add question: {} in event:  {}", payload.text, id);
 
@@ -77,7 +77,7 @@ pub async fn addquestion_handler(
 #[instrument(skip(app))]
 pub async fn getevent_handler(
     Path(id): Path<String>,
-    Extension(app): Extension<App>,
+    Extension(app): Extension<SharedApp>,
 ) -> Result<impl IntoResponse, StatusCode> {
     tracing::info!("get event:  {}", id);
 
@@ -93,7 +93,7 @@ pub async fn getevent_handler(
 #[instrument(skip(app))]
 pub async fn mod_get_event(
     Path((id, secret)): Path<(String, String)>,
-    Extension(app): Extension<App>,
+    Extension(app): Extension<SharedApp>,
 ) -> Result<impl IntoResponse, StatusCode> {
     match app.get_event(id, Some(secret)).await {
         Ok(res) => Ok(Json(res)),
@@ -107,7 +107,7 @@ pub async fn mod_get_event(
 #[instrument(skip(app))]
 pub async fn mod_delete_event(
     Path((id, secret)): Path<(String, String)>,
-    Extension(app): Extension<App>,
+    Extension(app): Extension<SharedApp>,
 ) -> Result<impl IntoResponse, StatusCode> {
     match app.delete_event(id, secret).await {
         Ok(res) => Ok(Json(res)),
@@ -121,7 +121,7 @@ pub async fn mod_delete_event(
 #[instrument(skip(app))]
 pub async fn mod_get_question(
     Path((id, secret, question_id)): Path<(String, String, i64)>,
-    Extension(app): Extension<App>,
+    Extension(app): Extension<SharedApp>,
 ) -> Result<impl IntoResponse, StatusCode> {
     match app.get_question(id, Some(secret), question_id).await {
         Ok(res) => Ok(Json(res)),
@@ -135,7 +135,7 @@ pub async fn mod_get_question(
 #[instrument(skip(app))]
 pub async fn get_question(
     Path((id, question_id)): Path<(String, i64)>,
-    Extension(app): Extension<App>,
+    Extension(app): Extension<SharedApp>,
 ) -> Result<impl IntoResponse, StatusCode> {
     match app.get_question(id, None, question_id).await {
         Ok(res) => Ok(Json(res)),
@@ -150,7 +150,7 @@ pub async fn get_question(
 pub async fn mod_edit_question(
     Path((id, secret, question_id)): Path<(String, String, i64)>,
     Json(payload): Json<shared::ModQuestion>,
-    Extension(app): Extension<App>,
+    Extension(app): Extension<SharedApp>,
 ) -> Result<impl IntoResponse, StatusCode> {
     match app
         .mod_edit_question(id, secret, question_id, payload)
@@ -168,7 +168,7 @@ pub async fn mod_edit_question(
 pub async fn mod_edit_state(
     Path((id, secret)): Path<(String, String)>,
     Json(payload): Json<shared::ModEventState>,
-    Extension(app): Extension<App>,
+    Extension(app): Extension<SharedApp>,
 ) -> Result<impl IntoResponse, StatusCode> {
     match app.edit_event_state(id, secret, payload.state).await {
         Ok(res) => Ok(Json(res)),

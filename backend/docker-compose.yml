@@ -53,3 +53,4 @@ services:
       - DDB_URL=http://ddb:8000
       - RUST_LOG=info
       - RELAX_CORS=1
+      - REDIS_URL=redis://redis:6379
