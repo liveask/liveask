@@ -56,6 +56,7 @@ pub struct EventInfo {
 }
 
 impl EventInfo {
+    #[must_use]
     pub fn get_question(&self, id: i64) -> Option<Item> {
         self.questions.iter().find(|i| i.id == id).cloned()
     }
@@ -121,12 +122,17 @@ pub struct EventState {
 }
 
 impl EventState {
+    #[must_use]
     pub const fn is_open(&self) -> bool {
         matches!(self.state, States::Open)
     }
+
+    #[must_use]
     pub const fn is_vote_only(&self) -> bool {
         matches!(self.state, States::VotingOnly)
     }
+
+    #[must_use]
     pub const fn is_closed(&self) -> bool {
         matches!(self.state, States::Closed)
     }

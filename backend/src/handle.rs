@@ -10,7 +10,7 @@ use crate::app::SharedApp;
 
 //TODO: not sure why we need this
 async fn socket_handler(ws: WebSocket, id: String, app: SharedApp) {
-    app.push_subscriber(ws, id).await
+    app.push_subscriber(ws, id).await;
 }
 
 #[instrument(skip(app, ws))]

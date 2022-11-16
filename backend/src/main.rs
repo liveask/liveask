@@ -1,5 +1,3 @@
-#![deny(clippy::unwrap_used)]
-
 mod app;
 mod env;
 mod eventsdb;

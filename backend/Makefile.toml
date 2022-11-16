@@ -10,7 +10,28 @@ args = ["r"]
 
 [tasks.check]
 command = "cargo"
-args = ["clippy"]
+args = ["clippy","--",
+	"-D","warnings",
+	"-D","unused_imports",
+	"-D","unused_must_use",
+	"-D","unused_variables",
+	"-D","unused_mut",
+	"-D","dead_code",
+	"-D","clippy::all",
+	"-D","clippy::pedantic",
+	"-D","clippy::dbg_macro",
+	"-D","clippy::unwrap_used",
+	"-D","clippy::panic",
+	"-D","clippy::needless_update",
+	"-D","clippy::match_like_matches_macro",
+	"-D","clippy::from_over_into",
+	"-D","clippy::useless_conversion",
+	"-D","clippy::float_cmp_const",
+	"-D","clippy::lossy_float_literal",
+	"-D","clippy::string_to_string",
+	"-D","clippy::unneeded_field_pattern",
+	"-D","clippy::verbose_file_reads",
+	"-A","clippy::module-name-repetitions"]
 
 [tasks.run-release]
 command = "cargo"

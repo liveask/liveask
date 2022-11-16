@@ -6,6 +6,7 @@
 
 # beyond
 
+- [ ] speed up CI https://github.com/marketplace/actions/rust-cargo-make
 - [ ] optimize pubsub delivery using concurrent hashmap
 - [ ] show last edit timestamp in mod view
 - [ ] simplify extending event runtime

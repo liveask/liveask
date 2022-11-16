@@ -24,6 +24,7 @@ impl CreateEventErrors {
         self.desc = Self::check_desc(desc);
     }
 
+    #[must_use]
     pub const fn has_any(&self) -> bool {
         self.name.is_some() || self.desc.is_some()
     }

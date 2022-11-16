@@ -42,15 +42,16 @@ impl App {
 
         let mailjet_config = MailjetConfig::new();
 
-        match mailjet_config {
-            Some(_) => tracing::info!("mail configured"),
-            None => tracing::warn!("mail not configured"),
-        };
+        if mailjet_config.is_some() {
+            tracing::info!("mail configured");
+        } else {
+            tracing::warn!("mail not configured");
+        }
 
         Self {
             eventsdb,
             pubsub_publish,
-            channels: Default::default(),
+            channels: std::sync::Arc::default(),
             base_url: std::env::var(env::ENV_BASE_URL)
                 .unwrap_or_else(|_| "https://www.live-ask.com".into()),
             tiny_url_token,
