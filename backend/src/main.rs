@@ -70,7 +70,7 @@ async fn dynamo_client() -> Result<aws_sdk_dynamodb::Client> {
             "http://localhost:8000".into()
         };
 
-        tracing::info!("ddb local url: {}", url);
+        tracing::info!("ddb local url: {url}");
 
         config
             .credentials_provider(Credentials::new("aid", "sid", None, None, "local"))
@@ -94,6 +94,8 @@ async fn main() -> anyhow::Result<()> {
         .init();
 
     let redis_url = get_redis_url();
+    tracing::info!("redis url: {redis_url}");
+
     let redis_pool = create_pool(&redis_url)?;
     ping_test_redis(&redis_pool).await?;
 
