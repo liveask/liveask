@@ -20,19 +20,23 @@ use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 use crate::{app::App, eventsdb::DynamoEventsDB, handle::push_handler};
 
-#[cfg(not(debug_assertions))]
 fn setup_cors() -> CorsLayer {
-    CorsLayer::new()
-}
-
-#[cfg(debug_assertions)]
-fn setup_cors() -> CorsLayer {
-    tracing::info!("cors setup");
-    CorsLayer::very_permissive()
+    if use_relaxed_cors() {
+        tracing::info!("cors setup very_permissive");
+        CorsLayer::very_permissive()
+    } else {
+        CorsLayer::new()
+    }
 }
 
 fn use_local_db() -> bool {
     std::env::var(env::ENV_DB_LOCAL).is_ok()
+}
+
+fn use_relaxed_cors() -> bool {
+    std::env::var(env::ENV_RELAX_CORS)
+        .map(|var| var == "1")
+        .unwrap_or_default()
 }
 
 async fn dynamo_client() -> aws_sdk_dynamodb::Client {
