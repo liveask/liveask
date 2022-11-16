@@ -1,5 +1,7 @@
 mod in_memory;
+mod redis;
 
+pub use self::redis::PubSubRedis;
 pub use in_memory::PubSubInMemory;
 
 use async_trait::async_trait;

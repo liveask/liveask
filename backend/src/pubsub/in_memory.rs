@@ -11,6 +11,7 @@ pub struct PubSubInMemory {
 }
 
 impl PubSubInMemory {
+    #[allow(dead_code)]
     pub async fn set_receiver(&self, receiver: Arc<dyn PubSubReceiver>) {
         let mut r = self.receiver.write().await;
         *r = Some(receiver);
