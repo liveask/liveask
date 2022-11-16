@@ -351,6 +351,8 @@ impl App {
 
             self.eventsdb.put(entry).await?;
 
+            self.notify_subscribers(id, Some(edit.question_id)).await?;
+
             Ok(res)
         } else {
             bail!("question not found")
@@ -370,6 +372,12 @@ impl App {
             .write()
             .await
             .insert(user_id, (id.clone(), send_channel));
+
+        tracing::info!(
+            "user connected: {} ({} total)",
+            user_id,
+            self.channels.read().await.len()
+        );
 
         while let Some(result) = ws_receiver.next().await {
             let msg = match result {
