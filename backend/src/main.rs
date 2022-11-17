@@ -27,6 +27,9 @@ use crate::{
     redis_pool::{create_pool, ping_test_redis},
 };
 
+pub const GIT_HASH: &str = env!("GIT_HASH");
+pub const GIT_BRANCH: &str = env!("GIT_BRANCH");
+
 #[cfg(not(debug_assertions))]
 #[must_use]
 pub fn is_debug() -> bool {
@@ -96,16 +99,22 @@ async fn dynamo_client() -> Result<aws_sdk_dynamodb::Client> {
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
+    let log_level = std::env::var("RUST_LOG")
+        .unwrap_or_else(|_| "info,liveask_server=debug,tower_http=debug".into());
+
     tracing_subscriber::registry()
-        .with(tracing_subscriber::EnvFilter::new(
-            std::env::var("RUST_LOG")
-                .unwrap_or_else(|_| "info,liveask_server=debug,tower_http=debug".into()),
-        ))
+        .with(tracing_subscriber::EnvFilter::new(log_level.clone()))
         .with(tracing_subscriber::fmt::layer().with_ansi(is_debug()))
         .init();
 
     let redis_url = get_redis_url();
-    tracing::info!("redis url: {redis_url}");
+
+    tracing::info!(
+        target: "server-starting",
+        git = %GIT_HASH,
+        log_level,
+        %redis_url,
+    );
 
     let redis_pool = create_pool(&redis_url)?;
     ping_test_redis(&redis_pool).await?;
