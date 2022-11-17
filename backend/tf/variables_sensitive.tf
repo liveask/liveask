@@ -39,3 +39,8 @@ variable "mj_secret" {
   type      = string
   sensitive = true
 }
+
+variable "arn_r53_zone" {
+  type      = string
+  sensitive = true
+}
