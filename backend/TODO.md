@@ -1,6 +1,7 @@
 
 # 2.0 rust rewrite
 
+- [ ] prod docker tag, re-deployment via CD
 - [ ] run e2e-local in CI
 
 # beyond
