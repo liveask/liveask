@@ -28,11 +28,13 @@ use crate::{
 };
 
 #[cfg(not(debug_assertions))]
+#[must_use]
 pub fn is_debug() -> bool {
     false
 }
 
 #[cfg(debug_assertions)]
+#[must_use]
 pub fn is_debug() -> bool {
     true
 }
