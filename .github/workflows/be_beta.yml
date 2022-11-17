@@ -1,4 +1,4 @@
-name: be_beta
+name: be beta
 
 on:
   schedule:
@@ -44,7 +44,7 @@ jobs:
         mkdir linux_bin
         cp ../target/release/liveask-server linux_bin/server
 
-    - name: BE release build
+    - name: Docker build
       run: |
         cd backend
         docker build -t liveask/server:latest .

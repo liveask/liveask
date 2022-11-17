@@ -1,4 +1,4 @@
-name: FE Prod CD
+name: fe prod
 
 on:
   workflow_dispatch:
