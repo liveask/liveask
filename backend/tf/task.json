@@ -1,0 +1,55 @@
+[
+  {
+    "name": "liveask-server",
+    "image": "${api-image}",
+    "essential": true,
+    "logConfiguration": {
+      "logDriver": "awslogs",
+      "options": {
+        "awslogs-region": "${region}",
+        "awslogs-stream-prefix": "api",
+        "awslogs-group": "${loggroup}"
+      }
+    },
+    "linuxParameters": {
+      "initProcessEnabled": true
+    },
+    "portMappings": [
+      {
+        "containerPort": ${port},
+        "hostPort": ${port},
+        "protocol": "tcp"
+      }
+    ],
+    "cpu": 1,
+    "environment": [
+      {
+        "name": "REDIS_URL",
+        "value": "${redis}"
+      },
+      {
+        "name": "RELAX_CORS",
+        "value": "1"
+      },
+      {
+        "name": "TINY_URL_TOKEN",
+        "value": "${tinyurl_token}"
+      },
+      {
+        "name": "MAILJET_TEMPLATE_ID",
+        "value": "${mj_template_id}"
+      },
+      {
+        "name": "MAILJET_KEY",
+        "value": "${mj_key}"
+      },
+      {
+        "name": "MAILJET_SECRET",
+        "value": "${mj_secret}"
+      }
+    ],
+    "mountPoints": [],
+    "volumesFrom": [],
+    "dependsOn": []
+  }
+]

@@ -72,7 +72,7 @@ resource "aws_lb_target_group" "alb" {
     protocol            = "HTTP"
     matcher             = "200"
     timeout             = "10"
-    path                = "/ping"
+    path                = "/api/ping"
     healthy_threshold   = "2"
     unhealthy_threshold = "2"
   }
