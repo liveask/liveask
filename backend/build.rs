@@ -1,3 +1,5 @@
+#![allow(clippy::panic, clippy::unwrap_used)]
+
 fn get_git_hash() -> (String, String) {
     use std::process::Command;
 
@@ -21,9 +23,9 @@ fn get_git_hash() -> (String, String) {
                 branch_string.lines().next().unwrap_or("").into(),
                 commit_string.lines().next().unwrap_or("").into(),
             );
-        } else {
-            panic!("Can not get git commit: {}", commit.unwrap_err());
         }
+
+        panic!("Can not get git commit: {}", commit.unwrap_err());
     } else {
         panic!("Can not get git branch: {}", branch.unwrap_err());
     }
