@@ -122,7 +122,7 @@ async fn main() -> anyhow::Result<()> {
     let pubsub = Arc::new(PubSubRedis::new(redis_pool, redis_url).await);
 
     let app = Arc::new(App::new(
-        Arc::new(DynamoEventsDB::new(dynamo_client().await?).await?),
+        Arc::new(DynamoEventsDB::new(dynamo_client().await?, use_local_db()).await?),
         pubsub.clone(),
     ));
 

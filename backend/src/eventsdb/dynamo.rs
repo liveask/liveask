@@ -79,16 +79,18 @@ impl EventsDB for DynamoEventsDB {
 const DB_TABLE_NAME: &str = "liveask";
 
 impl DynamoEventsDB {
-    pub async fn new(db: aws_sdk_dynamodb::Client) -> Result<Self> {
-        let resp = db.list_tables().send().await?;
-        let names = resp.table_names().unwrap_or_default();
+    pub async fn new(db: aws_sdk_dynamodb::Client, check_table_exists: bool) -> Result<Self> {
+        if check_table_exists {
+            let resp = db.list_tables().send().await?;
+            let names = resp.table_names().unwrap_or_default();
 
-        tracing::trace!("tables: {}", names.join(","));
+            tracing::trace!("tables: {}", names.join(","));
 
-        if !names.contains(&DB_TABLE_NAME.into()) {
-            tracing::info!("table not found, creating now");
+            if !names.contains(&DB_TABLE_NAME.into()) {
+                tracing::info!("table not found, creating now");
 
-            create_table(&db, DB_TABLE_NAME.into(), "key".into()).await?;
+                create_table(&db, DB_TABLE_NAME.into(), "key".into()).await?;
+            }
         }
 
         Ok(Self {
