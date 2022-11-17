@@ -113,7 +113,7 @@ async fn main() -> anyhow::Result<()> {
         target: "server-starting",
         git = %GIT_HASH,
         log_level,
-        %redis_url,
+        redis_url,
     );
 
     let redis_pool = create_pool(&redis_url)?;
