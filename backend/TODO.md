@@ -2,7 +2,6 @@
 # 2.0 rust rewrite
 
 - [ ] run e2e-local in CI
-- [ ] spin up beta env 
 
 # beyond
 
