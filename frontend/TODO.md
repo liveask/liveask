@@ -1,6 +1,7 @@
 
 # 2.1 (missing non essential features)
 
+- [ ] js: show info msg if wasm is disabled (`open /Applications/Google\ Chrome.app --args --js-flags=--noexpose_wasm`)
 - [ ] tutorial
 - [ ] autosize question/event-desc. textarea
 - [ ] collapsable event desc
