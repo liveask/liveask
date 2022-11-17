@@ -27,6 +27,16 @@ use crate::{
     redis_pool::{create_pool, ping_test_redis},
 };
 
+#[cfg(not(debug_assertions))]
+pub fn is_debug() -> bool {
+    false
+}
+
+#[cfg(debug_assertions)]
+pub fn is_debug() -> bool {
+    true
+}
+
 fn setup_cors() -> CorsLayer {
     if use_relaxed_cors() {
         tracing::info!("cors setup: very_permissive");
@@ -89,7 +99,7 @@ async fn main() -> anyhow::Result<()> {
             std::env::var("RUST_LOG")
                 .unwrap_or_else(|_| "liveask-server=debug,tower_http=debug".into()),
         ))
-        .with(tracing_subscriber::fmt::layer())
+        .with(tracing_subscriber::fmt::layer().with_ansi(is_debug()))
         .init();
 
     let redis_url = get_redis_url();
