@@ -28,7 +28,7 @@ impl EventEntry {
 }
 
 pub fn event_key(key: &str) -> String {
-    format!("events/ev-{}.json", key)
+    format!("events/ev-{key}.json")
 }
 
 #[async_trait]

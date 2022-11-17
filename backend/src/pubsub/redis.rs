@@ -93,10 +93,7 @@ impl PubSubRedis {
 impl PubSubPublish for PubSubRedis {
     async fn publish(&self, topic: &str, payload: &str) {
         if let Ok(mut db) = self.redis.get().await {
-            if let Err(e) = db
-                .publish::<_, _, ()>(format!("la/{}", topic), payload)
-                .await
-            {
+            if let Err(e) = db.publish::<_, _, ()>(format!("la/{topic}"), payload).await {
                 tracing::error!("publish err: {}", e);
             }
         }

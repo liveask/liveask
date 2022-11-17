@@ -136,8 +136,8 @@ impl App {
             result.data.name.clone(),
             result.data.short_url.clone(),
             format!(
-                "{}/eventmod/{}/{}",
-                self.base_url, result.tokens.public_token, mod_token
+                "{}/eventmod/{}/{mod_token}",
+                self.base_url, result.tokens.public_token,
             ),
         )
         .await;
@@ -452,7 +452,7 @@ impl App {
 
     async fn notify_subscribers(&self, event_id: String, question_id: Option<i64>) {
         let msg = if let Some(q) = question_id {
-            format!("q:{}", q)
+            format!("q:{q}")
         } else {
             "e".to_string()
         };
