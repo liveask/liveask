@@ -43,7 +43,12 @@ jobs:
         default: true
         profile: minimal
 
-    - name: Test
+    - name: Test Beta
+      run: |
+        cd backend-e2e
+        make e2e-test-beta
+
+    - name: Test Prod
       run: |
         cd backend-e2e
         make e2e-test-remote
