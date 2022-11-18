@@ -76,7 +76,7 @@ fn process_html_template() {
 
 fn file_content_changed(path: &str, content: &str) -> bool {
     read_to_string(path)
-        .map(|current_content| content != &current_content)
+        .map(|current_content| content != current_content)
         .unwrap_or_default()
 }
 
