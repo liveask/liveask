@@ -73,6 +73,7 @@ jobs:
 
   be_deploy_beta:
     runs-on: ubuntu-latest
+    environment: beta
     needs: ["check_and_test"]
     steps:
     - uses: actions/checkout@v2
