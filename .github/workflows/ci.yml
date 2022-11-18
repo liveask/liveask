@@ -191,7 +191,7 @@ jobs:
       run: |
         cd frontend
         #TODO: un-dupe once we have a better solution to change FE configs
-        cargo c
+        cargo make cargo-check
         cargo make build-and-check
     - name: Deploy
       env:
