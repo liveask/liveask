@@ -1,6 +1,7 @@
 name: fe prod
 
 on:
+  # only manually
   workflow_dispatch:
 
 jobs:
