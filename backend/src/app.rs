@@ -514,3 +514,34 @@ impl PubSubReceiver for App {
         }
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use crate::{eventsdb::InMemoryEventsDB, pubsub::PubSubInMemory};
+    use shared::EventData;
+    use std::sync::Arc;
+
+    #[tokio::test]
+    async fn test_event_create_fail_validation() {
+        let app = App::new(
+            Arc::new(InMemoryEventsDB::default()),
+            Arc::new(PubSubInMemory::default()),
+        );
+
+        let res = app
+            .create_event(AddEvent {
+                data: EventData {
+                    max_likes: 0,
+                    name: String::from("too short"),
+                    description: String::new(),
+                    short_url: String::new(),
+                    long_url: None,
+                },
+                moderator_email: String::new(),
+            })
+            .await;
+
+        assert!(res.is_err());
+    }
+}
