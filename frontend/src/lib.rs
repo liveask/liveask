@@ -124,6 +124,8 @@ fn switch(switch: &Route) -> Html {
 
 #[wasm_bindgen(start)]
 pub fn run_app() {
+    console_error_panic_hook::set_once();
+
     wasm_logger::init(wasm_logger::Config::new(log::Level::Info));
     yew::start_app::<AppRoot>();
 }

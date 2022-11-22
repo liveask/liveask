@@ -814,6 +814,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "chrono",
+ "console_error_panic_hook",
  "gloo",
  "gloo-storage",
  "gloo-utils",
