@@ -21,3 +21,4 @@
 - [ ] do not show hand on non-clickable questions vote bubble
 - [ ] show last edit timestamp in mod view
 - [ ] simplify extending event runtime
+- [ ] try/compare https://github.com/erwanvivien/fast_qr
