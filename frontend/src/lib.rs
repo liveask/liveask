@@ -24,10 +24,6 @@ use crate::{
 
 pub const VERSION_STR: &str = "2.0.0";
 
-// Use `wee_alloc` as the global allocator.
-#[global_allocator]
-static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
-
 #[derive(Default, Clone, Eq, PartialEq, Store)]
 pub struct State {
     pub event: Option<EventInfo>,
