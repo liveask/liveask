@@ -264,9 +264,9 @@ fn request_toggle_answered(event: String, secret: String, item: Item, link: &htm
             answered: !item.answered,
         };
 
-        fetch::mod_question(BASE_API, event, secret, item.id, modify)
-            .await
-            .unwrap();
+        if let Err(e) = fetch::mod_question(BASE_API, event, secret, item.id, modify).await {
+            log::error!("mod_questio error: {e}");
+        }
 
         Msg::QuestionUpdated(item.id)
     });
@@ -274,9 +274,9 @@ fn request_toggle_answered(event: String, secret: String, item: Item, link: &htm
 
 fn request_like(event: String, id: i64, like: bool, link: &html::Scope<Event>) {
     link.send_future(async move {
-        let _res = fetch::like_question(BASE_API, event, id, like)
-            .await
-            .unwrap();
+        if let Err(e) = fetch::like_question(BASE_API, event, id, like).await {
+            log::error!("like question error: {e}");
+        }
 
         Msg::QuestionUpdated(id)
     });
