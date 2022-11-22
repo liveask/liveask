@@ -112,9 +112,7 @@ fn switch(switch: &Route) -> Html {
         }
         Route::Privacy => {
             html! { <Privacy /> }
-        } // AppRoute::PageNotFound(Permissive(route)) => {
-          //     html! { <PageNotFound route=route /> }
-          // }
+        }
     }
 }
 

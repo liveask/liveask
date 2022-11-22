@@ -37,13 +37,14 @@ fn get_git_hash() -> (String, String) {
     }
 }
 
-fn process_html_template() {
+fn process_html_template(git_hash: String) {
     let mut hb = Handlebars::new();
     hb.register_template_file("template", "index.html.hbs")
         .unwrap();
 
     let mut data: HashMap<&str, &str> = HashMap::new();
     data.insert("sentry", "local");
+    data.insert("release", &git_hash);
 
     if env::var("IS_PROD")
         .map(|env| &env == "1")
@@ -85,5 +86,5 @@ fn main() {
     println!("cargo:rustc-env=GIT_BRANCH={}", git.0);
     println!("cargo:rustc-env=GIT_HASH={}", git.1);
 
-    process_html_template();
+    process_html_template(git.1);
 }
