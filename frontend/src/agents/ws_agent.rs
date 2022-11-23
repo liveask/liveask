@@ -178,9 +178,15 @@ impl WebSocketAgent {
 
         let interval = {
             let link = self.link.clone();
-            Interval::new(duration.num_milliseconds().try_into().unwrap(), move || {
-                link.send_message(Msg::Reconnect);
-            })
+            Interval::new(
+                duration
+                    .num_milliseconds()
+                    .try_into()
+                    .expect("duration millis should always fit into u32"),
+                move || {
+                    link.send_message(Msg::Reconnect);
+                },
+            )
         };
 
         log::info!("ws set reconnect timeout: {}", duration);
@@ -197,7 +203,8 @@ impl WebSocketAgent {
         let ws_connected_callback = self.link.callback(|_| Msg::Connected);
         let ws_msg_callback = self.link.callback(Msg::MessageReceived);
 
-        let mut client = wasm_sockets::EventClient::new(&self.url).unwrap();
+        let mut client =
+            wasm_sockets::EventClient::new(&self.url).expect("error creating websocket");
 
         client.set_on_error(Some(Box::new(move |_error| {
             // log::info!("ws on_error: {:#?}", error);

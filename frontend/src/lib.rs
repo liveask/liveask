@@ -1,5 +1,6 @@
 #[deny(clippy::redundant_closure)]
 #[deny(clippy::pedantic)]
+#[deny(clippy::unwrap_used)]
 mod agents;
 mod components;
 mod fetch;
