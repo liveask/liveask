@@ -5,6 +5,7 @@ use crate::{
     pages::BASE_API,
     routes::Route,
 };
+use wasm_bindgen::UnwrapThrowExt;
 use yew::prelude::*;
 use yew_agent::{Bridge, Bridged};
 use yew_router::{prelude::History, scope_ext::RouterScopeExt};
@@ -71,7 +72,7 @@ impl Component for DeletePopup {
                 true
             }
             Msg::Sent => {
-                ctx.link().history().unwrap().push(Route::Home);
+                ctx.link().history().unwrap_throw().push(Route::Home);
                 false
             }
         }

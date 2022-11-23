@@ -12,7 +12,7 @@ args = ["c","--target=wasm32-unknown-unknown"]
 [tasks.clippy]
 install_crate = "clippy"
 command = "cargo"
-args = ["clippy","--target=wasm32-unknown-unknown"]
+args = ["clippy","--target=wasm32-unknown-unknown","--","-D","clippy::unwrap_used"]
 
 [tasks.test]
 command = "cargo"

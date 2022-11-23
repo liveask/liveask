@@ -1,6 +1,7 @@
 use gloo_storage::{LocalStorage, Storage};
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
+use wasm_bindgen::UnwrapThrowExt;
 
 #[derive(Serialize, Deserialize, Debug)]
 struct EventStore {
@@ -31,6 +32,6 @@ impl LocalCache {
     }
 
     fn set_state(event: &str, likes: HashSet<i64>) {
-        LocalStorage::set(event, EventStore { likes }).unwrap();
+        LocalStorage::set(event, EventStore { likes }).unwrap_throw();
     }
 }

@@ -207,7 +207,7 @@ pub async fn create_event(
     let request = Request::new_with_str_and_init(&format!("{}/api/addevent", base_api), &opts)?;
     request.headers().set("content-type", "application/json")?;
 
-    let window = web_sys::window().unwrap();
+    let window = gloo_utils::window();
     let resp_value = JsFuture::from(window.fetch_with_request(&request)).await?;
     let resp: Response = resp_value.dyn_into()?;
 

@@ -1,3 +1,4 @@
+use wasm_bindgen::UnwrapThrowExt;
 use web_sys::HtmlElement;
 use yew::prelude::*;
 
@@ -78,9 +79,15 @@ impl Component for Popup {
 impl Popup {
     fn toggle_modal(&self, enable: bool) {
         if enable {
-            self.body.class_list().add_1("modal-open").unwrap();
+            self.body
+                .class_list()
+                .add_1("modal-open")
+                .expect_throw("toggle_modal error");
         } else {
-            self.body.class_list().remove_1("modal-open").unwrap();
+            self.body
+                .class_list()
+                .remove_1("modal-open")
+                .expect_throw("toggle_modal error 2");
         }
     }
 }

@@ -1,3 +1,4 @@
+use wasm_bindgen::UnwrapThrowExt;
 use yew::prelude::*;
 use yew_router::prelude::*;
 
@@ -23,17 +24,17 @@ impl Component for Home {
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
             Msg::CreateEvent => {
-                ctx.link().history().unwrap().push(Route::NewEvent);
+                ctx.link().history().unwrap_throw().push(Route::NewEvent);
                 false
             }
             Msg::Example => {
-                ctx.link().history().unwrap().push(Route::Event {
+                ctx.link().history().unwrap_throw().push(Route::Event {
                     id: "eventexample".into(),
                 });
                 false
             }
             Msg::Privacy => {
-                ctx.link().history().unwrap().push(Route::Privacy);
+                ctx.link().history().unwrap_throw().push(Route::Privacy);
                 false
             }
         }
@@ -42,7 +43,7 @@ impl Component for Home {
     fn view(&self, ctx: &Context<Self>) -> Html {
         let twitter_svg = {
             let svg = include_str!("../../inline-assets/twitter.svg");
-            let div = gloo_utils::document().create_element("div").unwrap();
+            let div = gloo_utils::document().create_element("div").unwrap_throw();
             div.set_inner_html(svg);
             div.set_id("twitter");
             div.set_class_name("social");
@@ -51,7 +52,7 @@ impl Component for Home {
 
         let github_svg = {
             let svg = include_str!("../../inline-assets/github.svg");
-            let div = gloo_utils::document().create_element("div").unwrap();
+            let div = gloo_utils::document().create_element("div").unwrap_throw();
             div.set_inner_html(svg);
             div.set_id("github");
             div.set_class_name("social");

@@ -4,6 +4,7 @@ use gloo::timers::callback::Timeout;
 use shared::Item;
 use std::rc::Rc;
 use wasm_bindgen::JsCast;
+use wasm_bindgen::UnwrapThrowExt;
 use web_sys::Element;
 use web_sys::HtmlElement;
 use yew::prelude::*;
@@ -119,7 +120,7 @@ impl Component for Question {
 
     fn rendered(&mut self, ctx: &Context<Self>, first_render: bool) {
         let (elem, element_y) = self.get_elem_y();
-        let elem: HtmlElement = elem.dyn_into::<HtmlElement>().unwrap();
+        let elem: HtmlElement = elem.dyn_into::<HtmlElement>().unwrap_throw();
 
         if let Some(last_pos) = self.last_pos {
             if self.animation_time.is_none() && self.timeout.is_none() && last_pos != element_y {
@@ -127,10 +128,12 @@ impl Component for Question {
 
                 let style = elem.style();
 
-                style.set_property("transition-duration", "0s").unwrap();
+                style
+                    .set_property("transition-duration", "0s")
+                    .unwrap_throw();
                 style
                     .set_property("transform", &format!("translate(0px,{}px)", diff))
-                    .unwrap();
+                    .unwrap_throw();
 
                 let handle = {
                     let link = ctx.link().clone();
@@ -198,11 +201,17 @@ impl Component for Question {
 
 impl Question {
     fn reset_transition(&mut self) {
-        let elem = self.get_element().unwrap();
-        let elem: HtmlElement = elem.dyn_into::<HtmlElement>().unwrap();
+        let elem = self.get_element().expect_throw("reset_transition error");
+        let elem: HtmlElement = elem
+            .dyn_into::<HtmlElement>()
+            .expect_throw("reset_transition error 2");
         let style = elem.style();
-        style.remove_property("transition-duration").unwrap();
-        style.remove_property("transform").unwrap();
+        style
+            .remove_property("transition-duration")
+            .expect_throw("reset_transition error 3");
+        style
+            .remove_property("transform")
+            .expect_throw("reset_transition error 4");
         self.timeout = None;
     }
 
@@ -343,8 +352,10 @@ impl Question {
 
 impl Question {
     fn get_elem_y(&self) -> (Element, i64) {
-        let elem = self.get_element().unwrap();
-        let scroll_y = gloo_utils::window().scroll_y().unwrap() as i64;
+        let elem = self.get_element().expect_throw("get_elem_y error 1");
+        let scroll_y = gloo_utils::window()
+            .scroll_y()
+            .expect_throw("get_elem_y error 2") as i64;
         let r = elem.get_bounding_client_rect();
         let element_y = r.y() as i64 + scroll_y;
 

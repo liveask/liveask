@@ -5,6 +5,7 @@ use crate::{
     local_cache::LocalCache,
     pages::BASE_API,
 };
+use wasm_bindgen::UnwrapThrowExt;
 use web_sys::HtmlTextAreaElement;
 use yew::prelude::*;
 use yew_agent::{Bridge, Bridged};
@@ -85,7 +86,7 @@ impl Component for QuestionPopup {
                 true
             }
             Msg::InputChanged(ev) => {
-                let target: HtmlTextAreaElement = ev.target_dyn_into().unwrap();
+                let target: HtmlTextAreaElement = ev.target_dyn_into().unwrap_throw();
 
                 self.text = target.value();
 

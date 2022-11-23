@@ -1,5 +1,5 @@
 use shared::{CreateEventErrors, EventInfo, ValidationError};
-use wasm_bindgen::JsCast;
+use wasm_bindgen::{JsCast, UnwrapThrowExt};
 use web_sys::{Element, HtmlInputElement, HtmlTextAreaElement};
 use yew::prelude::*;
 use yew_router::prelude::*;
@@ -67,9 +67,9 @@ impl Component for NewEvent {
 
             Msg::CreatedResult(event) => match event {
                 Some(event) => {
-                    ctx.link().history().unwrap().push(Route::EventMod {
+                    ctx.link().history().unwrap_throw().push(Route::EventMod {
                         id: event.tokens.public_token,
-                        secret: event.tokens.moderator_token.unwrap(),
+                        secret: event.tokens.moderator_token.unwrap_throw(),
                     });
                     false
                 }
@@ -82,19 +82,19 @@ impl Component for NewEvent {
             Msg::InputChange(input, c) => {
                 match input {
                     Input::Name => {
-                        let e = self.name_ref.cast::<Element>().unwrap();
-                        let e: HtmlInputElement = e.dyn_into().unwrap();
+                        let e = self.name_ref.cast::<Element>().unwrap_throw();
+                        let e: HtmlInputElement = e.dyn_into().unwrap_throw();
 
                         self.name = e.value();
 
                         self.errors.check(&self.name, &self.desc);
                     }
                     Input::Email => {
-                        let target: HtmlInputElement = c.target_dyn_into().unwrap();
+                        let target: HtmlInputElement = c.target_dyn_into().unwrap_throw();
                         self.email = target.value()
                     }
                     Input::Desc => {
-                        let target: HtmlTextAreaElement = c.target_dyn_into().unwrap();
+                        let target: HtmlTextAreaElement = c.target_dyn_into().unwrap_throw();
                         self.desc = target.value();
 
                         self.errors.check(&self.name, &self.desc);

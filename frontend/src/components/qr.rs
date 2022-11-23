@@ -1,3 +1,4 @@
+use wasm_bindgen::UnwrapThrowExt;
 use yew::prelude::*;
 
 #[derive(Clone, Debug, Eq, PartialEq, Properties)]
@@ -18,8 +19,9 @@ impl Component for Qr {
         let dim = ctx.props().dimensions;
 
         use qrcode::{render::svg, EcLevel, QrCode, Version};
-        let code =
-            QrCode::with_version(ctx.props().url.clone(), Version::Normal(6), EcLevel::M).unwrap();
+        let code = QrCode::with_version(ctx.props().url.clone(), Version::Normal(6), EcLevel::M)
+            .unwrap_throw();
+
         let qr_image = code
             .render()
             .min_dimensions(dim, dim)
@@ -31,9 +33,10 @@ impl Component for Qr {
     }
 
     fn view(&self, _ctx: &Context<Self>) -> Html {
-        let div = gloo_utils::document().create_element("div").unwrap();
+        let div = gloo_utils::document().create_element("div").unwrap_throw();
         div.set_inner_html(&self.qr_image);
-        div.class_list().add_1("qrcode").unwrap();
+        div.class_list().add_1("qrcode").unwrap_throw();
+
         let qr_svg = Html::VRef(div.into());
 
         html! {

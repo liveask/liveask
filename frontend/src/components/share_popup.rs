@@ -4,6 +4,7 @@ use crate::{
     components::Qr,
     routes::Route,
 };
+use wasm_bindgen::UnwrapThrowExt;
 use yew::prelude::*;
 use yew_agent::{Bridge, Bridged};
 use yew_router::{prelude::History, scope_ext::RouterScopeExt};
@@ -68,7 +69,7 @@ impl Component for SharePopup {
             }
             Msg::OpenPrint => {
                 self.show = false;
-                ctx.link().history().unwrap().push(Route::Print {
+                ctx.link().history().unwrap_throw().push(Route::Print {
                     id: ctx.props().event_id.clone(),
                 });
                 true
@@ -93,7 +94,7 @@ impl Component for SharePopup {
                                 )
                                 .as_str(),
                             )
-                            .unwrap();
+                            .unwrap_throw();
                     }
                     ShareLink::Whatsapp => {
                         location_href(format!("whatsapp://send?text={}", self.url))
@@ -169,7 +170,7 @@ impl Component for SharePopup {
 fn location_href(url: String) {
     gloo_utils::document()
         .location()
-        .unwrap()
+        .unwrap_throw()
         .set_href(url.as_str())
-        .unwrap();
+        .unwrap_throw();
 }

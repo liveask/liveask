@@ -1,6 +1,7 @@
 use chrono::{Duration, Utc};
 use gloo::timers::callback::Interval;
 use std::rc::Rc;
+use wasm_bindgen::UnwrapThrowExt;
 use yew::prelude::*;
 use yew_agent::{Bridge, Bridged};
 use yew_router::{prelude::*, scope_ext::HistoryHandle};
@@ -61,7 +62,7 @@ impl Component for IconBar {
             _route_listener: ctx
                 .link()
                 .add_history_listener(ctx.link().callback(|_history| Msg::RouteChange))
-                .unwrap(),
+                .unwrap_throw(),
         }
     }
 
@@ -80,7 +81,7 @@ impl Component for IconBar {
                 false
             }
             Msg::Home => {
-                ctx.link().history().unwrap().push(Route::Home);
+                ctx.link().history().unwrap_throw().push(Route::Home);
                 false
             }
             Msg::Reconnect => {
@@ -115,18 +116,18 @@ impl Component for IconBar {
 
         let logo_svg = {
             let logo_svg = include_str!("../../inline-assets/logo.svg");
-            let div = doc.create_element("div").unwrap();
+            let div = doc.create_element("div").unwrap_throw();
             div.set_inner_html(logo_svg);
-            Html::VRef(div.first_element_child().unwrap().into())
+            Html::VRef(div.first_element_child().unwrap_throw().into())
         };
 
         let logo_text_svg = {
             let logo_svg = include_str!("../../inline-assets/logo_text.svg");
-            let div = doc.create_element("div").unwrap();
+            let div = doc.create_element("div").unwrap_throw();
             div.set_inner_html(logo_svg);
-            let svg = div.first_element_child().unwrap();
+            let svg = div.first_element_child().unwrap_throw();
             //TODO: conditional
-            svg.class_list().add_1("shrink").unwrap();
+            svg.class_list().add_1("shrink").unwrap_throw();
             Html::VRef(svg.into())
         };
 

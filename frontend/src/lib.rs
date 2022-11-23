@@ -1,6 +1,6 @@
+//TODO: make them apply module wide
 #[deny(clippy::redundant_closure)]
 #[deny(clippy::pedantic)]
-#[deny(clippy::unwrap_used)]
 mod agents;
 mod components;
 mod fetch;
@@ -51,7 +51,7 @@ impl Component for AppRoot {
 
         Self {
             _dispatch: Dispatch::<State>::subscribe(ctx.link().callback(Msg::State)),
-            state: Default::default(),
+            state: Rc::default(),
             _events: events,
             connected: true,
         }
@@ -90,6 +90,7 @@ impl Component for AppRoot {
     }
 }
 
+#[must_use]
 pub fn not(b: bool) -> bool {
     !b
 }

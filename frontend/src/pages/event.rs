@@ -1,6 +1,7 @@
 use chrono::{DateTime, Duration, NaiveDateTime, Utc};
 use shared::{EventInfo, Item, ModQuestion, States};
 use std::{rc::Rc, str::FromStr};
+use wasm_bindgen::{JsCast, UnwrapThrowExt};
 use yew::prelude::*;
 use yew_agent::{Bridge, Bridged};
 use yewdux::prelude::*;
@@ -107,20 +108,20 @@ impl Component for Event {
                         request_like(self.event_id.clone(), id, !liked, ctx.link());
                     }
                     QuestionClickType::Hide => {
-                        if let Some(q) = self.state.event.as_ref().unwrap().get_question(id) {
+                        if let Some(q) = self.state.event.as_ref().unwrap_throw().get_question(id) {
                             request_toggle_hide(
                                 self.event_id.clone(),
-                                ctx.props().secret.clone().unwrap(),
+                                ctx.props().secret.clone().unwrap_throw(),
                                 q,
                                 ctx.link(),
                             )
                         }
                     }
                     QuestionClickType::Answer => {
-                        if let Some(q) = self.state.event.as_ref().unwrap().get_question(id) {
+                        if let Some(q) = self.state.event.as_ref().unwrap_throw().get_question(id) {
                             request_toggle_answered(
                                 self.event_id.clone(),
-                                ctx.props().secret.clone().unwrap(),
+                                ctx.props().secret.clone().unwrap_throw(),
                                 q,
                                 ctx.link(),
                             )
@@ -165,10 +166,9 @@ impl Component for Event {
             }
             Msg::StateChanged => false, // nothing needs to happen here
             Msg::ModStateChange(ev) => {
-                use wasm_bindgen::JsCast;
-
-                let e: web_sys::HtmlSelectElement = ev.target().unwrap().dyn_into().unwrap();
-                let new_state = States::from_str(e.value().as_str()).unwrap();
+                let e: web_sys::HtmlSelectElement =
+                    ev.target().unwrap_throw().dyn_into().unwrap_throw();
+                let new_state = States::from_str(e.value().as_str()).unwrap_throw();
 
                 request_state_change(
                     self.event_id.clone(),
@@ -207,7 +207,7 @@ impl Component for Event {
 
                 if res.is_some() {
                     self.dispatch.reduce(|old| State {
-                        event: Some(res.clone().unwrap()),
+                        event: Some(res.clone().unwrap_throw()),
                         new_question: old.new_question,
                     });
                     self.state = self.dispatch.get();
@@ -304,7 +304,7 @@ fn request_state_change(
     link: &html::Scope<Event>,
 ) {
     link.send_future(async move {
-        if let Err(e) = fetch::mod_state_change(BASE_API, id, secret.unwrap(), state).await {
+        if let Err(e) = fetch::mod_state_change(BASE_API, id, secret.unwrap_throw(), state).await {
             log::error!("mod_state_change error: {e}");
         }
 
@@ -554,7 +554,7 @@ impl Event {
                 format!(
                     "https://www.live-ask.com/eventmod/{}/{}",
                     e.tokens.public_token,
-                    e.tokens.moderator_token.clone().unwrap()
+                    e.tokens.moderator_token.clone().unwrap_throw()
                 )
             })
             .unwrap_or_default()

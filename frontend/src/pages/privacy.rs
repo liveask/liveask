@@ -1,3 +1,4 @@
+use wasm_bindgen::UnwrapThrowExt;
 use yew::prelude::*;
 
 #[derive(Clone, Debug, Eq, PartialEq, Properties)]
@@ -14,7 +15,9 @@ impl Component for Privacy {
 
     fn view(&self, _ctx: &Context<Self>) -> Html {
         let twitter_svg = include_str!("../../inline-assets/privacy.html");
-        let div = gloo_utils::document().create_element("div").unwrap();
+        let div = gloo_utils::document()
+            .create_element("div")
+            .expect_throw("could not create div");
         div.set_inner_html(twitter_svg);
         let node = Html::VRef(div.into());
 
