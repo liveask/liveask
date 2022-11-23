@@ -25,9 +25,11 @@
             release: "{{release}}"
         });
     </script>
-</head>
 
-<body>
+    <!-- Fathom - beautiful, simple website analytics -->
+    <script src="https://cdn.usefathom.com/script.js" data-site="{{fathom}}" defer></script>
+    <!-- / Fathom -->
+
     <!-- Metrical -->
     <script>
         window.metrical = { "app": "{{metrical}}" }
@@ -35,10 +37,9 @@
     <script async src="https://cdn.metrical.xyz/script.js" type="text/javascript">
     </script>
     <!-- / Metrical -->
+</head>
 
-    <!-- Fathom - beautiful, simple website analytics -->
-    <script src="https://cdn.usefathom.com/script.js" data-site="{{fathom}}" defer></script>
-    <!-- / Fathom -->
+<body>
 </body>
 
 </html>
