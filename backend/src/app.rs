@@ -390,7 +390,7 @@ impl App {
             let msg = match result {
                 Ok(msg) => msg,
                 Err(e) => {
-                    tracing::warn!("websocket receive err (id={}): '{}'", user_id, e);
+                    tracing::info!("websocket receive err (id={}): '{}'", user_id, e);
                     break;
                 }
             };
@@ -401,7 +401,8 @@ impl App {
             }
 
             match &msg {
-                Message::Ping(_) => tracing::warn!("received msg:ping"),
+                //TODO: do we need to respond manually?
+                Message::Ping(_) => tracing::info!("received msg:ping"),
                 Message::Pong(_) => tracing::warn!("received msg:pong"),
                 Message::Text(txt) => tracing::warn!("received msg:text: '{txt}'"),
                 Message::Binary(bin) => tracing::warn!("received msg:binary: {}b", bin.len()),
