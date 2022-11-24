@@ -40,6 +40,8 @@ resource "aws_ecs_task_definition" "service" {
     loggroup       = aws_cloudwatch_log_group.api.name
     api-image      = var.docker-image
     redis          = "redis://${aws_elasticache_replication_group.redis.primary_endpoint_address}:${var.redis_port}"
+    la_env         = var.tags.Environment
+    sentry_dsn     = var.sentry_dsn
   })
 
   tags = var.tags

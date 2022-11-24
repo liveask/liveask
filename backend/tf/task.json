@@ -46,6 +46,14 @@
       {
         "name": "MAILJET_SECRET",
         "value": "${mj_secret}"
+      },
+      {
+        "name": "LIVEASK_ENV",
+        "value": "${la_env}"
+      },
+      {
+        "name": "LA_SENTRY_DSN",
+        "value": "${sentry_dsn}"
       }
     ],
     "mountPoints": [],
