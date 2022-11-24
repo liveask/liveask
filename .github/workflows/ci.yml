@@ -121,6 +121,11 @@ jobs:
         ECS_SERVICE_ARN=$(aws ecs list-services --region=eu-west-1 --cluster=${ECS_CLUSTER} --output=text | head -1 | awk '{print $2}')
         aws ecs update-service --region=eu-west-1 --service=${ECS_SERVICE_ARN} --cluster=${ECS_CLUSTER} --force-new-deployment
 
+    - name: Set outputs
+      id: vars
+      run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+    - name: Check outputs
+      run: echo ${{ steps.vars.outputs.sha_short }}
     - name: Create Sentry release
       uses: getsentry/action-release@v1
       env:
@@ -130,7 +135,7 @@ jobs:
       with:
         environment: beta
         set_commits: false
-        version: ${{ github.sha }}
+        version: ${{ steps.vars.outputs.sha_short }}
 
   backend-e2e:
     runs-on: ubuntu-latest
