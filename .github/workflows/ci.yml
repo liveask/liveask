@@ -127,6 +127,10 @@ jobs:
         SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
         SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
         SENTRY_PROJECT: la-server
+      with:
+        environment: beta
+        set_commits: false
+        version: ${{ github.sha }}
 
   backend-e2e:
     runs-on: ubuntu-latest
