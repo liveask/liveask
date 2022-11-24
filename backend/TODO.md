@@ -6,6 +6,7 @@
 
 # beyond
 
+- [ ] only errors in sentry?
 - [ ] speed up CI https://github.com/marketplace/actions/rust-cargo-make
 - [ ] optimize pubsub delivery using concurrent hashmap
 - [ ] adjust event runtime
