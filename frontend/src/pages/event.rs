@@ -33,10 +33,10 @@ pub enum LoadingState {
 
 // pub const BASE_API: &str = "http://localhost:8090";
 // pub const BASE_SOCKET: &str = "ws://localhost:8090";
-// pub const BASE_API: &str = "https://beta.www.live-ask.com";
-// pub const BASE_SOCKET: &str = "wss://beta.www.live-ask.com";
-pub const BASE_API: &str = "https://api.www.live-ask.com";
-pub const BASE_SOCKET: &str = "wss://api.www.live-ask.com";
+pub const BASE_API: &str = "https://beta.www.live-ask.com";
+pub const BASE_SOCKET: &str = "wss://beta.www.live-ask.com";
+// pub const BASE_API: &str = "https://api.www.live-ask.com";
+// pub const BASE_SOCKET: &str = "wss://api.www.live-ask.com";
 
 pub struct Event {
     event_id: String,
