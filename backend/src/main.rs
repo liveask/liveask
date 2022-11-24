@@ -15,6 +15,7 @@ use axum::{
     routing::{get, post},
     Extension, Router,
 };
+use sentry_tracing::EventFilter;
 use std::{net::SocketAddr, str::FromStr, sync::Arc};
 use tower_http::{cors::CorsLayer, trace::TraceLayer};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
@@ -56,10 +57,21 @@ fn use_local_db() -> bool {
     std::env::var(env::ENV_DB_LOCAL).is_ok()
 }
 
+fn production_env() -> String {
+    std::env::var(env::ENV_ENV).unwrap_or_else(|_| String::from("local"))
+}
+
 fn use_relaxed_cors() -> bool {
     std::env::var(env::ENV_RELAX_CORS)
         .map(|var| var == "1")
         .unwrap_or_default()
+}
+
+fn get_port() -> u16 {
+    std::env::var(env::ENV_PORT)
+        .ok()
+        .and_then(|var| var.parse().ok())
+        .unwrap_or(8090)
 }
 
 fn get_redis_url() -> String {
@@ -102,18 +114,36 @@ async fn main() -> anyhow::Result<()> {
     let log_level = std::env::var("RUST_LOG")
         .unwrap_or_else(|_| "info,liveask_server=debug,tower_http=debug".into());
 
+    let prod_env = production_env();
+
+    let _guard = sentry::init((
+        std::env::var(env::ENV_SENTRY_DSN).unwrap_or_default(),
+        sentry::ClientOptions {
+            release: Some(GIT_HASH.into()),
+            environment: Some(prod_env.clone().into()),
+            ..Default::default()
+        },
+    ));
+
+    let sentry_layer = sentry_tracing::layer().event_filter(|md| match md.level() {
+        &tracing::Level::ERROR | &tracing::Level::WARN => EventFilter::Event,
+        _ => EventFilter::Ignore,
+    });
+
     tracing_subscriber::registry()
         .with(tracing_subscriber::EnvFilter::new(log_level.clone()))
         .with(tracing_subscriber::fmt::layer().with_ansi(is_debug()))
+        .with(sentry_layer)
         .init();
 
     let redis_url = get_redis_url();
 
     tracing::info!(
-        target: "server-starting",
-        git = %GIT_HASH,
+        git= %GIT_HASH,
+        env= prod_env,
         log_level,
         redis_url,
+        "server-starting",
     );
 
     let redis_pool = create_pool(&redis_url)?;
@@ -150,7 +180,7 @@ async fn main() -> anyhow::Result<()> {
         .layer(setup_cors())
         .layer(Extension(app));
 
-    let addr = SocketAddr::from(([0, 0, 0, 0], 8090));
+    let addr = SocketAddr::from(([0, 0, 0, 0], get_port()));
 
     tracing::info!("listening on {}", addr);
 

@@ -4,6 +4,7 @@ use axum::{
     response::{Html, IntoResponse},
     Extension, Json,
 };
+use sentry_anyhow::capture_anyhow;
 use tracing::instrument;
 
 use crate::app::SharedApp;
@@ -35,7 +36,8 @@ pub async fn editlike_handler(
     match app.edit_like(id, payload).await {
         Ok(res) => Ok(Json(res)),
         Err(e) => {
-            tracing::error!("{}", e);
+            capture_anyhow(&e);
+            tracing::error!("{e}");
             Err(StatusCode::BAD_REQUEST)
         }
     }
@@ -51,6 +53,7 @@ pub async fn addevent_handler(
     match app.create_event(payload).await {
         Ok(res) => Ok(Json(res)),
         Err(e) => {
+            capture_anyhow(&e);
             tracing::error!("{}", e);
             Err(StatusCode::BAD_REQUEST)
         }
@@ -68,6 +71,7 @@ pub async fn addquestion_handler(
     match app.add_question(id, payload).await {
         Ok(res) => Ok(Json(res)),
         Err(e) => {
+            capture_anyhow(&e);
             tracing::error!("{}", e);
             Err(StatusCode::BAD_REQUEST)
         }
@@ -84,6 +88,7 @@ pub async fn getevent_handler(
     match app.get_event(id, None).await {
         Ok(res) => Ok(Json(res)),
         Err(e) => {
+            capture_anyhow(&e);
             tracing::error!("{}", e);
             Err(StatusCode::BAD_REQUEST)
         }
@@ -98,6 +103,7 @@ pub async fn mod_get_event(
     match app.get_event(id, Some(secret)).await {
         Ok(res) => Ok(Json(res)),
         Err(e) => {
+            capture_anyhow(&e);
             tracing::error!("{}", e);
             Err(StatusCode::BAD_REQUEST)
         }
@@ -112,6 +118,7 @@ pub async fn mod_delete_event(
     match app.delete_event(id, secret).await {
         Ok(res) => Ok(Json(res)),
         Err(e) => {
+            capture_anyhow(&e);
             tracing::error!("{}", e);
             Err(StatusCode::BAD_REQUEST)
         }
@@ -126,6 +133,7 @@ pub async fn mod_get_question(
     match app.get_question(id, Some(secret), question_id).await {
         Ok(res) => Ok(Json(res)),
         Err(e) => {
+            capture_anyhow(&e);
             tracing::error!("{}", e);
             Err(StatusCode::BAD_REQUEST)
         }
@@ -140,6 +148,7 @@ pub async fn get_question(
     match app.get_question(id, None, question_id).await {
         Ok(res) => Ok(Json(res)),
         Err(e) => {
+            capture_anyhow(&e);
             tracing::error!("{}", e);
             Err(StatusCode::BAD_REQUEST)
         }
@@ -158,6 +167,7 @@ pub async fn mod_edit_question(
     {
         Ok(res) => Ok(Json(res)),
         Err(e) => {
+            capture_anyhow(&e);
             tracing::error!("{}", e);
             Err(StatusCode::BAD_REQUEST)
         }
@@ -173,6 +183,7 @@ pub async fn mod_edit_state(
     match app.edit_event_state(id, secret, payload.state).await {
         Ok(res) => Ok(Json(res)),
         Err(e) => {
+            capture_anyhow(&e);
             tracing::error!("{}", e);
             Err(StatusCode::BAD_REQUEST)
         }
