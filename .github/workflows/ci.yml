@@ -134,7 +134,7 @@ jobs:
         SENTRY_PROJECT: la-server
       with:
         environment: beta
-        set_commits: false
+        set_commits: skip
         version: ${{ steps.vars.outputs.sha_short }}
 
   backend-e2e:
