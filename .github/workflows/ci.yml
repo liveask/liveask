@@ -120,12 +120,9 @@ jobs:
       run: |
         ECS_SERVICE_ARN=$(aws ecs list-services --region=eu-west-1 --cluster=${ECS_CLUSTER} --output=text | head -1 | awk '{print $2}')
         aws ecs update-service --region=eu-west-1 --service=${ECS_SERVICE_ARN} --cluster=${ECS_CLUSTER} --force-new-deployment
-
-    - name: Set outputs
+    - name: Set short git SHA
       id: vars
       run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
-    - name: Check outputs
-      run: echo ${{ steps.vars.outputs.sha_short }}
     - name: Create Sentry release
       uses: getsentry/action-release@v1
       env:
@@ -220,3 +217,18 @@ jobs:
         aws s3 sync . s3://beta.live-ask.com --acl public-read --no-progress --delete --cache-control "public, max-age=5184000" --exclude index.html
         aws s3 cp ./index.html s3://beta.live-ask.com --acl public-read --no-progress --cache-control "public, max-age=21600"
         aws cloudfront create-invalidation --distribution-id EJFNBPSNYQSP9 --paths /index.html
+    - name: Set short SHA
+      id: vars
+      run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+    - name: Create Sentry release
+      uses: getsentry/action-release@v1
+      env:
+        SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+        SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+        SENTRY_PROJECT: liveask
+      with:
+        environment: beta
+        set_commits: skip
+        version: ${{ steps.vars.outputs.sha_short }}
+
+  
