@@ -207,11 +207,17 @@ jobs:
         #TODO: un-dupe once we have a better solution to change FE configs
         cargo make cargo-check
         cargo make build-and-check
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_KEY_ID_FE_CD }}
+        aws-secret-access-key: ${{ secrets.AWS_KEY_SECRET_FE_CD }}
+        aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
     - name: Deploy
-      env:
-        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_KEY_ID_FE_CD }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_KEY_SECRET_FE_CD }}
-        AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
+      # env:
+      #   AWS_ACCESS_KEY_ID: ${{ secrets.AWS_KEY_ID_FE_CD }}
+      #   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_KEY_SECRET_FE_CD }}
+      #   AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
       run: |
         cd frontend/dist
         aws s3 sync . s3://beta.live-ask.com --acl public-read --no-progress --delete --cache-control "public, max-age=5184000" --exclude index.html
