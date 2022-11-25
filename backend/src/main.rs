@@ -124,6 +124,8 @@ async fn main() -> anyhow::Result<()> {
         sentry::ClientOptions {
             release: Some(GIT_HASH.into()),
             attach_stacktrace: true,
+            //TODO: lower on prod
+            traces_sample_rate: 1.0,
             environment: Some(prod_env.clone().into()),
             ..Default::default()
         },
