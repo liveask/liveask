@@ -15,6 +15,7 @@ use axum::{
     routing::{get, post},
     Extension, Router,
 };
+use sentry_tower::{NewSentryLayer, SentryHttpLayer};
 use sentry_tracing::EventFilter;
 use std::{net::SocketAddr, str::FromStr, sync::Arc};
 use tower_http::{cors::CorsLayer, trace::TraceLayer};
@@ -120,6 +121,7 @@ async fn main() -> anyhow::Result<()> {
         std::env::var(env::ENV_SENTRY_DSN).unwrap_or_default(),
         sentry::ClientOptions {
             release: Some(GIT_HASH.into()),
+            attach_stacktrace: true,
             environment: Some(prod_env.clone().into()),
             ..Default::default()
         },
@@ -169,6 +171,7 @@ async fn main() -> anyhow::Result<()> {
     #[rustfmt::skip]
     let router = Router::new()
         .route("/api/ping", get(handle::ping_handler))
+        .route("/api/panic", get(handle::panic_handler))
         .route("/api/addevent", post(handle::addevent_handler))
         .route("/api/event/editlike/:id", post(handle::editlike_handler))
         .route("/api/event/addquestion/:id", post(handle::addquestion_handler))
@@ -176,6 +179,8 @@ async fn main() -> anyhow::Result<()> {
         .route("/api/event/:id", get(handle::getevent_handler))
         .route("/push/:id", get(push_handler))
         .nest("/api/mod/event",mod_routes)
+        .layer(SentryHttpLayer::with_transaction())
+        .layer(NewSentryLayer::new_from_top())
         .layer(TraceLayer::new_for_http())
         .layer(setup_cors())
         .layer(Extension(app));

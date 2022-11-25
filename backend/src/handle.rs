@@ -194,3 +194,8 @@ pub async fn mod_edit_state(
 pub async fn ping_handler() -> Html<&'static str> {
     Html("pong")
 }
+
+#[instrument]
+pub async fn panic_handler() -> Html<&'static str> {
+    todo!()
+}
