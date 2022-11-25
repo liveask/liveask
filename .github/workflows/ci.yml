@@ -110,7 +110,10 @@ jobs:
         -u liveask \
         -p ${{ secrets.DOCKER_PASSWORD }}
     - name: Publish Docker image
-      run: docker push liveask/server
+      run: |
+        docker push liveask/server
+        docker tag liveask/server liveask/server:beta
+        docker push liveask/server:beta
     - name: Deploy
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_KEY_ID }}
