@@ -1,4 +1,4 @@
-name: fe prod
+name: prod fe
 
 on:
   # only manually
