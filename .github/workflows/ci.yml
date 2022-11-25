@@ -205,7 +205,7 @@ jobs:
         mv trunk /usr/local/bin/trunk
     - name: Build
       env:
-        IS_BETA: 1
+        LA_ENV: "beta"
       run: |
         cd frontend
         #TODO: un-dupe once we have a better solution to change FE configs

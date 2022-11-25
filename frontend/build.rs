@@ -7,6 +7,7 @@ use std::{
 };
 
 use handlebars::Handlebars;
+use konst::eq_str;
 
 fn get_git_hash() -> (String, String) {
     use std::process::Command;
@@ -39,29 +40,42 @@ fn get_git_hash() -> (String, String) {
     }
 }
 
+enum LiveAskEnv {
+    Prod,
+    Beta,
+    Local,
+}
+
+const fn la_env(env: Option<&str>) -> LiveAskEnv {
+    match env {
+        Some(env) if eq_str(env, "prod") => LiveAskEnv::Prod,
+        Some(env) if eq_str(env, "beta") => LiveAskEnv::Beta,
+        _ => LiveAskEnv::Local,
+    }
+}
+
 fn process_html_template(git_hash: String) {
     let mut hb = Handlebars::new();
     hb.register_template_file("template", "index.html.hbs")
         .unwrap();
 
     let mut data: HashMap<&str, &str> = HashMap::new();
-    data.insert("sentry", "local");
     data.insert("release", &git_hash);
 
-    if env::var("IS_PROD")
-        .map(|env| &env == "1")
-        .unwrap_or_default()
-    {
-        data.insert("metrical", "xPuojp2x_");
-        data.insert("fathom", "XWFWPSUF");
-        data.insert("sentry", "production");
-    } else if env::var("IS_BETA")
-        .map(|env| &env == "1")
-        .unwrap_or_default()
-    {
-        data.insert("metrical", "2LaPi-sYg");
-        data.insert("fathom", "OAMRSQQM");
-        data.insert("sentry", "beta");
+    match la_env(env::var("LA_ENV").ok().as_deref()) {
+        LiveAskEnv::Prod => {
+            data.insert("metrical", "xPuojp2x_");
+            data.insert("fathom", "XWFWPSUF");
+            data.insert("sentry", "production");
+        }
+        LiveAskEnv::Beta => {
+            data.insert("metrical", "2LaPi-sYg");
+            data.insert("fathom", "OAMRSQQM");
+            data.insert("sentry", "beta");
+        }
+        LiveAskEnv::Local => {
+            data.insert("sentry", "local");
+        }
     }
 
     let content = hb.render("template", &data).unwrap();

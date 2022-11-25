@@ -1,4 +1,6 @@
 use chrono::{DateTime, Duration, NaiveDateTime, Utc};
+use const_format::formatcp;
+use konst::eq_str;
 use shared::{EventInfo, Item, ModQuestion, States};
 use std::{rc::Rc, str::FromStr};
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
@@ -31,12 +33,35 @@ pub enum LoadingState {
     NotFound,
 }
 
-// pub const BASE_API: &str = "http://localhost:8090";
-// pub const BASE_SOCKET: &str = "ws://localhost:8090";
-pub const BASE_API: &str = "https://beta.www.live-ask.com";
-pub const BASE_SOCKET: &str = "wss://beta.www.live-ask.com";
-// pub const BASE_API: &str = "https://api.www.live-ask.com";
-// pub const BASE_SOCKET: &str = "wss://api.www.live-ask.com";
+enum LiveAskEnv {
+    Prod,
+    Beta,
+    Local,
+}
+
+const fn la_env(env: Option<&str>) -> LiveAskEnv {
+    match env {
+        Some(env) if eq_str(env, "prod") => LiveAskEnv::Prod,
+        Some(env) if eq_str(env, "beta") => LiveAskEnv::Beta,
+        _ => LiveAskEnv::Local,
+    }
+}
+
+const fn la_endpoints() -> (&'static str, &'static str) {
+    match la_env(Some(env!("LA_ENV"))) {
+        LiveAskEnv::Prod | LiveAskEnv::Beta => (
+            formatcp!("https://{}.www.live-ask.com", env!("LA_ENV")),
+            formatcp!("wss://{}.www.live-ask.com", env!("LA_ENV")),
+        ),
+        LiveAskEnv::Local => (BASE_API_LOCAL, BASE_SOCKET_LOCAL),
+    }
+}
+
+pub const BASE_API: &str = la_endpoints().0;
+pub const BASE_SOCKET: &str = la_endpoints().1;
+
+pub const BASE_API_LOCAL: &str = "http://localhost:8090";
+pub const BASE_SOCKET_LOCAL: &str = "ws://localhost:8090";
 
 pub struct Event {
     event_id: String,

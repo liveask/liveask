@@ -11,10 +11,12 @@ crate-type = ["cdylib", "rlib"]
 anyhow = "1"
 chrono = "0.4"
 console_error_panic_hook = "0.1"
+const_format = "0.2"
 #keep in sync with yews gloo version
 gloo = "0.4"
 gloo-storage = "0.2"
 gloo-utils = "0.1"
+konst = "0.3"
 # logging
 log = "0.4"
 qrcode = "0.12"
@@ -54,3 +56,4 @@ wasm-bindgen-test = "0.3.0"
 
 [build-dependencies]
 handlebars = "4.3"
+konst = "0.3"
