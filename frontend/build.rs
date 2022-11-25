@@ -64,16 +64,21 @@ fn process_html_template(git_hash: String) {
 
     match la_env(env::var("LA_ENV").ok().as_deref()) {
         LiveAskEnv::Prod => {
+            println!("cargo:warning=env is prod");
             data.insert("metrical", "xPuojp2x_");
             data.insert("fathom", "XWFWPSUF");
             data.insert("sentry", "production");
         }
         LiveAskEnv::Beta => {
+            println!("cargo:warning=env is beta");
+
             data.insert("metrical", "2LaPi-sYg");
             data.insert("fathom", "OAMRSQQM");
             data.insert("sentry", "beta");
         }
         LiveAskEnv::Local => {
+            println!("cargo:warning=env is local");
+
             data.insert("sentry", "local");
         }
     }

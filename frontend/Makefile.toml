@@ -2,7 +2,8 @@
 
 [env]
 RUSTFLAGS="--cfg=web_sys_unstable_apis"
-LA_ENV="local" # "beta" or "local"
+# "beta" or "local"
+LA_ENV = { value = "local", condition = { env_not_set = ["LA_ENV"] } }
 
 [tasks.cargo-check]
 command = "cargo"
