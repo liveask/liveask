@@ -4,7 +4,7 @@ use axum::{
     response::{Html, IntoResponse},
     Extension, Json,
 };
-use sentry_anyhow::capture_anyhow;
+use sentry::integrations::anyhow::capture_anyhow;
 use tracing::instrument;
 
 use crate::app::SharedApp;

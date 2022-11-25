@@ -15,8 +15,10 @@ use axum::{
     routing::{get, post},
     Extension, Router,
 };
-use sentry_tower::{NewSentryLayer, SentryHttpLayer};
-use sentry_tracing::EventFilter;
+use sentry::integrations::{
+    tower::{NewSentryLayer, SentryHttpLayer},
+    tracing::EventFilter,
+};
 use std::{net::SocketAddr, str::FromStr, sync::Arc};
 use tower_http::{cors::CorsLayer, trace::TraceLayer};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
@@ -127,7 +129,7 @@ async fn main() -> anyhow::Result<()> {
         },
     ));
 
-    let sentry_layer = sentry_tracing::layer().event_filter(|md| match md.level() {
+    let sentry_layer = sentry::integrations::tracing::layer().event_filter(|md| match md.level() {
         &tracing::Level::ERROR | &tracing::Level::WARN => EventFilter::Event,
         _ => EventFilter::Ignore,
     });
