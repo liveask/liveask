@@ -27,9 +27,9 @@ pub async fn push_handler(
 
 #[instrument(skip(app))]
 pub async fn editlike_handler(
-    Json(payload): Json<shared::EditLike>,
     Path(id): Path<String>,
     Extension(app): Extension<SharedApp>,
+    Json(payload): Json<shared::EditLike>,
 ) -> Result<impl IntoResponse, StatusCode> {
     tracing::info!("edit like: {}/{}", payload.question_id, id);
 
@@ -45,8 +45,8 @@ pub async fn editlike_handler(
 
 #[instrument(skip(app))]
 pub async fn addevent_handler(
-    Json(payload): Json<shared::AddEvent>,
     Extension(app): Extension<SharedApp>,
+    Json(payload): Json<shared::AddEvent>,
 ) -> Result<impl IntoResponse, StatusCode> {
     tracing::info!("create event: {}", payload.data.name);
 
@@ -62,9 +62,9 @@ pub async fn addevent_handler(
 
 #[instrument(skip(app))]
 pub async fn addquestion_handler(
-    Json(payload): Json<shared::AddQuestion>,
     Path(id): Path<String>,
     Extension(app): Extension<SharedApp>,
+    Json(payload): Json<shared::AddQuestion>,
 ) -> Result<impl IntoResponse, StatusCode> {
     tracing::info!("add question: {} in event:  {}", payload.text, id);
 
@@ -158,8 +158,8 @@ pub async fn get_question(
 #[instrument(skip(app))]
 pub async fn mod_edit_question(
     Path((id, secret, question_id)): Path<(String, String, i64)>,
-    Json(payload): Json<shared::ModQuestion>,
     Extension(app): Extension<SharedApp>,
+    Json(payload): Json<shared::ModQuestion>,
 ) -> Result<impl IntoResponse, StatusCode> {
     match app
         .mod_edit_question(id, secret, question_id, payload)
@@ -177,8 +177,8 @@ pub async fn mod_edit_question(
 #[instrument(skip(app))]
 pub async fn mod_edit_state(
     Path((id, secret)): Path<(String, String)>,
-    Json(payload): Json<shared::ModEventState>,
     Extension(app): Extension<SharedApp>,
+    Json(payload): Json<shared::ModEventState>,
 ) -> Result<impl IntoResponse, StatusCode> {
     match app.edit_event_state(id, secret, payload.state).await {
         Ok(res) => Ok(Json(res)),

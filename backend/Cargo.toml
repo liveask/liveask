@@ -9,7 +9,7 @@ anyhow = "1.0"
 async-trait = "0.1"
 aws-config = "0.51"
 aws-sdk-dynamodb = "0.21"
-axum = { version = "0.5", features = ["ws"] }
+axum = { version = "0.6", features = ["ws"] }
 chrono = "0.4"
 deadpool-redis = { version = "0.11", default-features = false, features = ["rt_tokio_1"] }
 futures-util = "0.3"
