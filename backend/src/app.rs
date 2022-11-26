@@ -25,6 +25,7 @@ pub type SharedApp = Arc<App>;
 #[derive(Clone)]
 pub struct App {
     eventsdb: Arc<dyn EventsDB>,
+    //TODO: order subscriber based on topic name into Concurrent Hashmap
     channels: Arc<RwLock<HashMap<usize, (String, OutBoundChannel)>>>,
     pubsub_publish: Arc<dyn PubSubPublish>,
     base_url: String,
@@ -500,6 +501,7 @@ impl PubSubReceiver for App {
         let channels = self.channels.clone();
 
         if let Err(e) = tokio::spawn(async move {
+            //TODO: lookup subscriber based on topic name
             for (_user_id, (_id, c)) in channels
                 .read()
                 .await
