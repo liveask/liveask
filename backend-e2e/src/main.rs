@@ -91,6 +91,26 @@ async fn delete_event(id: String, secret: String) {
     assert_eq!(res.status(), StatusCode::OK);
 }
 
+async fn change_event_state(id: String, secret: String, state: u8) {
+    let res = reqwest::Client::new()
+        .post(format!(
+            "{}/api/mod/event/state/{}/{}",
+            server_rest(),
+            id,
+            secret
+        ))
+        .json(&json!({
+            "state": {
+                "state": state
+            }
+        }))
+        .send()
+        .await
+        .unwrap();
+
+    assert_eq!(res.status(), StatusCode::OK);
+}
+
 async fn add_question(event: String) -> shared::Item {
     let res = reqwest::Client::new()
         .post(format!("{}/api/event/addquestion/{}", server_rest(), event))
@@ -256,16 +276,28 @@ mod test {
     async fn test_websockets() {
         // env_logger::init();
 
-        let event = add_event(MIN_NAME.to_string()).await.tokens.public_token;
+        let tokens = add_event(MIN_NAME.to_string()).await.tokens;
+
+        let event = tokens.public_token;
+        let secret = tokens.moderator_token.unwrap();
 
         let (mut socket, response) =
             connect(&format!("{}/push/{}", server_socket(), event)).expect("Can't connect");
 
         assert_eq!(response.status(), StatusCode::SWITCHING_PROTOCOLS);
 
-        let question = add_question(event).await;
+        let question = add_question(event.clone()).await;
 
         let msg = socket.read_message().expect("Error reading message");
         assert_eq!(msg.into_text().unwrap(), format!("q:{}", question.id));
+
+        like_question(event.clone(), question.id, true).await;
+
+        let msg = socket.read_message().expect("Error reading message");
+        assert_eq!(msg.into_text().unwrap(), format!("q:{}", question.id));
+
+        change_event_state(event, secret, 1).await;
+        let msg = socket.read_message().expect("Error reading message");
+        assert_eq!(msg.into_text().unwrap(), "e");
     }
 }
