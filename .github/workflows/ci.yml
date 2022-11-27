@@ -53,11 +53,11 @@ jobs:
     - name: Check FE
       run: |
         cd frontend
-        cargo make la-check
+        cargo make checks
     - name: Check BE
       run: |
         cd backend
-        cargo make check
+        cargo make checks
     - name: Test FE
       run: |
         cd frontend

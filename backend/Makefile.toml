@@ -8,7 +8,21 @@ DDB_LOCAL = 1
 command = "cargo"
 args = ["r"]
 
-[tasks.check]
+[tasks.format]
+install_crate = "fmt"
+command = "cargo"
+args = ["fmt","--","--check"]
+
+[tasks.cargo-sort]
+install_crate = "sort"
+command = "cargo"
+args = ["sort","-c"]
+
+[tasks.tests]
+command = "cargo"
+args = ["t"]
+
+[tasks.clippy]
 command = "cargo"
 args = ["clippy","--",
 	"-D","warnings",
@@ -32,6 +46,9 @@ args = ["clippy","--",
 	"-D","clippy::unneeded_field_pattern",
 	"-D","clippy::verbose_file_reads",
 	"-A","clippy::module-name-repetitions"]
+
+[tasks.checks]
+dependencies = ["cargo-sort","format","clippy","tests"]
 
 [tasks.run-release]
 command = "cargo"

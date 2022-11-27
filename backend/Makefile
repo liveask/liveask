@@ -10,4 +10,4 @@ run:
 	cargo make --env-file=env/local.env run
 
 check:
-	cargo make check
+	cargo make checks
