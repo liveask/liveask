@@ -65,6 +65,10 @@ fn production_env() -> String {
     std::env::var(env::ENV_ENV).unwrap_or_else(|_| String::from("local"))
 }
 
+fn is_prod() -> bool {
+    production_env() == "prod"
+}
+
 fn use_relaxed_cors() -> bool {
     std::env::var(env::ENV_RELAX_CORS)
         .map(|var| var == "1")
@@ -132,10 +136,17 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
         },
     ));
 
-    let sentry_layer = sentry::integrations::tracing::layer().event_filter(|md| match md.level() {
-        &tracing::Level::ERROR | &tracing::Level::WARN => EventFilter::Event,
-        _ => EventFilter::Ignore,
-    });
+    let sentry_layer = if is_prod() {
+        sentry::integrations::tracing::layer().event_filter(|md| match md.level() {
+            &tracing::Level::ERROR | &tracing::Level::WARN => EventFilter::Event,
+            _ => EventFilter::Ignore,
+        })
+    } else {
+        sentry::integrations::tracing::layer().event_filter(|md| match md.level() {
+            &tracing::Level::ERROR => EventFilter::Event,
+            _ => EventFilter::Ignore,
+        })
+    };
 
     tracing_subscriber::registry()
         .with(tracing_subscriber::EnvFilter::new(log_level.clone()))
@@ -148,6 +159,7 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     tracing::info!(
         git= %GIT_HASH,
         env= prod_env,
+        is_prod= is_prod(),
         log_level,
         redis_url,
         "server-starting",
