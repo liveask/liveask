@@ -13,7 +13,7 @@ use aws_sdk_dynamodb::{Credentials, Endpoint};
 use axum::{
     http::Uri,
     routing::{get, post},
-    Extension, Router,
+    Router,
 };
 use sentry::integrations::{
     tower::{NewSentryLayer, SentryHttpLayer},
@@ -186,7 +186,7 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
         .layer(NewSentryLayer::new_from_top())
         .layer(TraceLayer::new_for_http())
         .layer(setup_cors())
-        .layer(Extension(app));
+        .with_state(app);
 
     let addr = SocketAddr::from(([0, 0, 0, 0], get_port()));
 

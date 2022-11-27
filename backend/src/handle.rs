@@ -1,7 +1,7 @@
 use axum::{
-    extract::{ws::WebSocket, Path, WebSocketUpgrade},
+    extract::{ws::WebSocket, Path, State, WebSocketUpgrade},
     response::{Html, IntoResponse},
-    Extension, Json,
+    Json,
 };
 use tracing::instrument;
 
@@ -16,7 +16,7 @@ async fn socket_handler(ws: WebSocket, id: String, app: SharedApp) {
 pub async fn push_handler(
     ws: WebSocketUpgrade,
     Path(id): Path<String>,
-    Extension(app): Extension<SharedApp>,
+    State(app): State<SharedApp>,
 ) -> impl IntoResponse {
     tracing::info!("push subscriber: {}", id);
 
@@ -26,7 +26,7 @@ pub async fn push_handler(
 #[instrument(skip(app))]
 pub async fn editlike_handler(
     Path(id): Path<String>,
-    Extension(app): Extension<SharedApp>,
+    State(app): State<SharedApp>,
     Json(payload): Json<shared::EditLike>,
 ) -> std::result::Result<impl IntoResponse, InternalError> {
     tracing::info!("edit like: {}/{}", payload.question_id, id);
@@ -36,7 +36,7 @@ pub async fn editlike_handler(
 
 #[instrument(skip(app))]
 pub async fn addevent_handler(
-    Extension(app): Extension<SharedApp>,
+    State(app): State<SharedApp>,
     Json(payload): Json<shared::AddEvent>,
 ) -> std::result::Result<impl IntoResponse, InternalError> {
     tracing::info!(
@@ -51,7 +51,7 @@ pub async fn addevent_handler(
 #[instrument(skip(app))]
 pub async fn addquestion_handler(
     Path(id): Path<String>,
-    Extension(app): Extension<SharedApp>,
+    State(app): State<SharedApp>,
     Json(payload): Json<shared::AddQuestion>,
 ) -> std::result::Result<impl IntoResponse, InternalError> {
     tracing::info!("add question: {} in event:  {}", payload.text, id);
@@ -62,7 +62,7 @@ pub async fn addquestion_handler(
 #[instrument(skip(app))]
 pub async fn getevent_handler(
     Path(id): Path<String>,
-    Extension(app): Extension<SharedApp>,
+    State(app): State<SharedApp>,
 ) -> std::result::Result<impl IntoResponse, InternalError> {
     tracing::info!("getevent_handler");
 
@@ -72,7 +72,7 @@ pub async fn getevent_handler(
 #[instrument(skip(app))]
 pub async fn mod_get_event(
     Path((id, secret)): Path<(String, String)>,
-    Extension(app): Extension<SharedApp>,
+    State(app): State<SharedApp>,
 ) -> std::result::Result<impl IntoResponse, InternalError> {
     tracing::info!("mod_get_event");
 
@@ -82,7 +82,7 @@ pub async fn mod_get_event(
 #[instrument(skip(app))]
 pub async fn mod_delete_event(
     Path((id, secret)): Path<(String, String)>,
-    Extension(app): Extension<SharedApp>,
+    State(app): State<SharedApp>,
 ) -> std::result::Result<impl IntoResponse, InternalError> {
     tracing::info!("mod_delete_event");
 
@@ -92,7 +92,7 @@ pub async fn mod_delete_event(
 #[instrument(skip(app))]
 pub async fn mod_get_question(
     Path((id, secret, question_id)): Path<(String, String, i64)>,
-    Extension(app): Extension<SharedApp>,
+    State(app): State<SharedApp>,
 ) -> std::result::Result<impl IntoResponse, InternalError> {
     tracing::info!("mod_get_question");
 
@@ -102,7 +102,7 @@ pub async fn mod_get_question(
 #[instrument(skip(app))]
 pub async fn get_question(
     Path((id, question_id)): Path<(String, i64)>,
-    Extension(app): Extension<SharedApp>,
+    State(app): State<SharedApp>,
 ) -> std::result::Result<impl IntoResponse, InternalError> {
     tracing::info!("get_question");
 
@@ -112,7 +112,7 @@ pub async fn get_question(
 #[instrument(skip(app))]
 pub async fn mod_edit_question(
     Path((id, secret, question_id)): Path<(String, String, i64)>,
-    Extension(app): Extension<SharedApp>,
+    State(app): State<SharedApp>,
     Json(payload): Json<shared::ModQuestion>,
 ) -> std::result::Result<impl IntoResponse, InternalError> {
     tracing::info!("mod_edit_question");
@@ -126,7 +126,7 @@ pub async fn mod_edit_question(
 #[instrument(skip(app))]
 pub async fn mod_edit_state(
     Path((id, secret)): Path<(String, String)>,
-    Extension(app): Extension<SharedApp>,
+    State(app): State<SharedApp>,
     Json(payload): Json<shared::ModEventState>,
 ) -> std::result::Result<impl IntoResponse, InternalError> {
     tracing::info!("mod_edit_state");
@@ -195,7 +195,7 @@ mod test_db_conflicts {
         Router::new()
             .route("/api/event/editlike/:id", post(editlike_handler))
             .layer(TraceLayer::new_for_http())
-            .layer(Extension(app))
+            .with_state(app)
     }
 
     #[tokio::test]
@@ -267,7 +267,7 @@ mod test_db_item_not_found {
         Router::new()
             .route("/api/event/:id", get(getevent_handler))
             .layer(TraceLayer::new_for_http())
-            .layer(Extension(app))
+            .with_state(app)
     }
 
     #[tokio::test]
