@@ -14,7 +14,7 @@ command = "cargo"
 args = ["fmt","--","--check"]
 
 [tasks.cargo-sort]
-install_crate = "sort"
+install_crate = "cargo-sort"
 command = "cargo"
 args = ["sort","-c"]
 

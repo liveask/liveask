@@ -15,7 +15,7 @@ command = "cargo"
 args = ["clippy","--target=wasm32-unknown-unknown","--","-D","clippy::unwrap_used"]
 
 [tasks.cargo-sort]
-install_crate = "sort"
+install_crate = "cargo-sort"
 command = "cargo"
 args = ["sort","-c"]
 
