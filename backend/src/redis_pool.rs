@@ -1,4 +1,5 @@
-use anyhow::{bail, Result};
+use crate::bail;
+use crate::error::Result;
 
 pub async fn ping_test_redis(pool: &deadpool_redis::Pool) -> Result<()> {
     let mut db = pool.get().await?;

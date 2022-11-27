@@ -1,13 +1,11 @@
 use axum::{
     extract::{ws::WebSocket, Path, WebSocketUpgrade},
-    http::StatusCode,
     response::{Html, IntoResponse},
     Extension, Json,
 };
-use sentry::integrations::anyhow::capture_anyhow;
 use tracing::instrument;
 
-use crate::app::SharedApp;
+use crate::{app::SharedApp, error::InternalError};
 
 //TODO: not sure why we need this
 async fn socket_handler(ws: WebSocket, id: String, app: SharedApp) {
@@ -30,34 +28,24 @@ pub async fn editlike_handler(
     Path(id): Path<String>,
     Extension(app): Extension<SharedApp>,
     Json(payload): Json<shared::EditLike>,
-) -> Result<impl IntoResponse, StatusCode> {
+) -> std::result::Result<impl IntoResponse, InternalError> {
     tracing::info!("edit like: {}/{}", payload.question_id, id);
 
-    match app.edit_like(id, payload).await {
-        Ok(res) => Ok(Json(res)),
-        Err(e) => {
-            capture_anyhow(&e);
-            tracing::error!("{e}");
-            Err(StatusCode::BAD_REQUEST)
-        }
-    }
+    Ok(Json(app.edit_like(id, payload).await?))
 }
 
 #[instrument(skip(app))]
 pub async fn addevent_handler(
     Extension(app): Extension<SharedApp>,
     Json(payload): Json<shared::AddEvent>,
-) -> Result<impl IntoResponse, StatusCode> {
-    tracing::info!("create event: {}", payload.data.name);
+) -> std::result::Result<impl IntoResponse, InternalError> {
+    tracing::info!(
+        "create event: {} (by {})",
+        payload.data.name,
+        payload.moderator_email
+    );
 
-    match app.create_event(payload).await {
-        Ok(res) => Ok(Json(res)),
-        Err(e) => {
-            capture_anyhow(&e);
-            tracing::error!("{}", e);
-            Err(StatusCode::BAD_REQUEST)
-        }
-    }
+    Ok(Json(app.create_event(payload).await?))
 }
 
 #[instrument(skip(app))]
@@ -65,94 +53,60 @@ pub async fn addquestion_handler(
     Path(id): Path<String>,
     Extension(app): Extension<SharedApp>,
     Json(payload): Json<shared::AddQuestion>,
-) -> Result<impl IntoResponse, StatusCode> {
+) -> std::result::Result<impl IntoResponse, InternalError> {
     tracing::info!("add question: {} in event:  {}", payload.text, id);
 
-    match app.add_question(id, payload).await {
-        Ok(res) => Ok(Json(res)),
-        Err(e) => {
-            capture_anyhow(&e);
-            tracing::error!("{}", e);
-            Err(StatusCode::BAD_REQUEST)
-        }
-    }
+    Ok(Json(app.add_question(id, payload).await?))
 }
 
 #[instrument(skip(app))]
 pub async fn getevent_handler(
     Path(id): Path<String>,
     Extension(app): Extension<SharedApp>,
-) -> Result<impl IntoResponse, StatusCode> {
-    tracing::info!("get event:  {}", id);
+) -> std::result::Result<impl IntoResponse, InternalError> {
+    tracing::info!("getevent_handler");
 
-    match app.get_event(id, None).await {
-        Ok(res) => Ok(Json(res)),
-        Err(e) => {
-            capture_anyhow(&e);
-            tracing::error!("{}", e);
-            Err(StatusCode::BAD_REQUEST)
-        }
-    }
+    Ok(Json(app.get_event(id, None).await?))
 }
 
 #[instrument(skip(app))]
 pub async fn mod_get_event(
     Path((id, secret)): Path<(String, String)>,
     Extension(app): Extension<SharedApp>,
-) -> Result<impl IntoResponse, StatusCode> {
-    match app.get_event(id, Some(secret)).await {
-        Ok(res) => Ok(Json(res)),
-        Err(e) => {
-            capture_anyhow(&e);
-            tracing::error!("{}", e);
-            Err(StatusCode::BAD_REQUEST)
-        }
-    }
+) -> std::result::Result<impl IntoResponse, InternalError> {
+    tracing::info!("mod_get_event");
+
+    Ok(Json(app.get_event(id, Some(secret)).await?))
 }
 
 #[instrument(skip(app))]
 pub async fn mod_delete_event(
     Path((id, secret)): Path<(String, String)>,
     Extension(app): Extension<SharedApp>,
-) -> Result<impl IntoResponse, StatusCode> {
-    match app.delete_event(id, secret).await {
-        Ok(res) => Ok(Json(res)),
-        Err(e) => {
-            capture_anyhow(&e);
-            tracing::error!("{}", e);
-            Err(StatusCode::BAD_REQUEST)
-        }
-    }
+) -> std::result::Result<impl IntoResponse, InternalError> {
+    tracing::info!("mod_delete_event");
+
+    Ok(Json(app.delete_event(id, secret).await?))
 }
 
 #[instrument(skip(app))]
 pub async fn mod_get_question(
     Path((id, secret, question_id)): Path<(String, String, i64)>,
     Extension(app): Extension<SharedApp>,
-) -> Result<impl IntoResponse, StatusCode> {
-    match app.get_question(id, Some(secret), question_id).await {
-        Ok(res) => Ok(Json(res)),
-        Err(e) => {
-            capture_anyhow(&e);
-            tracing::error!("{}", e);
-            Err(StatusCode::BAD_REQUEST)
-        }
-    }
+) -> std::result::Result<impl IntoResponse, InternalError> {
+    tracing::info!("mod_get_question");
+
+    Ok(Json(app.get_question(id, Some(secret), question_id).await?))
 }
 
 #[instrument(skip(app))]
 pub async fn get_question(
     Path((id, question_id)): Path<(String, i64)>,
     Extension(app): Extension<SharedApp>,
-) -> Result<impl IntoResponse, StatusCode> {
-    match app.get_question(id, None, question_id).await {
-        Ok(res) => Ok(Json(res)),
-        Err(e) => {
-            capture_anyhow(&e);
-            tracing::error!("{}", e);
-            Err(StatusCode::BAD_REQUEST)
-        }
-    }
+) -> std::result::Result<impl IntoResponse, InternalError> {
+    tracing::info!("get_question");
+
+    Ok(Json(app.get_question(id, None, question_id).await?))
 }
 
 #[instrument(skip(app))]
@@ -160,18 +114,13 @@ pub async fn mod_edit_question(
     Path((id, secret, question_id)): Path<(String, String, i64)>,
     Extension(app): Extension<SharedApp>,
     Json(payload): Json<shared::ModQuestion>,
-) -> Result<impl IntoResponse, StatusCode> {
-    match app
-        .mod_edit_question(id, secret, question_id, payload)
-        .await
-    {
-        Ok(res) => Ok(Json(res)),
-        Err(e) => {
-            capture_anyhow(&e);
-            tracing::error!("{}", e);
-            Err(StatusCode::BAD_REQUEST)
-        }
-    }
+) -> std::result::Result<impl IntoResponse, InternalError> {
+    tracing::info!("mod_edit_question");
+
+    Ok(Json(
+        app.mod_edit_question(id, secret, question_id, payload)
+            .await?,
+    ))
 }
 
 #[instrument(skip(app))]
@@ -179,15 +128,10 @@ pub async fn mod_edit_state(
     Path((id, secret)): Path<(String, String)>,
     Extension(app): Extension<SharedApp>,
     Json(payload): Json<shared::ModEventState>,
-) -> Result<impl IntoResponse, StatusCode> {
-    match app.edit_event_state(id, secret, payload.state).await {
-        Ok(res) => Ok(Json(res)),
-        Err(e) => {
-            capture_anyhow(&e);
-            tracing::error!("{}", e);
-            Err(StatusCode::BAD_REQUEST)
-        }
-    }
+) -> std::result::Result<impl IntoResponse, InternalError> {
+    tracing::info!("mod_edit_state");
+
+    Ok(Json(app.edit_event_state(id, secret, payload.state).await?))
 }
 
 #[instrument]
@@ -198,4 +142,152 @@ pub async fn ping_handler() -> Html<&'static str> {
 #[instrument]
 pub async fn panic_handler() -> Html<&'static str> {
     todo!()
+}
+
+#[cfg(test)]
+mod test_db_conflicts {
+    use super::*;
+    use crate::eventsdb::{EventEntry, EventsDB};
+    use crate::{app::App, pubsub::PubSubInMemory};
+    use async_trait::async_trait;
+    use axum::{
+        body::Body,
+        http::{self, Request, StatusCode},
+        routing::post,
+        Router,
+    };
+    use pretty_assertions::assert_eq;
+    use shared::{EventInfo, Item};
+    use std::sync::Arc;
+    use tower::util::ServiceExt;
+    use tower_http::trace::TraceLayer;
+
+    #[derive(Default)]
+    pub struct ConflictDB;
+    #[async_trait]
+    impl EventsDB for ConflictDB {
+        async fn get(&self, key: &str) -> crate::eventsdb::Result<EventEntry> {
+            tracing::info!("fake db get: {key}");
+            Ok(EventEntry {
+                event: EventInfo {
+                    questions: vec![Item {
+                        id: 1,
+                        ..Default::default()
+                    }],
+                    ..Default::default()
+                },
+
+                version: 1,
+            })
+        }
+        async fn put(&self, event: EventEntry) -> crate::eventsdb::Result<()> {
+            tracing::info!("fake db put: {}", event.event.tokens.public_token);
+            Err(crate::eventsdb::Error::Concurrency)
+        }
+    }
+
+    fn app() -> Router {
+        let app = Arc::new(App::new(
+            Arc::new(ConflictDB::default()),
+            Arc::new(PubSubInMemory::default()),
+        ));
+
+        Router::new()
+            .route("/api/event/editlike/:id", post(editlike_handler))
+            .layer(TraceLayer::new_for_http())
+            .layer(Extension(app))
+    }
+
+    #[tokio::test]
+    async fn test_conflicting_database_write() {
+        // env_logger::init();
+
+        let app = app();
+
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .method(http::Method::POST)
+                    .uri("/api/event/editlike/test")
+                    .header(http::header::CONTENT_TYPE, mime::APPLICATION_JSON.as_ref())
+                    .body(Body::from(
+                        serde_json::to_string(&shared::EditLike {
+                            like: true,
+                            question_id: 1,
+                        })
+                        .unwrap(),
+                    ))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::CONFLICT);
+    }
+}
+
+#[cfg(test)]
+mod test_db_item_not_found {
+    use super::*;
+    use crate::{
+        app::App,
+        eventsdb::{EventEntry, EventsDB},
+        pubsub::PubSubInMemory,
+    };
+    use async_trait::async_trait;
+    use axum::{
+        body::Body,
+        http::{self, Request, StatusCode},
+        routing::get,
+        Router,
+    };
+    use pretty_assertions::assert_eq;
+    use std::sync::Arc;
+    use tower::util::ServiceExt;
+    use tower_http::trace::TraceLayer;
+
+    #[derive(Default)]
+    pub struct ItemNotFoundDB;
+    #[async_trait]
+    impl EventsDB for ItemNotFoundDB {
+        async fn get(&self, _key: &str) -> crate::eventsdb::Result<EventEntry> {
+            Err(crate::eventsdb::Error::ItemNotFound)
+        }
+        async fn put(&self, _event: EventEntry) -> crate::eventsdb::Result<()> {
+            Ok(())
+        }
+    }
+
+    fn app() -> Router {
+        let app = Arc::new(App::new(
+            Arc::new(ItemNotFoundDB::default()),
+            Arc::new(PubSubInMemory::default()),
+        ));
+
+        Router::new()
+            .route("/api/event/:id", get(getevent_handler))
+            .layer(TraceLayer::new_for_http())
+            .layer(Extension(app))
+    }
+
+    #[tokio::test]
+    async fn test_db_item_not_found() {
+        // env_logger::init();
+
+        let app = app();
+
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .method(http::Method::GET)
+                    .uri("/api/event/test")
+                    .header(http::header::CONTENT_TYPE, mime::APPLICATION_JSON.as_ref())
+                    .body(Body::default())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+    }
 }

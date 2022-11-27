@@ -1,4 +1,3 @@
-use anyhow::Result;
 use async_trait::async_trait;
 use redis::AsyncCommands;
 use std::{sync::Arc, time::Duration};
@@ -7,6 +6,7 @@ use tokio_stream::StreamExt;
 use tracing::instrument;
 
 use super::{PubSubPublish, PubSubReceiver};
+use crate::error::Result;
 
 #[derive(Clone)]
 pub struct PubSubRedis {

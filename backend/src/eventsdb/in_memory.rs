@@ -1,5 +1,7 @@
-use super::{event_key, EventEntry, EventsDB};
-use anyhow::Result;
+use super::{
+    error::{Error, Result},
+    event_key, EventEntry, EventsDB,
+};
 use async_trait::async_trait;
 use std::{collections::HashMap, sync::Arc};
 use tokio::sync::Mutex;
@@ -20,7 +22,7 @@ impl EventsDB for InMemoryEventsDB {
 
         db.get(&key)
             .cloned()
-            .ok_or_else(|| anyhow::anyhow!("failed to get"))
+            .ok_or_else(|| Error::General("failed to get".to_string()))
     }
 
     #[instrument(skip(self), err)]
@@ -31,7 +33,7 @@ impl EventsDB for InMemoryEventsDB {
 
         if let Some(db_event) = db.get_mut(&key) {
             if event.version <= db_event.version {
-                anyhow::bail!("version mismatch, bump version before writing it back to db");
+                return Err(Error::Concurrency);
             }
             *db_event = event;
         } else {

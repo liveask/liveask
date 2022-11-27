@@ -1,14 +1,14 @@
 mod dynamo;
+mod error;
 mod in_memory;
 
 pub use dynamo::DynamoEventsDB;
+pub use error::{Error, Result};
 pub use in_memory::InMemoryEventsDB;
 
-use anyhow::Result;
+use crate::utils::timestamp_now;
 use async_trait::async_trait;
 use shared::EventInfo;
-
-use crate::utils::timestamp_now;
 
 #[derive(Clone, Debug, Eq, PartialEq, Default)]
 pub struct EventEntry {

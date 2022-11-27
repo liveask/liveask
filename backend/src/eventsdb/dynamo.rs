@@ -1,15 +1,21 @@
-use anyhow::Result;
 use async_trait::async_trait;
-use aws_sdk_dynamodb::model::{
-    AttributeDefinition, AttributeValue, KeySchemaElement, KeyType, ProvisionedThroughput,
-    ScalarAttributeType,
+use aws_sdk_dynamodb::{
+    error::{PutItemError, PutItemErrorKind},
+    model::{
+        AttributeDefinition, AttributeValue, KeySchemaElement, KeyType, ProvisionedThroughput,
+        ScalarAttributeType,
+    },
+    types::SdkError,
 };
 use shared::EventInfo;
 use tracing::instrument;
 
 use crate::eventsdb::event_key;
 
-use super::{EventEntry, EventsDB};
+use super::{
+    error::{Error, Result},
+    EventEntry, EventsDB,
+};
 
 #[derive(Clone)]
 pub struct DynamoEventsDB {
@@ -20,7 +26,7 @@ pub struct DynamoEventsDB {
 #[async_trait]
 impl EventsDB for DynamoEventsDB {
     #[instrument(skip(self), err)]
-    async fn get(&self, key: &str) -> anyhow::Result<EventEntry> {
+    async fn get(&self, key: &str) -> Result<EventEntry> {
         let key = event_key(key);
 
         let res = self
@@ -31,18 +37,16 @@ impl EventsDB for DynamoEventsDB {
             .send()
             .await?;
 
-        let item = res
-            .item()
-            .ok_or_else(|| anyhow::anyhow!("event not found"))?;
+        let item = res.item().ok_or(Error::ItemNotFound)?;
 
         let version = item["v"]
             .as_n()
-            .map_err(|_| anyhow::anyhow!("malformed event: v"))?
+            .map_err(|_| Error::General("malformed event: v".into()))?
             .parse::<usize>()?;
 
         let value = item["value"]
             .as_s()
-            .map_err(|_| anyhow::anyhow!("malformed event: value"))?;
+            .map_err(|_| Error::General("malformed event: value".to_string()))?;
 
         let event: EventInfo = serde_json::from_str(value)?;
 
@@ -70,7 +74,18 @@ impl EventsDB for DynamoEventsDB {
                 .expression_attribute_values(":ver", old_version_av);
         }
 
-        let _resp = request.send().await?;
+        //Note: filter out conditional error
+        if let Err(e) = request.send().await {
+            if matches!(&e,SdkError::<PutItemError>::ServiceError { err, .. }
+            if matches!(
+                err.kind,
+                PutItemErrorKind::ConditionalCheckFailedException(_)
+            )) {
+                return Err(Error::Concurrency);
+            }
+
+            return Err(Error::DynamoPut(e));
+        }
 
         Ok(())
     }

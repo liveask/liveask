@@ -1,5 +1,6 @@
 mod app;
 mod env;
+mod error;
 mod eventsdb;
 mod handle;
 mod mail;
@@ -7,7 +8,6 @@ mod pubsub;
 mod redis_pool;
 mod utils;
 
-use anyhow::Result;
 use aws_config::meta::region::RegionProviderChain;
 use aws_sdk_dynamodb::{Credentials, Endpoint};
 use axum::{
@@ -25,6 +25,7 @@ use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 use crate::{
     app::App,
+    error::Result,
     eventsdb::DynamoEventsDB,
     handle::push_handler,
     pubsub::PubSubRedis,
@@ -113,7 +114,7 @@ async fn dynamo_client() -> Result<aws_sdk_dynamodb::Client> {
 }
 
 #[tokio::main]
-async fn main() -> anyhow::Result<()> {
+async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let log_level = std::env::var("RUST_LOG")
         .unwrap_or_else(|_| "info,liveask_server=debug,tower_http=debug".into());
 
@@ -157,10 +158,8 @@ async fn main() -> anyhow::Result<()> {
 
     let pubsub = Arc::new(PubSubRedis::new(redis_pool, redis_url).await);
 
-    let app = Arc::new(App::new(
-        Arc::new(DynamoEventsDB::new(dynamo_client().await?, use_local_db()).await?),
-        pubsub.clone(),
-    ));
+    let eventsdb = Arc::new(DynamoEventsDB::new(dynamo_client().await?, use_local_db()).await?);
+    let app = Arc::new(App::new(eventsdb, pubsub.clone()));
 
     pubsub.set_receiver(app.clone()).await;
 

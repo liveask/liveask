@@ -1,4 +1,3 @@
-use anyhow::{bail, Result};
 use async_trait::async_trait;
 use axum::extract::ws::{Message, WebSocket};
 use shared::{AddEvent, EventInfo, EventState, EventTokens, Item, ModQuestion, States};
@@ -13,7 +12,8 @@ use tracing::instrument;
 use ulid::Ulid;
 
 use crate::{
-    env,
+    bail, env,
+    error::{InternalError, Result},
     eventsdb::{EventEntry, EventsDB},
     mail::MailjetConfig,
     pubsub::{PubSubPublish, PubSubReceiver},
@@ -98,8 +98,7 @@ impl App {
         validation.check(&request.data.name, &request.data.description);
 
         if validation.has_any() {
-            tracing::debug!("validation error: {:?}", validation);
-            bail!("request validation failed");
+            bail!("request validation failed: {:?}", validation);
         }
 
         let now = timestamp_now();
@@ -161,7 +160,7 @@ impl App {
         }
 
         if e.deleted {
-            bail!("ev not found");
+            return Err(InternalError::AccessingDeletedEvent);
         }
 
         if secret.is_none() {
@@ -198,7 +197,7 @@ impl App {
             .questions
             .iter()
             .find(|q| q.id == question_id)
-            .ok_or_else(|| anyhow::anyhow!("q not found"))?
+            .ok_or_else(|| InternalError::General("q not found".into()))?
             .clone();
 
         if q.hidden && !can_see_hidden {
@@ -237,7 +236,7 @@ impl App {
                 .questions
                 .iter_mut()
                 .find(|q| q.id == question_id)
-                .ok_or_else(|| anyhow::anyhow!("q not found"))?;
+                .ok_or_else(|| InternalError::General("q not found".into()))?;
 
             q.hidden = state.hide;
             q.answered = state.answered;

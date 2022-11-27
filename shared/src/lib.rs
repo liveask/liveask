@@ -26,7 +26,7 @@ pub struct EventData {
     pub long_url: Option<String>,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq)]
+#[derive(Serialize, Deserialize, Default, Debug, Clone, Eq, PartialEq)]
 pub struct Item {
     pub id: i64,
     pub likes: i32,
