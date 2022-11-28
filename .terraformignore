@@ -1,6 +1,0 @@
-target/
-shared/
-frontend/
-backend-e2e/
-.github/
-.cargo/
