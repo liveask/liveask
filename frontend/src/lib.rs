@@ -1,6 +1,3 @@
-//TODO: make them apply module wide
-#[deny(clippy::redundant_closure)]
-#[deny(clippy::pedantic)]
 mod agents;
 mod components;
 mod fetch;

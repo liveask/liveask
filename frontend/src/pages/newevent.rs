@@ -65,19 +65,18 @@ impl Component for NewEvent {
                 false
             }
 
-            Msg::CreatedResult(event) => match event {
-                Some(event) => {
+            Msg::CreatedResult(event) => {
+                if let Some(event) = event {
                     ctx.link().history().unwrap_throw().push(Route::EventMod {
                         id: event.tokens.public_token,
                         secret: event.tokens.moderator_token.unwrap_throw(),
                     });
                     false
-                }
-                None => {
+                } else {
                     log::error!("no event created");
                     true
                 }
-            },
+            }
 
             Msg::InputChange(input, c) => {
                 match input {
@@ -91,7 +90,7 @@ impl Component for NewEvent {
                     }
                     Input::Email => {
                         let target: HtmlInputElement = c.target_dyn_into().unwrap_throw();
-                        self.email = target.value()
+                        self.email = target.value();
                     }
                     Input::Desc => {
                         let target: HtmlTextAreaElement = c.target_dyn_into().unwrap_throw();
@@ -106,6 +105,7 @@ impl Component for NewEvent {
         }
     }
 
+    #[allow(clippy::if_not_else)]
     fn view(&self, ctx: &Context<Self>) -> Html {
         html! {
             <div class="newevent-bg">

@@ -16,9 +16,10 @@ impl Component for Qr {
     type Properties = QrProps;
 
     fn create(ctx: &Context<Self>) -> Self {
+        use qrcode::{render::svg, EcLevel, QrCode, Version};
+
         let dim = ctx.props().dimensions;
 
-        use qrcode::{render::svg, EcLevel, QrCode, Version};
         let code = QrCode::with_version(ctx.props().url.clone(), Version::Normal(6), EcLevel::M)
             .unwrap_throw();
 

@@ -73,8 +73,8 @@ pub struct Event {
     hidden: Vec<Rc<Item>>,
     loading_state: LoadingState,
     dispatch: Dispatch<State>,
-    _socket_agent: Box<dyn Bridge<WebSocketAgent>>,
-    _events: Box<dyn Bridge<EventAgent>>,
+    socket_agent: Box<dyn Bridge<WebSocketAgent>>,
+    events: Box<dyn Bridge<EventAgent>>,
 }
 pub enum Msg {
     ShareEventClick,
@@ -113,16 +113,17 @@ impl Component for Event {
             },
 
             loading_state: LoadingState::Loading,
-            state: Default::default(),
+            state: Rc::default(),
             unanswered: Vec::new(),
             answered: Vec::new(),
             hidden: Vec::new(),
             dispatch: Dispatch::<State>::subscribe(Callback::noop()),
-            _socket_agent: ws,
-            _events: EventAgent::bridge(ctx.link().callback(Msg::GlobalEvent)),
+            socket_agent: ws,
+            events: EventAgent::bridge(ctx.link().callback(Msg::GlobalEvent)),
         }
     }
 
+    #[allow(clippy::too_many_lines)]
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
             Msg::QuestionClick((id, kind)) => {
@@ -139,7 +140,7 @@ impl Component for Event {
                                 ctx.props().secret.clone().unwrap_throw(),
                                 q,
                                 ctx.link(),
-                            )
+                            );
                         }
                     }
                     QuestionClickType::Answer => {
@@ -149,7 +150,7 @@ impl Component for Event {
                                 ctx.props().secret.clone().unwrap_throw(),
                                 q,
                                 ctx.link(),
-                            )
+                            );
                         }
                     }
                 }
@@ -205,15 +206,15 @@ impl Component for Event {
                 false
             }
             Msg::ModDelete => {
-                self._events.send(GlobalEvent::DeletePopup);
+                self.events.send(GlobalEvent::DeletePopup);
                 false
             }
             Msg::ShareEventClick => {
-                self._events.send(GlobalEvent::OpenSharePopup);
+                self.events.send(GlobalEvent::OpenSharePopup);
                 false
             }
             Msg::AskQuestionClick => {
-                self._events.send(GlobalEvent::OpenQuestionPopup);
+                self.events.send(GlobalEvent::OpenQuestionPopup);
                 false
             }
             Msg::Fetched(res) => {
@@ -258,7 +259,7 @@ impl Component for Event {
 
     fn destroy(&mut self, _ctx: &Context<Self>) {
         self.dispatch.reduce(|_| State::default());
-        self._socket_agent.send(SocketInput::Disconnect);
+        self.socket_agent.send(SocketInput::Disconnect);
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
@@ -270,6 +271,7 @@ impl Component for Event {
     }
 }
 
+#[allow(clippy::needless_pass_by_value)]
 fn request_toggle_hide(event: String, secret: String, item: Item, link: &html::Scope<Event>) {
     link.send_future(async move {
         let modify = ModQuestion {
@@ -284,6 +286,7 @@ fn request_toggle_hide(event: String, secret: String, item: Item, link: &html::S
     });
 }
 
+#[allow(clippy::needless_pass_by_value)]
 fn request_toggle_answered(event: String, secret: String, item: Item, link: &html::Scope<Event>) {
     link.send_future(async move {
         let modify = ModQuestion {
@@ -358,6 +361,7 @@ impl Event {
         }
     }
 
+    #[allow(clippy::if_not_else)]
     fn view_event(&self, ctx: &Context<Self>) -> Html {
         if let Some(e) = self.state.event.as_ref() {
             let share_url = if e.data.short_url.is_empty() {
@@ -405,7 +409,7 @@ impl Event {
 
                     {self.view_questions(ctx,e)}
 
-                    {self.view_ask_question(mod_view,ctx,e)}
+                    {Self::view_ask_question(mod_view,ctx,e)}
                 </div>
             }
         } else {
@@ -413,7 +417,8 @@ impl Event {
         }
     }
 
-    fn view_ask_question(&self, mod_view: bool, ctx: &Context<Self>, e: &EventInfo) -> Html {
+    #[allow(clippy::if_not_else)]
+    fn view_ask_question(mod_view: bool, ctx: &Context<Self>, e: &EventInfo) -> Html {
         if mod_view {
             html! {}
         } else {
@@ -431,7 +436,7 @@ impl Event {
         if e.questions.is_empty() {
             let no_questions_classes = classes!(match self.mode {
                 Mode::Moderator => "noquestions modview",
-                _ => "noquestions",
+                Mode::Viewer => "noquestions",
             });
 
             html! {
@@ -461,7 +466,7 @@ impl Event {
         if !items.is_empty() {
             let title_classes = classes!(match self.mode {
                 Mode::Moderator => "questions-seperator modview",
-                _ => "questions-seperator",
+                Mode::Viewer => "questions-seperator",
             });
 
             return html! {

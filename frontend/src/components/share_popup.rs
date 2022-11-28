@@ -84,7 +84,7 @@ impl Component for SharePopup {
             }
             Msg::Share(share) => {
                 match share {
-                    ShareLink::Mail => location_href(format!("mailto:?&body={}", self.url)),
+                    ShareLink::Mail => location_href(&format!("mailto:?&body={}", self.url)),
                     ShareLink::Twitter => {
                         gloo_utils::window()
                             .open_with_url(
@@ -97,9 +97,9 @@ impl Component for SharePopup {
                             .unwrap_throw();
                     }
                     ShareLink::Whatsapp => {
-                        location_href(format!("whatsapp://send?text={}", self.url))
+                        location_href(&format!("whatsapp://send?text={}", self.url));
                     }
-                    ShareLink::Sms => location_href(format!("sms:?&body={}", self.url)),
+                    ShareLink::Sms => location_href(&format!("sms:?&body={}", self.url)),
                 }
                 false
             }
@@ -167,10 +167,10 @@ impl Component for SharePopup {
     }
 }
 
-fn location_href(url: String) {
+fn location_href(url: &str) {
     gloo_utils::document()
         .location()
         .unwrap_throw()
-        .set_href(url.as_str())
+        .set_href(url)
         .unwrap_throw();
 }

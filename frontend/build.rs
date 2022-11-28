@@ -32,9 +32,9 @@ fn get_git_hash() -> (String, String) {
                 branch_string.lines().next().unwrap_or("").into(),
                 commit_string.lines().next().unwrap_or("").into(),
             );
-        } else {
-            panic!("Can not get git commit: {}", commit.unwrap_err());
         }
+
+        panic!("Can not get git commit: {}", commit.unwrap_err());
     } else {
         panic!("Can not get git branch: {}", branch.unwrap_err());
     }
@@ -54,13 +54,15 @@ const fn la_env(env: Option<&str>) -> LiveAskEnv {
     }
 }
 
-fn process_html_template(git_hash: String) {
+fn process_html_template(git_hash: &str) {
+    const INDEX_FILE: &str = "index.html";
+
     let mut hb = Handlebars::new();
     hb.register_template_file("template", "index.html.hbs")
         .unwrap();
 
     let mut data: HashMap<&str, &str> = HashMap::new();
-    data.insert("release", &git_hash);
+    data.insert("release", git_hash);
 
     match la_env(env::var("LA_ENV").ok().as_deref()) {
         LiveAskEnv::Prod => {
@@ -85,8 +87,6 @@ fn process_html_template(git_hash: String) {
 
     let content = hb.render("template", &data).unwrap();
 
-    const INDEX_FILE: &str = "index.html";
-
     if file_content_changed(INDEX_FILE, &content) {
         use std::io::Write;
 
@@ -107,5 +107,5 @@ fn main() {
     println!("cargo:rustc-env=GIT_BRANCH={}", git.0);
     println!("cargo:rustc-env=GIT_HASH={}", git.1);
 
-    process_html_template(git.1);
+    process_html_template(&git.1);
 }

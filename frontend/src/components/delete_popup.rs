@@ -65,7 +65,7 @@ impl Component for DeletePopup {
                     .unwrap_or_default();
 
                 ctx.link().send_future(async move {
-                    let _ = fetch::delete_event(BASE_API, event_id.clone(), secret).await;
+                    let _res = fetch::delete_event(BASE_API, event_id.clone(), secret).await;
 
                     Msg::Sent
                 });

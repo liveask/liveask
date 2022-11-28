@@ -12,6 +12,7 @@ anyhow = "1"
 chrono = "0.4"
 console_error_panic_hook = "0.1"
 const_format = "0.2"
+easy-cast = "0.5"
 #keep in sync with yews gloo version
 gloo = "0.4"
 gloo-storage = "0.2"

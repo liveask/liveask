@@ -800,6 +800,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "easy-cast"
+version = "0.5.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d2953e4bb4103fd7db41b83431f681a583e2c18e529beb4ca6c679a0dad16c8d"
+
+[[package]]
 name = "either"
 version = "1.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -895,6 +901,7 @@ dependencies = [
  "chrono",
  "console_error_panic_hook",
  "const_format",
+ "easy-cast",
  "gloo",
  "gloo-storage",
  "gloo-utils",

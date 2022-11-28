@@ -40,6 +40,8 @@ impl Component for Home {
         }
     }
 
+    //TODO: split up
+    #[allow(clippy::too_many_lines)]
     fn view(&self, ctx: &Context<Self>) -> Html {
         let twitter_svg = {
             let svg = include_str!("../../inline-assets/twitter.svg");
@@ -60,7 +62,7 @@ impl Component for Home {
         };
 
         let branch = if env!("GIT_BRANCH") == "main" {
-            "".to_string()
+            String::new()
         } else {
             format!("({})", env!("GIT_BRANCH"))
         };

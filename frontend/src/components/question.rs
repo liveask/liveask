@@ -15,6 +15,8 @@ pub enum QuestionClickType {
     Answer,
 }
 
+//TODO: use bitflag to rid us of this warning
+#[allow(clippy::struct_excessive_bools)]
 #[derive(Clone, Debug, PartialEq, Properties)]
 pub struct Props {
     pub item: Rc<Item>,
@@ -109,12 +111,12 @@ impl Component for Question {
 
     fn changed(&mut self, ctx: &Context<Self>) -> bool {
         let props = ctx.props().clone();
-        if self.data != props {
+        if self.data == props {
+            false
+        } else {
             // log::info!("changed: {}", props.item.id);
             self.data = props;
             true
-        } else {
-            false
         }
     }
 
@@ -352,12 +354,16 @@ impl Question {
 
 impl Question {
     fn get_elem_y(&self) -> (Element, i64) {
+        use easy_cast::ConvFloat;
+
         let elem = self.get_element().expect_throw("get_elem_y error 1");
-        let scroll_y = gloo_utils::window()
-            .scroll_y()
-            .expect_throw("get_elem_y error 2") as i64;
+        let scroll_y = i64::conv_nearest(
+            gloo_utils::window()
+                .scroll_y()
+                .expect_throw("get_elem_y error 2"),
+        );
         let r = elem.get_bounding_client_rect();
-        let element_y = r.y() as i64 + scroll_y;
+        let element_y = i64::conv_nearest(r.y()) + scroll_y;
 
         (elem, element_y)
     }

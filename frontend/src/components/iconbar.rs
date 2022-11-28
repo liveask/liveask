@@ -54,7 +54,7 @@ impl Component for IconBar {
         Self {
             _dispatch: Dispatch::<State>::subscribe(ctx.link().callback(Msg::State)),
             events,
-            state: Default::default(),
+            state: Rc::default(),
             connected: true,
             socket_agent: WebSocketAgent::bridge(Callback::noop()),
             reconnect_timeout: None,

@@ -113,6 +113,7 @@ impl Component for QuestionPopup {
         }
     }
 
+    #[allow(clippy::if_not_else)]
     fn view(&self, ctx: &Context<Self>) -> Html {
         if self.show {
             let on_close = ctx.link().callback(|_| Msg::Close);
