@@ -322,7 +322,7 @@ impl App {
         let question = shared::Item {
             text: question.text,
             answered: false,
-            create_time_unix: 0,
+            create_time_unix: timestamp_now(),
             hidden: false,
             id: question_id,
             likes: 1,
