@@ -1,9 +1,5 @@
 @import 'colors';
 
-.iconbar {
-  float: right;
-}
-
 @keyframes example {
   20% {
     transform: translate(0px, -6px);
@@ -36,12 +32,6 @@
   animation-iteration-count: infinite;
 }
 
-.top-icon-svg {
-  width: 3em;
-  height: 3em;
-  zoom: 90%;
-}
-
 .topbar {
   position: fixed;
   left: 0;
@@ -67,126 +57,93 @@
   &.shrink {
     height: 60px;
   }
+
+  .iconbar {
+    float: right;
+  }
+
+  .logo {
+    bottom: 31px;
+    position: absolute;
+    transition: all .4s ease;
+  }
+
+  .logo.shrink {
+    bottom: 7px;
+    position: absolute;
+  }
+
+  @media (min-width: 400px) {
+    .logo {
+      bottom: 7px;
+    }
+  }
+
+  .logo-letters-svg {
+    transition: all 0.4s ease;
+    margin-left: 10.73px;
+    margin-bottom: 9.77px;
+  }
+
+  @media (max-width: 400px) {
+    .logo-letters-svg.shrink {
+      opacity: 0;
+    }
+  }
+
+  .innerbox {
+    min-width: 226px;
+    width: 375px;
+    height: 100%;
+    position: static;
+  }
+
+  @media (min-width: 400px) {
+    .innerbox {
+      width: 800px;
+    }
+  }
+
+  .logo-min-svg {
+    margin-left: 43px;
+    margin-top: 15px;
+  }
+
+  .createevent {
+    color: $pink-bg;
+    font-size: 14px;
+    letter-spacing: 0.22px;
+    line-height: 16px;
+    text-transform: uppercase;
+    margin-top: 23px;
+    margin-right: 30px;
+  }
+
+  .share {
+    font-size: 14px;
+    letter-spacing: 0.22px;
+    line-height: 16px;
+    text-transform: uppercase;
+    position: relative;
+    top: 21px;
+    left: 113px;
+  }
+
+  @media (min-width: 400px) and (max-width: 600px) {
+    .share {
+      left: 210px;
+    }
+  }
+
+  @media (min-width: 600px) {
+    .share {
+      left: 390px;
+    }
+  }
 }
 
 @media (min-width: 400px) {
   .topbar {
     height: 60px;
   }
-}
-
-.logo {
-  bottom: 31px;
-  position: absolute;
-  transition: all .4s ease;
-}
-
-.logo.shrink {
-  bottom: 7px;
-  position: absolute;
-}
-
-@media (min-width: 400px) {
-  .logo {
-    bottom: 7px;
-  }
-}
-
-.logo-letters-svg {
-  transition: all 0.4s ease;
-  margin-left: 10.73px;
-  margin-bottom: 9.77px;
-}
-
-@media (max-width: 400px) {
-  .logo-letters-svg.shrink {
-    opacity: 0;
-  }
-}
-
-.innerbox {
-  min-width: 226px;
-  width: 375px;
-  height: 100%;
-  position: static;
-}
-
-@media (min-width: 400px) {
-  .innerbox {
-    width: 800px;
-  }
-}
-
-.logo-min-svg {
-  margin-left: 43px;
-  margin-top: 15px;
-}
-
-.sharebar {
-  position: fixed;
-  left: 0;
-  right: 0;
-  top: 62px;
-  width: 100%;
-  background-color: rgb(232, 232, 232);
-  text-align: left;
-  z-index: 2;
-  display: flex;
-}
-
-.createevent {
-  color: $pink-bg;
-  font-size: 14px;
-  letter-spacing: 0.22px;
-  line-height: 16px;
-  text-transform: uppercase;
-  margin-top: 23px;
-  margin-right: 30px;
-}
-
-.share {
-  font-size: 14px;
-  letter-spacing: 0.22px;
-  line-height: 16px;
-  text-transform: uppercase;
-  position: relative;
-  top: 21px;
-  left: 113px;
-}
-
-@media (min-width: 400px) and (max-width: 600px) {
-  .share {
-    left: 210px;
-  }
-}
-
-@media (min-width: 600px) {
-  .share {
-    left: 390px;
-  }
-}
-
-.sharebar-overlay {
-  position: fixed;
-  height: 100%;
-  width: 100%;
-  left: 0;
-  top: 0;
-  z-index: 1;
-  -webkit-tap-highlight-color: transparent;
-  display: none;
-}
-
-.sharebar-entry {
-  cursor: pointer;
-  flex-grow: 1;
-  /* center text right next to it */
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.share-svg {
-  width: 40px;
-  margin-top: 0.5em;
 }
