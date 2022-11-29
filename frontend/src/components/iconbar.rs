@@ -145,13 +145,12 @@ impl Component for IconBar {
                 }
 
                 <div class="innerbox">
-                    <a
-                        class="logo shrink"
-                        onclick={ctx.link().callback(|_| Msg::Home)}
-                        >
-                        {logo_svg}
+                    <div class="logo">
+                        <a class="clickable-logo" onclick={ctx.link().callback(|_| Msg::Home)}>
+                            {logo_svg}
+                        </a>
                         {logo_text_svg}
-                    </a>
+                    </div>
 
                     {
                         if self.state.event.is_some() {

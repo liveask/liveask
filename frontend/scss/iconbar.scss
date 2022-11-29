@@ -63,20 +63,9 @@
   }
 
   .logo {
-    bottom: 31px;
-    position: absolute;
-    transition: all .4s ease;
-  }
-
-  .logo.shrink {
     bottom: 7px;
     position: absolute;
-  }
-
-  @media (min-width: 400px) {
-    .logo {
-      bottom: 7px;
-    }
+    transition: all .4s ease;
   }
 
   .logo-letters-svg {
@@ -104,9 +93,10 @@
     }
   }
 
-  .logo-min-svg {
+  .clickable-logo {
     margin-left: 43px;
     margin-top: 15px;
+    display: inline-block;
   }
 
   .createevent {
