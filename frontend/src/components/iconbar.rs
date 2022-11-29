@@ -126,7 +126,6 @@ impl Component for IconBar {
             let div = doc.create_element("div").unwrap_throw();
             div.set_inner_html(logo_svg);
             let svg = div.first_element_child().unwrap_throw();
-            //TODO: conditional
             svg.class_list().add_1("shrink").unwrap_throw();
             Html::VRef(svg.into())
         };
@@ -140,9 +139,7 @@ impl Component for IconBar {
             .unwrap_or_default();
 
         html! {
-            //TODO: shrink?
-            <div class={classes!(vec!["topbar", "shrink"],not(self.connected).then_some("offline"))}
-                /*[class.shrink]="isShrink()"*/>
+            <div class={classes!(vec!["topbar", "shrink"],not(self.connected).then_some("offline"))}>
                 {
                     self.view_offline_bar(ctx)
                 }
@@ -151,7 +148,6 @@ impl Component for IconBar {
                     <a
                         class="logo shrink"
                         onclick={ctx.link().callback(|_| Msg::Home)}
-                        /*[class.shrink]="isShrink()"*/
                         >
                         {logo_svg}
                         {logo_text_svg}
