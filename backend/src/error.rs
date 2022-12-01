@@ -31,6 +31,7 @@ pub enum InternalError {
 }
 
 impl IntoResponse for InternalError {
+    #[allow(clippy::cognitive_complexity)]
     fn into_response(self) -> Response {
         match self {
             Self::General(e) => {

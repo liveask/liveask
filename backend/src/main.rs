@@ -1,3 +1,29 @@
+#![deny(
+    warnings,
+    unused_imports,
+    unused_must_use,
+    unused_variables,
+    unused_mut,
+    dead_code
+)]
+#![deny(
+    clippy::all,
+    clippy::pedantic,
+    clippy::nursery,
+    clippy::dbg_macro,
+    clippy::unwrap_used,
+    clippy::panic,
+    clippy::needless_update,
+    clippy::match_like_matches_macro,
+    clippy::from_over_into,
+    clippy::useless_conversion,
+    clippy::float_cmp_const,
+    clippy::lossy_float_literal,
+    clippy::string_to_string,
+    clippy::unneeded_field_pattern,
+    clippy::verbose_file_reads
+)]
+#![allow(clippy::module_name_repetitions)]
 mod app;
 mod env;
 mod error;
@@ -37,13 +63,13 @@ pub const GIT_BRANCH: &str = env!("GIT_BRANCH");
 
 #[cfg(not(debug_assertions))]
 #[must_use]
-pub fn is_debug() -> bool {
+pub const fn is_debug() -> bool {
     false
 }
 
 #[cfg(debug_assertions)]
 #[must_use]
-pub fn is_debug() -> bool {
+pub const fn is_debug() -> bool {
     true
 }
 
@@ -83,11 +109,7 @@ fn get_port() -> u16 {
 }
 
 fn get_redis_url() -> String {
-    if let Ok(env) = std::env::var(env::ENV_REDIS_URL) {
-        env
-    } else {
-        "redis://localhost:6379".into()
-    }
+    std::env::var(env::ENV_REDIS_URL).map_or_else(|_| "redis://localhost:6379".into(), |env| env)
 }
 
 async fn dynamo_client() -> Result<aws_sdk_dynamodb::Client> {
@@ -97,11 +119,8 @@ async fn dynamo_client() -> Result<aws_sdk_dynamodb::Client> {
     let config = aws_config::from_env().region(region_provider);
 
     let config = if use_local_db() {
-        let url = if let Ok(env) = std::env::var(env::ENV_DB_URL) {
-            env
-        } else {
-            "http://localhost:8000".into()
-        };
+        let url = std::env::var(env::ENV_DB_URL)
+            .map_or_else(|_| "http://localhost:8000".into(), |env| env);
 
         tracing::info!("ddb local url: {url}");
 

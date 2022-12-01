@@ -454,11 +454,7 @@ impl App {
     }
 
     async fn notify_subscribers(&self, event_id: String, question_id: Option<i64>) {
-        let msg = if let Some(q) = question_id {
-            format!("q:{q}")
-        } else {
-            "e".to_string()
-        };
+        let msg = question_id.map_or_else(|| "e".to_string(), |q| format!("q:{q}"));
 
         self.pubsub_publish.publish(&event_id, &msg).await;
     }
@@ -474,20 +470,23 @@ impl App {
             return;
         }
 
-        if let Some(mail) = self.mailjet_config.clone() {
-            tracing::debug!("mail sending to: {receiver}");
+        self.mailjet_config.clone().map_or_else(
+            || {
+                tracing::warn!("mail not send: not configured");
+            },
+            |mail| {
+                tracing::debug!("mail sending to: {receiver}");
 
-            tokio::spawn(async move {
-                if let Err(e) = mail
-                    .send_mail(receiver.clone(), event_name, public_link, mod_link)
-                    .await
-                {
-                    tracing::error!("mail send error: {e}");
-                }
-            });
-        } else {
-            tracing::warn!("mail not send: not configured");
-        }
+                tokio::spawn(async move {
+                    if let Err(e) = mail
+                        .send_mail(receiver.clone(), event_name, public_link, mod_link)
+                        .await
+                    {
+                        tracing::error!("mail send error: {e}");
+                    }
+                });
+            },
+        );
     }
 }
 

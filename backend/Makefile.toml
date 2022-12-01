@@ -3,10 +3,6 @@
 [env]
 BASE_URL = "http://localhost:8080"
 DDB_LOCAL = 1
-CLIPPY_ARGS = [
-	"-D warnings -D unused_imports -D unused_must_use -D unused_variables -D unused_mut -D dead_code -D clippy::all -D clippy::pedantic -D clippy::dbg_macro -D clippy::unwrap_used -D clippy::panic -D clippy::needless_update -D clippy::match_like_matches_macro -D clippy::from_over_into -D clippy::useless_conversion -D clippy::float_cmp_const -D clippy::lossy_float_literal -D clippy::string_to_string -D clippy::unneeded_field_pattern -D clippy::verbose_file_reads -A clippy::module_name_repetitions"
-	]
-	
 
 [tasks.run]
 command = "cargo"
@@ -28,12 +24,12 @@ args = ["t"]
 
 [tasks.clippy]
 command = "cargo"
-args = ["clippy","--","@@split(CLIPPY_ARGS, )"]
+args = ["clippy"]
 
 [tasks.clippy-nightly]
 command = "cargo"
 toolchain="nightly"
-args = ["clippy","--","@@split(CLIPPY_ARGS, )"]
+args = ["clippy"]
 
 [tasks.checks]
 dependencies = ["cargo-sort","format","tests","clippy"]

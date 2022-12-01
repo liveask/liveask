@@ -17,7 +17,7 @@ pub struct EventEntry {
 }
 
 impl EventEntry {
-    pub fn new(event: EventInfo) -> Self {
+    pub const fn new(event: EventInfo) -> Self {
         Self { event, version: 0 }
     }
 
