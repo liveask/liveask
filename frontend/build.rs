@@ -92,7 +92,7 @@ fn process_html_template(git_hash: &str) {
 
         let mut output_file = fs::File::create(INDEX_FILE).unwrap();
 
-        write!(output_file, "{}", content).unwrap();
+        write!(output_file, "{content}").unwrap();
     }
 }
 
