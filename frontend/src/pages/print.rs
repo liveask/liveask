@@ -61,11 +61,7 @@ fn request_fetch(id: String, link: &html::Scope<Print>) {
     link.send_future(async move {
         let res = fetch::fetch_event(BASE_API, id, None).await;
 
-        if let Ok(val) = res {
-            Msg::Fetched(Some(val))
-        } else {
-            Msg::Fetched(None)
-        }
+        res.map_or(Msg::Fetched(None), |val| Msg::Fetched(Some(val)))
     });
 }
 
@@ -91,37 +87,38 @@ impl Print {
     }
 
     fn view_event(&self, _ctx: &Context<Self>) -> Html {
-        if let Some(e) = self.event.as_ref() {
-            let share_url = if e.data.short_url.is_empty() {
-                e.data.long_url.clone().unwrap_or_default()
-            } else {
-                e.data.short_url.clone()
-            };
+        self.event.as_ref().map_or_else(
+            || html! {},
+            |e| {
+                let share_url = if e.data.short_url.is_empty() {
+                    e.data.long_url.clone().unwrap_or_default()
+                } else {
+                    e.data.short_url.clone()
+                };
 
-            html! {
-                <div>
-                    <div class="bg-print">
-                    </div>
+                html! {
+                    <div>
+                        <div class="bg-print">
+                        </div>
 
-                    <div class="event-block">
+                        <div class="event-block">
 
-                        <div class="event-name printable">{&e.data.name.clone()}</div>
+                            <div class="event-name printable">{&e.data.name.clone()}</div>
 
-                        <div class="event-desc printable"
-                            >
-                            {{&e.data.description.clone()}}
+                            <div class="event-desc printable"
+                                >
+                                {{&e.data.description.clone()}}
+                            </div>
+                        </div>
+
+                        <div class="qrbox print">
+                            <div class="qr print">
+                                <Qr url={share_url} dimensions={300} />
+                            </div>
                         </div>
                     </div>
-
-                    <div class="qrbox print">
-                        <div class="qr print">
-                            <Qr url={share_url} dimensions={300} />
-                        </div>
-                    </div>
-                </div>
-            }
-        } else {
-            html! {}
-        }
+                }
+            },
+        )
     }
 }

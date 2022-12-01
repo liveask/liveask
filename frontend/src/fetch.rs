@@ -1,3 +1,5 @@
+#![allow(clippy::future_not_send)]
+
 use gloo_utils::format::JsValueSerdeExt;
 use shared::{
     AddEvent, AddQuestion, EditLike, EventData, EventInfo, EventState, Item, ModEventState,
@@ -43,11 +45,10 @@ pub async fn fetch_event(
     id: String,
     secret: Option<String>,
 ) -> Result<EventInfo, FetchError> {
-    let url = if let Some(secret) = secret {
-        format!("{}/api/mod/event/{}/{}", base_api, id, secret)
-    } else {
-        format!("{}/api/event/{}", base_api, id)
-    };
+    let url = secret.map_or_else(
+        || format!("{}/api/event/{}", base_api, id),
+        |secret| format!("{}/api/mod/event/{}/{}", base_api, id, secret),
+    );
 
     let mut opts = RequestInit::new();
     opts.method("GET");
@@ -224,14 +225,17 @@ pub async fn delete_event(
 ) -> Result<(), FetchError> {
     let url = format!("{}/api/mod/event/delete/{}/{}", base_api, event_id, secret);
 
-    let mut opts = RequestInit::new();
-    opts.method("GET");
-    opts.mode(RequestMode::Cors);
+    let opts = {
+        let mut opts = RequestInit::new();
+        opts.method("GET").mode(RequestMode::Cors);
+        opts
+    };
 
     let request = Request::new_with_str_and_init(&url, &opts)?;
 
     let window = gloo_utils::window();
-    let _resp_value = JsFuture::from(window.fetch_with_request(&request)).await?;
+    let req = window.fetch_with_request(&request);
+    let _resp_value = JsFuture::from(req).await?;
 
     Ok(())
 }

@@ -317,11 +317,7 @@ fn request_fetch(id: String, secret: Option<String>, link: &html::Scope<Event>) 
     link.send_future(async move {
         let res = fetch::fetch_event(BASE_API, id, secret).await;
 
-        if let Ok(val) = res {
-            Msg::Fetched(Some(val))
-        } else {
-            Msg::Fetched(None)
-        }
+        res.map_or(Msg::Fetched(None), |val| Msg::Fetched(Some(val)))
     });
 }
 
@@ -363,7 +359,7 @@ impl Event {
 
     #[allow(clippy::if_not_else)]
     fn view_event(&self, ctx: &Context<Self>) -> Html {
-        if let Some(e) = self.state.event.as_ref() {
+        self.state.event.as_ref().map_or_else(|| html! {}, |e| {
             let share_url = if e.data.short_url.is_empty() {
                 e.data.long_url.clone().unwrap_or_default()
             } else {
@@ -412,9 +408,7 @@ impl Event {
                     {Self::view_ask_question(mod_view,ctx,e)}
                 </div>
             }
-        } else {
-            html! {}
-        }
+        })
     }
 
     #[allow(clippy::if_not_else)]

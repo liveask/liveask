@@ -144,13 +144,14 @@ impl Component for QuestionPopup {
                             </code>
                         </div>
                         {
-                            if let Some(e) = &self.error {
-                                html!{<div class="invalid">
+                            self.error.as_ref().map_or_else(|| html!{}, |e|
+                                html!{
+                                    <div class="invalid">
                                     <div>
-                                        {e.clone()}
+                                       {e.clone()}
                                     </div>
-                                </div>}
-                            } else {html!{}}
+                                    </div>
+                                })
                         }
                     </div>
                 </div>

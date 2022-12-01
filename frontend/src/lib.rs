@@ -1,3 +1,29 @@
+#![deny(
+    warnings,
+    unused_imports,
+    unused_must_use,
+    unused_variables,
+    unused_mut,
+    dead_code
+)]
+#![deny(
+    clippy::all,
+    clippy::pedantic,
+    clippy::nursery,
+    clippy::dbg_macro,
+    clippy::unwrap_used,
+    clippy::panic,
+    clippy::needless_update,
+    clippy::match_like_matches_macro,
+    clippy::from_over_into,
+    clippy::useless_conversion,
+    clippy::float_cmp_const,
+    clippy::lossy_float_literal,
+    clippy::string_to_string,
+    clippy::unneeded_field_pattern,
+    clippy::verbose_file_reads
+)]
+#![allow(clippy::use_self, clippy::module_name_repetitions)]
 mod agents;
 mod components;
 mod fetch;
@@ -88,7 +114,7 @@ impl Component for AppRoot {
 }
 
 #[must_use]
-pub fn not(b: bool) -> bool {
+pub const fn not(b: bool) -> bool {
     !b
 }
 
