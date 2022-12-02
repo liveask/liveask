@@ -1553,9 +1553,9 @@ dependencies = [
 
 [[package]]
 name = "mailjet-rs"
-version = "0.2.2"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "255914be2a4bc5472068a0e5657d6fbb43e5b7c193a9a90c092d9345392427ec"
+checksum = "86e6fb560b2147db712a82b7abe88288da99448cfafc093fcccce9b4761b0958"
 dependencies = [
  "base64",
  "http-auth-basic",
@@ -2273,9 +2273,9 @@ checksum = "e25dfac463d778e353db5be2449d1cce89bd6fd23c9f1ea21310ce6e5a1b29c4"
 
 [[package]]
 name = "sentry"
-version = "0.29.0"
+version = "0.29.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c6425e2a14006415449fb0a3e9a119df5032f59e7a2d9350cf8738eca290dfc5"
+checksum = "17ad137b9df78294b98cab1a650bef237cc6c950e82e5ce164655e674d07c5cc"
 dependencies = [
  "httpdate",
  "native-tls",
@@ -2292,9 +2292,9 @@ dependencies = [
 
 [[package]]
 name = "sentry-backtrace"
-version = "0.29.0"
+version = "0.29.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "04d79c194e5c20fe602e81faf39f3cff0f275ec61283f437a892cfd6544da592"
+checksum = "afe4800806552aab314129761d5d3b3d422284eca3de2ab59e9fd133636cbd3d"
 dependencies = [
  "backtrace",
  "once_cell",
@@ -2304,9 +2304,9 @@ dependencies = [
 
 [[package]]
 name = "sentry-contexts"
-version = "0.29.0"
+version = "0.29.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e1c2a57601eeb870521cc241caee27e57a012f297ece3c1b7eee87f2a531edb5"
+checksum = "a42938426670f6e7974989cd1417837a96dd8bbb01567094f567d6acb360bf88"
 dependencies = [
  "hostname",
  "libc",
@@ -2318,9 +2318,9 @@ dependencies = [
 
 [[package]]
 name = "sentry-core"
-version = "0.29.0"
+version = "0.29.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8be90ea119c6d0664c8ab534013bc9e90355e7004d782d5d1492ca513393b929"
+checksum = "4df9b9d8de2658a1ecd4e45f7b06c80c5dd97b891bfbc7c501186189b7e9bbdf"
 dependencies = [
  "once_cell",
  "rand",
@@ -2331,9 +2331,9 @@ dependencies = [
 
 [[package]]
 name = "sentry-panic"
-version = "0.29.0"
+version = "0.29.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4ec217c3290e3f0d128154da731c28efa8f62cf8e3c3a006fd4bc3407c959176"
+checksum = "0af37b8500f273e511ebd6eb0d342ff7937d64ce3f134764b2b4653112d48cb4"
 dependencies = [
  "sentry-backtrace",
  "sentry-core",
@@ -2341,9 +2341,9 @@ dependencies = [
 
 [[package]]
 name = "sentry-tower"
-version = "0.29.0"
+version = "0.29.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "249ea2840f28eab9f9bd56edb79d6add52a4523b88af944c95cf86296266734e"
+checksum = "eac2ab74919ee9ad3e6f5fc3fac0a4af2e8a6397b5fd7e0394f19928a4a3a3d3"
 dependencies = [
  "http",
  "pin-project",
@@ -2355,9 +2355,9 @@ dependencies = [
 
 [[package]]
 name = "sentry-tracing"
-version = "0.29.0"
+version = "0.29.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "073a872ab639da1bee23354025ddc9c1b9e5d70eabfe8cd6f10a81914cf6563d"
+checksum = "63fc83ec2cf38726bd18cb1943ff11555b07fd5034cb68b10958ab32e2863a1f"
 dependencies = [
  "sentry-core",
  "tracing-core",
@@ -2366,9 +2366,9 @@ dependencies = [
 
 [[package]]
 name = "sentry-types"
-version = "0.29.0"
+version = "0.29.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "67ad85f0addf16310a1fbcf3facc7acb17ef5dbf6ae059d2f3c38442a471404d"
+checksum = "ccc95faa4078768a6bf8df45e2b894bbf372b3dbbfb364e9429c1c58ab7545c6"
 dependencies = [
  "debugid",
  "getrandom",
