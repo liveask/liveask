@@ -35,8 +35,7 @@ pub struct SharePopup {
     show: bool,
     copied_to_clipboard: bool,
     url: String,
-    #[allow(dead_code)]
-    events: Box<dyn Bridge<EventAgent>>,
+    _events: Box<dyn Bridge<EventAgent>>,
 }
 
 impl Component for SharePopup {
@@ -50,7 +49,7 @@ impl Component for SharePopup {
             url: ctx.props().url.clone(),
             show: false,
             copied_to_clipboard: false,
-            events,
+            _events: events,
         }
     }
 

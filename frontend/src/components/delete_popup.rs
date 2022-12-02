@@ -19,8 +19,7 @@ pub enum Msg {
 
 pub struct DeletePopup {
     show: bool,
-    #[allow(dead_code)]
-    events: Box<dyn Bridge<EventAgent>>,
+    _events: Box<dyn Bridge<EventAgent>>,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Properties)]
@@ -37,7 +36,7 @@ impl Component for DeletePopup {
 
         Self {
             show: false,
-            events,
+            _events: events,
         }
     }
 

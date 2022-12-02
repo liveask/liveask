@@ -123,38 +123,10 @@ impl Component for Event {
         }
     }
 
-    #[allow(clippy::too_many_lines)]
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
             Msg::QuestionClick((id, kind)) => {
-                match kind {
-                    QuestionClickType::Like => {
-                        let liked = LocalCache::is_liked(&self.event_id, id);
-                        LocalCache::set_like_state(&self.event_id, id, !liked);
-                        request_like(self.event_id.clone(), id, !liked, ctx.link());
-                    }
-                    QuestionClickType::Hide => {
-                        if let Some(q) = self.state.event.as_ref().unwrap_throw().get_question(id) {
-                            request_toggle_hide(
-                                self.event_id.clone(),
-                                ctx.props().secret.clone().unwrap_throw(),
-                                q,
-                                ctx.link(),
-                            );
-                        }
-                    }
-                    QuestionClickType::Answer => {
-                        if let Some(q) = self.state.event.as_ref().unwrap_throw().get_question(id) {
-                            request_toggle_answered(
-                                self.event_id.clone(),
-                                ctx.props().secret.clone().unwrap_throw(),
-                                q,
-                                ctx.link(),
-                            );
-                        }
-                    }
-                }
-
+                self.on_question_click(&kind, id, ctx);
                 false
             }
             Msg::QuestionUpdated(_id) => {
@@ -218,29 +190,7 @@ impl Component for Event {
                 false
             }
             Msg::Fetched(res) => {
-                //TODO: in subsequent fetches only update data if succesfully fetched
-
-                if matches!(
-                    self.loading_state,
-                    LoadingState::Loading | LoadingState::NotFound
-                ) {
-                    self.loading_state = if res.is_none() {
-                        LoadingState::NotFound
-                    } else {
-                        LoadingState::Loaded
-                    };
-                }
-
-                if res.is_some() {
-                    self.dispatch.reduce(|old| State {
-                        event: Some(res.clone().unwrap_throw()),
-                        new_question: old.new_question,
-                    });
-                    self.state = self.dispatch.get();
-
-                    self.init_event();
-                }
-
+                self.on_fetched(&res);
                 true
             }
             Msg::GlobalEvent(ev) => match ev {
@@ -611,6 +561,60 @@ impl Event {
             self.answered = answered.collect();
             self.unanswered = unanswered.collect();
             self.hidden = hidden.collect();
+        }
+    }
+
+    fn on_fetched(&mut self, res: &Option<EventInfo>) {
+        //TODO: in subsequent fetches only update data if succesfully fetched
+
+        if matches!(
+            self.loading_state,
+            LoadingState::Loading | LoadingState::NotFound
+        ) {
+            self.loading_state = if res.is_none() {
+                LoadingState::NotFound
+            } else {
+                LoadingState::Loaded
+            };
+        }
+        if res.is_some() {
+            self.dispatch.reduce(|old| State {
+                event: Some(res.clone().unwrap_throw()),
+                new_question: old.new_question,
+            });
+            self.state = self.dispatch.get();
+
+            self.init_event();
+        }
+    }
+
+    fn on_question_click(&mut self, kind: &QuestionClickType, id: i64, ctx: &Context<Event>) {
+        match kind {
+            QuestionClickType::Like => {
+                let liked = LocalCache::is_liked(&self.event_id, id);
+                LocalCache::set_like_state(&self.event_id, id, !liked);
+                request_like(self.event_id.clone(), id, !liked, ctx.link());
+            }
+            QuestionClickType::Hide => {
+                if let Some(q) = self.state.event.as_ref().unwrap_throw().get_question(id) {
+                    request_toggle_hide(
+                        self.event_id.clone(),
+                        ctx.props().secret.clone().unwrap_throw(),
+                        q,
+                        ctx.link(),
+                    );
+                }
+            }
+            QuestionClickType::Answer => {
+                if let Some(q) = self.state.event.as_ref().unwrap_throw().get_question(id) {
+                    request_toggle_answered(
+                        self.event_id.clone(),
+                        ctx.props().secret.clone().unwrap_throw(),
+                        q,
+                        ctx.link(),
+                    );
+                }
+            }
         }
     }
 }

@@ -40,33 +40,7 @@ impl Component for Home {
         }
     }
 
-    //TODO: split up
-    #[allow(clippy::too_many_lines)]
     fn view(&self, ctx: &Context<Self>) -> Html {
-        let twitter_svg = {
-            let svg = include_str!("../../inline-assets/twitter.svg");
-            let div = gloo_utils::document().create_element("div").unwrap_throw();
-            div.set_inner_html(svg);
-            div.set_id("twitter");
-            div.set_class_name("social");
-            Html::VRef(div.into())
-        };
-
-        let github_svg = {
-            let svg = include_str!("../../inline-assets/github.svg");
-            let div = gloo_utils::document().create_element("div").unwrap_throw();
-            div.set_inner_html(svg);
-            div.set_id("github");
-            div.set_class_name("social");
-            Html::VRef(div.into())
-        };
-
-        let branch = if env!("GIT_BRANCH") == "main" {
-            String::new()
-        } else {
-            format!("({})", env!("GIT_BRANCH"))
-        };
-
         html! {
             <div id="home">
                 <div class="feature-dark">
@@ -137,36 +111,68 @@ impl Component for Home {
                     </p>
                 </div>
 
-                <div class="feature-dark">
-                    <h1>
-                        {"It’s free, try it now!"}
-                    </h1>
-                    <button class="button-red" onclick={ctx.link().callback(|_| Msg::CreateEvent)}>
-                        {"Create your Event"}
-                    </button>
+                {Self::view_footer(ctx)}
+            </div>
+        }
+    }
+}
 
-                    <div class="copyright">
-                        {"© 2022 Live-Ask. All right reserved"}
-                    </div>
+impl Home {
+    fn view_footer(ctx: &Context<Self>) -> Html {
+        let twitter_svg = {
+            let svg = include_str!("../../inline-assets/twitter.svg");
+            let div = gloo_utils::document().create_element("div").unwrap_throw();
+            div.set_inner_html(svg);
+            div.set_id("twitter");
+            div.set_class_name("social");
+            Html::VRef(div.into())
+        };
 
-                    <a href="https://twitter.com/liveask1">
-                        {twitter_svg}
-                    </a>
-                    <a href="https://github.com/liveask/liveask">
-                        {github_svg}
-                    </a>
+        let github_svg = {
+            let svg = include_str!("../../inline-assets/github.svg");
+            let div = gloo_utils::document().create_element("div").unwrap_throw();
+            div.set_inner_html(svg);
+            div.set_id("github");
+            div.set_class_name("social");
+            Html::VRef(div.into())
+        };
 
-                    <a class="about" onclick={ctx.link().callback(|_| Msg::Privacy)}>
-                        {"Privacy Policy"}
-                    </a>
+        let branch = if env!("GIT_BRANCH") == "main" {
+            String::new()
+        } else {
+            format!("({})", env!("GIT_BRANCH"))
+        };
 
-                    <a class="about" href="https://github.com/liveask/liveask">
-                        {"About"}
-                    </a>
+        html! {
+            <div class="feature-dark">
+                <h1>
+                    {"It’s free, try it now!"}
+                </h1>
+                <button class="button-red" onclick={ctx.link().callback(|_| Msg::CreateEvent)}>
+                    {"Create your Event"}
+                </button>
 
-                    <div class="version">
-                        { format!("v.{VERSION_STR}-{} {branch}",env!("GIT_HASH")) }
-                    </div>
+                <div class="copyright">
+                    {"© 2022 Live-Ask. All right reserved"}
+                </div>
+
+                <a href="https://twitter.com/liveask1">
+                    {twitter_svg}
+                </a>
+                <a href="https://github.com/liveask/liveask">
+                    {github_svg}
+                </a>
+
+                <a class="about" onclick={ctx.link().callback(|_| Msg::Privacy)}>
+                    {"Privacy Policy"}
+                </a>
+
+                <a class="about" href="https://github.com/liveask/liveask">
+                    {"About"}
+                </a>
+
+                <div class="version">
+                    { format!("v.{VERSION_STR}-{} {branch}",env!("GIT_HASH")) }
                 </div>
             </div>
         }

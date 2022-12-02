@@ -39,9 +39,7 @@ pub struct WebSocketAgent {
     ws: Option<wasm_sockets::EventClient>,
     subscribers: HashSet<HandlerId>,
     connected: bool,
-    #[allow(dead_code)]
-    ping_interval: Interval,
-    #[allow(dead_code)]
+    _ping_interval: Interval,
     events: Box<dyn Bridge<EventAgent>>,
     reconnect_interval: Option<(Duration, Interval)>,
 }
@@ -64,7 +62,7 @@ impl Agent for WebSocketAgent {
             ws: None,
             subscribers: HashSet::new(),
             connected: false,
-            ping_interval,
+            _ping_interval: ping_interval,
             events: EventAgent::bridge(Callback::noop()),
             reconnect_interval: None,
         }
