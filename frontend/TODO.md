@@ -1,8 +1,7 @@
 
 # 2.1 (missing non essential features)
 
-- [ ] cleanup some unwrap_throw/expect_throw and deny expect entirely
-- [ ] more pedantic clippy 
+- [ ] cleanup some unwrap_throw/expect_throw
 - [ ] js: show info msg if wasm is disabled (`open /Applications/Google\ Chrome.app --args --js-flags=--noexpose_wasm`)
 - [ ] tutorial
 - [ ] autosize question/event-desc. textarea
