@@ -4,7 +4,8 @@
     unused_must_use,
     unused_variables,
     unused_mut,
-    dead_code
+    dead_code,
+    clippy::expect_used
 )]
 #![deny(
     clippy::all,

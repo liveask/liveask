@@ -2,6 +2,7 @@ use chrono::Duration;
 use gloo::timers::callback::Interval;
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
+use wasm_bindgen::UnwrapThrowExt;
 use yew::Callback;
 use yew_agent::{Agent, AgentLink, Bridge, Bridged, HandlerId};
 
@@ -182,7 +183,7 @@ impl WebSocketAgent {
                 duration
                     .num_milliseconds()
                     .try_into()
-                    .expect("duration millis should always fit into u32"),
+                    .expect_throw("duration millis should always fit into u32"),
                 move || {
                     link.send_message(Msg::Reconnect);
                 },
@@ -204,7 +205,7 @@ impl WebSocketAgent {
         let ws_msg_callback = self.link.callback(Msg::MessageReceived);
 
         let mut client =
-            wasm_sockets::EventClient::new(&self.url).expect("error creating websocket");
+            wasm_sockets::EventClient::new(&self.url).expect_throw("error creating websocket");
 
         client.set_on_error(Some(Box::new(move |_error| {
             // log::info!("ws on_error: {:#?}", error);

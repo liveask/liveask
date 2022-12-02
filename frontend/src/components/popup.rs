@@ -25,7 +25,9 @@ impl Component for Popup {
     type Properties = PopupProps;
 
     fn create(_ctx: &Context<Self>) -> Self {
-        let body: HtmlElement = gloo_utils::document().body().expect("no body node found");
+        let body: HtmlElement = gloo_utils::document()
+            .body()
+            .expect_throw("no body node found");
 
         let result = Self { body };
         result.toggle_modal(true);
