@@ -46,8 +46,8 @@ pub async fn fetch_event(
     secret: Option<String>,
 ) -> Result<EventInfo, FetchError> {
     let url = secret.map_or_else(
-        || format!("{}/api/event/{}", base_api, id),
-        |secret| format!("{}/api/mod/event/{}/{}", base_api, id, secret),
+        || format!("{base_api}/api/event/{id}"),
+        |secret| format!("{base_api}/api/mod/event/{id}/{secret}"),
     );
 
     let mut opts = RequestInit::new();
@@ -78,7 +78,7 @@ pub async fn mod_state_change(
     let body = serde_json::to_string(&body)?;
     let body = JsValue::from_str(&body);
 
-    let url = format!("{}/api/mod/event/state/{}/{}", base_api, id, secret);
+    let url = format!("{base_api}/api/mod/event/state/{id}/{secret}");
 
     let mut opts = RequestInit::new();
     opts.method("POST");
@@ -107,7 +107,7 @@ pub async fn like_question(
     let body = serde_json::to_string(&body)?;
     let body = JsValue::from_str(&body);
 
-    let url = format!("{}/api/event/editlike/{}", base_api, event_id);
+    let url = format!("{base_api}/api/event/editlike/{event_id}");
 
     let mut opts = RequestInit::new();
     opts.method("POST");
@@ -136,10 +136,8 @@ pub async fn mod_question(
     let body = serde_json::to_string(&modify)?;
     let body = JsValue::from_str(&body);
 
-    let url = format!(
-        "{}/api/mod/event/questionmod/{}/{}/{}",
-        base_api, event_id, event_secret, question_id
-    );
+    let url =
+        format!("{base_api}/api/mod/event/questionmod/{event_id}/{event_secret}/{question_id}");
 
     let mut opts = RequestInit::new();
     opts.method("POST");
@@ -163,7 +161,7 @@ pub async fn add_question(
     let body = serde_json::to_string(&body)?;
     let body = JsValue::from_str(&body);
 
-    let url = format!("{}/api/event/addquestion/{}", base_api, event_id);
+    let url = format!("{base_api}/api/event/addquestion/{event_id}");
 
     let mut opts = RequestInit::new();
     opts.method("POST");
@@ -205,7 +203,7 @@ pub async fn create_event(
     opts.method("POST");
     opts.body(Some(&body));
 
-    let request = Request::new_with_str_and_init(&format!("{}/api/addevent", base_api), &opts)?;
+    let request = Request::new_with_str_and_init(&format!("{base_api}/api/addevent"), &opts)?;
     request.headers().set("content-type", "application/json")?;
 
     let window = gloo_utils::window();
@@ -223,7 +221,7 @@ pub async fn delete_event(
     event_id: String,
     secret: String,
 ) -> Result<(), FetchError> {
-    let url = format!("{}/api/mod/event/delete/{}/{}", base_api, event_id, secret);
+    let url = format!("{base_api}/api/mod/event/delete/{event_id}/{secret}");
 
     let opts = {
         let mut opts = RequestInit::new();

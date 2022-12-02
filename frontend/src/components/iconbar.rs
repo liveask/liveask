@@ -220,7 +220,7 @@ impl IconBar {
                 onclick={ctx.link().callback(|_| Msg::Reconnect)}
                 >
                 <img hidden={is_online} src="/assets/offline.svg" />
-                <div hidden={is_online} class="timeout">{format!("{}s",seconds_till_reconnect)}</div>
+                <div hidden={is_online} class="timeout">{format!("{seconds_till_reconnect}s")}</div>
             </div>
         }
     }

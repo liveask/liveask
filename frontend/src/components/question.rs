@@ -134,7 +134,7 @@ impl Component for Question {
                     .set_property("transition-duration", "0s")
                     .unwrap_throw();
                 style
-                    .set_property("transform", &format!("translate(0px,{}px)", diff))
+                    .set_property("transform", &format!("translate(0px,{diff}px)"))
                     .unwrap_throw();
 
                 let handle = {
