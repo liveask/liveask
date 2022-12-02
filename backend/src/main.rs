@@ -148,7 +148,7 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
         sentry::ClientOptions {
             release: Some(GIT_HASH.into()),
             attach_stacktrace: true,
-            traces_sample_rate: if is_debug() { 1.0 } else { 0.1 },
+            traces_sample_rate: if is_debug() { 1.0 } else { 0.01 },
             environment: Some(prod_env.clone().into()),
             ..Default::default()
         },
