@@ -538,8 +538,10 @@ impl Event {
     fn get_event_timeout(e: &EventInfo) -> Html {
         let event_duration = Duration::days(30);
 
-        let create_time =
-            DateTime::<Utc>::from_utc(NaiveDateTime::from_timestamp(e.create_time_unix, 0), Utc);
+        let create_time = DateTime::<Utc>::from_utc(
+            NaiveDateTime::from_timestamp_opt(e.create_time_unix, 0).unwrap_throw(),
+            Utc,
+        );
         let end_time = create_time + event_duration;
 
         html! {end_time.format("%F")}

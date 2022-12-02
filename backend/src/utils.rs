@@ -6,8 +6,10 @@ pub fn timestamp_now() -> i64 {
 }
 
 pub fn format_timestamp(t: i64) -> String {
-    let date = Utc.timestamp(t, 0);
-    date.format("%Y%m%dT%H%M%S").to_string()
+    Utc.timestamp_opt(t, 0)
+        .latest()
+        .map(|date| date.format("%Y%m%dT%H%M%S").to_string())
+        .unwrap_or_default()
 }
 
 #[cfg(test)]

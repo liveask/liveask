@@ -252,7 +252,11 @@ impl Question {
     fn get_age(&self) -> String {
         use chrono::TimeZone;
 
-        let delta = Utc::now() - Utc.timestamp(self.data.item.create_time_unix, 0);
+        let delta = Utc::now()
+            - Utc
+                .timestamp_opt(self.data.item.create_time_unix, 0)
+                .latest()
+                .unwrap_throw();
 
         if delta.num_minutes() < 1 {
             String::from("just now")
