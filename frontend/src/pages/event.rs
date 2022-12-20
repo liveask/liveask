@@ -99,8 +99,7 @@ impl Component for Event {
 
         let mut ws = WebSocketAgent::bridge(ctx.link().callback(Msg::SocketMsg));
         ws.send(SocketInput::Connect(format!(
-            "{}/push/{}",
-            BASE_SOCKET, event_id
+            "{BASE_SOCKET}/push/{event_id}",
         )));
 
         Self {

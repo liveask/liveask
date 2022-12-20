@@ -95,8 +95,7 @@ impl Component for QuestionPopup {
                     self.error = Some(String::from("Question cannot be empty"));
                 } else if self.text.trim().len() < MIN_LENGTH {
                     self.error = Some(format!(
-                        "Question must be at least {} characters long.",
-                        MIN_LENGTH
+                        "Question must be at least {MIN_LENGTH} characters long."
                     ));
                 } else if self
                     .text
