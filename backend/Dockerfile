@@ -1,7 +1,7 @@
-FROM debian:bullseye-slim
+FROM debian:bookworm-slim
 LABEL maintainer="extrawurst"
 RUN apt-get update \
-    && apt-get install -y openssl libssl-dev ca-certificates curl
+    && apt-get install -y openssl ca-certificates curl
 
 ADD linux_bin/server /app/server
 
