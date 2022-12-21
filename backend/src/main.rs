@@ -30,6 +30,7 @@ mod error;
 mod eventsdb;
 mod handle;
 mod mail;
+mod payment;
 mod pubsub;
 mod redis_pool;
 mod utils;
@@ -54,6 +55,7 @@ use crate::{
     error::Result,
     eventsdb::DynamoEventsDB,
     handle::push_handler,
+    payment::Payment,
     pubsub::PubSubRedis,
     redis_pool::{create_pool, ping_test_redis},
 };
@@ -186,16 +188,27 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let redis_pool = create_pool(&redis_url)?;
     ping_test_redis(&redis_pool).await?;
 
+    let payment = Arc::new(
+        Payment::new(
+            std::env::var(env::ENV_PAYPAL_ID).unwrap_or_default(),
+            std::env::var(env::ENV_PAYPAL_SECRET).unwrap_or_default(),
+            //TODO: derive from env
+            true,
+        )
+        .await?,
+    );
+
     let pubsub = Arc::new(PubSubRedis::new(redis_pool, redis_url).await);
 
     let eventsdb = Arc::new(DynamoEventsDB::new(dynamo_client().await?, use_local_db()).await?);
-    let app = Arc::new(App::new(eventsdb, pubsub.clone()));
+    let app = Arc::new(App::new(eventsdb, pubsub.clone(), payment));
 
     pubsub.set_receiver(app.clone()).await;
 
     #[rustfmt::skip]
     let mod_routes = Router::new()
         .route("/:id/:secret", get(handle::mod_get_event))
+        .route("/upgrade/:id/:secret", get(handle::mod_premium_upgrade))
         .route("/delete/:id/:secret", get(handle::mod_delete_event))
         .route("/question/:id/:secret/:question_id", get(handle::mod_get_question))
         .route("/questionmod/:id/:secret/:question_id", post(handle::mod_edit_question))
@@ -206,6 +219,7 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
         .route("/api/ping", get(handle::ping_handler))
         .route("/api/panic", get(handle::panic_handler))
         .route("/api/addevent", post(handle::addevent_handler))
+        .route("/api/payment/webhook", post(handle::payment_webhook))
         .route("/api/event/editlike/:id", post(handle::editlike_handler))
         .route("/api/event/addquestion/:id", post(handle::addquestion_handler))
         .route("/api/event/question/:id/:question_id", get(handle::get_question))
