@@ -1,6 +1,8 @@
 use async_trait::async_trait;
 use axum::extract::ws::{Message, WebSocket};
-use shared::{AddEvent, EventInfo, EventState, EventTokens, Item, ModQuestion, States};
+use shared::{
+    AddEvent, EventInfo, EventState, EventTokens, EventUpgrade, Item, ModQuestion, States,
+};
 use std::{
     collections::HashMap,
     sync::{atomic::AtomicUsize, Arc},
@@ -16,6 +18,7 @@ use crate::{
     error::{InternalError, Result},
     eventsdb::{EventEntry, EventsDB},
     mail::MailjetConfig,
+    payment::Payment,
     pubsub::{PubSubPublish, PubSubReceiver},
     utils::{format_timestamp, timestamp_now},
 };
@@ -28,13 +31,18 @@ pub struct App {
     //TODO: order subscriber based on topic name into Concurrent Hashmap
     channels: Arc<RwLock<HashMap<usize, (String, OutBoundChannel)>>>,
     pubsub_publish: Arc<dyn PubSubPublish>,
+    payment: Arc<Payment>,
     base_url: String,
     tiny_url_token: Option<String>,
     mailjet_config: Option<MailjetConfig>,
 }
 
 impl App {
-    pub fn new(eventsdb: Arc<dyn EventsDB>, pubsub_publish: Arc<dyn PubSubPublish>) -> Self {
+    pub fn new(
+        eventsdb: Arc<dyn EventsDB>,
+        pubsub_publish: Arc<dyn PubSubPublish>,
+        payment: Arc<Payment>,
+    ) -> Self {
         let tiny_url_token = std::env::var(env::ENV_TINY_TOKEN).ok();
 
         if tiny_url_token.is_none() {
@@ -57,6 +65,7 @@ impl App {
                 .unwrap_or_else(|_| "https://www.live-ask.com".into()),
             tiny_url_token,
             mailjet_config,
+            payment,
         }
     }
 }
@@ -135,14 +144,23 @@ impl App {
             request.moderator_email,
             result.data.name.clone(),
             result.data.short_url.clone(),
-            format!(
-                "{}/eventmod/{}/{mod_token}",
-                self.base_url, result.tokens.public_token,
-            ),
+            self.mod_link(&result.tokens),
         )
         .await;
 
         Ok(result)
+    }
+
+    fn mod_link(&self, tokens: &EventTokens) -> String {
+        let mod_token = tokens
+            .moderator_token
+            .as_ref()
+            .map_or_else(String::new, std::clone::Clone::clone);
+
+        format!(
+            "{}/eventmod/{}/{mod_token}",
+            self.base_url, tokens.public_token,
+        )
     }
 
     pub async fn get_event(&self, id: String, secret: Option<String>) -> Result<EventInfo> {
@@ -307,6 +325,45 @@ impl App {
         self.eventsdb.put(entry).await?;
 
         self.notify_subscribers(id, None).await;
+
+        Ok(())
+    }
+
+    pub async fn premium_upgrade(&self, id: String, secret: String) -> Result<EventUpgrade> {
+        let mut entry = self.eventsdb.get(&id).await?;
+
+        let e = &mut entry.event;
+
+        if e.tokens
+            .moderator_token
+            .as_ref()
+            .map(|mod_token| mod_token != &secret)
+            .unwrap_or_default()
+        {
+            bail!("wrong mod token");
+        }
+
+        if e.deleted {
+            return Err(InternalError::AccessingDeletedEvent);
+        }
+
+        let approve_url = self
+            .payment
+            .create_order(e.tokens.public_token.clone(), self.mod_link(&e.tokens))
+            .await?;
+
+        Ok(EventUpgrade { url: approve_url })
+    }
+
+    #[instrument(skip(self))]
+    pub async fn payment_webhook(&self, id: String) -> Result<()> {
+        tracing::info!("order processing");
+
+        self.payment.capture_approved_payment(id.clone()).await?;
+
+        tracing::info!("order processing done");
+
+        // self.notify_subscribers(id, Some(question_id)).await;
 
         Ok(())
     }
@@ -530,6 +587,7 @@ mod test {
         let app = App::new(
             Arc::new(InMemoryEventsDB::default()),
             Arc::new(PubSubInMemory::default()),
+            Arc::new(Payment::default()),
         );
 
         let res = app

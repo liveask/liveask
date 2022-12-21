@@ -37,6 +37,11 @@ pub struct Item {
     pub create_time_unix: i64,
 }
 
+#[derive(Serialize, Deserialize, Default, Debug, Clone, Eq, PartialEq)]
+pub struct EventUpgrade {
+    pub url: String,
+}
+
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, Default)]
 pub struct EventInfo {
     pub tokens: EventTokens,
