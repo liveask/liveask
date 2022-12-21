@@ -1,4 +1,4 @@
-FROM debian:bullseye-slim
+FROM debian:bookworm-slim
 LABEL maintainer="extrawurst"
 RUN apt-get update \
     && apt-get install -y pkg-config libssl-dev ca-certificates curl
