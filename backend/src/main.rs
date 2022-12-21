@@ -190,15 +190,16 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let redis_pool = create_pool(&redis_url)?;
     ping_test_redis(&redis_pool).await?;
 
-    let payment = Arc::new(
-        Payment::new(
-            std::env::var(env::ENV_PAYPAL_ID).unwrap_or_default(),
-            std::env::var(env::ENV_PAYPAL_SECRET).unwrap_or_default(),
-            //TODO: derive from env
-            true,
-        )
-        .await?,
-    );
+    let payment = Arc::new(Payment::new(
+        std::env::var(env::ENV_PAYPAL_ID).unwrap_or_default(),
+        std::env::var(env::ENV_PAYPAL_SECRET).unwrap_or_default(),
+        //TODO: derive from env
+        true,
+    ));
+
+    if let Err(e) = payment.authenticate().await {
+        tracing::error!("payment auth error: {}", e);
+    }
 
     let pubsub = Arc::new(PubSubRedis::new(redis_pool, redis_url).await);
 

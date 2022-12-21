@@ -1,5 +1,10 @@
 mod error;
 
+use std::sync::{
+    atomic::{AtomicBool, Ordering},
+    Arc,
+};
+
 pub use self::error::PaymentError;
 use self::error::PaymentResult;
 use paypal_rust::{
@@ -29,19 +34,21 @@ pub struct PaymentWebhookBase {
 #[derive(Clone)]
 pub struct Payment {
     client: Client,
+    authenticated: Arc<AtomicBool>,
 }
 
 impl Default for Payment {
     fn default() -> Self {
         Self {
             client: Client::new(String::new(), String::new(), Environment::Sandbox),
+            authenticated: Arc::new(AtomicBool::new(false)),
         }
     }
 }
 
 //TODO: fix all `expect`s
 impl Payment {
-    pub async fn new(username: String, password: String, sandbox: bool) -> PaymentResult<Self> {
+    pub fn new(username: String, password: String, sandbox: bool) -> Self {
         let client = Client::new(
             username,
             password,
@@ -57,12 +64,23 @@ impl Payment {
             website: None,
         });
 
-        client.authenticate().await?;
+        Self {
+            client,
+            authenticated: Arc::new(AtomicBool::new(false)),
+        }
+    }
 
-        Ok(Self { client })
+    pub async fn authenticate(&self) -> PaymentResult<()> {
+        if !self.authenticated.load(Ordering::Relaxed) {
+            self.client.authenticate().await?;
+        }
+
+        Ok(())
     }
 
     pub async fn create_order(&self, event: String, return_url: String) -> PaymentResult<String> {
+        self.authenticate().await?;
+
         let order = Order::create(
             &self.client,
             CreateOrderDto {
@@ -95,6 +113,8 @@ impl Payment {
     }
 
     pub async fn capture_approved_payment(&self, id: String) -> PaymentResult<()> {
+        self.authenticate().await?;
+
         let order = Order::show_details(&self.client, &id).await.expect("TODO");
 
         let unit = order
