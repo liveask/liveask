@@ -73,6 +73,7 @@ impl Payment {
     pub async fn authenticate(&self) -> PaymentResult<()> {
         if !self.authenticated.load(Ordering::Relaxed) {
             self.client.authenticate().await?;
+            self.authenticated.store(true, Ordering::Relaxed);
         }
 
         Ok(())
