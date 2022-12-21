@@ -1,16 +1,11 @@
 use axum::{
     extract::{ws::WebSocket, Path, State, WebSocketUpgrade},
-    http::HeaderMap,
     response::{Html, IntoResponse},
     Json,
 };
 use tracing::instrument;
 
-use crate::{
-    app::SharedApp,
-    error::InternalError,
-    payment::{PaymentCheckoutApprovedResource, PaymentWebhookBase},
-};
+use crate::{app::SharedApp, error::InternalError};
 
 //TODO: not sure why we need this
 async fn socket_handler(ws: WebSocket, id: String, app: SharedApp) {
@@ -95,38 +90,6 @@ pub async fn mod_delete_event(
 }
 
 #[instrument(skip(app))]
-pub async fn mod_premium_upgrade(
-    Path((id, secret)): Path<(String, String)>,
-    State(app): State<SharedApp>,
-) -> std::result::Result<impl IntoResponse, InternalError> {
-    tracing::info!("mod_premium_upgrade");
-
-    Ok(Json(app.premium_upgrade(id, secret).await?))
-}
-
-#[instrument(skip(headers, app, body))]
-#[allow(unused_variables)]
-pub async fn payment_webhook(
-    headers: HeaderMap,
-    State(app): State<SharedApp>,
-    body: String,
-) -> std::result::Result<impl IntoResponse, InternalError> {
-    tracing::info!("payment_webhook");
-
-    let base: PaymentWebhookBase = serde_json::from_str(&body)?;
-
-    if base.event_type == "CHECKOUT.ORDER.APPROVED" {
-        let resource: PaymentCheckoutApprovedResource = serde_json::from_value(base.resource)?;
-
-        app.payment_webhook(resource.id).await?;
-    } else {
-        tracing::warn!("unknown payment hook: {}", body);
-    }
-
-    Ok(Html(""))
-}
-
-#[instrument(skip(app))]
 pub async fn mod_get_question(
     Path((id, secret, question_id)): Path<(String, String, i64)>,
     State(app): State<SharedApp>,
@@ -185,7 +148,6 @@ pub async fn panic_handler() -> Html<&'static str> {
 mod test_db_conflicts {
     use super::*;
     use crate::eventsdb::{EventEntry, EventsDB};
-    use crate::payment::Payment;
     use crate::{app::App, pubsub::PubSubInMemory};
     use async_trait::async_trait;
     use axum::{
@@ -228,7 +190,6 @@ mod test_db_conflicts {
         let app = Arc::new(App::new(
             Arc::new(ConflictDB::default()),
             Arc::new(PubSubInMemory::default()),
-            Arc::new(Payment::default()),
         ));
 
         Router::new()
@@ -271,7 +232,6 @@ mod test_db_item_not_found {
     use crate::{
         app::App,
         eventsdb::{EventEntry, EventsDB},
-        payment::Payment,
         pubsub::PubSubInMemory,
     };
     use async_trait::async_trait;
@@ -302,7 +262,6 @@ mod test_db_item_not_found {
         let app = Arc::new(App::new(
             Arc::new(ItemNotFoundDB::default()),
             Arc::new(PubSubInMemory::default()),
-            Arc::new(Payment::default()),
         ));
 
         Router::new()

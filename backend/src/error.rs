@@ -4,7 +4,7 @@ use redis::RedisError;
 use reqwest::StatusCode;
 use thiserror::Error;
 
-use crate::{eventsdb, payment::PaymentError};
+use crate::eventsdb;
 
 #[derive(Error, Debug)]
 pub enum InternalError {
@@ -16,12 +16,6 @@ pub enum InternalError {
 
     #[error("Events DB Error: {0}")]
     EventsDB(#[from] eventsdb::Error),
-
-    #[error("Serde Json Error: {0}")]
-    SerdeJson(#[from] serde_json::Error),
-
-    #[error("Payment Error: {0}")]
-    Payment(#[from] PaymentError),
 
     #[error("DeadPool Create Error: {0}")]
     DeadPoolCreatePool(#[from] CreatePoolError),
@@ -47,16 +41,6 @@ impl IntoResponse for InternalError {
 
             Self::AccessingDeletedEvent => {
                 tracing::warn!("accessing deleted event");
-                (StatusCode::BAD_REQUEST, "").into_response()
-            }
-
-            Self::Payment(e) => {
-                tracing::error!("{e}");
-                (StatusCode::BAD_REQUEST, "").into_response()
-            }
-
-            Self::SerdeJson(e) => {
-                tracing::error!("{e}");
                 (StatusCode::BAD_REQUEST, "").into_response()
             }
 
