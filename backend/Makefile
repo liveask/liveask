@@ -11,6 +11,3 @@ run:
 
 check:
 	cargo make checks
-
-test-payment:
-	xh "${URL}/api/mod/event/upgrade/eventexample/eventexamplemod"

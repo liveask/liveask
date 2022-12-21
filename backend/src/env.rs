@@ -10,5 +10,3 @@ pub const ENV_MAILJET_KEY: &str = "MAILJET_KEY";
 pub const ENV_MAILJET_SECRET: &str = "MAILJET_SECRET";
 pub const ENV_SENTRY_DSN: &str = "LA_SENTRY_DSN";
 pub const ENV_PORT: &str = "LA_PORT";
-pub const ENV_PAYPAL_ID: &str = "LA_PP_CLIENT_ID";
-pub const ENV_PAYPAL_SECRET: &str = "LA_PP_CLIENT_SECRET";

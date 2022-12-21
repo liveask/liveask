@@ -1,7 +1,7 @@
 use chrono::{DateTime, Duration, NaiveDateTime, Utc};
 use const_format::formatcp;
 use konst::eq_str;
-use shared::{EventInfo, EventUpgrade, Item, ModQuestion, States};
+use shared::{EventInfo, Item, ModQuestion, States};
 use std::{rc::Rc, str::FromStr};
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 use yew::prelude::*;
@@ -86,8 +86,6 @@ pub enum Msg {
     ModDelete,
     ModStateChange(yew::Event),
     StateChanged,
-    UpgradeButtonPressed,
-    UpgradeRequested(Option<EventUpgrade>),
     CopyLink,
     GlobalEvent(GlobalEvent),
 }
@@ -178,15 +176,6 @@ impl Component for Event {
 
                 false
             }
-            Msg::UpgradeButtonPressed => {
-                request_upgrade(
-                    self.event_id.clone(),
-                    ctx.props().secret.clone(),
-                    ctx.link(),
-                );
-
-                false
-            }
             Msg::ModDelete => {
                 self.events.send(GlobalEvent::DeletePopup);
                 false
@@ -202,18 +191,6 @@ impl Component for Event {
             Msg::Fetched(res) => {
                 self.on_fetched(&res);
                 true
-            }
-            Msg::UpgradeRequested(u) => {
-                if let Some(u) = u {
-                    log::info!("redirect to: {}", u.url);
-                    gloo::utils::window()
-                        .location()
-                        .assign(&u.url)
-                        .unwrap_throw();
-                    true
-                } else {
-                    false
-                }
             }
             Msg::GlobalEvent(ev) => match ev {
                 GlobalEvent::QuestionCreated(id) => {
@@ -305,18 +282,6 @@ fn request_state_change(
         }
 
         Msg::StateChanged
-    });
-}
-
-fn request_upgrade(id: String, secret: Option<String>, link: &html::Scope<Event>) {
-    link.send_future(async move {
-        match fetch::mod_upgrade(BASE_API, id, secret.unwrap_throw()).await {
-            Err(e) => {
-                log::error!("mod_state_change error: {e}");
-                Msg::UpgradeRequested(None)
-            }
-            Ok(u) => Msg::UpgradeRequested(Some(u)),
-        }
     });
 }
 
@@ -509,9 +474,6 @@ impl Event {
                 </div>
                 <button class="button-white" onclick={ctx.link().callback(|_|Msg::ModDelete)} >
                     {"Delete Event"}
-                </button>
-                <button class="button-white" onclick={ctx.link().callback(|_|Msg::UpgradeButtonPressed)} >
-                    {"Upgrade Event"}
                 </button>
             </div>
 
