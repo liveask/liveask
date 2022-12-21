@@ -24,6 +24,8 @@
     clippy::verbose_file_reads
 )]
 #![allow(clippy::module_name_repetitions)]
+//TODO: get rid of having to allow this
+#![allow(clippy::result_large_err)]
 mod app;
 mod env;
 mod error;
