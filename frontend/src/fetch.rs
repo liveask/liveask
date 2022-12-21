@@ -2,8 +2,8 @@
 
 use gloo_utils::format::JsValueSerdeExt;
 use shared::{
-    AddEvent, AddQuestion, EditLike, EventData, EventInfo, EventState, Item, ModEventState,
-    ModQuestion, States,
+    AddEvent, AddQuestion, EditLike, EventData, EventInfo, EventState, EventUpgrade, Item,
+    ModEventState, ModQuestion, States,
 };
 use std::{
     error::Error,
@@ -93,6 +93,28 @@ pub async fn mod_state_change(
 
     let json = JsFuture::from(resp.json()?).await?;
     let res = JsValueSerdeExt::into_serde::<EventInfo>(&json)?;
+
+    Ok(res)
+}
+
+pub async fn mod_upgrade(
+    base_api: &str,
+    id: String,
+    secret: String,
+) -> Result<EventUpgrade, FetchError> {
+    let url = format!("{base_api}/api/mod/event/upgrade/{id}/{secret}");
+
+    let mut opts = RequestInit::new();
+    opts.method("GET");
+
+    let request = Request::new_with_str_and_init(&url, &opts)?;
+
+    let window = gloo_utils::window();
+    let resp_value = JsFuture::from(window.fetch_with_request(&request)).await?;
+    let resp: Response = resp_value.dyn_into()?;
+
+    let json = JsFuture::from(resp.json()?).await?;
+    let res = JsValueSerdeExt::into_serde::<EventUpgrade>(&json)?;
 
     Ok(res)
 }
