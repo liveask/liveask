@@ -359,11 +359,15 @@ impl App {
     pub async fn payment_webhook(&self, id: String) -> Result<()> {
         tracing::info!("order processing");
 
-        self.payment.capture_approved_payment(id.clone()).await?;
+        let event_id = self.payment.capture_approved_payment(id.clone()).await?;
 
         tracing::info!("order processing done");
 
-        // self.notify_subscribers(id, Some(question_id)).await;
+        if let Some(event_id) = event_id {
+            //TODO: mark event premium
+
+            // self.notify_subscribers(id, Some(question_id)).await;
+        }
 
         Ok(())
     }

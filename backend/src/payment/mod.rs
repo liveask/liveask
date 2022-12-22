@@ -9,7 +9,7 @@ pub use self::error::PaymentError;
 use self::error::PaymentResult;
 use paypal_rust::{
     client::AppInfo, AmountWithBreakdown, Client, CreateOrderDto, Environment, Order,
-    OrderApplicationContext, OrderIntent, PurchaseUnitRequest,
+    OrderApplicationContext, OrderIntent, OrderStatus, PurchaseUnitRequest,
 };
 use serde::Deserialize;
 
@@ -112,10 +112,13 @@ impl Payment {
             .clone())
     }
 
-    pub async fn capture_approved_payment(&self, id: String) -> PaymentResult<()> {
+    pub async fn capture_approved_payment(
+        &self,
+        order_id: String,
+    ) -> PaymentResult<Option<String>> {
         self.authenticate().await?;
 
-        let order = Order::show_details(&self.client, &id).await?;
+        let order = Order::show_details(&self.client, &order_id).await?;
 
         let unit = order
             .purchase_units
@@ -141,10 +144,19 @@ impl Payment {
             event_id
         );
 
-        let authorized_payment = Order::capture(&self.client, &id, None).await?;
+        let captured_ordered = Order::capture(&self.client, &order_id, None).await?;
 
-        tracing::debug!("auth: {:?}", authorized_payment);
+        tracing::debug!("auth: {:?}", captured_ordered);
 
-        Ok(())
+        let completed = captured_ordered
+            .status
+            .map(|status| status == OrderStatus::Completed)
+            .unwrap_or_default();
+
+        if !completed {
+            tracing::warn!("paypment capture failed: {:?}", captured_ordered);
+        }
+
+        Ok(completed.then_some(event_id))
     }
 }
