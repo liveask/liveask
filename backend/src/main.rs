@@ -194,8 +194,8 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let payment = Arc::new(Payment::new(
         std::env::var(env::ENV_PAYPAL_ID).unwrap_or_default(),
         std::env::var(env::ENV_PAYPAL_SECRET).unwrap_or_default(),
-        //TODO: derive from env
-        true,
+        //only use sandbox on non-prod
+        !is_prod(),
     ));
 
     if let Err(e) = payment.authenticate().await {
