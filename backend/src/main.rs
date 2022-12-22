@@ -113,6 +113,10 @@ fn get_port() -> u16 {
         .unwrap_or(8090)
 }
 
+fn base_url() -> String {
+    std::env::var(env::ENV_BASE_URL).unwrap_or_else(|_| "https://www.live-ask.com".into())
+}
+
 fn get_redis_url() -> String {
     std::env::var(env::ENV_REDIS_URL).map_or_else(|_| "redis://localhost:6379".into(), |env| env)
 }
@@ -179,12 +183,15 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
 
     let redis_url = get_redis_url();
 
+    let base_url = base_url();
+
     tracing::info!(
         git= %GIT_HASH,
         env= prod_env,
         is_prod= is_prod(),
         log_level,
         redis_url,
+        base_url,
         "server-starting",
     );
 
@@ -205,7 +212,7 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let pubsub = Arc::new(PubSubRedis::new(redis_pool, redis_url).await);
 
     let eventsdb = Arc::new(DynamoEventsDB::new(dynamo_client().await?, use_local_db()).await?);
-    let app = Arc::new(App::new(eventsdb, pubsub.clone(), payment));
+    let app = Arc::new(App::new(eventsdb, pubsub.clone(), payment, base_url));
 
     pubsub.set_receiver(app.clone()).await;
 

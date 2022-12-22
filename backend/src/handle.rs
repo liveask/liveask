@@ -229,6 +229,7 @@ mod test_db_conflicts {
             Arc::new(ConflictDB::default()),
             Arc::new(PubSubInMemory::default()),
             Arc::new(Payment::default()),
+            String::new(),
         ));
 
         Router::new()
@@ -303,6 +304,7 @@ mod test_db_item_not_found {
             Arc::new(ItemNotFoundDB::default()),
             Arc::new(PubSubInMemory::default()),
             Arc::new(Payment::default()),
+            String::new(),
         ));
 
         Router::new()

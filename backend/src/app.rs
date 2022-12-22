@@ -42,6 +42,7 @@ impl App {
         eventsdb: Arc<dyn EventsDB>,
         pubsub_publish: Arc<dyn PubSubPublish>,
         payment: Arc<Payment>,
+        base_url: String,
     ) -> Self {
         let tiny_url_token = std::env::var(env::ENV_TINY_TOKEN).ok();
 
@@ -61,8 +62,7 @@ impl App {
             eventsdb,
             pubsub_publish,
             channels: std::sync::Arc::default(),
-            base_url: std::env::var(env::ENV_BASE_URL)
-                .unwrap_or_else(|_| "https://www.live-ask.com".into()),
+            base_url,
             tiny_url_token,
             mailjet_config,
             payment,
@@ -363,7 +363,7 @@ impl App {
 
         tracing::info!("order processing done");
 
-        if let Some(event_id) = event_id {
+        if let Some(_event_id) = event_id {
             //TODO: mark event premium
 
             // self.notify_subscribers(id, Some(question_id)).await;
@@ -592,6 +592,7 @@ mod test {
             Arc::new(InMemoryEventsDB::default()),
             Arc::new(PubSubInMemory::default()),
             Arc::new(Payment::default()),
+            String::new(),
         );
 
         let res = app
