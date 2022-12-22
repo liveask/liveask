@@ -100,7 +100,7 @@ impl Payment {
         )
         .await?;
 
-        tracing::info!("order: {:?}", order);
+        tracing::debug!("order: {:?}", order);
 
         Ok(order
             .links
@@ -119,7 +119,15 @@ impl Payment {
 
         let unit = order
             .purchase_units
-            .and_then(|units| units.first().cloned())
+            .and_then(|units| {
+                if units.len() > 1 {
+                    tracing::warn!(
+                        "payment contains more than expected PurchaseUnits: {}",
+                        units.len()
+                    );
+                }
+                units.first().cloned()
+            })
             .ok_or_else(|| PaymentError::General(String::from("purchase unit not found")))?;
 
         let event_id = unit
@@ -135,7 +143,7 @@ impl Payment {
 
         let authorized_payment = Order::capture(&self.client, &id, None).await?;
 
-        tracing::info!("auth: {:?}", authorized_payment);
+        tracing::debug!("auth: {:?}", authorized_payment);
 
         Ok(())
     }
