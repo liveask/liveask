@@ -46,7 +46,6 @@ impl Default for Payment {
     }
 }
 
-//TODO: fix all `expect`s
 impl Payment {
     pub fn new(username: String, password: String, sandbox: bool) -> Self {
         let client = Client::new(
@@ -105,10 +104,10 @@ impl Payment {
 
         Ok(order
             .links
-            .expect("TODO")
+            .ok_or_else(|| PaymentError::General(String::from("links not populated")))?
             .iter()
             .find(|e| e.rel == "approve")
-            .expect("TODO")
+            .ok_or_else(|| PaymentError::General(String::from("approve link not found")))?
             .href
             .clone())
     }
@@ -116,14 +115,16 @@ impl Payment {
     pub async fn capture_approved_payment(&self, id: String) -> PaymentResult<()> {
         self.authenticate().await?;
 
-        let order = Order::show_details(&self.client, &id).await.expect("TODO");
+        let order = Order::show_details(&self.client, &id).await?;
 
         let unit = order
             .purchase_units
             .and_then(|units| units.first().cloned())
-            .expect("TODO");
+            .ok_or_else(|| PaymentError::General(String::from("purchase unit not found")))?;
 
-        let event_id = unit.custom_id.expect("TODO");
+        let event_id = unit
+            .custom_id
+            .ok_or_else(|| PaymentError::General(String::from("custom id not found")))?;
 
         tracing::info!(
             "order: {} - {:?} - {}",
@@ -132,10 +133,7 @@ impl Payment {
             event_id
         );
 
-        let authorized_payment = Order::capture(&self.client, &id, None)
-            .await
-            //TODO:
-            .expect("TODO");
+        let authorized_payment = Order::capture(&self.client, &id, None).await?;
 
         tracing::info!("auth: {:?}", authorized_payment);
 

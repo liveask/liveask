@@ -12,6 +12,7 @@
     clippy::nursery,
     clippy::dbg_macro,
     clippy::unwrap_used,
+    clippy::expect_used,
     clippy::panic,
     clippy::needless_update,
     clippy::match_like_matches_macro,
