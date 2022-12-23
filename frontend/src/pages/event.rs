@@ -68,6 +68,8 @@ pub const BASE_SOCKET_LOCAL: &str = "ws://localhost:8090";
 #[derive(Debug, Default, Deserialize)]
 struct QueryParams {
     pub payment: Option<bool>,
+    #[serde(rename = "token")]
+    pub paypal_token: Option<String>,
 }
 
 pub struct Event {
@@ -117,6 +119,10 @@ impl Component for Event {
             .location()
             .and_then(|loc| loc.query::<QueryParams>().ok())
             .unwrap_or_default();
+
+        if let Some(token) = &query_params.paypal_token {
+            log::info!("paypal-token: {}", token);
+        }
 
         Self {
             event_id,
