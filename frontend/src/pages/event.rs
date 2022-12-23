@@ -1,11 +1,13 @@
 use chrono::{DateTime, Duration, NaiveDateTime, Utc};
 use const_format::formatcp;
 use konst::eq_str;
+use serde::Deserialize;
 use shared::{EventInfo, EventUpgrade, Item, ModQuestion, States};
 use std::{rc::Rc, str::FromStr};
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 use yew::prelude::*;
 use yew_agent::{Bridge, Bridged};
+use yew_router::{prelude::Location, scope_ext::RouterScopeExt};
 use yewdux::prelude::*;
 
 use crate::{
@@ -63,9 +65,15 @@ pub const BASE_SOCKET: &str = la_endpoints().1;
 pub const BASE_API_LOCAL: &str = "http://localhost:8090";
 pub const BASE_SOCKET_LOCAL: &str = "ws://localhost:8090";
 
+#[derive(Debug, Default, Deserialize)]
+struct QueryParams {
+    pub payment: Option<bool>,
+}
+
 pub struct Event {
     event_id: String,
     copied_to_clipboard: bool,
+    query_params: QueryParams,
     mode: Mode,
     state: Rc<State>,
     unanswered: Vec<Rc<Item>>,
@@ -104,8 +112,15 @@ impl Component for Event {
             "{BASE_SOCKET}/push/{event_id}",
         )));
 
+        let query_params = ctx
+            .link()
+            .location()
+            .and_then(|loc| loc.query::<QueryParams>().ok())
+            .unwrap_or_default();
+
         Self {
             event_id,
+            query_params,
             copied_to_clipboard: false,
             mode: if ctx.props().secret.is_some() {
                 Mode::Moderator
@@ -494,6 +509,8 @@ impl Event {
     }
 
     fn mod_view(&self, ctx: &Context<Self>, e: &EventInfo) -> Html {
+        let payment_enabled = self.query_params.payment.unwrap_or_default();
+
         if matches!(self.mode, Mode::Moderator) {
             html! {
             <>
@@ -510,9 +527,13 @@ impl Event {
                 <button class="button-white" onclick={ctx.link().callback(|_|Msg::ModDelete)} >
                     {"Delete Event"}
                 </button>
-                <button class="button-white" onclick={ctx.link().callback(|_|Msg::UpgradeButtonPressed)} >
-                    {"Upgrade Event"}
-                </button>
+                {
+                    if payment_enabled {html!{
+                        <button class="button-white" onclick={ctx.link().callback(|_|Msg::UpgradeButtonPressed)} >
+                            {"Upgrade Event"}
+                        </button>
+                    }}else{html!{}}
+                }
             </div>
 
             <div class="deadline">
