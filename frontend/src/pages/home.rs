@@ -137,10 +137,10 @@ impl Home {
             Html::VRef(div.into())
         };
 
-        let branch = if env!("GIT_BRANCH") == "main" {
+        let branch = if env!("VERGEN_GIT_BRANCH") == "main" {
             String::new()
         } else {
-            format!("({})", env!("GIT_BRANCH"))
+            format!("({})", env!("VERGEN_GIT_BRANCH"))
         };
 
         html! {
@@ -172,7 +172,7 @@ impl Home {
                 </a>
 
                 <div class="version">
-                    { format!("v.{VERSION_STR}-{} {branch}",env!("GIT_HASH")) }
+                    { format!("v.{VERSION_STR}-{} {branch}",env!("VERGEN_GIT_SHA_SHORT")) }
                 </div>
             </div>
         }

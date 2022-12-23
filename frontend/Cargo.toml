@@ -56,5 +56,7 @@ features = [
 wasm-bindgen-test = "0.3.0"
 
 [build-dependencies]
+anyhow = "1"
 handlebars = "4.3"
 konst = "0.3"
+vergen = "7"

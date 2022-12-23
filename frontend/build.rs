@@ -8,36 +8,24 @@ use std::{
 
 use handlebars::Handlebars;
 use konst::eq_str;
+use vergen::{Config, ShaKind};
 
-fn get_git_hash() -> (String, String) {
+fn get_git_hash() -> String {
     use std::process::Command;
 
-    let branch = Command::new("git")
+    let commit = Command::new("git")
         .arg("rev-parse")
-        .arg("--abbrev-ref")
+        .arg("--short")
+        .arg("--verify")
         .arg("HEAD")
         .output();
-    if let Ok(branch_output) = branch {
-        let branch_string = String::from_utf8_lossy(&branch_output.stdout);
-        let commit = Command::new("git")
-            .arg("rev-parse")
-            .arg("--short")
-            .arg("--verify")
-            .arg("HEAD")
-            .output();
-        if let Ok(commit_output) = commit {
-            let commit_string = String::from_utf8_lossy(&commit_output.stdout);
+    if let Ok(commit_output) = commit {
+        let commit_string = String::from_utf8_lossy(&commit_output.stdout);
 
-            return (
-                branch_string.lines().next().unwrap_or("").into(),
-                commit_string.lines().next().unwrap_or("").into(),
-            );
-        }
-
-        panic!("Can not get git commit: {}", commit.unwrap_err());
-    } else {
-        panic!("Can not get git branch: {}", branch.unwrap_err());
+        return commit_string.lines().next().unwrap_or("").into();
     }
+
+    panic!("Can not get git commit: {}", commit.unwrap_err());
 }
 
 enum LiveAskEnv {
@@ -102,10 +90,14 @@ fn file_content_changed(path: &str, content: &str) -> bool {
         .unwrap_or_default()
 }
 
-fn main() {
-    let git = get_git_hash();
-    println!("cargo:rustc-env=GIT_BRANCH={}", git.0);
-    println!("cargo:rustc-env=GIT_HASH={}", git.1);
+fn main() -> anyhow::Result<()> {
+    let mut config = Config::default();
+    *config.git_mut().sha_kind_mut() = ShaKind::Short;
 
-    process_html_template(&git.1);
+    vergen::vergen(config)?;
+
+    let git = get_git_hash();
+    process_html_template(&git);
+
+    Ok(())
 }

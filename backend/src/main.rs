@@ -63,8 +63,8 @@ use crate::{
     redis_pool::{create_pool, ping_test_redis},
 };
 
-pub const GIT_HASH: &str = env!("GIT_HASH");
-pub const GIT_BRANCH: &str = env!("GIT_BRANCH");
+pub const GIT_HASH: &str = env!("VERGEN_GIT_SHA_SHORT");
+pub const GIT_BRANCH: &str = env!("VERGEN_GIT_BRANCH");
 
 #[cfg(not(debug_assertions))]
 #[must_use]
