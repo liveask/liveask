@@ -91,13 +91,13 @@ fn file_content_changed(path: &str, content: &str) -> bool {
 }
 
 fn main() -> anyhow::Result<()> {
+    let git = get_git_hash();
+    process_html_template(&git);
+
     let mut config = Config::default();
     *config.git_mut().sha_kind_mut() = ShaKind::Short;
 
     vergen::vergen(config)?;
-
-    let git = get_git_hash();
-    process_html_template(&git);
 
     Ok(())
 }
