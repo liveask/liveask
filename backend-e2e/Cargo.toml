@@ -10,3 +10,6 @@ serde_json = "1"
 shared = { path = "../shared" }
 tokio = { version = "1", features = ["full"] }
 tungstenite = { version = "0.17", features = ["native-tls"] }
+
+[dev-dependencies]
+pretty_assertions = "1"

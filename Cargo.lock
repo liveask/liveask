@@ -582,6 +582,7 @@ name = "backend_tests"
 version = "0.1.0"
 dependencies = [
  "env_logger",
+ "pretty_assertions",
  "reqwest",
  "serde_json",
  "shared",

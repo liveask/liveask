@@ -11,6 +11,9 @@ pub enum Error {
     #[error("General Error: {0}")]
     General(String),
 
+    #[error("Malformed Object at field: {0}")]
+    MalformedObject(String),
+
     #[error("Concurrency Error")]
     Concurrency,
 
