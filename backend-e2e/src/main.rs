@@ -183,6 +183,7 @@ async fn hide_question(event: String, secret: String, question_id: i64) {
 #[cfg(test)]
 mod test {
     use super::*;
+    use pretty_assertions::assert_eq;
     use reqwest::StatusCode;
     use tungstenite::connect;
 
