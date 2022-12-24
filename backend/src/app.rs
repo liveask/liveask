@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 use axum::extract::ws::{Message, WebSocket};
 use shared::{
-    AddEvent, EventInfo, EventState, EventTokens, EventUpgrade, Item, ModQuestion, States,
+    AddEvent, EventInfo, EventState, EventTokens, EventUpgrade, ModQuestion, QuestionItem, States,
 };
 use std::{
     collections::HashMap,
@@ -200,7 +200,7 @@ impl App {
         id: String,
         secret: Option<String>,
         question_id: i64,
-    ) -> Result<Item> {
+    ) -> Result<QuestionItem> {
         let e = self.eventsdb.get(&id).await?.event;
 
         let can_see_hidden = e
@@ -373,14 +373,18 @@ impl App {
     }
 
     //TODO: validate event is still open
-    pub async fn add_question(&self, id: String, question: shared::AddQuestion) -> Result<Item> {
+    pub async fn add_question(
+        &self,
+        id: String,
+        question: shared::AddQuestion,
+    ) -> Result<QuestionItem> {
         let mut entry = self.eventsdb.get(&id).await?;
 
         let e = &mut entry.event;
 
         let question_id = e.questions.len() as i64;
 
-        let question = shared::Item {
+        let question = shared::QuestionItem {
             text: question.text,
             answered: false,
             create_time_unix: timestamp_now(),
@@ -401,7 +405,7 @@ impl App {
     }
 
     //TODO: validate event is still votable
-    pub async fn edit_like(&self, id: String, edit: shared::EditLike) -> Result<Item> {
+    pub async fn edit_like(&self, id: String, edit: shared::EditLike) -> Result<QuestionItem> {
         let mut entry = self.eventsdb.get(&id).await?.clone();
 
         let e = &mut entry.event;

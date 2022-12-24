@@ -195,7 +195,7 @@ mod test_db_conflicts {
         Router,
     };
     use pretty_assertions::assert_eq;
-    use shared::{EventInfo, Item};
+    use shared::{EventInfo, QuestionItem};
     use std::sync::Arc;
     use tower::util::ServiceExt;
     use tower_http::trace::TraceLayer;
@@ -208,7 +208,7 @@ mod test_db_conflicts {
             tracing::info!("fake db get: {key}");
             Ok(EventEntry {
                 event: EventInfo {
-                    questions: vec![Item {
+                    questions: vec![QuestionItem {
                         id: 1,
                         ..Default::default()
                     }],

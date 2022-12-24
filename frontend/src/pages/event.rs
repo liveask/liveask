@@ -2,7 +2,7 @@ use chrono::{DateTime, Duration, NaiveDateTime, Utc};
 use const_format::formatcp;
 use konst::eq_str;
 use serde::Deserialize;
-use shared::{EventInfo, EventUpgrade, Item, ModQuestion, States};
+use shared::{EventInfo, EventUpgrade, ModQuestion, QuestionItem, States};
 use std::{rc::Rc, str::FromStr};
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 use yew::prelude::*;
@@ -78,9 +78,9 @@ pub struct Event {
     query_params: QueryParams,
     mode: Mode,
     state: Rc<State>,
-    unanswered: Vec<Rc<Item>>,
-    answered: Vec<Rc<Item>>,
-    hidden: Vec<Rc<Item>>,
+    unanswered: Vec<Rc<QuestionItem>>,
+    answered: Vec<Rc<QuestionItem>>,
+    hidden: Vec<Rc<QuestionItem>>,
     loading_state: LoadingState,
     dispatch: Dispatch<State>,
     socket_agent: Box<dyn Bridge<WebSocketAgent>>,
@@ -265,7 +265,12 @@ impl Component for Event {
 }
 
 #[allow(clippy::needless_pass_by_value)]
-fn request_toggle_hide(event: String, secret: String, item: Item, link: &html::Scope<Event>) {
+fn request_toggle_hide(
+    event: String,
+    secret: String,
+    item: QuestionItem,
+    link: &html::Scope<Event>,
+) {
     link.send_future(async move {
         let modify = ModQuestion {
             hide: !item.hidden,
@@ -280,7 +285,12 @@ fn request_toggle_hide(event: String, secret: String, item: Item, link: &html::S
 }
 
 #[allow(clippy::needless_pass_by_value)]
-fn request_toggle_answered(event: String, secret: String, item: Item, link: &html::Scope<Event>) {
+fn request_toggle_answered(
+    event: String,
+    secret: String,
+    item: QuestionItem,
+    link: &html::Scope<Event>,
+) {
     link.send_future(async move {
         let modify = ModQuestion {
             hide: item.hidden,
@@ -458,7 +468,7 @@ impl Event {
     fn view_items(
         &self,
         ctx: &Context<Self>,
-        items: &[Rc<Item>],
+        items: &[Rc<QuestionItem>],
         title: &str,
         can_vote: bool,
     ) -> Html {
@@ -490,7 +500,7 @@ impl Event {
         ctx: &Context<Self>,
         can_vote: bool,
         index: usize,
-        item: &Rc<Item>,
+        item: &Rc<QuestionItem>,
     ) -> Html {
         let local_like = LocalCache::is_liked(&self.event_id, item.id);
         let mod_view = matches!(self.mode, Mode::Moderator);

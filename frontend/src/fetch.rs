@@ -2,8 +2,8 @@
 
 use gloo_utils::format::JsValueSerdeExt;
 use shared::{
-    AddEvent, AddQuestion, EditLike, EventData, EventInfo, EventState, EventUpgrade, Item,
-    ModEventState, ModQuestion, States,
+    AddEvent, AddQuestion, EditLike, EventData, EventInfo, EventState, EventUpgrade, ModEventState,
+    ModQuestion, QuestionItem, States,
 };
 use std::{
     error::Error,
@@ -124,7 +124,7 @@ pub async fn like_question(
     event_id: String,
     question_id: i64,
     like: bool,
-) -> Result<Item, FetchError> {
+) -> Result<QuestionItem, FetchError> {
     let body = EditLike { question_id, like };
     let body = serde_json::to_string(&body)?;
     let body = JsValue::from_str(&body);
@@ -143,7 +143,7 @@ pub async fn like_question(
     let resp: Response = resp_value.dyn_into()?;
 
     let json = JsFuture::from(resp.json()?).await?;
-    let res = JsValueSerdeExt::into_serde::<Item>(&json)?;
+    let res = JsValueSerdeExt::into_serde::<QuestionItem>(&json)?;
 
     Ok(res)
 }
@@ -178,7 +178,7 @@ pub async fn add_question(
     base_api: &str,
     event_id: String,
     text: String,
-) -> Result<Item, FetchError> {
+) -> Result<QuestionItem, FetchError> {
     let body = AddQuestion { text };
     let body = serde_json::to_string(&body)?;
     let body = JsValue::from_str(&body);
@@ -197,7 +197,7 @@ pub async fn add_question(
     let resp: Response = resp_value.dyn_into()?;
 
     let json = JsFuture::from(resp.json()?).await?;
-    let res = JsValueSerdeExt::into_serde::<Item>(&json)?;
+    let res = JsValueSerdeExt::into_serde::<QuestionItem>(&json)?;
 
     Ok(res)
 }

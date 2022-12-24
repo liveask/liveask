@@ -16,6 +16,7 @@ pub struct EventTokens {
 
 #[derive(Serialize, Deserialize, Debug, Default, Clone, Eq, PartialEq)]
 pub struct EventData {
+    //TODO: get rid, this is not used anymore (or ever)
     #[serde(rename = "maxLikes")]
     pub max_likes: i32,
     pub name: String,
@@ -27,7 +28,7 @@ pub struct EventData {
 }
 
 #[derive(Serialize, Deserialize, Default, Debug, Clone, Eq, PartialEq)]
-pub struct Item {
+pub struct QuestionItem {
     pub id: i64,
     pub likes: i32,
     pub text: String,
@@ -56,13 +57,13 @@ pub struct EventInfo {
     //TODO: is this still needed in the new FE?
     #[serde(rename = "createTimeUTC")]
     pub create_time_utc: String,
-    pub questions: Vec<Item>,
+    pub questions: Vec<QuestionItem>,
     pub state: EventState,
 }
 
 impl EventInfo {
     #[must_use]
-    pub fn get_question(&self, id: i64) -> Option<Item> {
+    pub fn get_question(&self, id: i64) -> Option<QuestionItem> {
         self.questions.iter().find(|i| i.id == id).cloned()
     }
 }
@@ -140,5 +141,28 @@ impl EventState {
     #[must_use]
     pub const fn is_closed(&self) -> bool {
         matches!(self.state, States::Closed)
+    }
+
+    pub fn to_value(&self) -> u8 {
+        match self.state {
+            States::Open => 0,
+            States::VotingOnly => 1,
+            States::Closed => 2,
+        }
+    }
+
+    pub fn from_value(value: u8) -> Option<Self> {
+        Some(match value {
+            0 => Self {
+                state: States::Open,
+            },
+            1 => Self {
+                state: States::VotingOnly,
+            },
+            2 => Self {
+                state: States::Closed,
+            },
+            _ => None?,
+        })
     }
 }
