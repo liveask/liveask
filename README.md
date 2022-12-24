@@ -10,7 +10,7 @@ Live-Ask.com provides a simple, free, and real-time service for the audience to 
 * Allows participants to easily add any question to a discussion
 * Operates in **real time** – see what others vote for instantly
 * Works on **all platforms** – use it on your phone, tablet, or laptop
-* Is completly **free** to use
+* Is **free** to use with premium features coming soon
 
 ### Links 
 * Fullstack Rust Version: [www.live-ask.com](http://www.live-ask.com) 
