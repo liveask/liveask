@@ -14,7 +14,6 @@ Live-Ask.com provides a simple, free, and real-time service for the audience to 
 
 ### Links 
 * Fullstack Rust Version: [www.live-ask.com](http://www.live-ask.com) 
-* Old Angular based version (will shutdown eventually): [old.live-ask.com](http://old.live-ask.com)
 * Very old blog post about the project (2018): [Blog Post](https://blog.extrawurst.org/general/webdev/2018/04/02/liveask.html)
 
 ### Screenshots 
