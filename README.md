@@ -1,5 +1,6 @@
 ![liveask readme header](https://i.postimg.cc/g0C4pYLw/Group-4.png)
-[![CI](https://github.com/liveask/liveask/actions/workflows/ci.yml/badge.svg)](https://github.com/liveask/liveask/actions/workflows/ci.yml)  [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![CI](https://github.com/liveask/liveask/actions/workflows/ci.yml/badge.svg)](https://github.com/liveask/liveask/actions/workflows/ci.yml)  [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)  [![made-with-rust](https://img.shields.io/badge/Made%20with-Rust-1f425f.svg)](https://www.rust-lang.org/)  
+
 
 ## TL;DR
 Live-Ask.com provides a simple, free, and real-time service for the audience to ask questions before and during panel discussions, conference presentations, meetups, and more. Think of Live-Ask as your one-stop solution for moderating discussions.
@@ -19,9 +20,9 @@ Live-Ask.com provides a simple, free, and real-time service for the audience to 
 [Insert some screenshots]
 
 ## News & Updates 
-* **20XX-XX-XX** - Complete Re-write in Rust 
-* **20XX-XX-XX** - Initial Launch of Live-Ask
-* **2017-00-00** - Work started on Live-Ask
+* **2022-11-28** - Complete Re-write in Rust 
+* **2018-04-06** - Initial Launch of Live-Ask
+* **2017** - Work started on Live-Ask
 
 ## Build & Usages Details 
 (coming soon) 
