@@ -1,5 +1,4 @@
-# liveask
-[Insert Header Image]
+![liveask readme header](https://i.postimg.cc/g0C4pYLw/Group-4.png)
 
 [![CI](https://github.com/liveask/liveask/actions/workflows/ci.yml/badge.svg)](https://github.com/liveask/liveask/actions/workflows/ci.yml)  [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
