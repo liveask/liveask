@@ -236,6 +236,7 @@ const ATTR_EVENT_DATA_NAME: &str = "name";
 const ATTR_EVENT_DATA_DESC: &str = "desc";
 const ATTR_EVENT_DATA_URL_SHORT: &str = "short_url";
 const ATTR_EVENT_DATA_URL_LONG: &str = "long_url";
+const ATTR_EVENT_DATA_MAIL: &str = "mail";
 
 fn eventdata_to_attributes(value: EventData) -> AttributeMap {
     let mut map = AttributeMap::new();
@@ -258,6 +259,13 @@ fn eventdata_to_attributes(value: EventData) -> AttributeMap {
         .and_then(|url| if url.is_empty() { None } else { Some(url) })
     {
         map.insert(ATTR_EVENT_DATA_URL_LONG.into(), AttributeValue::S(long_url));
+    }
+
+    if let Some(mail) = value
+        .mail
+        .and_then(|url| if url.is_empty() { None } else { Some(url) })
+    {
+        map.insert(ATTR_EVENT_DATA_MAIL.into(), AttributeValue::S(mail));
     }
 
     map
@@ -283,12 +291,16 @@ fn attributes_to_eventdata(value: &AttributeMap) -> Result<EventData, super::Err
         .get(ATTR_EVENT_DATA_URL_LONG)
         .and_then(|value| value.as_s().ok().cloned());
 
+    let mail = value
+        .get(ATTR_EVENT_DATA_MAIL)
+        .and_then(|value| value.as_s().ok().cloned());
+
     Ok(EventData {
         name,
         description,
         short_url,
         long_url,
-        max_likes: 0,
+        mail,
     })
 }
 
@@ -404,11 +416,11 @@ mod test_serialization {
                     moderator_token: None,
                 },
                 data: EventData {
-                    max_likes: 0,
                     name: String::from("name"),
                     description: String::from("desc"),
                     short_url: String::from(""),
                     long_url: None,
+                    mail: None,
                 },
                 create_time_unix: 1,
                 delete_time_unix: 0,
@@ -449,11 +461,11 @@ mod test_serialization {
                     moderator_token: Some(String::from("token2")),
                 },
                 data: EventData {
-                    max_likes: 0,
                     name: String::from("name"),
                     description: String::from("desc"),
                     short_url: String::from(""),
                     long_url: Some(String::from("foo")),
+                    mail: Some(String::from("mail")),
                 },
                 create_time_unix: 1,
                 delete_time_unix: 0,

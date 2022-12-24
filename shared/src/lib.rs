@@ -16,15 +16,13 @@ pub struct EventTokens {
 
 #[derive(Serialize, Deserialize, Debug, Default, Clone, Eq, PartialEq)]
 pub struct EventData {
-    //TODO: get rid, this is not used anymore (or ever)
-    #[serde(rename = "maxLikes")]
-    pub max_likes: i32,
     pub name: String,
     pub description: String,
     #[serde(rename = "shortUrl")]
     pub short_url: String,
     #[serde(rename = "longUrl")]
     pub long_url: Option<String>,
+    pub mail: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Default, Debug, Clone, Eq, PartialEq)]

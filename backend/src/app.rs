@@ -131,6 +131,13 @@ impl App {
             },
         };
 
+        //TODO: put in request alread at right place
+        e.data.mail = if request.moderator_email.is_empty() {
+            None
+        } else {
+            Some(request.moderator_email.clone())
+        };
+
         let url = format!("{}/event/{}", self.base_url, e.tokens.public_token);
 
         e.data.short_url = self.shorten_url(&url).await;
@@ -604,7 +611,7 @@ mod test {
         let res = app
             .create_event(AddEvent {
                 data: EventData {
-                    max_likes: 0,
+                    mail: None,
                     name: String::from("too short"),
                     description: String::new(),
                     short_url: String::new(),
