@@ -74,6 +74,7 @@ pub struct AddEvent {
     pub data: EventData,
     #[serde(rename = "moderatorEmail")]
     pub moderator_email: String,
+    pub test: bool,
 }
 
 #[derive(Serialize, Deserialize, Debug)]

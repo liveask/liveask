@@ -60,7 +60,11 @@ impl EventsDB for DynamoEventsDB {
 
             let event: EventInfo = serde_json::from_str(value)?;
 
-            Ok(EventEntry { event, version })
+            Ok(EventEntry {
+                event,
+                version,
+                ttl: None,
+            })
         } else {
             Ok(EventEntry::try_from(item)?)
         }

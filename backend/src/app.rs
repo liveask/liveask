@@ -138,7 +138,9 @@ impl App {
 
         let result = e.clone();
 
-        self.eventsdb.put(EventEntry::new(e)).await?;
+        self.eventsdb
+            .put(EventEntry::new(e, request.test.then_some(now + 60)))
+            .await?;
 
         self.send_mail(
             request.moderator_email,
@@ -609,6 +611,7 @@ mod test {
                     long_url: None,
                 },
                 moderator_email: String::new(),
+                test: false,
             })
             .await;
 

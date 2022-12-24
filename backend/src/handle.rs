@@ -214,8 +214,8 @@ mod test_db_conflicts {
                     }],
                     ..Default::default()
                 },
-
                 version: 1,
+                ttl: None,
             })
         }
         async fn put(&self, event: EventEntry) -> crate::eventsdb::Result<()> {

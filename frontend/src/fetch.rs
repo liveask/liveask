@@ -216,6 +216,7 @@ pub async fn create_event(
             long_url: None,
             short_url: String::new(),
         },
+        test: false,
         moderator_email: email,
     };
     let body = serde_json::to_string(&body)?;

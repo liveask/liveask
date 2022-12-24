@@ -10,11 +10,16 @@ use super::{event_key, Error};
 pub struct EventEntry {
     pub event: EventInfo,
     pub version: usize,
+    pub ttl: Option<i64>,
 }
 
 impl EventEntry {
-    pub const fn new(event: EventInfo) -> Self {
-        Self { event, version: 0 }
+    pub const fn new(event: EventInfo, ttl: Option<i64>) -> Self {
+        Self {
+            event,
+            version: 0,
+            ttl,
+        }
     }
 
     pub fn bump(&mut self) {
@@ -40,9 +45,18 @@ impl TryFrom<&AttributeMap> for EventEntry {
             .as_m()
             .map_err(|_| Error::MalformedObject("event".into()))?;
 
+        let ttl = value
+            .get("ttl")
+            .and_then(|ttl| ttl.as_n().ok())
+            .and_then(|ttl| ttl.parse::<i64>().ok());
+
         let event = attributes_to_event(event)?;
 
-        Ok(Self { event, version })
+        Ok(Self {
+            event,
+            version,
+            ttl,
+        })
     }
 }
 
@@ -60,6 +74,10 @@ impl From<EventEntry> for AttributeMap {
         map.insert("format".into(), format_av);
         map.insert("v".into(), version_av);
         map.insert("event".into(), AttributeValue::M(event_av));
+
+        if let Some(ttl) = value.ttl {
+            map.insert("ttl".into(), AttributeValue::N(ttl.to_string()));
+        }
 
         map
     }
@@ -410,6 +428,7 @@ mod test_serialization {
                 },
             },
             version: 2,
+            ttl: None,
         };
 
         let map: AttributeMap = entry.clone().try_into().unwrap();
@@ -454,6 +473,7 @@ mod test_serialization {
                 },
             },
             version: 2,
+            ttl: Some(12345),
         };
 
         let map: AttributeMap = entry.clone().try_into().unwrap();
