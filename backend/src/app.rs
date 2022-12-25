@@ -20,7 +20,7 @@ use crate::{
     mail::MailjetConfig,
     payment::Payment,
     pubsub::{PubSubPublish, PubSubReceiver},
-    utils::{format_timestamp, timestamp_now},
+    utils::timestamp_now,
 };
 
 pub type SharedApp = Arc<App>;
@@ -118,7 +118,6 @@ impl App {
             create_time_unix: now,
             delete_time_unix: 0,
             last_edit_unix: now,
-            create_time_utc: format_timestamp(now),
             deleted: false,
             questions: Vec::new(),
             state: EventState {
@@ -172,7 +171,10 @@ impl App {
         )
     }
 
+    #[instrument(skip(self))]
     pub async fn get_event(&self, id: String, secret: Option<String>) -> Result<EventInfo> {
+        tracing::info!("get_event");
+
         let mut e = self.eventsdb.get(&id).await?.event;
 
         if let Some(secret) = &secret {
@@ -191,6 +193,7 @@ impl App {
         }
 
         if secret.is_none() {
+            //TODO: can be NONE?
             e.tokens.moderator_token = Some(String::new());
 
             e.questions = e

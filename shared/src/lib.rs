@@ -1,9 +1,9 @@
 mod validation;
 
-use std::str::FromStr;
-
 use serde::{Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
+use std::str::FromStr;
+
 pub use validation::{CreateEventErrors, ValidationError};
 
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Default)]
@@ -52,9 +52,6 @@ pub struct EventInfo {
     pub deleted: bool,
     #[serde(rename = "lastEditUnix")]
     pub last_edit_unix: i64,
-    //TODO: is this still needed in the new FE?
-    #[serde(rename = "createTimeUTC")]
-    pub create_time_utc: String,
     pub questions: Vec<QuestionItem>,
     pub state: EventState,
 }

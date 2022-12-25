@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::utils::{format_timestamp, timestamp_now};
+use crate::utils::timestamp_now;
 use aws_sdk_dynamodb::model::AttributeValue;
 use shared::{EventData, EventInfo, EventState, EventTokens, QuestionItem, States};
 
@@ -183,15 +183,14 @@ fn attributes_to_event(value: &AttributeMap) -> Result<EventInfo, super::Error> 
     });
 
     Ok(EventInfo {
-        last_edit_unix,
-        delete_time_unix,
-        create_time_unix,
-        deleted,
-        state,
         tokens,
         data,
+        create_time_unix,
+        delete_time_unix,
+        deleted,
+        last_edit_unix,
         questions,
-        create_time_utc: format_timestamp(create_time_unix),
+        state,
     })
 }
 
@@ -426,7 +425,6 @@ mod test_serialization {
                 delete_time_unix: 0,
                 deleted: false,
                 last_edit_unix: 2,
-                create_time_utc: String::from("19700101T000001"),
                 questions: vec![QuestionItem {
                     id: 0,
                     likes: 2,
@@ -471,7 +469,6 @@ mod test_serialization {
                 delete_time_unix: 0,
                 deleted: false,
                 last_edit_unix: 2,
-                create_time_utc: String::from("19700101T000001"),
                 questions: vec![QuestionItem {
                     id: 0,
                     likes: 2,
