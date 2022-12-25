@@ -16,6 +16,7 @@ use web_sys::{Request, RequestInit, RequestMode, Response};
 /// Something wrong has occurred while fetching an external resource.
 #[derive(Debug)]
 pub enum FetchError {
+    Generic(String),
     JsonError(JsValue),
     SerdeError(serde_json::error::Error),
 }
@@ -24,6 +25,7 @@ impl Display for FetchError {
         match self {
             Self::JsonError(e) => Debug::fmt(e, f),
             Self::SerdeError(e) => Debug::fmt(e, f),
+            Self::Generic(e) => Debug::fmt(e, f),
         }
     }
 }
@@ -38,6 +40,24 @@ impl From<serde_json::error::Error> for FetchError {
     fn from(v: serde_json::error::Error) -> Self {
         Self::SerdeError(v)
     }
+}
+
+pub async fn fetch_version(base_api: &str) -> Result<String, FetchError> {
+    let url = format!("{base_api}/api/version");
+
+    let mut opts = RequestInit::new();
+    opts.method("GET");
+    opts.mode(RequestMode::Cors);
+
+    let request = Request::new_with_str_and_init(&url, &opts)?;
+
+    let window = gloo_utils::window();
+    let resp_value = JsFuture::from(window.fetch_with_request(&request)).await?;
+    let resp: Response = resp_value.dyn_into()?;
+    let resp = JsFuture::from(resp.text()?).await?;
+
+    resp.as_string()
+        .ok_or_else(|| FetchError::Generic(String::from("string error")))
 }
 
 pub async fn fetch_event(

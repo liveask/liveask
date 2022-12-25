@@ -228,6 +228,7 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     #[rustfmt::skip]
     let router = Router::new()
         .route("/api/ping", get(handle::ping_handler))
+        .route("/api/version", get(handle::version_handler))
         .route("/api/panic", get(handle::panic_handler))
         .route("/api/addevent", post(handle::addevent_handler))
         .route("/api/payment/webhook", post(handle::payment_webhook))

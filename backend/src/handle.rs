@@ -10,6 +10,7 @@ use crate::{
     app::SharedApp,
     error::InternalError,
     payment::{PaymentCheckoutApprovedResource, PaymentWebhookBase},
+    GIT_HASH,
 };
 
 //TODO: not sure why we need this
@@ -174,6 +175,11 @@ pub async fn mod_edit_state(
 #[instrument]
 pub async fn ping_handler() -> Html<&'static str> {
     Html("pong")
+}
+
+#[instrument]
+pub async fn version_handler() -> Html<&'static str> {
+    Html(GIT_HASH)
 }
 
 #[instrument]
