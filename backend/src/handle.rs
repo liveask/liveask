@@ -120,7 +120,7 @@ pub async fn payment_webhook(
 
         app.payment_webhook(resource.id).await?;
     } else if base.event_type == "PAYMENT.CAPTURE.COMPLETED" {
-        tracing::info!("payment capture completed: {}", base.id);
+        tracing::info!(base.id, "payment capture completed: {}", body);
     } else if base.event_type == "PAYMENT.CAPTURE.REFUNDED" {
         let resource: PaymentCaptureRefundedResource = serde_json::from_value(base.resource)?;
 

@@ -362,7 +362,10 @@ impl App {
 
         let approve_url = self
             .payment
-            .create_order(e.tokens.public_token.clone(), self.mod_link(&e.tokens))
+            .create_order(
+                e.tokens.public_token.clone(),
+                format!("{}?payment=true", self.mod_link(&e.tokens)),
+            )
             .await?;
 
         Ok(EventUpgrade { url: approve_url })
