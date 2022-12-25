@@ -278,7 +278,7 @@ impl App {
 
         self.eventsdb.put(entry).await?;
 
-        self.notify_subscribers(id, None).await;
+        self.notify_subscribers(id, Some(question_id)).await;
 
         Ok(e)
     }
@@ -598,8 +598,12 @@ impl PubSubReceiver for App {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::{eventsdb::InMemoryEventsDB, pubsub::PubSubInMemory};
-    use shared::EventData;
+    use crate::{
+        eventsdb::InMemoryEventsDB,
+        pubsub::{PubSubInMemory, PubSubReceiverInMemory},
+    };
+    use pretty_assertions::assert_eq;
+    use shared::{AddQuestion, EventData};
     use std::sync::Arc;
 
     #[tokio::test]
@@ -626,5 +630,92 @@ mod test {
             .await;
 
         assert!(res.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_event_create() {
+        let eventdb = Arc::new(InMemoryEventsDB::default());
+        let app = App::new(
+            eventdb.clone(),
+            Arc::new(PubSubInMemory::default()),
+            Arc::new(Payment::default()),
+            String::new(),
+        );
+
+        app.create_event(AddEvent {
+            data: EventData {
+                mail: None,
+                name: String::from("123456789"),
+                description: String::from("123456789 123456789 123456789 !"),
+                short_url: String::new(),
+                long_url: None,
+            },
+            moderator_email: String::new(),
+            test: false,
+        })
+        .await
+        .unwrap();
+
+        assert_eq!(eventdb.db.lock().await.len(), 1);
+    }
+
+    #[tokio::test]
+    async fn test_event_mod_question_notification() {
+        let pubsubreceiver = Arc::new(PubSubReceiverInMemory::default());
+        let pubsub = PubSubInMemory::default();
+        pubsub.set_receiver(pubsubreceiver.clone()).await;
+        let app = App::new(
+            Arc::new(InMemoryEventsDB::default()),
+            Arc::new(pubsub),
+            Arc::new(Payment::default()),
+            String::new(),
+        );
+
+        let res = app
+            .create_event(AddEvent {
+                data: EventData {
+                    mail: None,
+                    name: String::from("123456789"),
+                    description: String::from("123456789 123456789 123456789 !"),
+                    short_url: String::new(),
+                    long_url: None,
+                },
+                moderator_email: String::new(),
+                test: false,
+            })
+            .await
+            .unwrap();
+
+        let q = app
+            .add_question(
+                res.tokens.public_token.clone(),
+                AddQuestion {
+                    text: String::from("question"),
+                },
+            )
+            .await
+            .unwrap();
+
+        app.mod_edit_question(
+            res.tokens.public_token.clone(),
+            res.tokens.moderator_token.unwrap(),
+            q.id,
+            ModQuestion {
+                hide: true,
+                answered: false,
+            },
+        )
+        .await
+        .unwrap();
+
+        assert_eq!(
+            pubsubreceiver.log.read().await[0].clone(),
+            (res.tokens.public_token.clone(), format!("q:{}", q.id))
+        );
+
+        assert_eq!(
+            pubsubreceiver.log.read().await[1].clone(),
+            (res.tokens.public_token.clone(), format!("q:{}", q.id))
+        );
     }
 }

@@ -2,7 +2,7 @@ mod in_memory;
 mod redis;
 
 pub use self::redis::PubSubRedis;
-pub use in_memory::PubSubInMemory;
+pub use in_memory::{PubSubInMemory, PubSubReceiverInMemory};
 
 use async_trait::async_trait;
 

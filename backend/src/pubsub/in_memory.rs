@@ -29,3 +29,15 @@ impl PubSubPublish for PubSubInMemory {
         }
     }
 }
+
+#[derive(Clone, Default)]
+pub struct PubSubReceiverInMemory {
+    pub log: Arc<RwLock<Vec<(String, String)>>>,
+}
+
+#[async_trait]
+impl PubSubReceiver for PubSubReceiverInMemory {
+    async fn notify(&self, topic: &str, payload: &str) {
+        self.log.write().await.push((topic.into(), payload.into()));
+    }
+}
