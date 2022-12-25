@@ -1,6 +1,5 @@
 use axum::{
     extract::{ws::WebSocket, Path, State, WebSocketUpgrade},
-    http::HeaderMap,
     response::{Html, IntoResponse},
     Json,
 };
@@ -9,7 +8,9 @@ use tracing::instrument;
 use crate::{
     app::SharedApp,
     error::InternalError,
-    payment::{PaymentCheckoutApprovedResource, PaymentWebhookBase},
+    payment::{
+        PaymentCaptureRefundedResource, PaymentCheckoutApprovedResource, PaymentWebhookBase,
+    },
     GIT_HASH,
 };
 
@@ -105,10 +106,8 @@ pub async fn mod_premium_upgrade(
     Ok(Json(app.premium_upgrade(id, secret).await?))
 }
 
-#[instrument(skip(headers, app, body))]
-#[allow(unused_variables)]
+#[instrument(skip(app, body))]
 pub async fn payment_webhook(
-    headers: HeaderMap,
     State(app): State<SharedApp>,
     body: String,
 ) -> std::result::Result<impl IntoResponse, InternalError> {
@@ -122,6 +121,11 @@ pub async fn payment_webhook(
         app.payment_webhook(resource.id).await?;
     } else if base.event_type == "PAYMENT.CAPTURE.COMPLETED" {
         tracing::info!("payment capture completed: {}", base.id);
+    } else if base.event_type == "PAYMENT.CAPTURE.REFUNDED" {
+        let resource: PaymentCaptureRefundedResource = serde_json::from_value(base.resource)?;
+
+        //TODO: make event not-premium again
+        tracing::warn!("refund: {:?}", resource);
     } else {
         tracing::warn!("unknown payment hook: {}", body);
     }

@@ -22,6 +22,14 @@ pub struct PaymentCheckoutApprovedResource {
 }
 
 #[derive(Deserialize, Debug)]
+pub struct PaymentCaptureRefundedResource {
+    pub id: String,
+    pub status: String,
+    pub custom_id: Option<String>,
+    pub note_to_payer: Option<String>,
+}
+
+#[derive(Deserialize, Debug)]
 pub struct PaymentWebhookBase {
     pub id: String,
     pub create_time: String,
