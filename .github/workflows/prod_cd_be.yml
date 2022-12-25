@@ -1,4 +1,4 @@
-name: prod cd (be)
+name: prod cd (be only)
 
 on:
   # only manually

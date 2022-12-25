@@ -1,7 +1,7 @@
 use chrono::Utc;
 use gloo::timers::callback::Interval;
 use gloo::timers::callback::Timeout;
-use shared::Item;
+use shared::QuestionItem;
 use std::rc::Rc;
 use wasm_bindgen::JsCast;
 use wasm_bindgen::UnwrapThrowExt;
@@ -19,7 +19,7 @@ pub enum QuestionClickType {
 #[allow(clippy::struct_excessive_bools)]
 #[derive(Clone, Debug, PartialEq, Properties)]
 pub struct Props {
-    pub item: Rc<Item>,
+    pub item: Rc<QuestionItem>,
     pub index: usize,
     pub mod_view: bool,
     pub is_new: bool,

@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 use axum::extract::ws::{Message, WebSocket};
 use shared::{
-    AddEvent, EventInfo, EventState, EventTokens, EventUpgrade, Item, ModQuestion, States,
+    AddEvent, EventInfo, EventState, EventTokens, EventUpgrade, ModQuestion, QuestionItem, States,
 };
 use std::{
     collections::HashMap,
@@ -20,7 +20,7 @@ use crate::{
     mail::MailjetConfig,
     payment::Payment,
     pubsub::{PubSubPublish, PubSubReceiver},
-    utils::{format_timestamp, timestamp_now},
+    utils::timestamp_now,
 };
 
 pub type SharedApp = Arc<App>;
@@ -118,7 +118,6 @@ impl App {
             create_time_unix: now,
             delete_time_unix: 0,
             last_edit_unix: now,
-            create_time_utc: format_timestamp(now),
             deleted: false,
             questions: Vec::new(),
             state: EventState {
@@ -131,6 +130,13 @@ impl App {
             },
         };
 
+        //TODO: put in request alread at right place
+        e.data.mail = if request.moderator_email.is_empty() {
+            None
+        } else {
+            Some(request.moderator_email.clone())
+        };
+
         let url = format!("{}/event/{}", self.base_url, e.tokens.public_token);
 
         e.data.short_url = self.shorten_url(&url).await;
@@ -138,7 +144,9 @@ impl App {
 
         let result = e.clone();
 
-        self.eventsdb.put(EventEntry::new(e)).await?;
+        self.eventsdb
+            .put(EventEntry::new(e, request.test.then_some(now + 60)))
+            .await?;
 
         self.send_mail(
             request.moderator_email,
@@ -163,7 +171,10 @@ impl App {
         )
     }
 
+    #[instrument(skip(self))]
     pub async fn get_event(&self, id: String, secret: Option<String>) -> Result<EventInfo> {
+        tracing::info!("get_event");
+
         let mut e = self.eventsdb.get(&id).await?.event;
 
         if let Some(secret) = &secret {
@@ -182,6 +193,7 @@ impl App {
         }
 
         if secret.is_none() {
+            //TODO: can be NONE?
             e.tokens.moderator_token = Some(String::new());
 
             e.questions = e
@@ -200,7 +212,7 @@ impl App {
         id: String,
         secret: Option<String>,
         question_id: i64,
-    ) -> Result<Item> {
+    ) -> Result<QuestionItem> {
         let e = self.eventsdb.get(&id).await?.event;
 
         let can_see_hidden = e
@@ -266,7 +278,7 @@ impl App {
 
         self.eventsdb.put(entry).await?;
 
-        self.notify_subscribers(id, None).await;
+        self.notify_subscribers(id, Some(question_id)).await;
 
         Ok(e)
     }
@@ -373,14 +385,18 @@ impl App {
     }
 
     //TODO: validate event is still open
-    pub async fn add_question(&self, id: String, question: shared::AddQuestion) -> Result<Item> {
+    pub async fn add_question(
+        &self,
+        id: String,
+        question: shared::AddQuestion,
+    ) -> Result<QuestionItem> {
         let mut entry = self.eventsdb.get(&id).await?;
 
         let e = &mut entry.event;
 
         let question_id = e.questions.len() as i64;
 
-        let question = shared::Item {
+        let question = shared::QuestionItem {
             text: question.text,
             answered: false,
             create_time_unix: timestamp_now(),
@@ -401,7 +417,7 @@ impl App {
     }
 
     //TODO: validate event is still votable
-    pub async fn edit_like(&self, id: String, edit: shared::EditLike) -> Result<Item> {
+    pub async fn edit_like(&self, id: String, edit: shared::EditLike) -> Result<QuestionItem> {
         let mut entry = self.eventsdb.get(&id).await?.clone();
 
         let e = &mut entry.event;
@@ -582,8 +598,12 @@ impl PubSubReceiver for App {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::{eventsdb::InMemoryEventsDB, pubsub::PubSubInMemory};
-    use shared::EventData;
+    use crate::{
+        eventsdb::InMemoryEventsDB,
+        pubsub::{PubSubInMemory, PubSubReceiverInMemory},
+    };
+    use pretty_assertions::assert_eq;
+    use shared::{AddQuestion, EventData};
     use std::sync::Arc;
 
     #[tokio::test]
@@ -598,16 +618,104 @@ mod test {
         let res = app
             .create_event(AddEvent {
                 data: EventData {
-                    max_likes: 0,
+                    mail: None,
                     name: String::from("too short"),
                     description: String::new(),
                     short_url: String::new(),
                     long_url: None,
                 },
                 moderator_email: String::new(),
+                test: false,
             })
             .await;
 
         assert!(res.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_event_create() {
+        let eventdb = Arc::new(InMemoryEventsDB::default());
+        let app = App::new(
+            eventdb.clone(),
+            Arc::new(PubSubInMemory::default()),
+            Arc::new(Payment::default()),
+            String::new(),
+        );
+
+        app.create_event(AddEvent {
+            data: EventData {
+                mail: None,
+                name: String::from("123456789"),
+                description: String::from("123456789 123456789 123456789 !"),
+                short_url: String::new(),
+                long_url: None,
+            },
+            moderator_email: String::new(),
+            test: false,
+        })
+        .await
+        .unwrap();
+
+        assert_eq!(eventdb.db.lock().await.len(), 1);
+    }
+
+    #[tokio::test]
+    async fn test_event_mod_question_notification() {
+        let pubsubreceiver = Arc::new(PubSubReceiverInMemory::default());
+        let pubsub = PubSubInMemory::default();
+        pubsub.set_receiver(pubsubreceiver.clone()).await;
+        let app = App::new(
+            Arc::new(InMemoryEventsDB::default()),
+            Arc::new(pubsub),
+            Arc::new(Payment::default()),
+            String::new(),
+        );
+
+        let res = app
+            .create_event(AddEvent {
+                data: EventData {
+                    mail: None,
+                    name: String::from("123456789"),
+                    description: String::from("123456789 123456789 123456789 !"),
+                    short_url: String::new(),
+                    long_url: None,
+                },
+                moderator_email: String::new(),
+                test: false,
+            })
+            .await
+            .unwrap();
+
+        let q = app
+            .add_question(
+                res.tokens.public_token.clone(),
+                AddQuestion {
+                    text: String::from("question"),
+                },
+            )
+            .await
+            .unwrap();
+
+        app.mod_edit_question(
+            res.tokens.public_token.clone(),
+            res.tokens.moderator_token.unwrap(),
+            q.id,
+            ModQuestion {
+                hide: true,
+                answered: false,
+            },
+        )
+        .await
+        .unwrap();
+
+        assert_eq!(
+            pubsubreceiver.log.read().await[0].clone(),
+            (res.tokens.public_token.clone(), format!("q:{}", q.id))
+        );
+
+        assert_eq!(
+            pubsubreceiver.log.read().await[1].clone(),
+            (res.tokens.public_token.clone(), format!("q:{}", q.id))
+        );
     }
 }

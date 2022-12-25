@@ -1,9 +1,9 @@
 mod validation;
 
-use std::str::FromStr;
-
 use serde::{Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
+use std::str::FromStr;
+
 pub use validation::{CreateEventErrors, ValidationError};
 
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Default)]
@@ -16,18 +16,17 @@ pub struct EventTokens {
 
 #[derive(Serialize, Deserialize, Debug, Default, Clone, Eq, PartialEq)]
 pub struct EventData {
-    #[serde(rename = "maxLikes")]
-    pub max_likes: i32,
     pub name: String,
     pub description: String,
     #[serde(rename = "shortUrl")]
     pub short_url: String,
     #[serde(rename = "longUrl")]
     pub long_url: Option<String>,
+    pub mail: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Default, Debug, Clone, Eq, PartialEq)]
-pub struct Item {
+pub struct QuestionItem {
     pub id: i64,
     pub likes: i32,
     pub text: String,
@@ -53,16 +52,13 @@ pub struct EventInfo {
     pub deleted: bool,
     #[serde(rename = "lastEditUnix")]
     pub last_edit_unix: i64,
-    //TODO: is this still needed in the new FE?
-    #[serde(rename = "createTimeUTC")]
-    pub create_time_utc: String,
-    pub questions: Vec<Item>,
+    pub questions: Vec<QuestionItem>,
     pub state: EventState,
 }
 
 impl EventInfo {
     #[must_use]
-    pub fn get_question(&self, id: i64) -> Option<Item> {
+    pub fn get_question(&self, id: i64) -> Option<QuestionItem> {
         self.questions.iter().find(|i| i.id == id).cloned()
     }
 }
@@ -73,6 +69,7 @@ pub struct AddEvent {
     pub data: EventData,
     #[serde(rename = "moderatorEmail")]
     pub moderator_email: String,
+    pub test: bool,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -140,5 +137,28 @@ impl EventState {
     #[must_use]
     pub const fn is_closed(&self) -> bool {
         matches!(self.state, States::Closed)
+    }
+
+    pub fn to_value(&self) -> u8 {
+        match self.state {
+            States::Open => 0,
+            States::VotingOnly => 1,
+            States::Closed => 2,
+        }
+    }
+
+    pub fn from_value(value: u8) -> Option<Self> {
+        Some(match value {
+            0 => Self {
+                state: States::Open,
+            },
+            1 => Self {
+                state: States::VotingOnly,
+            },
+            2 => Self {
+                state: States::Closed,
+            },
+            _ => None?,
+        })
     }
 }

@@ -53,7 +53,9 @@ async fn add_event(name: String) -> EventInfo {
                 "name":name,
                 "description":MIN_DESC,
                 "shortUrl":"",
+                "mail:": null,
                 "longUrl":null},
+            "test": true,
             "moderatorEmail": "",
         }))
         .send()
@@ -111,7 +113,7 @@ async fn change_event_state(id: String, secret: String, state: u8) {
     assert_eq!(res.status(), StatusCode::OK);
 }
 
-async fn add_question(event: String) -> shared::Item {
+async fn add_question(event: String) -> shared::QuestionItem {
     let res = reqwest::Client::new()
         .post(format!("{}/api/event/addquestion/{}", server_rest(), event))
         .json(&json!({
@@ -130,14 +132,14 @@ async fn add_question(event: String) -> shared::Item {
         .unwrap()
         .starts_with("application/json"),);
 
-    let q = res.json::<shared::Item>().await.unwrap();
+    let q = res.json::<shared::QuestionItem>().await.unwrap();
 
     assert_eq!(q.text, "test");
 
     q
 }
 
-async fn like_question(event: String, question_id: i64, like: bool) -> shared::Item {
+async fn like_question(event: String, question_id: i64, like: bool) -> shared::QuestionItem {
     let body = shared::EditLike { question_id, like };
     let res = reqwest::Client::new()
         .post(format!("{}/api/event/editlike/{}", server_rest(), event))
@@ -155,7 +157,7 @@ async fn like_question(event: String, question_id: i64, like: bool) -> shared::I
         .unwrap()
         .starts_with("application/json"),);
 
-    res.json::<shared::Item>().await.unwrap()
+    res.json::<shared::QuestionItem>().await.unwrap()
 }
 
 async fn hide_question(event: String, secret: String, question_id: i64) {
@@ -183,6 +185,7 @@ async fn hide_question(event: String, secret: String, question_id: i64) {
 #[cfg(test)]
 mod test {
     use super::*;
+    use pretty_assertions::assert_eq;
     use reqwest::StatusCode;
     use tungstenite::connect;
 

@@ -37,7 +37,7 @@ impl EventsDB for InMemoryEventsDB {
             }
             *db_event = event;
         } else {
-            db.insert(event.event.tokens.public_token.clone(), event);
+            db.insert(key, event);
         }
 
         Ok(())
