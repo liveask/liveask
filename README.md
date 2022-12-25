@@ -1,4 +1,4 @@
-![liveask readme header](https://i.postimg.cc/g0C4pYLw/Group-4.png)
+![liveask readme header](/assets/readme_header.png)
 [![CI](https://github.com/liveask/liveask/actions/workflows/ci.yml/badge.svg)](https://github.com/liveask/liveask/actions/workflows/ci.yml)  [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)  [![made-with-rust](https://img.shields.io/badge/Made%20with-Rust-1f425f.svg)](https://www.rust-lang.org/)  
 
 
@@ -39,4 +39,4 @@ Wnat to help support the project? Use the following links to help us 💪
 ### Contact
 (coming soon)
 
-![liveask readme footer](https://i.postimg.cc/brtZhhbv/Rectangle-3.png)
+![liveask readme footer](/assets/readme_footer.png)
