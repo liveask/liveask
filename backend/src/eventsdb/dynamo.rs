@@ -14,8 +14,11 @@ use crate::eventsdb::event_key;
 
 use super::{
     error::{Error, Result},
+    types::AttributeMap,
     EventEntry, EventsDB,
 };
+
+const DB_TABLE_NAME: &str = "liveask";
 
 #[derive(Clone)]
 pub struct DynamoEventsDB {
@@ -39,36 +42,48 @@ impl EventsDB for DynamoEventsDB {
 
         let item = res.item().ok_or(Error::ItemNotFound)?;
 
-        let version = item["v"]
-            .as_n()
-            .map_err(|_| Error::General("malformed event: v".into()))?
-            .parse::<usize>()?;
+        let format_version = item
+            .get("format")
+            .and_then(|value| value.as_n().ok())
+            .and_then(|format| format.parse::<usize>().ok())
+            .unwrap_or_default();
 
-        let value = item["value"]
-            .as_s()
-            .map_err(|_| Error::General("malformed event: value".to_string()))?;
+        if format_version == 0 {
+            let version = item["v"]
+                .as_n()
+                .map_err(|_| Error::General("malformed event: `v`".into()))?
+                .parse::<usize>()?;
 
-        let event: EventInfo = serde_json::from_str(value)?;
+            let value = item["value"]
+                .as_s()
+                .map_err(|_| Error::General("malformed event: `value`".to_string()))?;
 
-        Ok(EventEntry { event, version })
+            let event: EventInfo = serde_json::from_str(value)?;
+
+            Ok(EventEntry {
+                event,
+                version,
+                ttl: None,
+            })
+        } else {
+            Ok(EventEntry::try_from(item)?)
+        }
     }
 
     #[instrument(skip(self), err)]
     async fn put(&self, event: EventEntry) -> Result<()> {
-        let event_av = AttributeValue::S(serde_json::to_string(&event.event)?);
-        let version_av = AttributeValue::N(event.version.to_string());
-        let key_av = AttributeValue::S(event_key(&event.event.tokens.public_token));
+        let event_version = event.version;
+
+        let attributes: AttributeMap = event.into();
 
         let mut request = self
             .db
             .put_item()
             .table_name(&self.table)
-            .item("key", key_av)
-            .item("v", version_av)
-            .item("value", event_av);
+            .set_item(Some(attributes));
 
-        if event.version > 0 {
-            let old_version_av = AttributeValue::N(event.version.saturating_sub(1).to_string());
+        if event_version > 0 {
+            let old_version_av = AttributeValue::N(event_version.saturating_sub(1).to_string());
             request = request
                 .condition_expression("v = :ver")
                 .expression_attribute_values(":ver", old_version_av);
@@ -90,8 +105,6 @@ impl EventsDB for DynamoEventsDB {
         Ok(())
     }
 }
-
-const DB_TABLE_NAME: &str = "liveask";
 
 impl DynamoEventsDB {
     pub async fn new(db: aws_sdk_dynamodb::Client, check_table_exists: bool) -> Result<Self> {

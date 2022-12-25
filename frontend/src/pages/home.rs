@@ -2,23 +2,30 @@ use wasm_bindgen::UnwrapThrowExt;
 use yew::prelude::*;
 use yew_router::prelude::*;
 
-use crate::{routes::Route, VERSION_STR};
+use crate::{fetch, routes::Route, VERSION_STR};
+
+use super::BASE_API;
 
 #[derive(Clone, Debug, Eq, PartialEq, Properties)]
 pub struct HomeProps;
 
-pub struct Home {}
+pub struct Home {
+    api_version: Option<String>,
+}
 pub enum Msg {
     Example,
     CreateEvent,
     Privacy,
+    VersionReceived(Option<String>),
 }
 impl Component for Home {
     type Message = Msg;
     type Properties = HomeProps;
 
-    fn create(_: &Context<Self>) -> Self {
-        Self {}
+    fn create(ctx: &Context<Self>) -> Self {
+        request_version(ctx.link());
+
+        Self { api_version: None }
     }
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
@@ -36,6 +43,10 @@ impl Component for Home {
             Msg::Privacy => {
                 ctx.link().history().unwrap_throw().push(Route::Privacy);
                 false
+            }
+            Msg::VersionReceived(api_version) => {
+                self.api_version = api_version;
+                true
             }
         }
     }
@@ -111,14 +122,14 @@ impl Component for Home {
                     </p>
                 </div>
 
-                {Self::view_footer(ctx)}
+                {self.view_footer(ctx)}
             </div>
         }
     }
 }
 
 impl Home {
-    fn view_footer(ctx: &Context<Self>) -> Html {
+    fn view_footer(&self, ctx: &Context<Self>) -> Html {
         let twitter_svg = {
             let svg = include_str!("../../inline-assets/twitter.svg");
             let div = gloo_utils::document().create_element("div").unwrap_throw();
@@ -142,6 +153,14 @@ impl Home {
         } else {
             format!("({})", env!("VERGEN_GIT_BRANCH"))
         };
+
+        let git_sha = env!("VERGEN_GIT_SHA_SHORT");
+
+        let api_version = self
+            .api_version
+            .as_ref()
+            .filter(|version| version != &git_sha)
+            .map_or_else(String::new, |api_version| format!("[api:{api_version}]"));
 
         html! {
             <div class="feature-dark">
@@ -172,9 +191,21 @@ impl Home {
                 </a>
 
                 <div class="version">
-                    { format!("v.{VERSION_STR}-{} {branch}",env!("VERGEN_GIT_SHA_SHORT")) }
+                    { format!("v.{VERSION_STR}-{git_sha} {branch} {api_version}") }
                 </div>
             </div>
         }
     }
+}
+
+fn request_version(link: &html::Scope<Home>) {
+    link.send_future(async move {
+        match fetch::fetch_version(BASE_API).await {
+            Err(e) => {
+                log::error!("fetch_version error: {e}");
+                Msg::VersionReceived(None)
+            }
+            Ok(res) => Msg::VersionReceived(Some(res)),
+        }
+    });
 }
