@@ -16,7 +16,7 @@ use ulid::Ulid;
 use crate::{
     bail, env,
     error::{InternalError, Result},
-    eventsdb::{EventEntry, EventsDB},
+    eventsdb::{ApiEventInfo, EventEntry, EventsDB},
     mail::MailjetConfig,
     payment::Payment,
     pubsub::{PubSubPublish, PubSubReceiver},
@@ -114,11 +114,12 @@ impl App {
 
         let mod_token = Ulid::new().to_string();
 
-        let mut e = EventInfo {
+        let mut e = ApiEventInfo {
             create_time_unix: now,
             delete_time_unix: 0,
             last_edit_unix: now,
             deleted: false,
+            premium_order: None,
             questions: Vec::new(),
             state: EventState {
                 state: States::Open,
@@ -156,7 +157,7 @@ impl App {
         )
         .await;
 
-        Ok(result)
+        Ok(result.into())
     }
 
     fn mod_link(&self, tokens: &EventTokens) -> String {
@@ -203,7 +204,7 @@ impl App {
                 .collect::<Vec<_>>();
         }
 
-        Ok(e)
+        Ok(e.into())
     }
 
     //TODO: validate event is not deleted
@@ -280,7 +281,7 @@ impl App {
 
         self.notify_subscribers(id, Some(question_id)).await;
 
-        Ok(e)
+        Ok(e.into())
     }
 
     //TODO: validate event is not deleted
@@ -312,7 +313,7 @@ impl App {
 
         self.notify_subscribers(id, None).await;
 
-        Ok(result)
+        Ok(result.into())
     }
 
     pub async fn delete_event(&self, id: String, secret: String) -> Result<()> {
@@ -371,14 +372,24 @@ impl App {
     pub async fn payment_webhook(&self, id: String) -> Result<()> {
         tracing::info!("order processing");
 
-        let event_id = self.payment.capture_approved_payment(id.clone()).await?;
+        let event_id = self.payment.event_of_order(id.clone()).await?;
 
-        tracing::info!("order processing done");
+        let mut entry = self.eventsdb.get(&event_id).await?;
 
-        if let Some(_event_id) = event_id {
-            //TODO: mark event premium
+        if entry.event.premium_order.is_some() {
+            return Err(InternalError::General("event already premium".into()));
+        }
 
-            // self.notify_subscribers(id, Some(question_id)).await;
+        if self.payment.capture_payment(id.clone()).await? {
+            tracing::info!("order captured");
+
+            entry.event.premium_order = Some(id);
+
+            entry.bump();
+
+            self.eventsdb.put(entry).await?;
+
+            self.notify_subscribers(event_id, None).await;
         }
 
         Ok(())

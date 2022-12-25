@@ -112,10 +112,7 @@ impl Payment {
             .clone())
     }
 
-    pub async fn capture_approved_payment(
-        &self,
-        order_id: String,
-    ) -> PaymentResult<Option<String>> {
+    pub async fn event_of_order(&self, order_id: String) -> PaymentResult<String> {
         self.authenticate().await?;
 
         let order = Order::show_details(&self.client, &order_id).await?;
@@ -144,6 +141,12 @@ impl Payment {
             event_id
         );
 
+        Ok(event_id)
+    }
+
+    pub async fn capture_payment(&self, order_id: String) -> PaymentResult<bool> {
+        self.authenticate().await?;
+
         let captured_ordered = Order::capture(&self.client, &order_id, None).await?;
 
         tracing::debug!("auth: {:?}", captured_ordered);
@@ -157,6 +160,6 @@ impl Payment {
             tracing::warn!("paypment capture failed: {:?}", captured_ordered);
         }
 
-        Ok(completed.then_some(event_id))
+        Ok(completed)
     }
 }

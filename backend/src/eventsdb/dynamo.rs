@@ -7,14 +7,13 @@ use aws_sdk_dynamodb::{
     },
     types::SdkError,
 };
-use shared::EventInfo;
 use tracing::instrument;
 
 use crate::eventsdb::event_key;
 
 use super::{
     error::{Error, Result},
-    types::AttributeMap,
+    types::{ApiEventInfo, AttributeMap},
     EventEntry, EventsDB,
 };
 
@@ -58,7 +57,7 @@ impl EventsDB for DynamoEventsDB {
                 .as_s()
                 .map_err(|_| Error::General("malformed event: `value`".to_string()))?;
 
-            let event: EventInfo = serde_json::from_str(value)?;
+            let event: ApiEventInfo = serde_json::from_str(value)?;
 
             Ok(EventEntry {
                 event,

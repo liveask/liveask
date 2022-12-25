@@ -190,7 +190,7 @@ pub async fn panic_handler() -> Html<&'static str> {
 #[cfg(test)]
 mod test_db_conflicts {
     use super::*;
-    use crate::eventsdb::{EventEntry, EventsDB};
+    use crate::eventsdb::{ApiEventInfo, EventEntry, EventsDB};
     use crate::payment::Payment;
     use crate::{app::App, pubsub::PubSubInMemory};
     use async_trait::async_trait;
@@ -201,7 +201,7 @@ mod test_db_conflicts {
         Router,
     };
     use pretty_assertions::assert_eq;
-    use shared::{EventInfo, QuestionItem};
+    use shared::QuestionItem;
     use std::sync::Arc;
     use tower::util::ServiceExt;
     use tower_http::trace::TraceLayer;
@@ -213,7 +213,7 @@ mod test_db_conflicts {
         async fn get(&self, key: &str) -> crate::eventsdb::Result<EventEntry> {
             tracing::info!("fake db get: {key}");
             Ok(EventEntry {
-                event: EventInfo {
+                event: ApiEventInfo {
                     questions: vec![QuestionItem {
                         id: 1,
                         ..Default::default()

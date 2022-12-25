@@ -54,6 +54,7 @@ pub struct EventInfo {
     pub last_edit_unix: i64,
     pub questions: Vec<QuestionItem>,
     pub state: EventState,
+    pub premium: bool,
 }
 
 impl EventInfo {
