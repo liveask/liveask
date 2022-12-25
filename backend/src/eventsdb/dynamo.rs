@@ -73,11 +73,8 @@ impl EventsDB for DynamoEventsDB {
     #[instrument(skip(self), err)]
     async fn put(&self, event: EventEntry) -> Result<()> {
         let event_version = event.version;
-        let old_event_serialized = serde_json::to_string(&event.event)?;
 
-        let mut attributes: AttributeMap = event.into();
-
-        attributes.insert("value".into(), AttributeValue::S(old_event_serialized));
+        let attributes: AttributeMap = event.into();
 
         let mut request = self
             .db
