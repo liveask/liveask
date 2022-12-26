@@ -190,7 +190,7 @@ impl App {
         }
 
         if e.deleted {
-            return Err(InternalError::AccessingDeletedEvent);
+            return Err(InternalError::AccessingDeletedEvent(id));
         }
 
         if secret.is_none() {
@@ -357,7 +357,7 @@ impl App {
         }
 
         if e.deleted {
-            return Err(InternalError::AccessingDeletedEvent);
+            return Err(InternalError::AccessingDeletedEvent(id));
         }
 
         let approve_url = self
