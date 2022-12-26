@@ -525,7 +525,7 @@ impl Event {
     }
 
     fn mod_view(&self, ctx: &Context<Self>, e: &EventInfo) -> Html {
-        let payment_enabled = self.query_params.payment.unwrap_or_default();
+        let payment_allowed = self.query_params.payment.unwrap_or_default() && !e.premium;
 
         if matches!(self.mode, Mode::Moderator) {
             html! {
@@ -544,7 +544,7 @@ impl Event {
                     {"Delete Event"}
                 </button>
                 {
-                    if payment_enabled {html!{
+                    if payment_allowed {html!{
                         <button class="button-white" onclick={ctx.link().callback(|_|Msg::UpgradeButtonPressed)} >
                             {"Upgrade Event"}
                         </button>
@@ -552,7 +552,25 @@ impl Event {
                 }
             </div>
 
-            <div class="deadline">
+            {Self::mod_view_deadline(e)}
+
+            </>
+            }
+        } else {
+            html! {}
+        }
+    }
+
+    fn mod_view_deadline(e: &EventInfo) -> Html {
+        if e.premium {
+            html! {
+                <div class="deadline">
+                {"This is a premium event and will not time out!"}
+                </div>
+            }
+        } else {
+            html! {
+                <div class="deadline">
                 {"Currently an event is valid for 30 days. Your event will close on "}
                 <span>{Self::get_event_timeout(e)}</span>
                 {". Please "}
@@ -560,11 +578,8 @@ impl Event {
                 {"contact us"}
                 </a>
                 {" if you need your event to persist."}
-            </div>
-            </>
+                </div>
             }
-        } else {
-            html! {}
         }
     }
 

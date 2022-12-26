@@ -11,8 +11,8 @@ pub enum InternalError {
     #[error("General Error: {0}")]
     General(String),
 
-    #[error("Acceesssing Deleted Event")]
-    AccessingDeletedEvent,
+    #[error("Acceesssing Deleted Event: {0}")]
+    AccessingDeletedEvent(String),
 
     #[error("Events DB Error: {0}")]
     EventsDB(#[from] eventsdb::Error),
@@ -45,8 +45,8 @@ impl IntoResponse for InternalError {
                 (StatusCode::INTERNAL_SERVER_ERROR, "").into_response()
             }
 
-            Self::AccessingDeletedEvent => {
-                tracing::warn!("accessing deleted event");
+            Self::AccessingDeletedEvent(id) => {
+                tracing::info!("accessing deleted event: {id}");
                 (StatusCode::BAD_REQUEST, "").into_response()
             }
 

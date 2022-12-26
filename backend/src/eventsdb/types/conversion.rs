@@ -1,87 +1,9 @@
-use std::collections::HashMap;
-
-use crate::utils::timestamp_now;
 use aws_sdk_dynamodb::model::AttributeValue;
-use shared::{EventData, EventInfo, EventState, EventTokens, QuestionItem, States};
+use shared::{EventData, EventState, EventTokens, QuestionItem, States};
 
-use super::{event_key, Error};
+use crate::eventsdb::Error;
 
-#[derive(Clone, Debug, Eq, PartialEq, Default)]
-pub struct EventEntry {
-    pub event: EventInfo,
-    pub version: usize,
-    pub ttl: Option<i64>,
-}
-
-impl EventEntry {
-    pub const fn new(event: EventInfo, ttl: Option<i64>) -> Self {
-        Self {
-            event,
-            version: 0,
-            ttl,
-        }
-    }
-
-    pub fn bump(&mut self) {
-        self.version += 1;
-        self.event.last_edit_unix = timestamp_now();
-    }
-}
-
-pub type AttributeMap = HashMap<std::string::String, AttributeValue>;
-
-const CURRENT_FORMAT: usize = 1;
-
-impl TryFrom<&AttributeMap> for EventEntry {
-    type Error = super::Error;
-
-    fn try_from(value: &AttributeMap) -> Result<Self, Error> {
-        let version = value["v"]
-            .as_n()
-            .map_err(|_| Error::General("malformed event: `v`".into()))?
-            .parse::<usize>()?;
-
-        let event = value["event"]
-            .as_m()
-            .map_err(|_| Error::MalformedObject("event".into()))?;
-
-        let ttl = value
-            .get("ttl")
-            .and_then(|ttl| ttl.as_n().ok())
-            .and_then(|ttl| ttl.parse::<i64>().ok());
-
-        let event = attributes_to_event(event)?;
-
-        Ok(Self {
-            event,
-            version,
-            ttl,
-        })
-    }
-}
-
-impl From<EventEntry> for AttributeMap {
-    fn from(value: EventEntry) -> Self {
-        let mut map = Self::new();
-        let event_key = event_key(&value.event.tokens.public_token);
-
-        let event_av = event_to_attributes(value.event);
-        let version_av = AttributeValue::N(value.version.to_string());
-        let format_av = AttributeValue::N(CURRENT_FORMAT.to_string());
-        let key_av = AttributeValue::S(event_key);
-
-        map.insert("key".into(), key_av);
-        map.insert("format".into(), format_av);
-        map.insert("v".into(), version_av);
-        map.insert("event".into(), AttributeValue::M(event_av));
-
-        if let Some(ttl) = value.ttl {
-            map.insert("ttl".into(), AttributeValue::N(ttl.to_string()));
-        }
-
-        map
-    }
-}
+use super::{ApiEventInfo, AttributeMap};
 
 const ATTR_EVENT_INFO_LAST_EDIT: &str = "last_edit";
 const ATTR_EVENT_INFO_DELETE_TIME: &str = "delete_time";
@@ -91,9 +13,10 @@ const ATTR_EVENT_INFO_STATE: &str = "state";
 const ATTR_EVENT_INFO_TOKENS: &str = "tokens";
 const ATTR_EVENT_INFO_ITEMS: &str = "items";
 const ATTR_EVENT_INFO_DATA: &str = "data";
+const ATTR_EVENT_INFO_PREMIUM: &str = "premium";
 
-fn event_to_attributes(value: EventInfo) -> AttributeMap {
-    let map: AttributeMap = vec![
+pub fn event_to_attributes(value: ApiEventInfo) -> AttributeMap {
+    let mut map: AttributeMap = vec![
         (
             ATTR_EVENT_INFO_TOKENS.into(),
             AttributeValue::M(tokens_to_attributes(value.tokens)),
@@ -130,10 +53,17 @@ fn event_to_attributes(value: EventInfo) -> AttributeMap {
     .into_iter()
     .collect();
 
+    if let Some(premium_order) = value.premium_order {
+        map.insert(
+            ATTR_EVENT_INFO_PREMIUM.into(),
+            AttributeValue::S(premium_order),
+        );
+    }
+
     map
 }
 
-fn attributes_to_event(value: &AttributeMap) -> Result<EventInfo, super::Error> {
+pub fn attributes_to_event(value: &AttributeMap) -> Result<ApiEventInfo, super::Error> {
     let tokens = attributes_to_tokens(
         value[ATTR_EVENT_INFO_TOKENS]
             .as_m()
@@ -172,6 +102,10 @@ fn attributes_to_event(value: &AttributeMap) -> Result<EventInfo, super::Error> 
         .map_err(|_| Error::MalformedObject(ATTR_EVENT_INFO_DELETED.into()))?
         .to_owned();
 
+    let premium_order = value
+        .get(ATTR_EVENT_INFO_PREMIUM)
+        .and_then(|value| value.as_s().ok().cloned());
+
     let state = EventState::from_value(
         value[ATTR_EVENT_INFO_STATE]
             .as_n()
@@ -182,7 +116,7 @@ fn attributes_to_event(value: &AttributeMap) -> Result<EventInfo, super::Error> 
         state: States::Open,
     });
 
-    Ok(EventInfo {
+    Ok(ApiEventInfo {
         tokens,
         data,
         create_time_unix,
@@ -191,6 +125,7 @@ fn attributes_to_event(value: &AttributeMap) -> Result<EventInfo, super::Error> 
         last_edit_unix,
         questions,
         state,
+        premium_order,
     })
 }
 
@@ -396,99 +331,4 @@ fn attributes_to_questions(value: &Vec<AttributeValue>) -> Result<Vec<QuestionIt
     }
 
     Ok(list)
-}
-
-#[cfg(test)]
-mod test_serialization {
-    use super::*;
-    use pretty_assertions::assert_eq;
-    use shared::{EventState, States};
-
-    #[test]
-    fn test_ser_and_de_1() {
-        // env_logger::init();
-
-        let entry = EventEntry {
-            event: EventInfo {
-                tokens: EventTokens {
-                    public_token: String::from("token1"),
-                    moderator_token: None,
-                },
-                data: EventData {
-                    name: String::from("name"),
-                    description: String::from("desc"),
-                    short_url: String::from(""),
-                    long_url: None,
-                    mail: None,
-                },
-                create_time_unix: 1,
-                delete_time_unix: 0,
-                deleted: false,
-                last_edit_unix: 2,
-                questions: vec![QuestionItem {
-                    id: 0,
-                    likes: 2,
-                    text: String::from("q"),
-                    hidden: false,
-                    answered: true,
-                    create_time_unix: 3,
-                }],
-                state: EventState {
-                    state: States::Closed,
-                },
-            },
-            version: 2,
-            ttl: None,
-        };
-
-        let map: AttributeMap = entry.clone().try_into().unwrap();
-
-        let entry_deserialized: EventEntry = (&map).try_into().unwrap();
-
-        assert_eq!(entry, entry_deserialized);
-    }
-
-    #[test]
-    fn test_ser_and_de_2() {
-        // env_logger::init();
-
-        let entry = EventEntry {
-            event: EventInfo {
-                tokens: EventTokens {
-                    public_token: String::from("token1"),
-                    moderator_token: Some(String::from("token2")),
-                },
-                data: EventData {
-                    name: String::from("name"),
-                    description: String::from("desc"),
-                    short_url: String::from(""),
-                    long_url: Some(String::from("foo")),
-                    mail: Some(String::from("mail")),
-                },
-                create_time_unix: 1,
-                delete_time_unix: 0,
-                deleted: false,
-                last_edit_unix: 2,
-                questions: vec![QuestionItem {
-                    id: 0,
-                    likes: 2,
-                    text: String::from("q"),
-                    hidden: false,
-                    answered: true,
-                    create_time_unix: 3,
-                }],
-                state: EventState {
-                    state: States::Closed,
-                },
-            },
-            version: 2,
-            ttl: Some(12345),
-        };
-
-        let map: AttributeMap = entry.clone().try_into().unwrap();
-
-        let entry_deserialized: EventEntry = (&map).try_into().unwrap();
-
-        assert_eq!(entry, entry_deserialized);
-    }
 }

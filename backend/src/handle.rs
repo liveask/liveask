@@ -1,6 +1,5 @@
 use axum::{
     extract::{ws::WebSocket, Path, State, WebSocketUpgrade},
-    http::HeaderMap,
     response::{Html, IntoResponse},
     Json,
 };
@@ -9,7 +8,9 @@ use tracing::instrument;
 use crate::{
     app::SharedApp,
     error::InternalError,
-    payment::{PaymentCheckoutApprovedResource, PaymentWebhookBase},
+    payment::{
+        PaymentCaptureRefundedResource, PaymentCheckoutApprovedResource, PaymentWebhookBase,
+    },
     GIT_HASH,
 };
 
@@ -105,10 +106,8 @@ pub async fn mod_premium_upgrade(
     Ok(Json(app.premium_upgrade(id, secret).await?))
 }
 
-#[instrument(skip(headers, app, body))]
-#[allow(unused_variables)]
+#[instrument(skip(app, body))]
 pub async fn payment_webhook(
-    headers: HeaderMap,
     State(app): State<SharedApp>,
     body: String,
 ) -> std::result::Result<impl IntoResponse, InternalError> {
@@ -120,6 +119,13 @@ pub async fn payment_webhook(
         let resource: PaymentCheckoutApprovedResource = serde_json::from_value(base.resource)?;
 
         app.payment_webhook(resource.id).await?;
+    } else if base.event_type == "PAYMENT.CAPTURE.COMPLETED" {
+        tracing::info!(base.id, "payment capture completed: {}", body);
+    } else if base.event_type == "PAYMENT.CAPTURE.REFUNDED" {
+        let resource: PaymentCaptureRefundedResource = serde_json::from_value(base.resource)?;
+
+        //TODO: make event not-premium again
+        tracing::warn!("refund: {:?}", resource);
     } else {
         tracing::warn!("unknown payment hook: {}", body);
     }
@@ -190,7 +196,7 @@ pub async fn panic_handler() -> Html<&'static str> {
 #[cfg(test)]
 mod test_db_conflicts {
     use super::*;
-    use crate::eventsdb::{EventEntry, EventsDB};
+    use crate::eventsdb::{ApiEventInfo, EventEntry, EventsDB};
     use crate::payment::Payment;
     use crate::{app::App, pubsub::PubSubInMemory};
     use async_trait::async_trait;
@@ -201,7 +207,7 @@ mod test_db_conflicts {
         Router,
     };
     use pretty_assertions::assert_eq;
-    use shared::{EventInfo, QuestionItem};
+    use shared::QuestionItem;
     use std::sync::Arc;
     use tower::util::ServiceExt;
     use tower_http::trace::TraceLayer;
@@ -213,7 +219,7 @@ mod test_db_conflicts {
         async fn get(&self, key: &str) -> crate::eventsdb::Result<EventEntry> {
             tracing::info!("fake db get: {key}");
             Ok(EventEntry {
-                event: EventInfo {
+                event: ApiEventInfo {
                     questions: vec![QuestionItem {
                         id: 1,
                         ..Default::default()
