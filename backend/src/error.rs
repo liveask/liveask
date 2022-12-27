@@ -51,12 +51,12 @@ impl IntoResponse for InternalError {
             }
 
             Self::Payment(e) => {
-                tracing::error!("{e}");
+                tracing::error!("payment error: {e}");
                 (StatusCode::BAD_REQUEST, "").into_response()
             }
 
             Self::SerdeJson(e) => {
-                tracing::error!("{e}");
+                tracing::error!("serde error: {e}");
                 (StatusCode::BAD_REQUEST, "").into_response()
             }
 
@@ -70,8 +70,9 @@ impl IntoResponse for InternalError {
                     .into_response()
             }
 
+            //Note: do not trace this as error
             Self::EventsDB(e) if matches!(e, eventsdb::Error::ItemNotFound) => {
-                tracing::info!("{}", e.to_string());
+                tracing::info!("ItemNotFound error: {}", e);
                 (StatusCode::BAD_REQUEST, "").into_response()
             }
 
