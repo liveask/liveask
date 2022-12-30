@@ -17,7 +17,7 @@ Live-Ask.com provides a simple, free, and real-time service for the audience to 
 * Original Pitch Blogpost for the Project (2018): [Blog Post](https://blog.extrawurst.org/general/webdev/2018/04/02/liveask.html)
 
 ### Screenshots 
-<img src="/assets/desktop_modview.png" height="266" width="300" > <img src="/assets/desktop_partview.png" height="266" width="300" > <img src="/assets/desktop_share.png" height="266" width="300" >
+<img src="/assets/desktop_modview.png" height="222" width="250" > <img src="/assets/desktop_partview.png" height="222" width="250" > <img src="/assets/desktop_share.png" height="222" width="250" >
 
 ## News & Updates 
 * **2022-11-28** - Complete Re-write in Rust 
