@@ -235,8 +235,6 @@ impl App {
             bail!("q not found")
         }
 
-        self.notify_subscribers(id, None).await;
-
         Ok(q)
     }
 
@@ -253,6 +251,10 @@ impl App {
         let mut entry = self.eventsdb.get(&id).await?;
         {
             let e = &mut entry.event;
+
+            if e.is_timed_out() {
+                return Err(InternalError::ModifyingTimedOutEvent(id));
+            }
 
             if e.tokens
                 .moderator_token
@@ -294,6 +296,11 @@ impl App {
         let mut entry = self.eventsdb.get(&id).await?.clone();
 
         let e = &mut entry.event;
+
+        if e.is_timed_out() {
+            return Err(InternalError::ModifyingTimedOutEvent(id));
+        }
+
         if e.tokens
             .moderator_token
             .as_ref()
@@ -316,6 +323,7 @@ impl App {
         Ok(result.into())
     }
 
+    //TODO: keep allowing to delete timedout event?
     pub async fn delete_event(&self, id: String, secret: String) -> Result<()> {
         let mut entry = self.eventsdb.get(&id).await?;
 
@@ -409,7 +417,7 @@ impl App {
         let e = &mut entry.event;
 
         if e.is_timed_out() {
-            bail!("event timed out")
+            return Err(InternalError::ModifyingTimedOutEvent(id));
         }
 
         let question_id = e.questions.len() as i64;
@@ -441,7 +449,7 @@ impl App {
         let e = &mut entry.event;
 
         if e.is_timed_out() {
-            bail!("event timed out")
+            return Err(InternalError::ModifyingTimedOutEvent(id));
         }
 
         if let Some(f) = e.questions.iter_mut().find(|e| e.id == edit.question_id) {

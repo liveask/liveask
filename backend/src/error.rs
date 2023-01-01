@@ -14,6 +14,9 @@ pub enum InternalError {
     #[error("Acceesssing Deleted Event: {0}")]
     AccessingDeletedEvent(String),
 
+    #[error("Trying to modify timed out Event: {0}")]
+    ModifyingTimedOutEvent(String),
+
     #[error("Events DB Error: {0}")]
     EventsDB(#[from] eventsdb::Error),
 
@@ -47,6 +50,11 @@ impl IntoResponse for InternalError {
 
             Self::AccessingDeletedEvent(id) => {
                 tracing::info!("accessing deleted event: {id}");
+                (StatusCode::BAD_REQUEST, "").into_response()
+            }
+
+            Self::ModifyingTimedOutEvent(id) => {
+                tracing::info!("trying to modify timed out Event: {id}");
                 (StatusCode::BAD_REQUEST, "").into_response()
             }
 
