@@ -1,11 +1,11 @@
 mod conversion;
 
-use std::collections::HashMap;
-
 use crate::utils::timestamp_now;
 use aws_sdk_dynamodb::model::AttributeValue;
+use chrono::{DateTime, Duration, TimeZone, Utc};
 use serde::{Deserialize, Serialize};
 use shared::{EventData, EventInfo, EventState, EventTokens, QuestionItem};
+use std::collections::HashMap;
 
 use self::conversion::{attributes_to_event, event_to_attributes};
 
@@ -27,8 +27,29 @@ pub struct ApiEventInfo {
     pub premium_order: Option<String>,
 }
 
+impl ApiEventInfo {
+    fn is_timed_out(&self) -> bool {
+        Self::timestamp_to_datetime(self.create_time_unix).map_or_else(
+            || {
+                tracing::warn!("timeout calc error: {}", self.create_time_unix);
+                true
+            },
+            |create_date| {
+                let age: Duration = Utc::now() - create_date;
+                age.num_days() > 7
+            },
+        )
+    }
+
+    fn timestamp_to_datetime(timestamp: i64) -> Option<DateTime<Utc>> {
+        Utc.timestamp_opt(timestamp, 0).latest()
+    }
+}
+
 impl From<ApiEventInfo> for EventInfo {
     fn from(val: ApiEventInfo) -> Self {
+        let premium = val.premium_order.is_some();
+        let timed_out = if premium { false } else { val.is_timed_out() };
         Self {
             tokens: val.tokens,
             data: val.data,
@@ -38,7 +59,8 @@ impl From<ApiEventInfo> for EventInfo {
             last_edit_unix: val.last_edit_unix,
             questions: val.questions,
             state: val.state,
-            premium: val.premium_order.is_some(),
+            premium,
+            timed_out,
         }
     }
 }

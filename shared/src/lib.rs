@@ -55,12 +55,18 @@ pub struct EventInfo {
     pub questions: Vec<QuestionItem>,
     pub state: EventState,
     pub premium: bool,
+    pub timed_out: bool,
 }
 
 impl EventInfo {
     #[must_use]
     pub fn get_question(&self, id: i64) -> Option<QuestionItem> {
         self.questions.iter().find(|i| i.id == id).cloned()
+    }
+
+    #[must_use]
+    pub const fn is_closed(&self) -> bool {
+        matches!(self.state.state, States::Closed) || self.timed_out
     }
 }
 

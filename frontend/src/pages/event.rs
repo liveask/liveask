@@ -392,7 +392,7 @@ impl Event {
 
                         {self.mod_view(ctx,e)}
 
-                        <div class="not-open" hidden={!e.state.is_closed()}>
+                        <div class="not-open" hidden={!e.is_closed()}>
                             {"This event was closed by the moderator. You cannot add or vote questions anymore."}
                             <br/>
                             {"Updates by the moderator are still seen in real-time."}
@@ -440,7 +440,7 @@ impl Event {
                 </div>
             }
         } else {
-            let can_vote = !e.state.is_closed();
+            let can_vote = !e.is_closed();
             html! {
                 <>
                     {self.view_items(ctx,&self.unanswered,"Hot Questions",can_vote)}
@@ -514,21 +514,29 @@ impl Event {
         let payment_allowed = self.query_params.payment.unwrap_or_default() && !e.premium;
 
         if matches!(self.mode, Mode::Moderator) {
+            let timed_out = e.timed_out;
+
             html! {
             <>
             <div class="mod-panel" >
                 <DeletePopup tokens={e.tokens.clone()} />
 
-                <div class="state">
-                    <select onchange={ctx.link().callback(Msg::ModStateChange)} >
-                        <option value="0" selected={e.state.is_open()}>{"Event open"}</option>
-                        <option value="1" selected={e.state.is_vote_only()}>{"Event vote only"}</option>
-                        <option value="2" selected={e.state.is_closed()}>{"Event closed"}</option>
-                    </select>
-                </div>
+                {
+                    if timed_out {html!{}}else {html!{
+                    <div class="state">
+                        <select onchange={ctx.link().callback(Msg::ModStateChange)} >
+                            <option value="0" selected={e.state.is_open()}>{"Event open"}</option>
+                            <option value="1" selected={e.state.is_vote_only()}>{"Event vote only"}</option>
+                            <option value="2" selected={e.state.is_closed()}>{"Event closed"}</option>
+                        </select>
+                    </div>
+                    }}
+                }
+
                 <button class="button-white" onclick={ctx.link().callback(|_|Msg::ModDelete)} >
                     {"Delete Event"}
                 </button>
+
                 {
                     if payment_allowed {html!{
                         <button class="button-white" onclick={ctx.link().callback(|_|Msg::UpgradeButtonPressed)} >
@@ -552,6 +560,12 @@ impl Event {
             html! {
                 <div class="deadline">
                 {"This is a premium event and will not time out!"}
+                </div>
+            }
+        } else if e.timed_out {
+            html! {
+                <div class="deadline">
+                {"Event has timed out. Only the moderator can upgrade it now."}
                 </div>
             }
         } else {
