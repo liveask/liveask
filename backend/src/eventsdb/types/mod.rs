@@ -50,6 +50,14 @@ impl From<ApiEventInfo> for EventInfo {
     fn from(val: ApiEventInfo) -> Self {
         let premium = val.premium_order.is_some();
         let timed_out = if premium { false } else { val.is_timed_out() };
+        let mut questions = val.questions;
+
+        if timed_out {
+            for q in &mut questions {
+                q.text = "time out".into();
+            }
+        }
+
         Self {
             tokens: val.tokens,
             data: val.data,
@@ -57,7 +65,7 @@ impl From<ApiEventInfo> for EventInfo {
             delete_time_unix: val.delete_time_unix,
             deleted: val.deleted,
             last_edit_unix: val.last_edit_unix,
-            questions: val.questions,
+            questions,
             state: val.state,
             premium,
             timed_out,
