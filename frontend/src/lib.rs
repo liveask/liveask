@@ -159,3 +159,7 @@ extern "C" {
 pub const EVNT_NEWEVENT_FINISH: &str = "newevent_finish";
 pub const EVNT_ASK_OPEN: &str = "ask_open";
 pub const EVNT_ASK_SENT: &str = "ask_sent";
+pub const EVNT_EVENT_DELETE: &str = "event_delete";
+pub const EVNT_SHARE_OPEN: &str = "share_open";
+pub const EVNT_QUESTION_LIKE: &str = "question_like";
+pub const EVNT_QUESTION_UNLIKE: &str = "question_unlike";

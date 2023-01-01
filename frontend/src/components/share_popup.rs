@@ -57,6 +57,7 @@ impl Component for SharePopup {
         match msg {
             Msg::GlobalEvent(e) => {
                 if matches!(e, GlobalEvent::OpenSharePopup) {
+                    crate::track_event(crate::EVNT_SHARE_OPEN);
                     self.show = true;
                     return true;
                 }

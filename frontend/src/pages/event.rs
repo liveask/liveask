@@ -683,6 +683,11 @@ impl Event {
         match kind {
             QuestionClickType::Like => {
                 let liked = LocalCache::is_liked(&self.event_id, id);
+                if liked {
+                    crate::track_event(crate::EVNT_QUESTION_UNLIKE);
+                } else {
+                    crate::track_event(crate::EVNT_QUESTION_LIKE);
+                }
                 LocalCache::set_like_state(&self.event_id, id, !liked);
                 request_like(self.event_id.clone(), id, !liked, ctx.link());
             }
