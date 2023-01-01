@@ -172,7 +172,7 @@ impl Home {
                 </button>
 
                 <div class="copyright">
-                    {"© 2022 Live-Ask. All right reserved"}
+                    {"© 2023 Live-Ask. All right reserved"}
                 </div>
 
                 <a href="https://twitter.com/liveask1">
