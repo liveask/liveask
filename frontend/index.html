@@ -35,6 +35,10 @@
     <!-- Metrical -->
     <script>
         window.metrical = { "app": "" }
+        window.track_event =
+            function track_event(msg) {
+                window.metrical.trackEvent(msg)
+            };
     </script>
     <script async src="https://cdn.metrical.xyz/script.js" type="text/javascript">
     </script>

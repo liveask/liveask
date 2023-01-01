@@ -4,7 +4,7 @@ use web_sys::{Element, HtmlInputElement, HtmlTextAreaElement};
 use yew::prelude::*;
 use yew_router::prelude::*;
 
-use crate::{fetch, routes::Route};
+use crate::{fetch, routes::Route, EVNT_NEWEVENT_FINISH};
 
 use super::event::BASE_API;
 
@@ -51,6 +51,9 @@ impl Component for NewEvent {
                 let name = self.name.clone();
                 let desc = self.desc.clone();
                 let email = self.email.clone();
+
+                crate::track_event(EVNT_NEWEVENT_FINISH);
+
                 ctx.link().send_future(async move {
                     let res = fetch::create_event(BASE_API, name, desc, email).await;
 

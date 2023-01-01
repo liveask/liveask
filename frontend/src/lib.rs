@@ -149,3 +149,13 @@ pub fn run_app() {
     wasm_logger::init(wasm_logger::Config::new(log::Level::Info));
     yew::start_app::<AppRoot>();
 }
+
+#[wasm_bindgen]
+extern "C" {
+    #[wasm_bindgen(js_namespace = window)]
+    pub fn track_event(s: &str);
+}
+
+pub const EVNT_NEWEVENT_FINISH: &str = "newevent-finish";
+pub const EVNT_ASK_OPEN: &str = "ask-open";
+pub const EVNT_ASK_SENT: &str = "ask-sent";
