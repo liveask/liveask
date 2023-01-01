@@ -252,8 +252,8 @@ impl App {
         {
             let e = &mut entry.event;
 
-            if e.is_timed_out() {
-                return Err(InternalError::ModifyingTimedOutEvent(id));
+            if e.is_timed_out_and_free() {
+                return Err(InternalError::TimedOutFreeEvent(id));
             }
 
             if e.tokens
@@ -297,8 +297,8 @@ impl App {
 
         let e = &mut entry.event;
 
-        if e.is_timed_out() {
-            return Err(InternalError::ModifyingTimedOutEvent(id));
+        if e.is_timed_out_and_free() {
+            return Err(InternalError::TimedOutFreeEvent(id));
         }
 
         if e.tokens
@@ -416,8 +416,8 @@ impl App {
 
         let e = &mut entry.event;
 
-        if e.is_timed_out() {
-            return Err(InternalError::ModifyingTimedOutEvent(id));
+        if e.is_timed_out_and_free() {
+            return Err(InternalError::TimedOutFreeEvent(id));
         }
 
         let question_id = e.questions.len() as i64;
@@ -448,8 +448,8 @@ impl App {
 
         let e = &mut entry.event;
 
-        if e.is_timed_out() {
-            return Err(InternalError::ModifyingTimedOutEvent(id));
+        if e.is_timed_out_and_free() {
+            return Err(InternalError::TimedOutFreeEvent(id));
         }
 
         if let Some(f) = e.questions.iter_mut().find(|e| e.id == edit.question_id) {

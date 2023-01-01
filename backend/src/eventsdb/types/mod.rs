@@ -28,7 +28,7 @@ pub struct ApiEventInfo {
 }
 
 impl ApiEventInfo {
-    pub fn is_timed_out(&self) -> bool {
+    fn is_timed_out(&self) -> bool {
         Self::timestamp_to_datetime(self.create_time_unix).map_or_else(
             || {
                 tracing::warn!("timeout calc error: {}", self.create_time_unix);
@@ -39,6 +39,10 @@ impl ApiEventInfo {
                 age.num_days() > 7
             },
         )
+    }
+
+    pub fn is_timed_out_and_free(&self) -> bool {
+        self.premium_order.is_none() && self.is_timed_out()
     }
 
     fn timestamp_to_datetime(timestamp: i64) -> Option<DateTime<Utc>> {
@@ -53,8 +57,7 @@ const LOREM_IPSUM:&[&str] = &[
 
 impl From<ApiEventInfo> for EventInfo {
     fn from(val: ApiEventInfo) -> Self {
-        let premium = val.premium_order.is_some();
-        let timed_out = if premium { false } else { val.is_timed_out() };
+        let timed_out = val.is_timed_out_and_free();
         let mut questions = val.questions;
 
         if timed_out {
@@ -74,7 +77,7 @@ impl From<ApiEventInfo> for EventInfo {
             last_edit_unix: val.last_edit_unix,
             questions,
             state: val.state,
-            premium,
+            premium: val.premium_order.is_some(),
             timed_out,
         }
     }
