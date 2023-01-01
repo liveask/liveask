@@ -1,10 +1,9 @@
+use crate::{fetch, routes::Route, tracking};
 use shared::{CreateEventErrors, EventInfo, ValidationError};
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 use web_sys::{Element, HtmlInputElement, HtmlTextAreaElement};
 use yew::prelude::*;
 use yew_router::prelude::*;
-
-use crate::{fetch, routes::Route, EVNT_NEWEVENT_FINISH};
 
 use super::event::BASE_API;
 
@@ -52,7 +51,7 @@ impl Component for NewEvent {
                 let desc = self.desc.clone();
                 let email = self.email.clone();
 
-                crate::track_event(EVNT_NEWEVENT_FINISH);
+                tracking::track_event(tracking::EVNT_NEWEVENT_FINISH);
 
                 ctx.link().send_future(async move {
                     let res = fetch::create_event(BASE_API, name, desc, email).await;

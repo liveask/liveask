@@ -3,6 +3,7 @@ use crate::{
     components::Popup,
     components::Qr,
     routes::Route,
+    tracking,
 };
 use wasm_bindgen::UnwrapThrowExt;
 use yew::prelude::*;
@@ -57,7 +58,7 @@ impl Component for SharePopup {
         match msg {
             Msg::GlobalEvent(e) => {
                 if matches!(e, GlobalEvent::OpenSharePopup) {
-                    crate::track_event(crate::EVNT_SHARE_OPEN);
+                    tracking::track_event(tracking::EVNT_SHARE_OPEN);
                     self.show = true;
                     return true;
                 }

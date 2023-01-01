@@ -1,6 +1,5 @@
 use chrono::{DateTime, Duration, NaiveDateTime, Utc};
 use const_format::formatcp;
-use konst::eq_str;
 use serde::Deserialize;
 use shared::{EventInfo, EventUpgrade, ModQuestion, QuestionItem, States};
 use std::{rc::Rc, str::FromStr};
@@ -13,9 +12,10 @@ use yewdux::prelude::*;
 use crate::{
     agents::{EventAgent, GlobalEvent, SocketInput, WebSocketAgent, WsResponse},
     components::{DeletePopup, Question, QuestionClickType, QuestionPopup, SharePopup},
+    environment::{la_env, LiveAskEnv},
     fetch,
     local_cache::LocalCache,
-    State,
+    tracking, State,
 };
 
 enum Mode {
@@ -33,20 +33,6 @@ pub enum LoadingState {
     Loading,
     Loaded,
     NotFound,
-}
-
-enum LiveAskEnv {
-    Prod,
-    Beta,
-    Local,
-}
-
-const fn la_env(env: Option<&str>) -> LiveAskEnv {
-    match env {
-        Some(env) if eq_str(env, "prod") => LiveAskEnv::Prod,
-        Some(env) if eq_str(env, "beta") => LiveAskEnv::Beta,
-        _ => LiveAskEnv::Local,
-    }
 }
 
 const fn la_endpoints() -> (&'static str, &'static str) {
@@ -684,9 +670,9 @@ impl Event {
             QuestionClickType::Like => {
                 let liked = LocalCache::is_liked(&self.event_id, id);
                 if liked {
-                    crate::track_event(crate::EVNT_QUESTION_UNLIKE);
+                    tracking::track_event(tracking::EVNT_QUESTION_UNLIKE);
                 } else {
-                    crate::track_event(crate::EVNT_QUESTION_LIKE);
+                    tracking::track_event(tracking::EVNT_QUESTION_LIKE);
                 }
                 LocalCache::set_like_state(&self.event_id, id, !liked);
                 request_like(self.event_id.clone(), id, !liked, ctx.link());

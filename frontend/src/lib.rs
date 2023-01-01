@@ -27,10 +27,12 @@
 #![allow(clippy::use_self, clippy::module_name_repetitions)]
 mod agents;
 mod components;
+mod environment;
 mod fetch;
 mod local_cache;
 mod pages;
 mod routes;
+mod tracking;
 
 use agents::{EventAgent, GlobalEvent};
 use routes::Route;
@@ -149,21 +151,3 @@ pub fn run_app() {
     wasm_logger::init(wasm_logger::Config::new(log::Level::Info));
     yew::start_app::<AppRoot>();
 }
-
-#[wasm_bindgen]
-extern "C" {
-    #[wasm_bindgen(js_namespace = window)]
-    fn track_event_js(metrical: &str, fathom: &str);
-}
-
-pub fn track_event((metrical, fathom): (&str, &str)) {
-    track_event_js(metrical, fathom);
-}
-
-pub const EVNT_NEWEVENT_FINISH: (&str, &str) = ("newevent_finish", "FGTHLILK");
-pub const EVNT_ASK_OPEN: (&str, &str) = ("ask_open", "PTYICP9D");
-pub const EVNT_ASK_SENT: (&str, &str) = ("ask_sent", "2QLZ08FA");
-pub const EVNT_EVENT_DELETE: (&str, &str) = ("event_delete", "RPUPYLYB");
-pub const EVNT_SHARE_OPEN: (&str, &str) = ("share_open", "MNJ3ZBU9");
-pub const EVNT_QUESTION_LIKE: (&str, &str) = ("question_like", "1O6TRFHR");
-pub const EVNT_QUESTION_UNLIKE: (&str, &str) = ("question_unlike", "D56OBEJZ");

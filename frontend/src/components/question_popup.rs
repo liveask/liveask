@@ -4,7 +4,7 @@ use crate::{
     fetch,
     local_cache::LocalCache,
     pages::BASE_API,
-    track_event, EVNT_ASK_OPEN, EVNT_ASK_SENT,
+    tracking,
 };
 use wasm_bindgen::UnwrapThrowExt;
 use web_sys::HtmlTextAreaElement;
@@ -53,7 +53,7 @@ impl Component for QuestionPopup {
         match msg {
             Msg::GlobalEvent(e) => {
                 if matches!(e, GlobalEvent::OpenQuestionPopup) {
-                    track_event(EVNT_ASK_OPEN);
+                    tracking::track_event(tracking::EVNT_ASK_OPEN);
                     self.show = true;
                     return true;
                 }
@@ -67,7 +67,7 @@ impl Component for QuestionPopup {
                 let event_id = ctx.props().event.clone();
                 let text = self.text.clone();
 
-                track_event(EVNT_ASK_SENT);
+                tracking::track_event(tracking::EVNT_ASK_SENT);
 
                 ctx.link().send_future(async move {
                     if let Ok(item) = fetch::add_question(BASE_API, event_id.clone(), text).await {
