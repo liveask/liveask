@@ -156,6 +156,6 @@ extern "C" {
     pub fn track_event(s: &str);
 }
 
-pub const EVNT_NEWEVENT_FINISH: &str = "newevent-finish";
-pub const EVNT_ASK_OPEN: &str = "ask-open";
-pub const EVNT_ASK_SENT: &str = "ask-sent";
+pub const EVNT_NEWEVENT_FINISH: &str = "newevent_finish";
+pub const EVNT_ASK_OPEN: &str = "ask_open";
+pub const EVNT_ASK_SENT: &str = "ask_sent";
