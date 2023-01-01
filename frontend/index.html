@@ -36,9 +36,9 @@
     <script>
         window.metrical = { "app": "" }
         window.track_event =
-            function track_event(msg) {
-                window.metrical.trackEvent(msg)
-                fathom.trackGoal(msg, 0);
+            function track_event_js(metrical, fathom) {
+                window.metrical.trackEvent(metrical)
+                fathom.trackGoal(fathom, 0);
             };
     </script>
     <script async src="https://cdn.metrical.xyz/script.js" type="text/javascript">
