@@ -92,7 +92,10 @@ impl Component for SharePopup {
                             .open_with_url(
                                 format!(
                                     "https://twitter.com/intent/tweet?via=liveask1&text={}",
-                                    self.url
+                                    urlencoding::encode(&format!(
+                                        "{}?utm_source=share-twitter",
+                                        self.url
+                                    ))
                                 )
                                 .as_str(),
                             )

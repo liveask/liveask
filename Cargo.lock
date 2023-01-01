@@ -1260,6 +1260,7 @@ dependencies = [
  "serde_json",
  "shared",
  "split-iter",
+ "urlencoding",
  "vergen",
  "wasm-bindgen",
  "wasm-bindgen-futures",
