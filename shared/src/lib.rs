@@ -54,7 +54,9 @@ pub struct EventInfo {
     pub last_edit_unix: i64,
     pub questions: Vec<QuestionItem>,
     pub state: EventState,
+    #[serde(default)]
     pub premium: bool,
+    #[serde(default)]
     pub timed_out: bool,
 }
 
