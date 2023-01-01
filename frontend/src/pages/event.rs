@@ -400,6 +400,9 @@ impl Event {
                         <div class="not-open" hidden={!e.state.is_vote_only()}>
                             {"This event is set to vote-only by the moderator. You cannot add new questions. You can still vote though."}
                         </div>
+                        <div class="not-open" hidden={!e.timed_out}>
+                            {"This free event timed out. Only the moderator can upgrade it to be accessible again."}
+                        </div>
                     </div>
 
                     {self.mod_urls(ctx)}
@@ -490,6 +493,12 @@ impl Event {
     ) -> Html {
         let local_like = LocalCache::is_liked(&self.event_id, item.id);
         let mod_view = matches!(self.mode, Mode::Moderator);
+        let show_blurred = self
+            .state
+            .event
+            .as_ref()
+            .map(|e| e.timed_out)
+            .unwrap_or_default();
         let is_new = self
             .state
             .new_question
@@ -505,6 +514,7 @@ impl Event {
                 key={item.id}
                 {local_like}
                 {mod_view}
+                {show_blurred}
                 on_click={ctx.link().callback(Msg::QuestionClick)}
                 />
         }

@@ -408,6 +408,10 @@ impl App {
 
         let e = &mut entry.event;
 
+        if e.is_timed_out() {
+            bail!("event timed out")
+        }
+
         let question_id = e.questions.len() as i64;
 
         let question = shared::QuestionItem {
@@ -435,6 +439,10 @@ impl App {
         let mut entry = self.eventsdb.get(&id).await?.clone();
 
         let e = &mut entry.event;
+
+        if e.is_timed_out() {
+            bail!("event timed out")
+        }
 
         if let Some(f) = e.questions.iter_mut().find(|e| e.id == edit.question_id) {
             f.likes = if edit.like {

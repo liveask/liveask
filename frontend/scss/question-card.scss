@@ -28,6 +28,11 @@
     &.answered {
       color: #8CC63F;
     }
+
+    &.blurr {
+      color: transparent;
+      text-shadow: 0 0 8px #000;
+    }
   }
 }
 

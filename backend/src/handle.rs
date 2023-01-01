@@ -198,6 +198,7 @@ mod test_db_conflicts {
     use super::*;
     use crate::eventsdb::{ApiEventInfo, EventEntry, EventsDB};
     use crate::payment::Payment;
+    use crate::utils::timestamp_now;
     use crate::{app::App, pubsub::PubSubInMemory};
     use async_trait::async_trait;
     use axum::{
@@ -224,6 +225,7 @@ mod test_db_conflicts {
                         id: 1,
                         ..Default::default()
                     }],
+                    create_time_unix: timestamp_now(),
                     ..Default::default()
                 },
                 version: 1,
