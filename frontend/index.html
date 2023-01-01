@@ -38,6 +38,7 @@
         window.track_event =
             function track_event(msg) {
                 window.metrical.trackEvent(msg)
+                fathom.trackGoal(msg, 0);
             };
     </script>
     <script async src="https://cdn.metrical.xyz/script.js" type="text/javascript">
