@@ -51,6 +51,8 @@ pub const BASE_SOCKET: &str = la_endpoints().1;
 pub const BASE_API_LOCAL: &str = "http://localhost:8090";
 pub const BASE_SOCKET_LOCAL: &str = "ws://localhost:8090";
 
+const FREE_EVENT_DURATION_DAYS: usize = 7;
+
 #[derive(Debug, Default, Deserialize)]
 struct QueryParams {
     pub payment: Option<bool>,
@@ -581,7 +583,7 @@ impl Event {
         } else {
             html! {
                 <div class="deadline">
-                {"Currently an event is valid for 30 days. Your event will close on "}
+                {format!("Currently a free event is valid for {} days. Your event will be inaccessible on ",FREE_EVENT_DURATION_DAYS)}
                 <span>{Self::get_event_timeout(e)}</span>
                 {". Please "}
                 <a href="mailto:mail@live-ask.com">
@@ -635,7 +637,7 @@ impl Event {
 
     //TODO: put event duration into object from backend
     fn get_event_timeout(e: &EventInfo) -> Html {
-        let event_duration = Duration::days(30);
+        let event_duration = Duration::days(FREE_EVENT_DURATION_DAYS);
 
         let create_time = DateTime::<Utc>::from_utc(
             NaiveDateTime::from_timestamp_opt(e.create_time_unix, 0).unwrap_throw(),
