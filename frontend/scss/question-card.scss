@@ -1,8 +1,10 @@
 @import 'colors';
+@import 'text-macros';
 
 .question-host {
-  width: 100%;
+  @extend .unselectable;
 
+  width: 100%;
   background-color: white;
   margin-left: 5px;
   margin-right: 5px;
