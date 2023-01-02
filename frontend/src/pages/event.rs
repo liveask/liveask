@@ -574,12 +574,6 @@ impl Event {
                 {"This is a premium event and will not time out!"}
                 </div>
             }
-        } else if e.timed_out {
-            html! {
-                <div class="deadline">
-                {"Event has timed out. Only the moderator can upgrade it now."}
-                </div>
-            }
         } else {
             html! {
                 <div class="deadline">
