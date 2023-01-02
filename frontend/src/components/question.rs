@@ -25,7 +25,7 @@ pub struct Props {
     pub is_new: bool,
     pub local_like: bool,
     pub can_vote: bool,
-    pub show_blurred: bool,
+    pub timed_out: bool,
     pub on_click: Callback<(i64, QuestionClickType)>,
 }
 
@@ -160,7 +160,7 @@ impl Component for Question {
     fn view(&self, ctx: &Context<Self>) -> Html {
         let liked = ctx.props().local_like;
         let mod_view = ctx.props().mod_view;
-        let blurred = ctx.props().show_blurred;
+        let blurred = ctx.props().timed_out;
 
         html! {
             <div class="question-host questions-move"
@@ -220,14 +220,21 @@ impl Question {
     }
 
     fn view_mod(&self, ctx: &Context<Self>) -> Html {
+        if ctx.props().timed_out {
+            return html! {};
+        }
+
+        let hidden = self.data.item.hidden;
+        let answered = self.data.item.answered;
+
         html! {
             <div class="options">
-                <button class={classes!("button-hide",self.data.item.hidden.then_some("reverse"))}
+                <button class={classes!("button-hide",hidden.then_some("reverse"))}
                     onclick={ctx.link().callback(|_| Msg::ToggleHide)}
-                    hidden={self.data.item.answered}
+                    hidden={answered}
                     >
                     {
-                        if self.data.item.hidden {
+                        if hidden {
                             html!{"unhide"}
                         }else{
                             html!{"hide"}
@@ -235,12 +242,12 @@ impl Question {
                     }
                 </button>
 
-                <button class={classes!("button-answered",self.data.item.answered.then_some("reverse"))}
+                <button class={classes!("button-answered",answered.then_some("reverse"))}
                     onclick={ctx.link().callback(|_| Msg::ToggleAnswered)}
-                    hidden={self.data.item.hidden}
+                    hidden={hidden}
                     >
                     {
-                        if self.data.item.answered {
+                        if answered {
                             html!{"not answered"}
                         }else{
                             html!{"answered"}

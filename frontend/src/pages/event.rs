@@ -51,7 +51,7 @@ pub const BASE_SOCKET: &str = la_endpoints().1;
 pub const BASE_API_LOCAL: &str = "http://localhost:8090";
 pub const BASE_SOCKET_LOCAL: &str = "ws://localhost:8090";
 
-const FREE_EVENT_DURATION_DAYS: usize = 7;
+const FREE_EVENT_DURATION_DAYS: i64 = 7;
 
 #[derive(Debug, Default, Deserialize)]
 struct QueryParams {
@@ -495,7 +495,7 @@ impl Event {
     ) -> Html {
         let local_like = LocalCache::is_liked(&self.event_id, item.id);
         let mod_view = matches!(self.mode, Mode::Moderator);
-        let show_blurred = self
+        let timed_out = self
             .state
             .event
             .as_ref()
@@ -516,7 +516,7 @@ impl Event {
                 key={item.id}
                 {local_like}
                 {mod_view}
-                {show_blurred}
+                {timed_out}
                 on_click={ctx.link().callback(Msg::QuestionClick)}
                 />
         }
@@ -577,7 +577,7 @@ impl Event {
         } else {
             html! {
                 <div class="deadline">
-                {format!("Currently a free event is valid for {} days. Your event will be inaccessible on ",FREE_EVENT_DURATION_DAYS)}
+                {format!("Currently a free event is valid for {FREE_EVENT_DURATION_DAYS} days. Your event will be inaccessible on ")}
                 <span>{Self::get_event_timeout(e)}</span>
                 {". Please "}
                 <a href="mailto:mail@live-ask.com">
