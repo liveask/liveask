@@ -1,7 +1,7 @@
 use chrono::{DateTime, Duration, NaiveDateTime, Utc};
 use const_format::formatcp;
 use serde::Deserialize;
-use shared::{EventInfo, EventUpgrade, ModQuestion, QuestionItem, States};
+use shared::{EventInfo, ModQuestion, QuestionItem, States};
 use std::{rc::Rc, str::FromStr};
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 use yew::prelude::*;
@@ -11,7 +11,7 @@ use yewdux::prelude::*;
 
 use crate::{
     agents::{EventAgent, GlobalEvent, SocketInput, WebSocketAgent, WsResponse},
-    components::{DeletePopup, Question, QuestionClickType, QuestionPopup, SharePopup},
+    components::{DeletePopup, Question, QuestionClickType, QuestionPopup, SharePopup, Upgrade},
     environment::{la_env, LiveAskEnv},
     fetch,
     local_cache::LocalCache,
@@ -84,8 +84,6 @@ pub enum Msg {
     ModDelete,
     ModStateChange(yew::Event),
     StateChanged,
-    UpgradeButtonPressed,
-    UpgradeRequested(Option<EventUpgrade>),
     CopyLink,
     GlobalEvent(GlobalEvent),
 }
@@ -187,15 +185,7 @@ impl Component for Event {
 
                 false
             }
-            Msg::UpgradeButtonPressed => {
-                request_upgrade(
-                    self.event_id.clone(),
-                    ctx.props().secret.clone(),
-                    ctx.link(),
-                );
 
-                false
-            }
             Msg::ModDelete => {
                 self.events.send(GlobalEvent::DeletePopup);
                 false
@@ -212,18 +202,7 @@ impl Component for Event {
                 self.on_fetched(&res);
                 true
             }
-            Msg::UpgradeRequested(u) => {
-                if let Some(u) = u {
-                    log::info!("redirect to: {}", u.url);
-                    gloo::utils::window()
-                        .location()
-                        .assign(&u.url)
-                        .unwrap_throw();
-                    true
-                } else {
-                    false
-                }
-            }
+
             Msg::GlobalEvent(ev) => match ev {
                 GlobalEvent::QuestionCreated(id) => {
                     self.dispatch.reduce(|old| State {
@@ -324,18 +303,6 @@ fn request_state_change(
         }
 
         Msg::StateChanged
-    });
-}
-
-fn request_upgrade(id: String, secret: Option<String>, link: &html::Scope<Event>) {
-    link.send_future(async move {
-        match fetch::mod_upgrade(BASE_API, id, secret.unwrap_throw()).await {
-            Err(e) => {
-                log::error!("mod_state_change error: {e}");
-                Msg::UpgradeRequested(None)
-            }
-            Ok(u) => Msg::UpgradeRequested(Some(u)),
-        }
     });
 }
 
@@ -548,15 +515,13 @@ impl Event {
                 <button class="button-white" onclick={ctx.link().callback(|_|Msg::ModDelete)} >
                     {"Delete Event"}
                 </button>
-
-                {
-                    if payment_allowed {html!{
-                        <button class="button-white" onclick={ctx.link().callback(|_|Msg::UpgradeButtonPressed)} >
-                            {"Upgrade Event"}
-                        </button>
-                    }}else{html!{}}
-                }
             </div>
+
+            {
+                if payment_allowed {html!{
+                    <Upgrade tokens={e.tokens.clone()} />
+                }}else{html!{}}
+            }
 
             {Self::mod_view_deadline(e)}
 
