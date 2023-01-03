@@ -8,6 +8,7 @@ pub struct PopupProps {
     pub class: Classes,
     #[prop_or_default]
     pub children: Children,
+    #[prop_or_default]
     pub on_close: Callback<()>,
 }
 

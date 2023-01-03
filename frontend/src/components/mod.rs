@@ -1,5 +1,6 @@
 mod delete_popup;
 mod iconbar;
+mod payment_popup;
 mod popup;
 mod qr;
 mod question;

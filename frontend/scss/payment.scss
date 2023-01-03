@@ -1,0 +1,10 @@
+@import 'text-macros';
+@import 'colors';
+
+.payment-popup {
+	max-width: 260px;
+
+	.title {
+		@extend %popup-title;
+	}
+}

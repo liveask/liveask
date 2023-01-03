@@ -1,9 +1,14 @@
-#![allow(dead_code)]
-use shared::{EventTokens, EventUpgrade};
-use wasm_bindgen::UnwrapThrowExt;
+use shared::EventTokens;
 use yew::prelude::*;
+use yew_agent::Bridge;
+use yew_agent::Bridged;
 
-use crate::{fetch, not, pages::BASE_API};
+use crate::{
+    agents::{EventAgent, GlobalEvent},
+    not,
+};
+
+use super::payment_popup::PaymentPopup;
 
 #[derive(Clone, Debug, PartialEq, Eq, Properties)]
 pub struct Props {
@@ -13,13 +18,11 @@ pub struct Props {
 pub struct Upgrade {
     data: Props,
     collapsed: bool,
+    events: Box<dyn Bridge<EventAgent>>,
 }
 pub enum Msg {
-    Expand,
-    Collapse,
     ToggleExpansion,
-    Upgrade,
-    UpgradeRequested(Option<EventUpgrade>),
+    UpgradeClicked,
 }
 impl Component for Upgrade {
     type Message = Msg;
@@ -29,38 +32,19 @@ impl Component for Upgrade {
         Self {
             data: ctx.props().clone(),
             collapsed: true,
+            events: EventAgent::bridge(Callback::noop()),
         }
     }
 
-    fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
+    fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
-            Msg::Expand => todo!(),
-            Msg::Collapse => todo!(),
             Msg::ToggleExpansion => {
                 self.collapsed = !self.collapsed;
                 true
             }
-            Msg::Upgrade => {
-                let tokens = self.data.tokens.clone();
-                request_upgrade(
-                    tokens.public_token.clone(),
-                    tokens.moderator_token,
-                    ctx.link(),
-                );
-
+            Msg::UpgradeClicked => {
+                self.events.send(GlobalEvent::PayForUpgrade);
                 false
-            }
-            Msg::UpgradeRequested(u) => {
-                if let Some(u) = u {
-                    log::info!("redirect to: {}", u.url);
-                    gloo::utils::window()
-                        .location()
-                        .assign(&u.url)
-                        .unwrap_throw();
-                    true
-                } else {
-                    false
-                }
             }
         }
     }
@@ -95,25 +79,16 @@ impl Upgrade {
                 <ul>
                     <li>{"Remove 7 Day Event Timeout"}</li>
                     <li class="tbd">{"Prescreen Questions (coming soon..)"}</li>
-                    <li class="tbd">{"Export Questions as CSV (coming soon..)"}</li>
+                    <li class="tbd">{"Export Data (coming soon..)"}</li>
+                    <li class="tbd">{"Word Cloud (coming soon..)"}</li>
+                    <li class="tbd">{"Answer Questions (coming soon..)"}</li>
                 </ul>
                 </div>
-                <button class="button" onclick={ctx.link().callback(|_| Msg::Upgrade)}>
+                <button class="button" onclick={ctx.link().callback(|_| Msg::UpgradeClicked)}>
                     {"upgrade"}
                 </button>
+                <PaymentPopup tokens={self.data.tokens.clone()}/>
             </div>
         }
     }
-}
-
-fn request_upgrade(id: String, secret: Option<String>, link: &html::Scope<Upgrade>) {
-    link.send_future(async move {
-        match fetch::mod_upgrade(BASE_API, id, secret.unwrap_throw()).await {
-            Err(e) => {
-                log::error!("request_upgrade error: {e}");
-                Msg::UpgradeRequested(None)
-            }
-            Ok(u) => Msg::UpgradeRequested(Some(u)),
-        }
-    });
 }

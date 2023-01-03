@@ -544,11 +544,7 @@ impl Event {
                 <div class="deadline">
                 {format!("Currently a free event is valid for {FREE_EVENT_DURATION_DAYS} days. Your event will be inaccessible on ")}
                 <span>{Self::get_event_timeout(e)}</span>
-                {". Please "}
-                <a href="mailto:mail@live-ask.com">
-                {"contact us"}
-                </a>
-                {" if you need your event to persist."}
+                {". Please upgrade to premium to make it permanent."}
                 </div>
             }
         }
