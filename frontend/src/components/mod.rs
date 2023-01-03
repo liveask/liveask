@@ -6,6 +6,7 @@ mod qr;
 mod question;
 mod question_popup;
 mod share_popup;
+mod spinner;
 mod upgrade;
 
 pub use delete_popup::DeletePopup;
@@ -15,4 +16,5 @@ pub use qr::Qr;
 pub use question::{Question, QuestionClickType};
 pub use question_popup::QuestionPopup;
 pub use share_popup::SharePopup;
+pub use spinner::Spinner;
 pub use upgrade::Upgrade;

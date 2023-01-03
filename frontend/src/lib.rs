@@ -24,7 +24,11 @@
     clippy::unneeded_field_pattern,
     clippy::verbose_file_reads
 )]
-#![allow(clippy::use_self, clippy::module_name_repetitions)]
+#![allow(
+    clippy::use_self,
+    clippy::module_name_repetitions,
+    clippy::let_unit_value
+)]
 mod agents;
 mod components;
 mod environment;

@@ -5,6 +5,7 @@ use yew_agent::Bridged;
 
 use crate::{
     agents::{EventAgent, GlobalEvent},
+    components::Spinner,
     not,
 };
 
@@ -76,7 +77,7 @@ impl Upgrade {
         }
 
         html! {
-            <div class="lds-roller"><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>
+            <Spinner />
         }
     }
     fn view_expanded(&self, ctx: &Context<Self>) -> Html {

@@ -3,8 +3,14 @@
 
 .payment-popup {
 	max-width: 260px;
+	background-color: $event-bg;
 
-	.title {
-		@extend %popup-title;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+
+	.paypal-logo {
+		margin-bottom: 35px;
 	}
 }

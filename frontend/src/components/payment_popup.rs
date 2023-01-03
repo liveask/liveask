@@ -1,6 +1,6 @@
 use crate::{
     agents::{EventAgent, GlobalEvent},
-    components::Popup,
+    components::{Popup, Spinner},
     fetch,
     pages::BASE_API,
 };
@@ -84,8 +84,8 @@ impl Component for PaymentPopup {
         if self.show {
             html! {
                 <Popup class="payment-popup">
-                    <img src="/assets/paypal.svg" />
-                    //TODO: spinner
+                    <img class="paypal-logo" src="/assets/paypal.svg" />
+                    <Spinner />
                 </Popup>
             }
         } else {
