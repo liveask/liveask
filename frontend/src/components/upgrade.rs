@@ -13,6 +13,7 @@ use super::payment_popup::PaymentPopup;
 #[derive(Clone, Debug, PartialEq, Eq, Properties)]
 pub struct Props {
     pub tokens: EventTokens,
+    pub pending: bool,
 }
 
 pub struct Upgrade {
@@ -60,6 +61,8 @@ impl Component for Upgrade {
                     </div>
 
                     {self.view_expanded(ctx)}
+
+                    {Self::view_pending(ctx.props().pending)}
                 </div>
             </div>
         }
@@ -67,8 +70,19 @@ impl Component for Upgrade {
 }
 
 impl Upgrade {
+    fn view_pending(pending: bool) -> Html {
+        if !pending {
+            return html! {};
+        }
+
+        html! {
+            <div class="lds-roller"><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>
+        }
+    }
     fn view_expanded(&self, ctx: &Context<Self>) -> Html {
-        if self.collapsed {
+        let pending = ctx.props().pending;
+
+        if self.collapsed && !pending {
             return html! {};
         }
 
@@ -84,9 +98,11 @@ impl Upgrade {
                     <li class="tbd">{"Answer Questions (coming soon..)"}</li>
                 </ul>
                 </div>
-                <button class="button" onclick={ctx.link().callback(|_| Msg::UpgradeClicked)}>
+
+                <button class="button" hidden={pending} onclick={ctx.link().callback(|_| Msg::UpgradeClicked)}>
                     {"upgrade"}
                 </button>
+
                 <PaymentPopup tokens={self.data.tokens.clone()}/>
             </div>
         }

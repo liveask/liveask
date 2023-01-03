@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use chrono::{DateTime, Duration, NaiveDateTime, Utc};
 use const_format::formatcp;
 use serde::Deserialize;
@@ -55,7 +57,6 @@ const FREE_EVENT_DURATION_DAYS: i64 = 7;
 
 #[derive(Debug, Default, Deserialize)]
 struct QueryParams {
-    pub payment: Option<bool>,
     #[serde(rename = "token")]
     pub paypal_token: Option<String>,
 }
@@ -490,7 +491,8 @@ impl Event {
     }
 
     fn mod_view(&self, ctx: &Context<Self>, e: &EventInfo) -> Html {
-        let payment_allowed = self.query_params.payment.unwrap_or_default() && !e.premium;
+        let payment_allowed = !e.premium;
+        let pending_payment = self.query_params.paypal_token.is_some() && !e.premium;
 
         if matches!(self.mode, Mode::Moderator) {
             let timed_out = e.timed_out;
@@ -519,7 +521,7 @@ impl Event {
 
             {
                 if payment_allowed {html!{
-                    <Upgrade tokens={e.tokens.clone()} />
+                    <Upgrade pending={pending_payment} tokens={e.tokens.clone()} />
                 }}else{html!{}}
             }
 
