@@ -36,6 +36,7 @@ mod mail;
 mod payment;
 mod pubsub;
 mod redis_pool;
+mod signals;
 mod utils;
 
 use aws_config::meta::region::RegionProviderChain;
@@ -242,15 +243,29 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
         .layer(NewSentryLayer::new_from_top())
         .layer(TraceLayer::new_for_http())
         .layer(setup_cors())
-        .with_state(app);
+        .with_state(Arc::clone(&app));
 
     let addr = SocketAddr::from(([0, 0, 0, 0], get_port()));
 
     tracing::info!("listening on {}", addr);
 
-    axum::Server::bind(&addr)
-        .serve(router.into_make_service())
-        .await?;
+    let (tx, rx) = tokio::sync::oneshot::channel::<()>();
+
+    signals::create_term_signal_handler(tx);
+
+    let server = axum::Server::bind(&addr).serve(router.into_make_service());
+
+    let graceful = server.with_graceful_shutdown(async {
+        rx.await.ok();
+    });
+
+    if let Err(e) = graceful.await {
+        tracing::error!("server error: {}", e);
+    }
+
+    if let Err(e) = app.shutdown().await {
+        tracing::error!("app shutdown error: {}", e);
+    }
 
     Ok(())
 }

@@ -1,15 +1,21 @@
 use async_trait::async_trait;
-use axum::extract::ws::{Message, WebSocket};
+use axum::extract::ws::{close_code::RESTART, CloseFrame, Message, WebSocket};
 use shared::{
     AddEvent, EventInfo, EventState, EventTokens, EventUpgrade, ModQuestion, QuestionItem, States,
 };
 use std::{
     collections::HashMap,
-    sync::{atomic::AtomicUsize, Arc},
-    time::Instant,
+    sync::{
+        atomic::{AtomicBool, AtomicUsize, Ordering},
+        Arc,
+    },
+    time::{Duration, Instant},
 };
 use tinyurl_rs::{CreateRequest, TinyUrlAPI, TinyUrlOpenAPI};
-use tokio::sync::{mpsc, RwLock};
+use tokio::{
+    sync::{mpsc, RwLock},
+    time::sleep,
+};
 use tracing::instrument;
 use ulid::Ulid;
 
@@ -30,12 +36,18 @@ pub struct App {
     eventsdb: Arc<dyn EventsDB>,
     //TODO: order subscriber based on topic name into Concurrent Hashmap
     channels: Arc<RwLock<HashMap<usize, (String, OutBoundChannel)>>>,
+    shutdown: Arc<AtomicBool>,
     pubsub_publish: Arc<dyn PubSubPublish>,
     payment: Arc<Payment>,
     base_url: String,
     tiny_url_token: Option<String>,
     mailjet_config: Option<MailjetConfig>,
 }
+
+static NEXT_USER_ID: AtomicUsize = AtomicUsize::new(1);
+
+type OutBoundChannel =
+    mpsc::UnboundedSender<std::result::Result<axum::extract::ws::Message, axum::Error>>;
 
 impl App {
     pub fn new(
@@ -61,21 +73,38 @@ impl App {
         Self {
             eventsdb,
             pubsub_publish,
-            channels: std::sync::Arc::default(),
+            channels: Arc::default(),
             base_url,
             tiny_url_token,
             mailjet_config,
             payment,
+            shutdown: Arc::new(AtomicBool::new(false)),
         }
     }
-}
 
-static NEXT_USER_ID: AtomicUsize = AtomicUsize::new(1);
+    #[instrument(skip(self))]
+    pub async fn shutdown(&self) -> Result<()> {
+        tracing::info!("shutting down..");
 
-type OutBoundChannel =
-    mpsc::UnboundedSender<std::result::Result<axum::extract::ws::Message, axum::Error>>;
+        self.shutdown.store(true, Ordering::Relaxed);
 
-impl App {
+        loop {
+            let count = self.channels.read().await.len();
+
+            if count == 0 {
+                break;
+            }
+
+            tracing::info!("shutting down: {count} ws connections remain");
+
+            sleep(Duration::from_secs(1)).await;
+        }
+
+        tracing::info!("shutting down.. done");
+
+        Ok(())
+    }
+
     #[instrument(skip(self))]
     async fn shorten_url(&self, url: &str) -> String {
         if let Some(tiny_url_token) = &self.tiny_url_token {
@@ -485,7 +514,7 @@ impl App {
         self.channels
             .write()
             .await
-            .insert(user_id, (id.clone(), send_channel));
+            .insert(user_id, (id.clone(), send_channel.clone()));
 
         tracing::info!(
             "user connected: {} ({} total)",
@@ -503,29 +532,40 @@ impl App {
             };
 
             //allow receiving `p` for app based pings
-            if matches!(&msg, Message::Text(text) if text=="p") {
-                continue;
-            }
-
-            match &msg {
-                //TODO: do we need to respond manually?
-                Message::Ping(_) => tracing::info!("received msg:ping"),
-                Message::Pong(_) => tracing::warn!("received msg:pong"),
-                Message::Text(txt) => tracing::warn!("received msg:text: '{txt}'"),
-                Message::Binary(bin) => tracing::warn!("received msg:binary: {}b", bin.len()),
-                Message::Close(frame) => tracing::info!("received msg:close: {frame:?}"),
-            }
-
-            let (disconnect, sent_data) = match msg {
-                Message::Ping(_) | Message::Pong(_) => (false, false),
-                Message::Close(_) => (true, false),
-                _ => (true, true),
-            };
-
-            if disconnect {
-                if sent_data {
-                    tracing::warn!("user:{} sent data, disconnecting", user_id);
+            if !matches!(&msg, Message::Text(text) if text=="p") {
+                match &msg {
+                    //TODO: do we need to respond manually?
+                    Message::Ping(_) => tracing::info!("received msg:ping"),
+                    Message::Pong(_) => tracing::warn!("received msg:pong"),
+                    Message::Text(txt) => tracing::warn!("received msg:text: '{txt}'"),
+                    Message::Binary(bin) => tracing::warn!("received msg:binary: {}b", bin.len()),
+                    Message::Close(frame) => tracing::info!("received msg:close: {frame:?}"),
                 }
+
+                let (disconnect, sent_data) = match msg {
+                    Message::Ping(_) | Message::Pong(_) => (false, false),
+                    Message::Close(_) => (true, false),
+                    _ => (true, true),
+                };
+
+                if disconnect {
+                    if sent_data {
+                        tracing::warn!("user:{} sent data, disconnecting", user_id);
+                    }
+                    break;
+                }
+            }
+
+            if self.shutdown.load(Ordering::Relaxed) {
+                tracing::info!("shutdown: close client connection [{user_id}]");
+
+                if let Err(e) = send_channel.send(Ok(Message::Close(Some(CloseFrame {
+                    code: RESTART,
+                    reason: "server shutdown".into(),
+                })))) {
+                    tracing::error!("shutdown error: {e}");
+                }
+
                 break;
             }
         }

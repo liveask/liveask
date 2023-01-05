@@ -3,6 +3,7 @@ use gloo::timers::callback::Interval;
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use wasm_bindgen::UnwrapThrowExt;
+use web_sys::CloseEvent;
 use yew::Callback;
 use yew_agent::{Agent, AgentLink, Bridge, Bridged, HandlerId};
 
@@ -216,8 +217,8 @@ impl WebSocketAgent {
                 ws_connected_callback.emit(());
             },
         )));
-        client.set_on_close(Some(Box::new(move |_event| {
-            log::info!("ws on_close");
+        client.set_on_close(Some(Box::new(move |event: CloseEvent| {
+            log::info!("ws on_close: {}", event.reason());
             ws_close_callback.emit(());
         })));
         client.set_on_message(Some(Box::new(
