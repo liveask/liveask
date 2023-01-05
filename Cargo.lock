@@ -4132,9 +4132,9 @@ dependencies = [
 
 [[package]]
 name = "wasm-sockets"
-version = "0.2.2"
+version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f8f79197ff5b54945ab40e5fc6337dc8be541e113ff7e13884aa9ffe52c90860"
+checksum = "d14bbe65995269301ab677e5d69b3b69195447c01137ef44f72b10eecea55c77"
 dependencies = [
  "js-sys",
  "log",

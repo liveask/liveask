@@ -167,6 +167,8 @@ impl WebSocketAgent {
             //Note: doing this will lead to borrow panics
             // client.set_on_close(None);
             client.set_on_message(None);
+
+            client.close().unwrap_throw();
         }
         self.ws = None;
     }
@@ -214,7 +216,7 @@ impl WebSocketAgent {
                 ws_connected_callback.emit(());
             },
         )));
-        client.set_on_close(Some(Box::new(move || {
+        client.set_on_close(Some(Box::new(move |_event| {
             log::info!("ws on_close");
             ws_close_callback.emit(());
         })));
