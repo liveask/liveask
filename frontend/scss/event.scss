@@ -247,6 +247,21 @@
   }
 }
 
+.viewers {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+
+  img {
+    width: 30px;
+  }
+
+  .viewers-count {
+    margin-top: 2px;
+    margin-left: 4px;
+  }
+}
+
 .modpadding {
   padding-bottom: 80px;
 }

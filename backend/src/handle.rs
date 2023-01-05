@@ -154,6 +154,16 @@ pub async fn get_question(
 }
 
 #[instrument(skip(app))]
+pub async fn get_viewers(
+    Path(id): Path<String>,
+    State(app): State<SharedApp>,
+) -> std::result::Result<impl IntoResponse, InternalError> {
+    tracing::info!("get_viewers");
+
+    Ok(Json(app.get_viewers(id).await?))
+}
+
+#[instrument(skip(app))]
 pub async fn mod_edit_question(
     Path((id, secret, question_id)): Path<(String, String, i64)>,
     State(app): State<SharedApp>,
@@ -199,6 +209,7 @@ mod test_db_conflicts {
     use crate::eventsdb::{ApiEventInfo, EventEntry, EventsDB};
     use crate::payment::Payment;
     use crate::utils::timestamp_now;
+    use crate::viewers::Viewers;
     use crate::{app::App, pubsub::PubSubInMemory};
     use async_trait::async_trait;
     use axum::{
@@ -212,6 +223,16 @@ mod test_db_conflicts {
     use std::sync::Arc;
     use tower::util::ServiceExt;
     use tower_http::trace::TraceLayer;
+
+    mockall::mock! {
+        pub TestViewers {}
+        #[async_trait]
+        impl Viewers for TestViewers{
+            async fn count(&self, key: &str) -> isize;
+            async fn add(&self, key: &str);
+            async fn remove(&self, key: &str);
+        }
+    }
 
     #[derive(Default)]
     pub struct ConflictDB;
@@ -242,6 +263,7 @@ mod test_db_conflicts {
         let app = Arc::new(App::new(
             Arc::new(ConflictDB::default()),
             Arc::new(PubSubInMemory::default()),
+            Arc::new(MockTestViewers::new()),
             Arc::new(Payment::default()),
             String::new(),
         ));
@@ -288,6 +310,7 @@ mod test_db_item_not_found {
         eventsdb::{EventEntry, EventsDB},
         payment::Payment,
         pubsub::PubSubInMemory,
+        viewers::Viewers,
     };
     use async_trait::async_trait;
     use axum::{
@@ -300,6 +323,16 @@ mod test_db_item_not_found {
     use std::sync::Arc;
     use tower::util::ServiceExt;
     use tower_http::trace::TraceLayer;
+
+    mockall::mock! {
+        pub TestViewers {}
+        #[async_trait]
+        impl Viewers for TestViewers{
+            async fn count(&self, key: &str) -> isize;
+            async fn add(&self, key: &str);
+            async fn remove(&self, key: &str);
+        }
+    }
 
     #[derive(Default)]
     pub struct ItemNotFoundDB;
@@ -317,6 +350,7 @@ mod test_db_item_not_found {
         let app = Arc::new(App::new(
             Arc::new(ItemNotFoundDB::default()),
             Arc::new(PubSubInMemory::default()),
+            Arc::new(MockTestViewers::new()),
             Arc::new(Payment::default()),
             String::new(),
         ));

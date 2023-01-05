@@ -27,6 +27,7 @@ use crate::{
     payment::Payment,
     pubsub::{PubSubPublish, PubSubReceiver},
     utils::timestamp_now,
+    viewers::Viewers,
 };
 
 pub type SharedApp = Arc<App>;
@@ -38,6 +39,7 @@ pub struct App {
     channels: Arc<RwLock<HashMap<usize, (String, OutBoundChannel)>>>,
     shutdown: Arc<AtomicBool>,
     pubsub_publish: Arc<dyn PubSubPublish>,
+    viewers: Arc<dyn Viewers>,
     payment: Arc<Payment>,
     base_url: String,
     tiny_url_token: Option<String>,
@@ -53,6 +55,7 @@ impl App {
     pub fn new(
         eventsdb: Arc<dyn EventsDB>,
         pubsub_publish: Arc<dyn PubSubPublish>,
+        viewers: Arc<dyn Viewers>,
         payment: Arc<Payment>,
         base_url: String,
     ) -> Self {
@@ -78,6 +81,7 @@ impl App {
             tiny_url_token,
             mailjet_config,
             payment,
+            viewers,
             shutdown: Arc::new(AtomicBool::new(false)),
         }
     }
@@ -265,6 +269,11 @@ impl App {
         }
 
         Ok(q)
+    }
+
+    #[instrument(skip(self))]
+    pub async fn get_viewers(&self, id: String) -> Result<i64> {
+        Ok(self.viewers.count(&id).await as i64)
     }
 
     //TODO: validate event is not deleted
@@ -516,6 +525,8 @@ impl App {
             .await
             .insert(user_id, (id.clone(), send_channel.clone()));
 
+        self.viewers.add(&id).await;
+
         tracing::info!(
             "user connected: {} ({} total)",
             user_id,
@@ -575,6 +586,8 @@ impl App {
             user_id,
             self.channels.read().await.len().saturating_sub(1)
         );
+
+        self.viewers.remove(&id).await;
 
         self.channels.write().await.remove(&user_id);
     }
@@ -676,11 +689,22 @@ mod test {
     use shared::{AddQuestion, EventData};
     use std::sync::Arc;
 
+    mockall::mock! {
+        pub TestViewers {}
+        #[async_trait]
+        impl Viewers for TestViewers{
+            async fn count(&self, key: &str) -> isize;
+            async fn add(&self, key: &str);
+            async fn remove(&self, key: &str);
+        }
+    }
+
     #[tokio::test]
     async fn test_event_create_fail_validation() {
         let app = App::new(
             Arc::new(InMemoryEventsDB::default()),
             Arc::new(PubSubInMemory::default()),
+            Arc::new(MockTestViewers::new()),
             Arc::new(Payment::default()),
             String::new(),
         );
@@ -708,6 +732,7 @@ mod test {
         let app = App::new(
             eventdb.clone(),
             Arc::new(PubSubInMemory::default()),
+            Arc::new(MockTestViewers::new()),
             Arc::new(Payment::default()),
             String::new(),
         );
@@ -737,6 +762,7 @@ mod test {
         let app = App::new(
             Arc::new(InMemoryEventsDB::default()),
             Arc::new(pubsub),
+            Arc::new(MockTestViewers::new()),
             Arc::new(Payment::default()),
             String::new(),
         );

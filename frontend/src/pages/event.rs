@@ -63,6 +63,7 @@ struct QueryParams {
 
 pub struct Event {
     event_id: String,
+    viewer_count: i64,
     copied_to_clipboard: bool,
     query_params: QueryParams,
     mode: Mode,
@@ -79,6 +80,7 @@ pub enum Msg {
     ShareEventClick,
     AskQuestionClick,
     Fetched(Option<EventInfo>),
+    FetchedViewers(i64),
     SocketMsg(WsResponse),
     QuestionClick((i64, QuestionClickType)),
     QuestionUpdated(i64),
@@ -120,7 +122,7 @@ impl Component for Event {
             } else {
                 Mode::Viewer
             },
-
+            viewer_count: 0,
             loading_state: LoadingState::Loading,
             state: Rc::default(),
             unanswered: Vec::new(),
@@ -203,7 +205,10 @@ impl Component for Event {
                 self.on_fetched(&res);
                 true
             }
-
+            Msg::FetchedViewers(count) => {
+                self.viewer_count = count;
+                true
+            }
             Msg::GlobalEvent(ev) => match ev {
                 GlobalEvent::QuestionCreated(id) => {
                     self.dispatch.reduce(|old| State {
@@ -285,10 +290,17 @@ fn request_like(event: String, id: i64, like: bool, link: &html::Scope<Event>) {
 
 //TODO: dedup
 fn request_fetch(id: String, secret: Option<String>, link: &html::Scope<Event>) {
+    let id_clone = id.clone();
     link.send_future(async move {
         let res = fetch::fetch_event(BASE_API, id, secret).await;
 
         res.map_or(Msg::Fetched(None), |val| Msg::Fetched(Some(val)))
+    });
+
+    link.send_future(async move {
+        let res = fetch::fetch_viewers(BASE_API, id_clone).await;
+
+        res.map_or(Msg::FetchedViewers(0), Msg::FetchedViewers)
     });
 }
 
@@ -376,6 +388,8 @@ impl Event {
                     </div>
 
                     {self.mod_urls(ctx)}
+
+                    {self.view_viewers()}
 
                     {self.view_questions(ctx,e)}
 
@@ -531,6 +545,15 @@ impl Event {
             }
         } else {
             html! {}
+        }
+    }
+
+    fn view_viewers(&self) -> Html {
+        html! {
+            <div class="viewers" >
+                <img src="/assets/symbols/viewers.svg" title="current viewers"/>
+                <div class="viewers-count">{{self.viewer_count.to_string()}}</div>
+            </div>
         }
     }
 

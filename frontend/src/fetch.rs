@@ -42,6 +42,25 @@ impl From<serde_json::error::Error> for FetchError {
     }
 }
 
+pub async fn fetch_viewers(base_api: &str, id: String) -> Result<i64, FetchError> {
+    let url = format!("{base_api}/api/event/viewers/{id}");
+
+    let mut opts = RequestInit::new();
+    opts.method("GET");
+    opts.mode(RequestMode::Cors);
+
+    let request = Request::new_with_str_and_init(&url, &opts)?;
+
+    let window = gloo_utils::window();
+    let resp_value = JsFuture::from(window.fetch_with_request(&request)).await?;
+    let resp: Response = resp_value.dyn_into()?;
+    let resp = JsFuture::from(resp.text()?).await?;
+
+    resp.as_string()
+        .and_then(|text| text.parse::<i64>().ok())
+        .ok_or_else(|| FetchError::Generic(String::from("string error")))
+}
+
 pub async fn fetch_version(base_api: &str) -> Result<String, FetchError> {
     let url = format!("{base_api}/api/version");
 

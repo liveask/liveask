@@ -38,6 +38,7 @@ mod pubsub;
 mod redis_pool;
 mod signals;
 mod utils;
+mod viewers;
 
 use aws_config::meta::region::RegionProviderChain;
 use aws_sdk_dynamodb::{Credentials, Endpoint};
@@ -62,6 +63,7 @@ use crate::{
     payment::Payment,
     pubsub::PubSubRedis,
     redis_pool::{create_pool, ping_test_redis},
+    viewers::RedisViewers,
 };
 
 pub const GIT_HASH: &str = env!("VERGEN_GIT_SHA_SHORT");
@@ -146,6 +148,7 @@ async fn dynamo_client() -> Result<aws_sdk_dynamodb::Client> {
     Ok(Client::new(&config))
 }
 
+#[allow(clippy::too_many_lines)]
 #[tokio::main]
 async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let log_level = std::env::var("RUST_LOG")
@@ -210,10 +213,17 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
         tracing::error!("payment auth error: {}", e);
     }
 
-    let pubsub = Arc::new(PubSubRedis::new(redis_pool, redis_url).await);
+    let pubsub = Arc::new(PubSubRedis::new(redis_pool.clone(), redis_url).await);
+    let viewers = Arc::new(RedisViewers::new(redis_pool));
 
     let eventsdb = Arc::new(DynamoEventsDB::new(dynamo_client().await?, use_local_db()).await?);
-    let app = Arc::new(App::new(eventsdb, pubsub.clone(), payment, base_url));
+    let app = Arc::new(App::new(
+        eventsdb,
+        pubsub.clone(),
+        viewers,
+        payment,
+        base_url,
+    ));
 
     pubsub.set_receiver(app.clone()).await;
 
@@ -236,6 +246,7 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
         .route("/api/event/editlike/:id", post(handle::editlike_handler))
         .route("/api/event/addquestion/:id", post(handle::addquestion_handler))
         .route("/api/event/question/:id/:question_id", get(handle::get_question))
+        .route("/api/event/viewers/:id", get(handle::get_viewers))
         .route("/api/event/:id", get(handle::getevent_handler))
         .route("/push/:id", get(push_handler))
         .nest("/api/mod/event",mod_routes)
