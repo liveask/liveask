@@ -154,16 +154,6 @@ pub async fn get_question(
 }
 
 #[instrument(skip(app))]
-pub async fn get_viewers(
-    Path(id): Path<String>,
-    State(app): State<SharedApp>,
-) -> std::result::Result<impl IntoResponse, InternalError> {
-    tracing::info!("get_viewers");
-
-    Ok(Json(app.get_viewers(id).await?))
-}
-
-#[instrument(skip(app))]
 pub async fn mod_edit_question(
     Path((id, secret, question_id)): Path<(String, String, i64)>,
     State(app): State<SharedApp>,
@@ -228,7 +218,7 @@ mod test_db_conflicts {
         pub TestViewers {}
         #[async_trait]
         impl Viewers for TestViewers{
-            async fn count(&self, key: &str) -> isize;
+            async fn count(&self, key: &str) -> i64;
             async fn add(&self, key: &str);
             async fn remove(&self, key: &str);
         }
@@ -328,7 +318,7 @@ mod test_db_item_not_found {
         pub TestViewers {}
         #[async_trait]
         impl Viewers for TestViewers{
-            async fn count(&self, key: &str) -> isize;
+            async fn count(&self, key: &str) -> i64;
             async fn add(&self, key: &str);
             async fn remove(&self, key: &str);
         }

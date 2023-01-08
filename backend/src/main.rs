@@ -246,7 +246,6 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
         .route("/api/event/editlike/:id", post(handle::editlike_handler))
         .route("/api/event/addquestion/:id", post(handle::addquestion_handler))
         .route("/api/event/question/:id/:question_id", get(handle::get_question))
-        .route("/api/event/viewers/:id", get(handle::get_viewers))
         .route("/api/event/:id", get(handle::getevent_handler))
         .route("/push/:id", get(push_handler))
         .nest("/api/mod/event",mod_routes)

@@ -1,7 +1,8 @@
 use async_trait::async_trait;
 use axum::extract::ws::{close_code::RESTART, CloseFrame, Message, WebSocket};
 use shared::{
-    AddEvent, EventInfo, EventState, EventTokens, EventUpgrade, ModQuestion, QuestionItem, States,
+    AddEvent, EventInfo, EventState, EventTokens, EventUpgrade, GetEventResponse, ModQuestion,
+    QuestionItem, States,
 };
 use std::{
     collections::HashMap,
@@ -206,7 +207,7 @@ impl App {
     }
 
     #[instrument(skip(self))]
-    pub async fn get_event(&self, id: String, secret: Option<String>) -> Result<EventInfo> {
+    pub async fn get_event(&self, id: String, secret: Option<String>) -> Result<GetEventResponse> {
         tracing::info!("get_event");
 
         let mut e = self.eventsdb.get(&id).await?.event;
@@ -237,7 +238,13 @@ impl App {
                 .collect::<Vec<_>>();
         }
 
-        Ok(e.into())
+        let timed_out = e.is_timed_out_and_free();
+        let viewers = self.viewers.count(&id).await;
+        Ok(GetEventResponse {
+            info: e.into(),
+            timed_out,
+            viewers,
+        })
     }
 
     //TODO: validate event is not deleted
@@ -269,11 +276,6 @@ impl App {
         }
 
         Ok(q)
-    }
-
-    #[instrument(skip(self))]
-    pub async fn get_viewers(&self, id: String) -> Result<i64> {
-        Ok(self.viewers.count(&id).await as i64)
     }
 
     //TODO: validate event is not deleted
@@ -693,7 +695,7 @@ mod test {
         pub TestViewers {}
         #[async_trait]
         impl Viewers for TestViewers{
-            async fn count(&self, key: &str) -> isize;
+            async fn count(&self, key: &str) -> i64;
             async fn add(&self, key: &str);
             async fn remove(&self, key: &str);
         }

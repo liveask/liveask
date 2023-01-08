@@ -190,7 +190,7 @@ impl IconBar {
             .state
             .event
             .as_ref()
-            .map(|e| e.state.is_open())
+            .map(|e| e.info.state.is_open())
             .unwrap_or_default();
 
         if is_open {

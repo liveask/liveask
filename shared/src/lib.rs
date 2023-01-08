@@ -56,19 +56,30 @@ pub struct EventInfo {
     pub state: EventState,
     #[serde(default)]
     pub premium: bool,
-    #[serde(default)]
-    pub timed_out: bool,
 }
 
-impl EventInfo {
+#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, Default)]
+pub struct GetEventResponse {
+    pub info: EventInfo,
+    #[serde(default)]
+    pub timed_out: bool,
+    pub viewers: i64,
+}
+
+impl GetEventResponse {
     #[must_use]
     pub fn get_question(&self, id: i64) -> Option<QuestionItem> {
-        self.questions.iter().find(|i| i.id == id).cloned()
+        self.info.questions.iter().find(|i| i.id == id).cloned()
+    }
+
+    #[must_use]
+    pub fn get_likes(&self) -> i32 {
+        self.info.questions.iter().map(|q| q.likes).sum()
     }
 
     #[must_use]
     pub const fn is_closed(&self) -> bool {
-        matches!(self.state.state, States::Closed) || self.timed_out
+        matches!(self.info.state.state, States::Closed) || self.timed_out
     }
 }
 

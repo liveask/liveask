@@ -2,8 +2,8 @@
 
 use gloo_utils::format::JsValueSerdeExt;
 use shared::{
-    AddEvent, AddQuestion, EditLike, EventData, EventInfo, EventState, EventUpgrade, ModEventState,
-    ModQuestion, QuestionItem, States,
+    AddEvent, AddQuestion, EditLike, EventData, EventInfo, EventState, EventUpgrade,
+    GetEventResponse, ModEventState, ModQuestion, QuestionItem, States,
 };
 use std::{
     error::Error,
@@ -42,25 +42,6 @@ impl From<serde_json::error::Error> for FetchError {
     }
 }
 
-pub async fn fetch_viewers(base_api: &str, id: String) -> Result<i64, FetchError> {
-    let url = format!("{base_api}/api/event/viewers/{id}");
-
-    let mut opts = RequestInit::new();
-    opts.method("GET");
-    opts.mode(RequestMode::Cors);
-
-    let request = Request::new_with_str_and_init(&url, &opts)?;
-
-    let window = gloo_utils::window();
-    let resp_value = JsFuture::from(window.fetch_with_request(&request)).await?;
-    let resp: Response = resp_value.dyn_into()?;
-    let resp = JsFuture::from(resp.text()?).await?;
-
-    resp.as_string()
-        .and_then(|text| text.parse::<i64>().ok())
-        .ok_or_else(|| FetchError::Generic(String::from("string error")))
-}
-
 pub async fn fetch_version(base_api: &str) -> Result<String, FetchError> {
     let url = format!("{base_api}/api/version");
 
@@ -83,7 +64,7 @@ pub async fn fetch_event(
     base_api: &str,
     id: String,
     secret: Option<String>,
-) -> Result<EventInfo, FetchError> {
+) -> Result<GetEventResponse, FetchError> {
     let url = secret.map_or_else(
         || format!("{base_api}/api/event/{id}"),
         |secret| format!("{base_api}/api/mod/event/{id}/{secret}"),
@@ -100,7 +81,7 @@ pub async fn fetch_event(
     let resp: Response = resp_value.dyn_into()?;
 
     let json = JsFuture::from(resp.json()?).await?;
-    let res = JsValueSerdeExt::into_serde::<EventInfo>(&json)?;
+    let res = JsValueSerdeExt::into_serde::<GetEventResponse>(&json)?;
 
     Ok(res)
 }

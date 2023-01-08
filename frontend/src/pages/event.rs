@@ -3,7 +3,7 @@
 use chrono::{DateTime, Duration, NaiveDateTime, Utc};
 use const_format::formatcp;
 use serde::Deserialize;
-use shared::{EventInfo, ModQuestion, QuestionItem, States};
+use shared::{EventInfo, GetEventResponse, ModQuestion, QuestionItem, States};
 use std::{rc::Rc, str::FromStr};
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 use yew::prelude::*;
@@ -63,7 +63,6 @@ struct QueryParams {
 
 pub struct Event {
     event_id: String,
-    viewer_count: i64,
     copied_to_clipboard: bool,
     query_params: QueryParams,
     mode: Mode,
@@ -79,8 +78,7 @@ pub struct Event {
 pub enum Msg {
     ShareEventClick,
     AskQuestionClick,
-    Fetched(Option<EventInfo>),
-    FetchedViewers(i64),
+    Fetched(Option<GetEventResponse>),
     SocketMsg(WsResponse),
     QuestionClick((i64, QuestionClickType)),
     QuestionUpdated(i64),
@@ -122,7 +120,6 @@ impl Component for Event {
             } else {
                 Mode::Viewer
             },
-            viewer_count: 0,
             loading_state: LoadingState::Loading,
             state: Rc::default(),
             unanswered: Vec::new(),
@@ -203,10 +200,6 @@ impl Component for Event {
             }
             Msg::Fetched(res) => {
                 self.on_fetched(&res);
-                true
-            }
-            Msg::FetchedViewers(count) => {
-                self.viewer_count = count;
                 true
             }
             Msg::GlobalEvent(ev) => match ev {
@@ -290,17 +283,10 @@ fn request_like(event: String, id: i64, like: bool, link: &html::Scope<Event>) {
 
 //TODO: dedup
 fn request_fetch(id: String, secret: Option<String>, link: &html::Scope<Event>) {
-    let id_clone = id.clone();
     link.send_future(async move {
         let res = fetch::fetch_event(BASE_API, id, secret).await;
 
         res.map_or(Msg::Fetched(None), |val| Msg::Fetched(Some(val)))
-    });
-
-    link.send_future(async move {
-        let res = fetch::fetch_viewers(BASE_API, id_clone).await;
-
-        res.map_or(Msg::FetchedViewers(0), Msg::FetchedViewers)
     });
 }
 
@@ -343,10 +329,10 @@ impl Event {
     #[allow(clippy::if_not_else)]
     fn view_event(&self, ctx: &Context<Self>) -> Html {
         self.state.event.as_ref().map_or_else(|| html! {}, |e| {
-            let share_url = if e.data.short_url.is_empty() {
-                e.data.long_url.clone().unwrap_or_default()
+            let share_url = if e.info.data.short_url.is_empty() {
+                e.info.data.long_url.clone().unwrap_or_default()
             } else {
-                e.data.short_url.clone()
+                e.info.data.short_url.clone()
             };
 
             let background = classes!(match self.mode {
@@ -361,25 +347,25 @@ impl Event {
                     <div class={background}>
                     </div>
 
-                    <QuestionPopup event={e.tokens.public_token.clone()} />
-                    <SharePopup url={share_url} event_id={e.tokens.public_token.clone()}/>
+                    <QuestionPopup event={e.info.tokens.public_token.clone()} />
+                    <SharePopup url={share_url} event_id={e.info.tokens.public_token.clone()}/>
 
                     <div class="event-block">
                         <div class="event-name-label">{"The Event"}</div>
-                        <div class="event-name">{&e.data.name.clone()}</div>
+                        <div class="event-name">{&e.info.data.name.clone()}</div>
                         //TODO: collapsable event desc
                         <div class="event-desc">
-                            {{&e.data.description.clone()}}
+                            {{&e.info.data.description.clone()}}
                         </div>
 
                         {self.mod_view(ctx,e)}
 
-                        <div class="not-open" hidden={!e.state.is_closed()}>
+                        <div class="not-open" hidden={!e.info.state.is_closed()}>
                             {"This event was closed by the moderator. You cannot add or vote questions anymore."}
                             <br/>
                             {"Updates by the moderator are still seen in real-time."}
                         </div>
-                        <div class="not-open" hidden={!e.state.is_vote_only()}>
+                        <div class="not-open" hidden={!e.info.state.is_vote_only()}>
                             {"This event is set to vote-only by the moderator. You cannot add new questions. You can still vote though."}
                         </div>
                         <div class="not-open" hidden={!e.timed_out}>
@@ -400,12 +386,12 @@ impl Event {
     }
 
     #[allow(clippy::if_not_else)]
-    fn view_ask_question(mod_view: bool, ctx: &Context<Self>, e: &EventInfo) -> Html {
+    fn view_ask_question(mod_view: bool, ctx: &Context<Self>, e: &GetEventResponse) -> Html {
         if mod_view {
             html! {}
         } else {
             html! {
-                <div class="addquestion" hidden={!e.state.is_open()}>
+                <div class="addquestion" hidden={!e.info.state.is_open()}>
                     <button class="button-red" onclick={ctx.link().callback(|_| Msg::AskQuestionClick)}>
                         {"Ask a Question"}
                     </button>
@@ -414,8 +400,8 @@ impl Event {
         }
     }
 
-    fn view_questions(&self, ctx: &Context<Self>, e: &EventInfo) -> Html {
-        if e.questions.is_empty() {
+    fn view_questions(&self, ctx: &Context<Self>, e: &GetEventResponse) -> Html {
+        if e.info.questions.is_empty() {
             let no_questions_classes = classes!(match self.mode {
                 Mode::Moderator => "noquestions modview",
                 Mode::Viewer => "noquestions",
@@ -504,9 +490,9 @@ impl Event {
         }
     }
 
-    fn mod_view(&self, ctx: &Context<Self>, e: &EventInfo) -> Html {
-        let payment_allowed = !e.premium;
-        let pending_payment = self.query_params.paypal_token.is_some() && !e.premium;
+    fn mod_view(&self, ctx: &Context<Self>, e: &GetEventResponse) -> Html {
+        let payment_allowed = !e.info.premium;
+        let pending_payment = self.query_params.paypal_token.is_some() && !e.info.premium;
 
         if matches!(self.mode, Mode::Moderator) {
             let timed_out = e.timed_out;
@@ -514,15 +500,15 @@ impl Event {
             html! {
             <>
             <div class="mod-panel" >
-                <DeletePopup tokens={e.tokens.clone()} />
+                <DeletePopup tokens={e.info.tokens.clone()} />
 
                 {
                     if timed_out {html!{}}else {html!{
                     <div class="state">
                         <select onchange={ctx.link().callback(Msg::ModStateChange)} >
-                            <option value="0" selected={e.state.is_open()}>{"Event open"}</option>
-                            <option value="1" selected={e.state.is_vote_only()}>{"Event vote only"}</option>
-                            <option value="2" selected={e.state.is_closed()}>{"Event closed"}</option>
+                            <option value="0" selected={e.info.state.is_open()}>{"Event open"}</option>
+                            <option value="1" selected={e.info.state.is_vote_only()}>{"Event vote only"}</option>
+                            <option value="2" selected={e.info.state.is_closed()}>{"Event closed"}</option>
                         </select>
                     </div>
                     }}
@@ -535,7 +521,7 @@ impl Event {
 
             {
                 if payment_allowed {html!{
-                    <Upgrade pending={pending_payment} tokens={e.tokens.clone()} />
+                    <Upgrade pending={pending_payment} tokens={e.info.tokens.clone()} />
                 }}else{html!{}}
             }
 
@@ -549,16 +535,31 @@ impl Event {
     }
 
     fn view_viewers(&self) -> Html {
+        let viewers = self
+            .state
+            .event
+            .as_ref()
+            .map(|e| e.viewers)
+            .unwrap_or_default();
+        let likes = self
+            .state
+            .event
+            .as_ref()
+            .map(GetEventResponse::get_likes)
+            .unwrap_or_default();
+
         html! {
-            <div class="viewers" >
+            <div class="statistics" >
                 <img src="/assets/symbols/viewers.svg" title="current viewers"/>
-                <div class="viewers-count">{{self.viewer_count.to_string()}}</div>
+                <div class="count">{{viewers}}</div>
+                <img src="/assets/symbols/likes.svg" title="amount of likes"/>
+                <div class="count">{{likes}}</div>
             </div>
         }
     }
 
-    fn mod_view_deadline(e: &EventInfo) -> Html {
-        if e.premium {
+    fn mod_view_deadline(e: &GetEventResponse) -> Html {
+        if e.info.premium {
             html! {
                 <div class="deadline">
                 {"This is a premium event and will not time out!"}
@@ -568,7 +569,7 @@ impl Event {
             html! {
                 <div class="deadline">
                 {format!("Currently a free event is valid for {FREE_EVENT_DURATION_DAYS} days. Your event will be inaccessible on ")}
-                <span>{Self::get_event_timeout(e)}</span>
+                <span>{Self::get_event_timeout(&e.info)}</span>
                 {". Please upgrade to premium to make it permanent."}
                 </div>
             }
@@ -608,8 +609,8 @@ impl Event {
             .map(|e| {
                 format!(
                     "https://www.live-ask.com/eventmod/{}/{}",
-                    e.tokens.public_token,
-                    e.tokens.moderator_token.clone().unwrap_throw()
+                    e.info.tokens.public_token,
+                    e.info.tokens.moderator_token.clone().unwrap_throw()
                 )
             })
             .unwrap_or_default()
@@ -634,7 +635,7 @@ impl Event {
         self.unanswered.clear();
 
         if let Some(e) = &self.state.event {
-            let mut questions = e.questions.clone();
+            let mut questions = e.info.questions.clone();
             questions.sort_by(|a, b| b.likes.cmp(&a.likes));
 
             let (not_hidden, hidden) = questions.into_iter().map(Rc::new).split(|i| i.hidden);
@@ -647,7 +648,7 @@ impl Event {
         }
     }
 
-    fn on_fetched(&mut self, res: &Option<EventInfo>) {
+    fn on_fetched(&mut self, res: &Option<GetEventResponse>) {
         //TODO: in subsequent fetches only update data if succesfully fetched
 
         if matches!(

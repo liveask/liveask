@@ -247,7 +247,7 @@
   }
 }
 
-.viewers {
+.statistics {
   display: flex;
   justify-content: center;
   margin-top: 20px;
@@ -256,9 +256,10 @@
     width: 30px;
   }
 
-  .viewers-count {
+  .count {
     margin-top: 2px;
     margin-left: 4px;
+    margin-right: 10px;
   }
 }
 

@@ -16,11 +16,9 @@ impl RedisViewers {
 #[async_trait]
 impl Viewers for RedisViewers {
     #[instrument(skip(self))]
-    async fn count(&self, key: &str) -> isize {
+    async fn count(&self, key: &str) -> i64 {
         if let Ok(mut db) = self.redis.get().await {
-            db.get::<_, isize>(create_key(key))
-                .await
-                .unwrap_or_default()
+            db.get::<_, i64>(create_key(key)).await.unwrap_or_default()
         } else {
             0
         }

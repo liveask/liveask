@@ -49,11 +49,7 @@ impl ApiEventInfo {
         Utc.timestamp_opt(timestamp, 0).latest()
     }
 }
-const LOREM_IPSUM:&[&str] = &[
-    "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam diam eros, tincidunt ac placerat in, sodales sit amet nibh.",
-    "Donec a sem gravida, convallis sem in, blandit augue. Vivamus lorem neque, rutrum non nulla vitae, semper cursus dolor. Quisque vitae convallis erat, ac feugiat enim.",
-    "Morbi id ex lectus. Donec posuere ac eros non rhoncus. Curabitur venenatis felis in imperdiet rhoncus. Donec quam magna, sagittis ut vestibulum vel, rhoncus quis sem."
-    ];
+const LOREM_IPSUM:&str = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam diam eros, tincidunt ac placerat in, sodales sit amet nibh.";
 
 impl From<ApiEventInfo> for EventInfo {
     fn from(val: ApiEventInfo) -> Self {
@@ -62,8 +58,7 @@ impl From<ApiEventInfo> for EventInfo {
 
         if timed_out {
             for q in &mut questions {
-                //TODO: randomize based on create time
-                let sentence = LOREM_IPSUM[0];
+                let sentence = LOREM_IPSUM;
                 q.text = sentence[0..q.text.len().min(sentence.len())].to_string();
             }
         }
@@ -78,7 +73,6 @@ impl From<ApiEventInfo> for EventInfo {
             questions,
             state: val.state,
             premium: val.premium_order.is_some(),
-            timed_out,
         }
     }
 }

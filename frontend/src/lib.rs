@@ -40,7 +40,7 @@ mod tracking;
 
 use agents::{EventAgent, GlobalEvent};
 use routes::Route;
-use shared::EventInfo;
+use shared::GetEventResponse;
 use std::rc::Rc;
 use wasm_bindgen::prelude::*;
 use yew::prelude::*;
@@ -57,7 +57,7 @@ pub const VERSION_STR: &str = "2.0.12";
 
 #[derive(Default, Clone, Eq, PartialEq, Store)]
 pub struct State {
-    pub event: Option<EventInfo>,
+    pub event: Option<GetEventResponse>,
     pub new_question: Option<i64>,
 }
 
