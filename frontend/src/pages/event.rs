@@ -547,11 +547,19 @@ impl Event {
             .as_ref()
             .map(GetEventResponse::get_likes)
             .unwrap_or_default();
+        let questions = self
+            .state
+            .event
+            .as_ref()
+            .map(|e| e.info.questions.len())
+            .unwrap_or_default();
 
         html! {
             <div class="statistics" >
                 <img src="/assets/symbols/viewers.svg" title="current viewers"/>
                 <div class="count">{{viewers}}</div>
+                <img src="/assets/symbols/questions.svg" title="amount of questions"/>
+                <div class="count">{{questions}}</div>
                 <img src="/assets/symbols/likes.svg" title="amount of likes"/>
                 <div class="count">{{likes}}</div>
             </div>
