@@ -535,6 +535,16 @@ impl Event {
     }
 
     fn view_viewers(&self) -> Html {
+        if !self
+            .state
+            .event
+            .as_ref()
+            .map(|e| e.info.premium)
+            .unwrap_or_default()
+        {
+            return html! {};
+        }
+
         let viewers = self
             .state
             .event
