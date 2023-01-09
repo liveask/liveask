@@ -93,6 +93,7 @@ impl Upgrade {
                 {"To unlock the following features:"}
                 <ul>
                     <li>{"Remove 7 Day Event Timeout"}</li>
+                    <li>{"Live Stats (participants, likes ..)"}</li>
                     <li class="tbd">{"Prescreen Questions (coming soon..)"}</li>
                     <li class="tbd">{"Export Data (coming soon..)"}</li>
                     <li class="tbd">{"Word Cloud (coming soon..)"}</li>
