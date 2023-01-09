@@ -2,7 +2,7 @@
 
 use reqwest::{header::CONTENT_TYPE, StatusCode};
 use serde_json::json;
-use shared::EventInfo;
+use shared::{EventInfo, GetEventResponse};
 
 const MIN_DESC: &str = "minimum desc length possible!!";
 const MIN_NAME: &str = "min name";
@@ -16,7 +16,7 @@ fn server_socket() -> String {
     std::env::var("SOCKET_URL").unwrap_or_else(|_| "ws://localhost:8090".into())
 }
 
-async fn get_event(public: String, secret: Option<String>) -> Option<EventInfo> {
+async fn get_event(public: String, secret: Option<String>) -> Option<GetEventResponse> {
     let url = if let Some(secret) = secret {
         format!("{}/api/mod/event/{}/{}", server_rest(), public, secret)
     } else {
@@ -34,9 +34,9 @@ async fn get_event(public: String, secret: Option<String>) -> Option<EventInfo> 
             .unwrap()
             .starts_with("application/json"),);
 
-        let e = res.json::<EventInfo>().await.unwrap();
+        let e = res.json::<GetEventResponse>().await.unwrap();
 
-        assert_eq!(e.tokens.public_token, public);
+        assert_eq!(e.info.tokens.public_token, public);
 
         Some(e)
     } else {
@@ -216,10 +216,11 @@ mod test {
             e.tokens.moderator_token.clone(),
         )
         .await
-        .unwrap();
+        .unwrap()
+        .info;
 
         assert_eq!(e2, e);
-        let e3 = get_event(e.tokens.public_token, None).await.unwrap();
+        let e3 = get_event(e.tokens.public_token, None).await.unwrap().info;
         assert_eq!(e3.tokens.moderator_token, Some(String::new()));
     }
 
@@ -264,14 +265,16 @@ mod test {
 
         let e = get_event(e_mod.tokens.public_token.clone(), None)
             .await
-            .unwrap();
+            .unwrap()
+            .info;
         assert_eq!(e.questions.len(), 0);
         let e = get_event(
             e_mod.tokens.public_token.clone(),
             e_mod.tokens.moderator_token,
         )
         .await
-        .unwrap();
+        .unwrap()
+        .info;
         assert_eq!(e.questions.len(), 1);
     }
 
