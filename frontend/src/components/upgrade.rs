@@ -3,6 +3,7 @@ use yew::prelude::*;
 use yew_agent::Bridge;
 use yew_agent::Bridged;
 
+use crate::tracking;
 use crate::{
     agents::{EventAgent, GlobalEvent},
     components::Spinner,
@@ -42,9 +43,13 @@ impl Component for Upgrade {
         match msg {
             Msg::ToggleExpansion => {
                 self.collapsed = !self.collapsed;
+                if !self.collapsed {
+                    tracking::track_event(tracking::EVNT_PREMIUM_EXPAND);
+                }
                 true
             }
             Msg::UpgradeClicked => {
+                tracking::track_event(tracking::EVNT_PREMIUM_UPGRADE);
                 self.events.send(GlobalEvent::PayForUpgrade);
                 false
             }

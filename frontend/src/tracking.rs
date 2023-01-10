@@ -21,12 +21,16 @@ pub const EVNT_EVENT_DELETE: (&str, usize) = ("event_delete", 3);
 pub const EVNT_SHARE_OPEN: (&str, usize) = ("share_open", 4);
 pub const EVNT_QUESTION_LIKE: (&str, usize) = ("question_like", 5);
 pub const EVNT_QUESTION_UNLIKE: (&str, usize) = ("question_unlike", 6);
+pub const EVNT_PREMIUM_EXPAND: (&str, usize) = ("premium_expand", 7);
+pub const EVNT_PREMIUM_UPGRADE: (&str, usize) = ("premium_upgrade", 8);
 
 const EVNT_FATHOM_IDS_BETA: &[&str] = &[
-    "FGTHLILK", "PTYICP9D", "2QLZ08FA", "RPUPYLYB", "MNJ3ZBU9", "1O6TRFHR", "D56OBEJZ",
+    "FGTHLILK", "PTYICP9D", "2QLZ08FA", "RPUPYLYB", "MNJ3ZBU9", "1O6TRFHR", "D56OBEJZ", "PZMXZBMP",
+    "KW4PIK1U",
 ];
 const EVNT_FATHOM_IDS_PROD: &[&str] = &[
-    "CE3E5DQE", "YJOUOV25", "Z6JYJXLR", "IWTNGV5P", "KPLTI4YY", "BUFQIMQI", "VNYQXL7D",
+    "CE3E5DQE", "YJOUOV25", "Z6JYJXLR", "IWTNGV5P", "KPLTI4YY", "BUFQIMQI", "VNYQXL7D", "ZHOUYH0B",
+    "LYLSJMGT",
 ];
 
 const EVNT_FATHOM_IDS: &[&str] = fathom_ids();
