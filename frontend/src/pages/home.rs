@@ -165,7 +165,7 @@ impl Home {
         html! {
             <div class="feature-dark">
                 <h1>
-                    {"Start free, try it now!"}
+                    {"Try it now for free!"}
                 </h1>
                 <button class="button-red" onclick={ctx.link().callback(|_| Msg::CreateEvent)}>
                     {"Create your Event"}
