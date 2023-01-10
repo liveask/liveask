@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use chrono::{DateTime, Duration, NaiveDateTime, Utc};
 use const_format::formatcp;
 use serde::Deserialize;
