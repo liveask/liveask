@@ -45,17 +45,19 @@ pub struct Payment {
     authenticated: Arc<AtomicBool>,
 }
 
+#[cfg(test)]
+#[allow(clippy::expect_used)]
 impl Default for Payment {
     fn default() -> Self {
         Self {
-            client: Client::new(String::new(), String::new(), Environment::Sandbox),
+            client: Client::new(String::new(), String::new(), Environment::Sandbox).expect(""),
             authenticated: Arc::new(AtomicBool::new(false)),
         }
     }
 }
 
 impl Payment {
-    pub fn new(username: String, password: String, sandbox: bool) -> Self {
+    pub fn new(username: String, password: String, sandbox: bool) -> PaymentResult<Self> {
         let client = Client::new(
             username,
             password,
@@ -64,17 +66,17 @@ impl Payment {
             } else {
                 Environment::Live
             },
-        )
+        )?
         .with_app_info(AppInfo {
             name: "liveask".to_string(),
             version: "1.0".to_string(),
             website: None,
         });
 
-        Self {
+        Ok(Self {
             client,
             authenticated: Arc::new(AtomicBool::new(false)),
-        }
+        })
     }
 
     pub async fn authenticate(&self) -> PaymentResult<()> {

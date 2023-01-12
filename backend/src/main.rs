@@ -207,7 +207,7 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
         std::env::var(env::ENV_PAYPAL_SECRET).unwrap_or_default(),
         //only use sandbox on non-prod
         !is_prod(),
-    ));
+    )?);
 
     if let Err(e) = payment.authenticate().await {
         tracing::error!("payment auth error: {}", e);

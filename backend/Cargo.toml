@@ -13,7 +13,7 @@ chrono = "0.4"
 deadpool-redis = { version = "0.11", default-features = false, features = ["rt_tokio_1"] }
 futures-util = "0.3"
 mailjet-rs = "0.3" 
-paypal-rust = { git = "https://github.com/extrawurst/paypal-rust", rev = "765d406" }
+paypal-rust = "0.0.5-alpha"
 redis = { version = "0.22", default-features = false, features = ["tokio-comp","connection-manager"] }
 reqwest = { version = "0.11", features = ["json"] }
 sentry = { version = "0.29", features = ["tracing", "tower", "tower-http"] }
