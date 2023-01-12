@@ -33,6 +33,12 @@ use crate::{
 
 pub type SharedApp = Arc<App>;
 
+enum Notification {
+    Event,
+    Question(i64),
+    Viewers(i64),
+}
+
 #[derive(Clone)]
 pub struct App {
     eventsdb: Arc<dyn EventsDB>,
@@ -321,7 +327,8 @@ impl App {
 
         self.eventsdb.put(entry).await?;
 
-        self.notify_subscribers(id, Some(question_id)).await;
+        self.notify_subscribers(id, Notification::Question(question_id))
+            .await;
 
         Ok(e.into())
     }
@@ -358,7 +365,7 @@ impl App {
 
         self.eventsdb.put(entry).await?;
 
-        self.notify_subscribers(id, None).await;
+        self.notify_subscribers(id, Notification::Event).await;
 
         Ok(result.into())
     }
@@ -385,7 +392,7 @@ impl App {
 
         self.eventsdb.put(entry).await?;
 
-        self.notify_subscribers(id, None).await;
+        self.notify_subscribers(id, Notification::Event).await;
 
         Ok(())
     }
@@ -440,7 +447,7 @@ impl App {
 
             self.eventsdb.put(entry).await?;
 
-            self.notify_subscribers(event_id, None).await;
+            self.notify_subscribers(event_id, Notification::Event).await;
         }
 
         Ok(())
@@ -477,7 +484,8 @@ impl App {
 
         self.eventsdb.put(entry).await?;
 
-        self.notify_subscribers(id, Some(question_id)).await;
+        self.notify_subscribers(id, Notification::Question(question_id))
+            .await;
 
         Ok(question)
     }
@@ -505,7 +513,8 @@ impl App {
 
             self.eventsdb.put(entry).await?;
 
-            self.notify_subscribers(id, Some(edit.question_id)).await;
+            self.notify_subscribers(id, Notification::Question(edit.question_id))
+                .await;
 
             Ok(res)
         } else {
@@ -528,6 +537,8 @@ impl App {
             .insert(user_id, (id.clone(), send_channel.clone()));
 
         self.viewers.add(&id).await;
+
+        self.notify_viewer_count_change(&id);
 
         tracing::info!(
             "user connected: {} ({} total)",
@@ -569,7 +580,7 @@ impl App {
                 }
             }
 
-            if self.shutdown.load(Ordering::Relaxed) {
+            if self.is_shutting_down() {
                 tracing::info!("shutdown: close client connection [{user_id}]");
 
                 if let Err(e) = send_channel.send(Ok(Message::Close(Some(CloseFrame {
@@ -589,9 +600,32 @@ impl App {
             self.channels.read().await.len().saturating_sub(1)
         );
 
+        //Note: lets not spam everyone if its a shutdown
+        if !self.is_shutting_down() {
+            self.notify_viewer_count_change(&id);
+        }
+
         self.viewers.remove(&id).await;
 
         self.channels.write().await.remove(&user_id);
+    }
+
+    fn is_shutting_down(&self) -> bool {
+        self.shutdown.load(Ordering::Relaxed)
+    }
+
+    fn notify_viewer_count_change(&self, event: &str) {
+        let event = event.to_string();
+        let app = self.clone();
+
+        tokio::spawn(async move {
+            let count = app.viewers.count(&event).await;
+
+            tracing::info!("notify viewer count: {count}");
+
+            app.notify_subscribers(event, Notification::Viewers(count))
+                .await;
+        });
     }
 
     fn create_send_channel(
@@ -615,8 +649,12 @@ impl App {
         sender
     }
 
-    async fn notify_subscribers(&self, event_id: String, question_id: Option<i64>) {
-        let msg = question_id.map_or_else(|| "e".to_string(), |q| format!("q:{q}"));
+    async fn notify_subscribers(&self, event_id: String, n: Notification) {
+        let msg = match n {
+            Notification::Event => "e".to_string(),
+            Notification::Question(id) => format!("q:{id}"),
+            Notification::Viewers(count) => format!("v:{count}"),
+        };
 
         self.pubsub_publish.publish(&event_id, &msg).await;
     }

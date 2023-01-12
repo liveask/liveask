@@ -147,27 +147,7 @@ impl Component for Event {
                     .map(|c| c.write_text(&self.moderator_url()));
                 true
             }
-            Msg::SocketMsg(msg) => {
-                match msg {
-                    WsResponse::Ready | WsResponse::Disconnected => {}
-                    WsResponse::Message(msg) => {
-                        //TODO: do we want to act differently here? only fetch q on "q"?
-                        if msg == "e" {
-                            log::info!("received event update");
-                        } else if msg.starts_with('q') {
-                            log::info!("received question update: {}", msg);
-                        }
-
-                        request_fetch(
-                            self.event_id.clone(),
-                            ctx.props().secret.clone(),
-                            ctx.link(),
-                        );
-                    }
-                }
-
-                false
-            }
+            Msg::SocketMsg(msg) => self.push_received(msg, ctx),
             Msg::StateChanged => false, // nothing needs to happen here
             Msg::ModStateChange(ev) => {
                 let e: web_sys::HtmlSelectElement =
@@ -719,6 +699,59 @@ impl Event {
                         ctx.link(),
                     );
                 }
+            }
+        }
+    }
+
+    fn push_received(&mut self, msg: WsResponse, ctx: &Context<Event>) -> bool {
+        match msg {
+            WsResponse::Ready | WsResponse::Disconnected => false,
+            WsResponse::Message(msg) => {
+                let fetch_event = if msg == "e" {
+                    log::info!("received event update");
+                    true
+                } else if msg.starts_with("q:") {
+                    //TODO: do we want to act differently here? only fetch q on "q"?
+                    log::info!("received question update: {}", msg);
+                    true
+                } else if msg.starts_with("v:") {
+                    log::info!("received viewer update: {}", msg);
+
+                    let viewers = msg
+                        .split(':')
+                        .nth(1)
+                        .and_then(|text| text.parse::<i64>().ok())
+                        .unwrap_or_default();
+
+                    self.dispatch.reduce(|old| State {
+                        event: Some(GetEventResponse {
+                            info: old
+                                .event
+                                .as_ref()
+                                .map(|e| e.info.clone())
+                                .unwrap_or_default(),
+                            timed_out: old.event.as_ref().map(|e| e.timed_out).unwrap_or_default(),
+                            viewers,
+                        }),
+                        new_question: old.new_question,
+                    });
+                    self.state = self.dispatch.get();
+
+                    false
+                } else {
+                    log::error!("unknown push msg: {msg}",);
+                    true
+                };
+
+                if fetch_event {
+                    request_fetch(
+                        self.event_id.clone(),
+                        ctx.props().secret.clone(),
+                        ctx.link(),
+                    );
+                }
+
+                !fetch_event
             }
         }
     }
