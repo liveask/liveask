@@ -544,11 +544,11 @@ impl Event {
 
         html! {
             <div class="statistics" >
-                <img src="/assets/symbols/viewers.svg" title="current viewers"/>
+                <abbr title="current viewers" tabindex="0"><img src="/assets/symbols/viewers.svg"/></abbr>
                 <div class="count">{{viewers}}</div>
-                <img src="/assets/symbols/questions.svg" title="amount of questions"/>
+                <abbr title="amount of questions" tabindex="0"><img src="/assets/symbols/questions.svg"/></abbr>
                 <div class="count">{{questions}}</div>
-                <img src="/assets/symbols/likes.svg" title="amount of likes"/>
+                <abbr title="amount of likes" tabindex="0"><img src="/assets/symbols/likes.svg"/></abbr>
                 <div class="count">{{likes}}</div>
             </div>
         }
