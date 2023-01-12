@@ -292,6 +292,9 @@ mod test {
 
         assert_eq!(response.status(), StatusCode::SWITCHING_PROTOCOLS);
 
+        let msg = socket.read_message().expect("Error reading message");
+        assert_eq!(msg.into_text().unwrap(), "v:1".to_string());
+
         let question = add_question(event.clone()).await;
 
         let msg = socket.read_message().expect("Error reading message");
