@@ -600,12 +600,12 @@ impl App {
             self.channels.read().await.len().saturating_sub(1)
         );
 
+        self.viewers.remove(&id).await;
+
         //Note: lets not spam everyone if its a shutdown
         if !self.is_shutting_down() {
             self.notify_viewer_count_change(&id);
         }
-
-        self.viewers.remove(&id).await;
 
         self.channels.write().await.remove(&user_id);
     }
