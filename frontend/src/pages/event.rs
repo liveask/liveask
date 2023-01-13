@@ -300,7 +300,19 @@ const fn question_state(q: &QuestionItem) -> &str {
 }
 
 impl Event {
+    fn is_premium(&self) -> bool {
+        self.state
+            .event
+            .as_ref()
+            .map(|e| e.info.premium)
+            .unwrap_or_default()
+    }
+
     fn export_event(&self) {
+        if !self.is_premium() {
+            return;
+        }
+
         let questions = self
             .state
             .event
@@ -556,9 +568,16 @@ impl Event {
                     {"Delete Event"}
                 </button>
 
-                <button class="button-white" onclick={ctx.link().callback(|_|Msg::ModExport)} >
-                    {"Export"}
-                </button>
+                {
+                    if self.is_premium() {
+                        html!{
+                            <button class="button-white" onclick={ctx.link().callback(|_|Msg::ModExport)} >
+                                {"Export"}
+                            </button>
+                        }
+                    }else{html!{}}
+                }
+
             </div>
 
             {
