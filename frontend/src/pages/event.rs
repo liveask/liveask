@@ -4,6 +4,7 @@ use serde::Deserialize;
 use shared::{EventInfo, GetEventResponse, ModQuestion, QuestionItem, States};
 use std::{rc::Rc, str::FromStr};
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
+use web_sys::HtmlAnchorElement;
 use yew::prelude::*;
 use yew_agent::{Bridge, Bridged};
 use yew_router::{prelude::Location, scope_ext::RouterScopeExt};
@@ -81,6 +82,7 @@ pub enum Msg {
     QuestionClick((i64, QuestionClickType)),
     QuestionUpdated(i64),
     ModDelete,
+    ModExport,
     ModStateChange(yew::Event),
     StateChanged,
     CopyLink,
@@ -179,6 +181,10 @@ impl Component for Event {
             Msg::Fetched(res) => {
                 self.on_fetched(&res);
                 true
+            }
+            Msg::ModExport => {
+                self.export_event();
+                false
             }
             Msg::GlobalEvent(ev) => match ev {
                 GlobalEvent::QuestionCreated(id) => {
@@ -283,7 +289,61 @@ fn request_state_change(
     });
 }
 
+const fn question_state(q: &QuestionItem) -> &str {
+    if q.answered {
+        "answered"
+    } else if q.hidden {
+        "hidden"
+    } else {
+        "asked"
+    }
+}
+
 impl Event {
+    fn export_event(&self) {
+        let questions = self
+            .state
+            .event
+            .as_ref()
+            .map(|e| e.info.questions.clone())
+            .unwrap_or_default();
+
+        let questions = questions
+            .into_iter()
+            .map(|q| {
+                let create_time = DateTime::<Utc>::from_utc(
+                    NaiveDateTime::from_timestamp_opt(q.create_time_unix, 0).unwrap_throw(),
+                    Utc,
+                );
+
+                format!(
+                    "{},\"{}\",{},{}",
+                    create_time.format("%Y-%m-%d %H:%M"),
+                    q.text,
+                    question_state(&q),
+                    q.likes
+                )
+            })
+            .collect::<Vec<_>>()
+            .join("\n");
+
+        let csv = format!("date (utc),text,state,likes\n{questions}");
+
+        let anchor = gloo::utils::document()
+            .create_element("a")
+            .unwrap_throw()
+            .dyn_into::<HtmlAnchorElement>()
+            .unwrap_throw();
+
+        anchor.set_href(&format!(
+            "data:text/csv;charset=utf-8,{}",
+            js_sys::encode_uri_component(&csv)
+        ));
+        anchor.set_target("_blank");
+        anchor.set_download("live-ask-event.csv");
+        anchor.click();
+    }
+
     fn view_internal(&self, ctx: &Context<Self>) -> Html {
         match self.loading_state {
             LoadingState::Loaded => self.view_event(ctx),
@@ -494,6 +554,10 @@ impl Event {
 
                 <button class="button-white" onclick={ctx.link().callback(|_|Msg::ModDelete)} >
                     {"Delete Event"}
+                </button>
+
+                <button class="button-white" onclick={ctx.link().callback(|_|Msg::ModExport)} >
+                    {"Export"}
                 </button>
             </div>
 
