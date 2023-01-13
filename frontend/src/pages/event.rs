@@ -602,13 +602,7 @@ impl Event {
     }
 
     fn view_viewers(&self) -> Html {
-        if !self
-            .state
-            .event
-            .as_ref()
-            .map(|e| e.info.premium)
-            .unwrap_or_default()
-        {
+        if !self.is_premium() {
             return html! {};
         }
 
