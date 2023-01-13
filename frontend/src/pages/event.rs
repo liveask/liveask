@@ -629,9 +629,9 @@ impl Event {
             <div class="statistics" >
                 <abbr title="current viewers" tabindex="0"><img src="/assets/symbols/viewers.svg"/></abbr>
                 <div class="count">{{viewers}}</div>
-                <abbr title="amount of questions" tabindex="0"><img src="/assets/symbols/questions.svg"/></abbr>
+                <abbr title="all questions" tabindex="0"><img src="/assets/symbols/questions.svg"/></abbr>
                 <div class="count">{{questions}}</div>
-                <abbr title="amount of likes" tabindex="0"><img src="/assets/symbols/likes.svg"/></abbr>
+                <abbr title="all likes" tabindex="0"><img src="/assets/symbols/likes.svg"/></abbr>
                 <div class="count">{{likes}}</div>
             </div>
         }
