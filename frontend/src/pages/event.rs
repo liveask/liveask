@@ -569,13 +569,7 @@ impl Event {
                 </button>
 
                 {
-                    if self.is_premium() {
-                        html!{
-                            <button class="button-white" onclick={ctx.link().callback(|_|Msg::ModExport)} >
-                                {"Export"}
-                            </button>
-                        }
-                    }else{html!{}}
+                    self.mod_view_export(ctx)
                 }
 
             </div>
@@ -589,6 +583,18 @@ impl Event {
             {Self::mod_view_deadline(e)}
 
             </>
+            }
+        } else {
+            html! {}
+        }
+    }
+
+    fn mod_view_export(&self, ctx: &Context<Self>) -> Html {
+        if self.is_premium() {
+            html! {
+                <button class="button-white" onclick={ctx.link().callback(|_|Msg::ModExport)} >
+                    {"Export"}
+                </button>
             }
         } else {
             html! {}
