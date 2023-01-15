@@ -78,6 +78,7 @@ pub enum Msg {
     ShareEventClick,
     AskQuestionClick,
     Fetched(Option<GetEventResponse>),
+    Captured,
     SocketMsg(WsResponse),
     QuestionClick((i64, QuestionClickType)),
     QuestionUpdated(i64),
@@ -133,6 +134,10 @@ impl Component for Event {
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
+            Msg::Captured => {
+                log::info!("payment captured");
+                false
+            }
             Msg::QuestionClick((id, kind)) => {
                 self.on_question_click(&kind, id, ctx);
                 false
@@ -180,6 +185,21 @@ impl Component for Event {
             }
             Msg::Fetched(res) => {
                 self.on_fetched(&res);
+
+                if let Some(e) = res {
+                    if !e.info.premium && self.query_params.paypal_token.is_some() {
+                        request_capture(
+                            e.info.tokens.public_token,
+                            self.query_params
+                                .paypal_token
+                                .as_ref()
+                                .cloned()
+                                .unwrap_throw(),
+                            ctx.link(),
+                        );
+                    }
+                }
+
                 true
             }
             Msg::ModExport => {
@@ -271,6 +291,16 @@ fn request_fetch(id: String, secret: Option<String>, link: &html::Scope<Event>) 
         let res = fetch::fetch_event(BASE_API, id, secret).await;
 
         res.map_or(Msg::Fetched(None), |val| Msg::Fetched(Some(val)))
+    });
+}
+
+fn request_capture(id: String, order_id: String, link: &html::Scope<Event>) {
+    link.send_future(async move {
+        if let Err(e) = fetch::mod_premium_capture(BASE_API, id, order_id).await {
+            log::error!("mod_premium_capture error: {e}");
+        }
+
+        Msg::Captured
     });
 }
 

@@ -2,7 +2,7 @@ use async_trait::async_trait;
 use axum::extract::ws::{close_code::RESTART, CloseFrame, Message, WebSocket};
 use shared::{
     AddEvent, EventInfo, EventState, EventTokens, EventUpgrade, GetEventResponse, ModQuestion,
-    QuestionItem, States,
+    PaymentCapture, QuestionItem, States,
 };
 use std::{
     collections::HashMap,
@@ -427,30 +427,54 @@ impl App {
     }
 
     #[instrument(skip(self))]
+    pub async fn premium_capture(&self, id: String, order: String) -> Result<PaymentCapture> {
+        tracing::info!("premium_capture");
+
+        let event_id = self.payment.event_of_order(order.clone()).await?;
+        if event_id != id {
+            return Err(InternalError::General("invalid parameter".into()));
+        }
+
+        let order_captured = self.capture_payment_and_upgrade(event_id, order).await?;
+
+        Ok(PaymentCapture { order_captured })
+    }
+
+    #[instrument(skip(self))]
     pub async fn payment_webhook(&self, id: String) -> Result<()> {
         tracing::info!("order processing");
 
         let event_id = self.payment.event_of_order(id.clone()).await?;
 
-        let mut entry = self.eventsdb.get(&event_id).await?;
+        if !self.capture_payment_and_upgrade(event_id, id).await? {
+            tracing::warn!("capture failed");
+        }
+
+        Ok(())
+    }
+
+    async fn capture_payment_and_upgrade(&self, event: String, order: String) -> Result<bool> {
+        let mut entry = self.eventsdb.get(&event).await?;
 
         if entry.event.premium_order.is_some() {
             return Err(InternalError::General("event already premium".into()));
         }
 
-        if self.payment.capture_payment(id.clone()).await? {
+        if self.payment.capture_payment(order.clone()).await? {
             tracing::info!("order captured");
 
-            entry.event.premium_order = Some(id);
+            entry.event.premium_order = Some(order);
 
             entry.bump();
 
             self.eventsdb.put(entry).await?;
 
-            self.notify_subscribers(event_id, Notification::Event).await;
-        }
+            self.notify_subscribers(event, Notification::Event).await;
 
-        Ok(())
+            Ok(true)
+        } else {
+            Ok(false)
+        }
     }
 
     //TODO: validate event is still open

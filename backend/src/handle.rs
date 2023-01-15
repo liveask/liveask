@@ -106,6 +106,16 @@ pub async fn mod_premium_upgrade(
     Ok(Json(app.premium_upgrade(id, secret).await?))
 }
 
+#[instrument(skip(app))]
+pub async fn mod_premium_capture(
+    Path((id, order)): Path<(String, String)>,
+    State(app): State<SharedApp>,
+) -> std::result::Result<impl IntoResponse, InternalError> {
+    tracing::info!("mod_premium_capture");
+
+    Ok(Json(app.premium_capture(id, order).await?))
+}
+
 #[instrument(skip(app, body))]
 pub async fn payment_webhook(
     State(app): State<SharedApp>,

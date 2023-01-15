@@ -3,7 +3,7 @@
 use gloo_utils::format::JsValueSerdeExt;
 use shared::{
     AddEvent, AddQuestion, EditLike, EventData, EventInfo, EventState, EventUpgrade,
-    GetEventResponse, ModEventState, ModQuestion, QuestionItem, States,
+    GetEventResponse, ModEventState, ModQuestion, PaymentCapture, QuestionItem, States,
 };
 use std::{
     error::Error,
@@ -135,6 +135,28 @@ pub async fn mod_upgrade(
 
     let json = JsFuture::from(resp.json()?).await?;
     let res = JsValueSerdeExt::into_serde::<EventUpgrade>(&json)?;
+
+    Ok(res)
+}
+
+pub async fn mod_premium_capture(
+    base_api: &str,
+    id: String,
+    order_id: String,
+) -> Result<PaymentCapture, FetchError> {
+    let url = format!("{base_api}/api/mod/event/capture/{id}/{order_id}");
+
+    let mut opts = RequestInit::new();
+    opts.method("GET");
+
+    let request = Request::new_with_str_and_init(&url, &opts)?;
+
+    let window = gloo_utils::window();
+    let resp_value = JsFuture::from(window.fetch_with_request(&request)).await?;
+    let resp: Response = resp_value.dyn_into()?;
+
+    let json = JsFuture::from(resp.json()?).await?;
+    let res = JsValueSerdeExt::into_serde::<PaymentCapture>(&json)?;
 
     Ok(res)
 }

@@ -231,6 +231,7 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let mod_routes = Router::new()
         .route("/:id/:secret", get(handle::mod_get_event))
         .route("/upgrade/:id/:secret", get(handle::mod_premium_upgrade))
+        .route("/capture/:id/:order", get(handle::mod_premium_capture))
         .route("/delete/:id/:secret", get(handle::mod_delete_event))
         .route("/question/:id/:secret/:question_id", get(handle::mod_get_question))
         .route("/questionmod/:id/:secret/:question_id", post(handle::mod_edit_question))
