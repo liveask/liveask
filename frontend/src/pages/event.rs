@@ -313,33 +313,14 @@ impl Event {
             return;
         }
 
-        let questions = self
+        let name = self
             .state
             .event
             .as_ref()
-            .map(|e| e.info.questions.clone())
+            .map(|e| e.info.data.name.clone())
             .unwrap_or_default();
 
-        let questions = questions
-            .into_iter()
-            .map(|q| {
-                let create_time = DateTime::<Utc>::from_utc(
-                    NaiveDateTime::from_timestamp_opt(q.create_time_unix, 0).unwrap_throw(),
-                    Utc,
-                );
-
-                format!(
-                    "{},\"{}\",{},{}",
-                    create_time.format("%Y-%m-%d %H:%M"),
-                    q.text,
-                    question_state(&q),
-                    q.likes
-                )
-            })
-            .collect::<Vec<_>>()
-            .join("\n");
-
-        let csv = format!("date (utc),text,state,likes\n{questions}");
+        let csv = self.event_as_csv().unwrap_or_default();
 
         let anchor = gloo::utils::document()
             .create_element("a")
@@ -352,8 +333,37 @@ impl Event {
             js_sys::encode_uri_component(&csv)
         ));
         anchor.set_target("_blank");
-        anchor.set_download("live-ask-event.csv");
+        anchor.set_download(&format!("live-ask:{name}.csv"));
         anchor.click();
+    }
+
+    fn event_as_csv(&self) -> anyhow::Result<String> {
+        use csv::WriterBuilder;
+
+        let questions = self
+            .state
+            .event
+            .as_ref()
+            .map(|e| e.info.questions.clone())
+            .unwrap_or_default();
+        let mut wtr = WriterBuilder::new().from_writer(vec![]);
+        wtr.write_record(["date (utc)", "text", "state", "likes"])
+            .unwrap_throw();
+        for q in questions {
+            let create_time = DateTime::<Utc>::from_utc(
+                NaiveDateTime::from_timestamp_opt(q.create_time_unix, 0).unwrap_throw(),
+                Utc,
+            );
+            let state = question_state(&q).to_string();
+
+            wtr.write_record(&[
+                create_time.format("%Y-%m-%d %H:%M").to_string(),
+                q.text,
+                state,
+                q.likes.to_string(),
+            ])?;
+        }
+        Ok(String::from_utf8(wtr.into_inner()?)?)
     }
 
     fn view_internal(&self, ctx: &Context<Self>) -> Html {
