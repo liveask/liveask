@@ -37,8 +37,8 @@
         window.metrical = { "app": "{{metrical}}" }
         window.track_event_js =
             function track_event(metrical, fathom_id) {
-                if (window.metrical === null) { window.metrical.trackEvent(metrical); }
-                if (window.fathom === null) { window.fathom.trackGoal(fathom_id, 0); }
+                if (window.metrical !== null) { window.metrical.trackEvent(metrical); }
+                if (window.fathom !== null) { window.fathom.trackGoal(fathom_id, 0); }
             };
     </script>
     <script async src="https://cdn.metrical.xyz/script.js" type="text/javascript">
