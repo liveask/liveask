@@ -343,6 +343,8 @@ impl Event {
             return;
         }
 
+        tracking::track_event(tracking::EVNT_EXPORT);
+
         let name = self
             .state
             .event

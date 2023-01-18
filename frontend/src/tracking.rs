@@ -23,14 +23,15 @@ pub const EVNT_QUESTION_LIKE: (&str, usize) = ("question_like", 5);
 pub const EVNT_QUESTION_UNLIKE: (&str, usize) = ("question_unlike", 6);
 pub const EVNT_PREMIUM_EXPAND: (&str, usize) = ("premium_expand", 7);
 pub const EVNT_PREMIUM_UPGRADE: (&str, usize) = ("premium_upgrade", 8);
+pub const EVNT_EXPORT: (&str, usize) = ("export_data", 9);
 
 const EVNT_FATHOM_IDS_BETA: &[&str] = &[
     "FGTHLILK", "PTYICP9D", "2QLZ08FA", "RPUPYLYB", "MNJ3ZBU9", "1O6TRFHR", "D56OBEJZ", "PZMXZBMP",
-    "KW4PIK1U",
+    "KW4PIK1U", "XMK8M2CD",
 ];
 const EVNT_FATHOM_IDS_PROD: &[&str] = &[
     "CE3E5DQE", "YJOUOV25", "Z6JYJXLR", "IWTNGV5P", "KPLTI4YY", "BUFQIMQI", "VNYQXL7D", "ZHOUYH0B",
-    "LYLSJMGT",
+    "LYLSJMGT", "OAZVXYRC",
 ];
 
 const EVNT_FATHOM_IDS: &[&str] = fathom_ids();
