@@ -748,27 +748,18 @@ mod test {
     use crate::{
         eventsdb::InMemoryEventsDB,
         pubsub::{PubSubInMemory, PubSubReceiverInMemory},
+        viewers::MockViewers,
     };
     use pretty_assertions::assert_eq;
     use shared::{AddQuestion, EventData};
     use std::sync::Arc;
-
-    mockall::mock! {
-        pub TestViewers {}
-        #[async_trait]
-        impl Viewers for TestViewers{
-            async fn count(&self, key: &str) -> i64;
-            async fn add(&self, key: &str);
-            async fn remove(&self, key: &str);
-        }
-    }
 
     #[tokio::test]
     async fn test_event_create_fail_validation() {
         let app = App::new(
             Arc::new(InMemoryEventsDB::default()),
             Arc::new(PubSubInMemory::default()),
-            Arc::new(MockTestViewers::new()),
+            Arc::new(MockViewers::new()),
             Arc::new(Payment::default()),
             String::new(),
         );
@@ -796,7 +787,7 @@ mod test {
         let app = App::new(
             eventdb.clone(),
             Arc::new(PubSubInMemory::default()),
-            Arc::new(MockTestViewers::new()),
+            Arc::new(MockViewers::new()),
             Arc::new(Payment::default()),
             String::new(),
         );
@@ -826,7 +817,7 @@ mod test {
         let app = App::new(
             Arc::new(InMemoryEventsDB::default()),
             Arc::new(pubsub),
-            Arc::new(MockTestViewers::new()),
+            Arc::new(MockViewers::new()),
             Arc::new(Payment::default()),
             String::new(),
         );
