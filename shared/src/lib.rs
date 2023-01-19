@@ -187,3 +187,9 @@ impl EventState {
         })
     }
 }
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct UserLogin {
+    pub name: String,
+    pub pwd_hash: String,
+}

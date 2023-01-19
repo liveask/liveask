@@ -45,24 +45,24 @@ impl ApiEventInfo {
         self.premium_order.is_none() && self.is_timed_out()
     }
 
-    fn timestamp_to_datetime(timestamp: i64) -> Option<DateTime<Utc>> {
-        Utc.timestamp_opt(timestamp, 0).latest()
-    }
-}
-const LOREM_IPSUM:&str = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam diam eros, tincidunt ac placerat in, sodales sit amet nibh.";
-
-impl From<ApiEventInfo> for EventInfo {
-    fn from(val: ApiEventInfo) -> Self {
-        let timed_out = val.is_timed_out_and_free();
-        let mut questions = val.questions;
-
-        if timed_out {
-            for q in &mut questions {
+    pub fn adapt_if_timedout(&mut self) {
+        if self.is_timed_out_and_free() {
+            for q in &mut self.questions {
                 let sentence = LOREM_IPSUM;
                 q.text = sentence[0..q.text.len().min(sentence.len())].to_string();
             }
         }
+    }
 
+    fn timestamp_to_datetime(timestamp: i64) -> Option<DateTime<Utc>> {
+        Utc.timestamp_opt(timestamp, 0).latest()
+    }
+}
+
+const LOREM_IPSUM:&str = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam diam eros, tincidunt ac placerat in, sodales sit amet nibh.";
+
+impl From<ApiEventInfo> for EventInfo {
+    fn from(val: ApiEventInfo) -> Self {
         Self {
             tokens: val.tokens,
             data: val.data,
@@ -70,7 +70,7 @@ impl From<ApiEventInfo> for EventInfo {
             delete_time_unix: val.delete_time_unix,
             deleted: val.deleted,
             last_edit_unix: val.last_edit_unix,
-            questions,
+            questions: val.questions,
             state: val.state,
             premium: val.premium_order.is_some(),
         }

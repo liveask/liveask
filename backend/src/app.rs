@@ -213,7 +213,12 @@ impl App {
     }
 
     #[instrument(skip(self))]
-    pub async fn get_event(&self, id: String, secret: Option<String>) -> Result<GetEventResponse> {
+    pub async fn get_event(
+        &self,
+        id: String,
+        secret: Option<String>,
+        admin: bool,
+    ) -> Result<GetEventResponse> {
         tracing::info!("get_event");
 
         let mut e = self.eventsdb.get(&id).await?.event;
@@ -233,7 +238,7 @@ impl App {
             return Err(InternalError::AccessingDeletedEvent(id));
         }
 
-        if secret.is_none() {
+        if secret.is_none() && !admin {
             //TODO: can be NONE?
             e.tokens.moderator_token = Some(String::new());
 
@@ -242,6 +247,10 @@ impl App {
                 .into_iter()
                 .filter(|q| !q.hidden)
                 .collect::<Vec<_>>();
+        }
+
+        if !admin {
+            e.adapt_if_timedout();
         }
 
         let timed_out = e.is_timed_out_and_free();

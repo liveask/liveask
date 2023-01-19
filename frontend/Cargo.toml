@@ -49,6 +49,7 @@ features = [
     "ValidityState",
     "Request",
     "RequestInit",
+    "RequestCredentials",
     "RequestMode",
     "Response",
     "Headers",

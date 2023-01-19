@@ -39,6 +39,7 @@ mod routes;
 mod tracking;
 
 use agents::{EventAgent, GlobalEvent};
+use pages::AdminLogin;
 use routes::Route;
 use shared::GetEventResponse;
 use std::rc::Rc;
@@ -144,6 +145,9 @@ fn switch(switch: &Route) -> Html {
         }
         Route::Privacy => {
             html! { <Privacy /> }
+        }
+        Route::Login => {
+            html! { <AdminLogin /> }
         }
     }
 }

@@ -7,6 +7,7 @@ use tracing::instrument;
 
 use crate::{
     app::SharedApp,
+    auth::OptionalUser,
     error::InternalError,
     payment::{
         PaymentCaptureRefundedResource, PaymentCheckoutApprovedResource, PaymentWebhookBase,
@@ -69,11 +70,12 @@ pub async fn addquestion_handler(
 #[instrument(skip(app))]
 pub async fn getevent_handler(
     Path(id): Path<String>,
+    OptionalUser(user): OptionalUser,
     State(app): State<SharedApp>,
 ) -> std::result::Result<impl IntoResponse, InternalError> {
     tracing::info!("getevent_handler");
 
-    Ok(Json(app.get_event(id, None).await?))
+    Ok(Json(app.get_event(id, None, user.is_some()).await?))
 }
 
 #[instrument(skip(app))]
@@ -83,7 +85,7 @@ pub async fn mod_get_event(
 ) -> std::result::Result<impl IntoResponse, InternalError> {
     tracing::info!("mod_get_event");
 
-    Ok(Json(app.get_event(id, Some(secret)).await?))
+    Ok(Json(app.get_event(id, Some(secret), false).await?))
 }
 
 #[instrument(skip(app))]
@@ -297,6 +299,7 @@ mod test_db_item_not_found {
     use super::*;
     use crate::{
         app::App,
+        auth,
         eventsdb::{EventEntry, EventsDB},
         payment::Payment,
         pubsub::PubSubInMemory,
@@ -335,8 +338,12 @@ mod test_db_item_not_found {
             String::new(),
         ));
 
+        let (session, auth) = auth::setup_test();
+
         Router::new()
             .route("/api/event/:id", get(getevent_handler))
+            .layer(auth)
+            .layer(session)
             .layer(TraceLayer::new_for_http())
             .with_state(app)
     }
