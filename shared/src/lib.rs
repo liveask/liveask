@@ -69,6 +69,9 @@ pub struct GetEventResponse {
     #[serde(default)]
     pub timed_out: bool,
     pub viewers: i64,
+    //TODO: not needed if client becomes aware of its user role
+    #[serde(default)]
+    pub admin: bool,
 }
 
 impl GetEventResponse {

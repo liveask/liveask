@@ -258,6 +258,7 @@ impl App {
         Ok(GetEventResponse {
             info: e.into(),
             timed_out,
+            admin,
             viewers,
         })
     }

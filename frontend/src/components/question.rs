@@ -25,7 +25,7 @@ pub struct Props {
     pub is_new: bool,
     pub local_like: bool,
     pub can_vote: bool,
-    pub timed_out: bool,
+    pub blurr: bool,
     pub on_click: Callback<(i64, QuestionClickType)>,
 }
 
@@ -160,7 +160,7 @@ impl Component for Question {
     fn view(&self, ctx: &Context<Self>) -> Html {
         let liked = ctx.props().local_like;
         let mod_view = ctx.props().mod_view;
-        let blurred = ctx.props().timed_out;
+        let blurred = ctx.props().blurr;
 
         html! {
             <div class="question-host questions-move"
@@ -220,7 +220,7 @@ impl Question {
     }
 
     fn view_mod(&self, ctx: &Context<Self>) -> Html {
-        if ctx.props().timed_out {
+        if ctx.props().blurr {
             return html! {};
         }
 
