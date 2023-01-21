@@ -2,7 +2,7 @@ use wasm_bindgen::UnwrapThrowExt;
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
 
-use crate::fetch;
+use crate::{fetch, pwd::pwd_hash};
 
 use super::BASE_API;
 
@@ -59,7 +59,7 @@ impl Component for AdminLogin {
                 let pwd = self.pwd.clone();
 
                 ctx.link().send_future(async move {
-                    let res = fetch::admin_login(BASE_API, name, pwd).await;
+                    let res = fetch::admin_login(BASE_API, name, pwd_hash(pwd)).await;
 
                     match res {
                         Ok(_) => {

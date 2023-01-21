@@ -35,6 +35,7 @@ mod environment;
 mod fetch;
 mod local_cache;
 mod pages;
+mod pwd;
 mod routes;
 mod tracking;
 
