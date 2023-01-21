@@ -234,7 +234,7 @@ impl App {
             }
         }
 
-        if e.deleted {
+        if e.deleted && !admin {
             return Err(InternalError::AccessingDeletedEvent(id));
         }
 
@@ -254,7 +254,12 @@ impl App {
         }
 
         let timed_out = e.is_timed_out_and_free();
-        let viewers = self.viewers.count(&id).await;
+        let viewers = if admin || e.premium_order.is_some() {
+            self.viewers.count(&id).await
+        } else {
+            0
+        };
+
         Ok(GetEventResponse {
             info: e.into(),
             timed_out,

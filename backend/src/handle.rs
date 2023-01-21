@@ -81,11 +81,12 @@ pub async fn getevent_handler(
 #[instrument(skip(app))]
 pub async fn mod_get_event(
     Path((id, secret)): Path<(String, String)>,
+    OptionalUser(user): OptionalUser,
     State(app): State<SharedApp>,
 ) -> std::result::Result<impl IntoResponse, InternalError> {
     tracing::info!("mod_get_event");
 
-    Ok(Json(app.get_event(id, Some(secret), false).await?))
+    Ok(Json(app.get_event(id, Some(secret), user.is_some()).await?))
 }
 
 #[instrument(skip(app))]

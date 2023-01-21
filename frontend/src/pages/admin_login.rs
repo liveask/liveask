@@ -59,7 +59,7 @@ impl Component for AdminLogin {
                 let pwd = self.pwd.clone();
 
                 ctx.link().send_future(async move {
-                    let res = fetch::admin_login(BASE_API, name, pwd_hash(pwd)).await;
+                    let res = fetch::admin_login(BASE_API, name, pwd_hash(&pwd)).await;
 
                     match res {
                         Ok(_) => {
