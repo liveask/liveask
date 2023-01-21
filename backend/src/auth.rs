@@ -11,7 +11,6 @@ use axum_login::{axum_sessions::SessionLayer, secrecy::SecretVec, AuthLayer, Aut
 use crate::{env::admin_pwd_hash, error::InternalError};
 
 #[derive(Debug, Clone)]
-#[allow(dead_code)]
 pub struct User {
     id: String,
     password_hash: String,
