@@ -7,8 +7,8 @@ build = "build.rs"
 [dependencies]
 async-redis-session = "0.2"
 async-trait = "0.1"
-aws-config = "0.51"
-aws-sdk-dynamodb = "0.21"
+aws-config = "0.53"
+aws-sdk-dynamodb = "0.23"
 axum = { version = "0.6", features = ["ws"] }
 axum-login = "0.4"
 axum-sessions = "0.4"

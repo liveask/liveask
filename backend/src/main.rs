@@ -43,9 +43,9 @@ mod viewers;
 
 use async_redis_session::RedisSessionStore;
 use aws_config::meta::region::RegionProviderChain;
-use aws_sdk_dynamodb::{Credentials, Endpoint};
+use aws_sdk_dynamodb::Credentials;
 use axum::{
-    http::{header, Uri},
+    http::header,
     routing::{get, post},
     Router,
 };
@@ -53,7 +53,7 @@ use sentry::integrations::{
     tower::{NewSentryLayer, SentryHttpLayer},
     tracing::EventFilter,
 };
-use std::{iter::once, net::SocketAddr, str::FromStr, sync::Arc};
+use std::{iter::once, net::SocketAddr, sync::Arc};
 use tower::ServiceBuilder;
 use tower_http::{
     cors::CorsLayer, sensitive_headers::SetSensitiveRequestHeadersLayer, trace::TraceLayer,
@@ -145,7 +145,7 @@ async fn dynamo_client() -> Result<aws_sdk_dynamodb::Client> {
 
         config
             .credentials_provider(Credentials::new("aid", "sid", None, None, "local"))
-            .endpoint_resolver(Endpoint::immutable(Uri::from_str(&url)?))
+            .endpoint_url(&url)
     } else {
         config
     };
