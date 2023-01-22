@@ -1,3 +1,4 @@
+use shared::{GetUserInfo, UserInfo};
 use wasm_bindgen::UnwrapThrowExt;
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
@@ -6,10 +7,16 @@ use crate::{fetch, pwd::pwd_hash};
 
 use super::BASE_API;
 
+enum AdminState {
+    RequestingInfo,
+    LoggedIn(UserInfo),
+    NotLoggedIn,
+}
+
 pub struct AdminLogin {
     name: String,
     pwd: String,
-    logged_in: bool,
+    state: AdminState,
 }
 
 #[derive(Debug)]
@@ -23,6 +30,8 @@ pub struct AdminLoginProps;
 
 pub enum Msg {
     Login,
+    LogOut,
+    UserInfoResult(GetUserInfo),
     LoginResult(bool),
     InputChange(Input, InputEvent),
 }
@@ -30,11 +39,13 @@ impl Component for AdminLogin {
     type Message = Msg;
     type Properties = AdminLoginProps;
 
-    fn create(_: &Context<Self>) -> Self {
+    fn create(ctx: &Context<Self>) -> Self {
+        request_user_info(ctx.link());
+
         Self {
             name: String::new(),
             pwd: String::new(),
-            logged_in: false,
+            state: AdminState::RequestingInfo,
         }
     }
 
@@ -75,10 +86,28 @@ impl Component for AdminLogin {
 
                 false
             }
-            Msg::LoginResult(result) => {
+            Msg::LogOut => {
+                log::info!("log out");
+                self.state = AdminState::RequestingInfo;
+                request_logout(ctx.link());
+                true
+            }
+            Msg::LoginResult(_) => {
                 self.name.clear();
                 self.pwd.clear();
-                self.logged_in = result;
+
+                self.state = AdminState::RequestingInfo;
+                request_user_info(ctx.link());
+
+                true
+            }
+            Msg::UserInfoResult(res) => {
+                if let Some(user) = res.user {
+                    self.state = AdminState::LoggedIn(user);
+                } else {
+                    self.state = AdminState::NotLoggedIn;
+                }
+
                 true
             }
         }
@@ -86,12 +115,23 @@ impl Component for AdminLogin {
 
     #[allow(clippy::if_not_else)]
     fn view(&self, ctx: &Context<Self>) -> Html {
+        match &self.state {
+            AdminState::NotLoggedIn => self.view_login(ctx),
+            AdminState::RequestingInfo => Self::view_waiting(),
+            AdminState::LoggedIn(user) => Self::view_logged_in(ctx, user),
+        }
+    }
+}
+
+impl AdminLogin {
+    #[allow(clippy::if_not_else)]
+    fn view_login(&self, ctx: &Context<Self>) -> Html {
         html! {
             <div class="newevent-bg">
                 <div class="title">
                     {"Admin Login"}
                 </div>
-                <div class="form" hidden={self.logged_in}>
+                <div class="form">
                     <div class="newevent">
                         <div class="input-box">
                             <input
@@ -121,10 +161,63 @@ impl Component for AdminLogin {
                         {"login"}
                     </button>
                 </div>
-                <div class="form" hidden={!self.logged_in}>
-                    {"Logged in"}
+
+            </div>
+        }
+    }
+
+    fn view_logged_in(ctx: &Context<Self>, user: &UserInfo) -> Html {
+        html! {
+            <div class="newevent-bg">
+                <div class="title">
+                    {"Admin Login"}
+                </div>
+
+                <div class="form">
+                    <p>{format!("Logged in as: '{}'",user.name)}</p>
+
+                    <button
+                        class="button-finish"
+                        onclick={ctx.link().callback(|_| Msg::LogOut)}>
+                        {"logout"}
+                    </button>
                 </div>
             </div>
         }
     }
+
+    fn view_waiting() -> Html {
+        html! {
+            <div class="newevent-bg">
+                <div class="title">
+                    {"Admin Login"}
+                </div>
+                <div class="form">
+                    {"Waiting..."}
+                </div>
+            </div>
+        }
+    }
+}
+
+fn request_user_info(link: &html::Scope<AdminLogin>) {
+    link.send_future(async move {
+        match fetch::fetch_user(BASE_API).await {
+            Err(res) => {
+                log::error!("fetch_user error: {:?}", res);
+                Msg::UserInfoResult(GetUserInfo { user: None })
+            }
+            Ok(res) => Msg::UserInfoResult(res),
+        }
+    });
+}
+
+fn request_logout(link: &html::Scope<AdminLogin>) {
+    link.send_future(async move {
+        if let Err(res) = fetch::admin_logout(BASE_API).await {
+            log::error!("admin_logout error: {:?}", res);
+        }
+
+        Msg::UserInfoResult(GetUserInfo { user: None })
+    });
 }

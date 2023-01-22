@@ -22,6 +22,7 @@ pub struct EventData {
     pub short_url: String,
     #[serde(rename = "longUrl")]
     pub long_url: Option<String>,
+    //TODO: do not send out to non mod clients
     pub mail: Option<String>,
 }
 
@@ -195,4 +196,14 @@ impl EventState {
 pub struct UserLogin {
     pub name: String,
     pub pwd_hash: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct UserInfo {
+    pub name: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct GetUserInfo {
+    pub user: Option<UserInfo>,
 }

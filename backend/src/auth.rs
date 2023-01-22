@@ -3,10 +3,11 @@ use async_trait::async_trait;
 use axum::{
     extract::FromRequestParts,
     http::{request::Parts, StatusCode},
-    response::{Html, IntoResponse},
+    response::IntoResponse,
     Json,
 };
 use axum_login::{axum_sessions::SessionLayer, secrecy::SecretVec, AuthLayer, AuthUser, UserStore};
+use shared::{GetUserInfo, UserInfo};
 
 use crate::{env::admin_pwd_hash, error::InternalError};
 
@@ -61,10 +62,12 @@ pub async fn logout_handler(mut auth: AuthContext) {
 }
 
 #[allow(clippy::unused_async)]
-pub async fn admin_user_handler(OptionalUser(user): OptionalUser) -> Html<String> {
-    tracing::info!("Logged in as: {:?}", user);
-
-    Html(format!("user: {user:?}"))
+pub async fn admin_user_handler(
+    OptionalUser(user): OptionalUser,
+) -> std::result::Result<impl IntoResponse, InternalError> {
+    Ok(Json(GetUserInfo {
+        user: user.map(|user| UserInfo { name: user.id }),
+    }))
 }
 
 pub struct OptionalUser(pub Option<User>);

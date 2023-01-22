@@ -1,11 +1,11 @@
-mod admin_login;
+mod admin;
 mod event;
 mod home;
 mod newevent;
 mod print;
 mod privacy;
 
-pub use admin_login::AdminLogin;
+pub use admin::AdminLogin;
 pub use event::{Event, LoadingState, BASE_API};
 pub use home::Home;
 pub use newevent::NewEvent;

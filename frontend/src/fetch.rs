@@ -3,7 +3,8 @@
 use gloo_utils::format::JsValueSerdeExt;
 use shared::{
     AddEvent, AddQuestion, EditLike, EventData, EventInfo, EventState, EventUpgrade,
-    GetEventResponse, ModEventState, ModQuestion, PaymentCapture, QuestionItem, States, UserLogin,
+    GetEventResponse, GetUserInfo, ModEventState, ModQuestion, PaymentCapture, QuestionItem,
+    States, UserLogin,
 };
 use std::{
     error::Error,
@@ -302,6 +303,47 @@ pub async fn admin_login(base_api: &str, name: String, pwd_hash: String) -> Resu
 
     let window = gloo_utils::window();
 
+    let resp = JsFuture::from(window.fetch_with_request(&request)).await?;
+    let resp: Response = resp.dyn_into()?;
+
+    if resp.ok() {
+        Ok(())
+    } else {
+        Err(FetchError::Generic("request failed".into()))
+    }
+}
+
+pub async fn fetch_user(base_api: &str) -> Result<GetUserInfo, FetchError> {
+    let url = format!("{base_api}/api/admin/user");
+
+    let mut opts = RequestInit::new();
+    opts.method("GET");
+    opts.mode(RequestMode::Cors);
+    opts.credentials(RequestCredentials::Include);
+
+    let request = Request::new_with_str_and_init(&url, &opts)?;
+
+    let window = gloo_utils::window();
+    let resp_value = JsFuture::from(window.fetch_with_request(&request)).await?;
+    let resp: Response = resp_value.dyn_into()?;
+
+    let json = JsFuture::from(resp.json()?).await?;
+    let res = JsValueSerdeExt::into_serde::<GetUserInfo>(&json)?;
+
+    Ok(res)
+}
+
+pub async fn admin_logout(base_api: &str) -> Result<(), FetchError> {
+    let url = format!("{base_api}/api/admin/logout");
+
+    let mut opts = RequestInit::new();
+    opts.method("GET");
+    opts.mode(RequestMode::Cors);
+    opts.credentials(RequestCredentials::Include);
+
+    let request = Request::new_with_str_and_init(&url, &opts)?;
+
+    let window = gloo_utils::window();
     let resp = JsFuture::from(window.fetch_with_request(&request)).await?;
     let resp: Response = resp.dyn_into()?;
 
