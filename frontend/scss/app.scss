@@ -24,3 +24,14 @@
   background-color: #CFD8DC !important;
   color: white;
 }
+
+#admin {
+  display: flex;
+  justify-content: center;
+
+  .inner {
+    cursor: pointer;
+    width: 35px;
+    padding-top: 20px;
+  }
+}
