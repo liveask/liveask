@@ -47,11 +47,7 @@ pub async fn addevent_handler(
     State(app): State<SharedApp>,
     Json(payload): Json<shared::AddEvent>,
 ) -> std::result::Result<impl IntoResponse, InternalError> {
-    tracing::info!(
-        "create event: {} (by {})",
-        payload.data.name,
-        payload.moderator_email
-    );
+    tracing::info!("create event");
 
     Ok(Json(app.create_event(payload).await?))
 }

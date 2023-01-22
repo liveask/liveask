@@ -22,8 +22,6 @@ pub struct EventData {
     pub short_url: String,
     #[serde(rename = "longUrl")]
     pub long_url: Option<String>,
-    //TODO: do not send out to non mod clients
-    pub mail: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Default, Debug, Clone, Eq, PartialEq)]
@@ -96,8 +94,8 @@ impl GetEventResponse {
 pub struct AddEvent {
     #[serde(rename = "eventData")]
     pub data: EventData,
-    #[serde(rename = "moderatorEmail")]
-    pub moderator_email: String,
+    #[serde(rename = "moderatorEmail", default)]
+    pub moderator_email: Option<String>,
     pub test: bool,
 }
 

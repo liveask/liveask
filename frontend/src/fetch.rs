@@ -250,7 +250,7 @@ pub async fn create_event(
     base_api: &str,
     name: String,
     desc: String,
-    email: String,
+    email: Option<String>,
 ) -> Result<EventInfo, FetchError> {
     let body = AddEvent {
         data: EventData {
@@ -258,14 +258,8 @@ pub async fn create_event(
             description: desc,
             long_url: None,
             short_url: String::new(),
-            mail: if email.is_empty() {
-                None
-            } else {
-                Some(email.clone())
-            },
         },
         test: false,
-        //TODO: get rid of
         moderator_email: email,
     };
     let body = serde_json::to_string(&body)?;

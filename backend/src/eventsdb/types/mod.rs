@@ -25,6 +25,8 @@ pub struct ApiEventInfo {
     pub questions: Vec<QuestionItem>,
     pub state: EventState,
     pub premium_order: Option<String>,
+    #[serde(default)]
+    pub mod_email: Option<String>,
 }
 
 impl ApiEventInfo {
@@ -175,13 +177,13 @@ mod test_serialization {
                     description: String::from("desc"),
                     short_url: String::from(""),
                     long_url: None,
-                    mail: None,
                 },
                 create_time_unix: 1,
                 delete_time_unix: 0,
                 deleted: false,
                 premium_order: Some(String::from("order")),
                 last_edit_unix: 2,
+                mod_email: None,
                 questions: vec![QuestionItem {
                     id: 0,
                     likes: 2,
@@ -220,13 +222,13 @@ mod test_serialization {
                     description: String::from("desc"),
                     short_url: String::from(""),
                     long_url: Some(String::from("foo")),
-                    mail: Some(String::from("mail")),
                 },
                 create_time_unix: 1,
                 delete_time_unix: 0,
                 deleted: false,
                 premium_order: Some(String::from("order")),
                 last_edit_unix: 2,
+                mod_email: Some(String::from("mail")),
                 questions: vec![QuestionItem {
                     id: 0,
                     likes: 2,

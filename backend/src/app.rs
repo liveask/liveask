@@ -165,17 +165,11 @@ impl App {
                 state: States::Open,
             },
             data: request.data,
+            mod_email: request.moderator_email,
             tokens: EventTokens {
                 public_token: Ulid::new().to_string(),
                 moderator_token: Some(mod_token.clone()),
             },
-        };
-
-        //TODO: put in request alread at right place
-        e.data.mail = if request.moderator_email.is_empty() {
-            None
-        } else {
-            Some(request.moderator_email.clone())
         };
 
         let url = format!("{}/event/{}", self.base_url, e.tokens.public_token);
@@ -189,13 +183,15 @@ impl App {
             .put(EventEntry::new(e, request.test.then_some(now + 60)))
             .await?;
 
-        self.send_mail(
-            request.moderator_email,
-            result.data.name.clone(),
-            result.data.short_url.clone(),
-            self.mod_link(&result.tokens),
-        )
-        .await;
+        if let Some(mail) = result.mod_email.as_ref() {
+            self.send_mail(
+                mail.clone(),
+                result.data.name.clone(),
+                result.data.short_url.clone(),
+                self.mod_link(&result.tokens),
+            )
+            .await;
+        }
 
         Ok(result.into())
     }
@@ -782,13 +778,12 @@ mod test {
         let res = app
             .create_event(AddEvent {
                 data: EventData {
-                    mail: None,
                     name: String::from("too short"),
                     description: String::new(),
                     short_url: String::new(),
                     long_url: None,
                 },
-                moderator_email: String::new(),
+                moderator_email: None,
                 test: false,
             })
             .await;
@@ -809,13 +804,12 @@ mod test {
 
         app.create_event(AddEvent {
             data: EventData {
-                mail: None,
                 name: String::from("123456789"),
                 description: String::from("123456789 123456789 123456789 !"),
                 short_url: String::new(),
                 long_url: None,
             },
-            moderator_email: String::new(),
+            moderator_email: None,
             test: false,
         })
         .await
@@ -840,13 +834,12 @@ mod test {
         let res = app
             .create_event(AddEvent {
                 data: EventData {
-                    mail: None,
                     name: String::from("123456789"),
                     description: String::from("123456789 123456789 123456789 !"),
                     short_url: String::new(),
                     long_url: None,
                 },
-                moderator_email: String::new(),
+                moderator_email: None,
                 test: false,
             })
             .await

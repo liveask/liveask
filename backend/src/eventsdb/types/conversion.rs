@@ -14,6 +14,7 @@ const ATTR_EVENT_INFO_TOKENS: &str = "tokens";
 const ATTR_EVENT_INFO_ITEMS: &str = "items";
 const ATTR_EVENT_INFO_DATA: &str = "data";
 const ATTR_EVENT_INFO_PREMIUM: &str = "premium";
+const ATTR_EVENT_INFO_MODMAIL: &str = "mod_email";
 
 pub fn event_to_attributes(value: ApiEventInfo) -> AttributeMap {
     let mut map: AttributeMap = vec![
@@ -58,6 +59,10 @@ pub fn event_to_attributes(value: ApiEventInfo) -> AttributeMap {
             ATTR_EVENT_INFO_PREMIUM.into(),
             AttributeValue::S(premium_order),
         );
+    }
+
+    if let Some(mod_email) = value.mod_email {
+        map.insert(ATTR_EVENT_INFO_MODMAIL.into(), AttributeValue::S(mod_email));
     }
 
     map
@@ -106,6 +111,10 @@ pub fn attributes_to_event(value: &AttributeMap) -> Result<ApiEventInfo, super::
         .get(ATTR_EVENT_INFO_PREMIUM)
         .and_then(|value| value.as_s().ok().cloned());
 
+    let mod_email = value
+        .get(ATTR_EVENT_INFO_MODMAIL)
+        .and_then(|value| value.as_s().ok().cloned());
+
     let state = EventState::from_value(
         value[ATTR_EVENT_INFO_STATE]
             .as_n()
@@ -126,6 +135,7 @@ pub fn attributes_to_event(value: &AttributeMap) -> Result<ApiEventInfo, super::
         questions,
         state,
         premium_order,
+        mod_email,
     })
 }
 
@@ -170,7 +180,6 @@ const ATTR_EVENT_DATA_NAME: &str = "name";
 const ATTR_EVENT_DATA_DESC: &str = "desc";
 const ATTR_EVENT_DATA_URL_SHORT: &str = "short_url";
 const ATTR_EVENT_DATA_URL_LONG: &str = "long_url";
-const ATTR_EVENT_DATA_MAIL: &str = "mail";
 
 fn eventdata_to_attributes(value: EventData) -> AttributeMap {
     let mut map = AttributeMap::new();
@@ -193,13 +202,6 @@ fn eventdata_to_attributes(value: EventData) -> AttributeMap {
         .and_then(|url| if url.is_empty() { None } else { Some(url) })
     {
         map.insert(ATTR_EVENT_DATA_URL_LONG.into(), AttributeValue::S(long_url));
-    }
-
-    if let Some(mail) = value
-        .mail
-        .and_then(|url| if url.is_empty() { None } else { Some(url) })
-    {
-        map.insert(ATTR_EVENT_DATA_MAIL.into(), AttributeValue::S(mail));
     }
 
     map
@@ -225,16 +227,11 @@ fn attributes_to_eventdata(value: &AttributeMap) -> Result<EventData, super::Err
         .get(ATTR_EVENT_DATA_URL_LONG)
         .and_then(|value| value.as_s().ok().cloned());
 
-    let mail = value
-        .get(ATTR_EVENT_DATA_MAIL)
-        .and_then(|value| value.as_s().ok().cloned());
-
     Ok(EventData {
         name,
         description,
         short_url,
         long_url,
-        mail,
     })
 }
 

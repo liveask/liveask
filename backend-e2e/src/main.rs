@@ -53,10 +53,9 @@ async fn add_event(name: String) -> EventInfo {
                 "name":name,
                 "description":MIN_DESC,
                 "shortUrl":"",
-                "mail:": null,
                 "longUrl":null},
             "test": true,
-            "moderatorEmail": "",
+            "moderatorEmail": null,
         }))
         .send()
         .await
