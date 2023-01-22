@@ -175,6 +175,7 @@ impl AdminLogin {
 
                 <div class="form">
                     <p>{format!("Logged in as: '{}'",user.name)}</p>
+                    <p>{format!("expires: {} min",user.expires.as_secs()/60)}</p>
 
                     <button
                         class="button-finish"

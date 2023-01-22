@@ -2,7 +2,7 @@ mod validation;
 
 use serde::{Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
-use std::str::FromStr;
+use std::{str::FromStr, time::Duration};
 
 pub use validation::{CreateEventErrors, ValidationError};
 
@@ -201,6 +201,7 @@ pub struct UserLogin {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct UserInfo {
     pub name: String,
+    pub expires: Duration,
 }
 
 #[derive(Serialize, Deserialize, Debug)]

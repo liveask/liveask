@@ -63,10 +63,14 @@ pub async fn logout_handler(mut auth: AuthContext) {
 
 #[allow(clippy::unused_async)]
 pub async fn admin_user_handler(
+    session: axum_sessions::extractors::ReadableSession,
     OptionalUser(user): OptionalUser,
 ) -> std::result::Result<impl IntoResponse, InternalError> {
     Ok(Json(GetUserInfo {
-        user: user.map(|user| UserInfo { name: user.id }),
+        user: user.map(|user| UserInfo {
+            name: user.id,
+            expires: session.expires_in().unwrap_or_default(),
+        }),
     }))
 }
 

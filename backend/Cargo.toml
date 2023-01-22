@@ -11,6 +11,7 @@ aws-config = "0.51"
 aws-sdk-dynamodb = "0.21"
 axum = { version = "0.6", features = ["ws"] }
 axum-login = "0.4"
+axum-sessions = "0.4"
 chrono = "0.4"
 deadpool-redis = { version = "0.11", default-features = false, features = ["rt_tokio_1"] }
 eyre = "0.6"

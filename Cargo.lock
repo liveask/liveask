@@ -2342,6 +2342,7 @@ dependencies = [
  "aws-sdk-dynamodb",
  "axum",
  "axum-login",
+ "axum-sessions",
  "chrono",
  "deadpool-redis",
  "env_logger",
