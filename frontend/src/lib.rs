@@ -55,12 +55,32 @@ use crate::{
     pages::{Event, Home, NewEvent, Print, Privacy},
 };
 
-pub const VERSION_STR: &str = "2.1.4";
+pub const VERSION_STR: &str = "2.1.5";
 
 #[derive(Default, Clone, Eq, PartialEq, Store)]
 pub struct State {
     pub event: Option<GetEventResponse>,
     pub new_question: Option<i64>,
+    pub admin: bool,
+}
+
+impl State {
+    #[must_use]
+    pub const fn set_new_question(mut self, v: Option<i64>) -> Self {
+        self.new_question = v;
+        self
+    }
+    #[must_use]
+    #[allow(clippy::missing_const_for_fn)]
+    pub fn set_event(mut self, v: Option<GetEventResponse>) -> Self {
+        self.event = v;
+        self
+    }
+    #[must_use]
+    pub const fn set_admin(mut self, v: bool) -> Self {
+        self.admin = v;
+        self
+    }
 }
 
 pub enum Msg {

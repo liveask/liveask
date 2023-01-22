@@ -208,10 +208,8 @@ impl Component for Event {
             }
             Msg::GlobalEvent(ev) => match ev {
                 GlobalEvent::QuestionCreated(id) => {
-                    self.dispatch.reduce(|old| State {
-                        event: old.event.clone(),
-                        new_question: Some(id),
-                    });
+                    self.dispatch
+                        .reduce(|old| (*old).clone().set_new_question(Some(id)));
                     self.state = self.dispatch.get();
                     true
                 }
@@ -785,9 +783,11 @@ impl Event {
             };
         }
         if res.is_some() {
-            self.dispatch.reduce(|old| State {
-                event: Some(res.clone().unwrap_throw()),
-                new_question: old.new_question,
+            self.dispatch.reduce(|old| {
+                (*old)
+                    .clone()
+                    .set_event(Some(res.clone().unwrap_throw()))
+                    .set_admin(res.as_ref().map(|res| res.admin).unwrap_or_default())
             });
             self.state = self.dispatch.get();
 
@@ -850,8 +850,8 @@ impl Event {
                         .and_then(|text| text.parse::<i64>().ok())
                         .unwrap_or_default();
 
-                    self.dispatch.reduce(|old| State {
-                        event: Some(GetEventResponse {
+                    self.dispatch.reduce(|old| {
+                        (*old).clone().set_event(Some(GetEventResponse {
                             info: old
                                 .event
                                 .as_ref()
@@ -860,8 +860,7 @@ impl Event {
                             timed_out: old.event.as_ref().map(|e| e.timed_out).unwrap_or_default(),
                             admin: old.event.as_ref().map(|e| e.admin).unwrap_or_default(),
                             viewers,
-                        }),
-                        new_question: old.new_question,
+                        }))
                     });
                     self.state = self.dispatch.get();
 

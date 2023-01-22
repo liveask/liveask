@@ -153,13 +153,6 @@ impl Home {
             Html::VRef(div.into())
         };
 
-        let admin_svg = {
-            let svg = include_str!("../../inline-assets/admin.svg");
-            let div = gloo_utils::document().create_element("div").unwrap_throw();
-            div.set_inner_html(svg);
-            Html::VRef(div.into())
-        };
-
         let branch = if env!("VERGEN_GIT_BRANCH") == "main" {
             String::new()
         } else {
@@ -208,7 +201,7 @@ impl Home {
 
                 <div id="admin">
                     <div class="inner" onclick={ctx.link().callback(|_| Msg::Admin)}>
-                        {admin_svg}
+                        <img src="/assets/admin.svg" />
                     </div>
                 </div>
             </div>

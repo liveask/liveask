@@ -111,6 +111,7 @@ impl Component for IconBar {
         }
     }
 
+    #[allow(clippy::if_not_else)]
     fn view(&self, ctx: &Context<Self>) -> Html {
         let doc = gloo_utils::document();
 
@@ -162,6 +163,12 @@ impl Component for IconBar {
                             }
                         }else{html! {}}
                     }
+
+                    <div class="admin" hidden={!self.state.admin}>
+                        <Link<Route> to={Route::Login}>
+                            <img src="/assets/admin.svg" />
+                        </Link<Route>>
+                    </div>
 
                     <div class="iconbar">
                         {
