@@ -41,6 +41,7 @@ Wnat to help support the project? Use the following links to help us 💪
 ### Attributions
 
 * `viewers.svg`, `likes.svg` and `questions.svg` by [Arafat Uddin](https://thenounproject.com/shalfdesign/)
+* `admin.svg` [LAFS](https://thenounproject.com/LAFS/)
 
 ### Contact
 (coming soon)

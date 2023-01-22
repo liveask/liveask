@@ -2,7 +2,7 @@ mod validation;
 
 use serde::{Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
-use std::str::FromStr;
+use std::{str::FromStr, time::Duration};
 
 pub use validation::{CreateEventErrors, ValidationError};
 
@@ -22,7 +22,6 @@ pub struct EventData {
     pub short_url: String,
     #[serde(rename = "longUrl")]
     pub long_url: Option<String>,
-    pub mail: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Default, Debug, Clone, Eq, PartialEq)]
@@ -69,6 +68,9 @@ pub struct GetEventResponse {
     #[serde(default)]
     pub timed_out: bool,
     pub viewers: i64,
+    //TODO: not needed if client becomes aware of its user role
+    #[serde(default)]
+    pub admin: bool,
 }
 
 impl GetEventResponse {
@@ -92,8 +94,8 @@ impl GetEventResponse {
 pub struct AddEvent {
     #[serde(rename = "eventData")]
     pub data: EventData,
-    #[serde(rename = "moderatorEmail")]
-    pub moderator_email: String,
+    #[serde(rename = "moderatorEmail", default)]
+    pub moderator_email: Option<String>,
     pub test: bool,
 }
 
@@ -186,4 +188,21 @@ impl EventState {
             _ => None?,
         })
     }
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct UserLogin {
+    pub name: String,
+    pub pwd_hash: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct UserInfo {
+    pub name: String,
+    pub expires: Duration,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct GetUserInfo {
+    pub user: Option<UserInfo>,
 }

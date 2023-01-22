@@ -28,6 +28,7 @@
 //TODO: get rid of having to allow this
 #![allow(clippy::result_large_err)]
 mod app;
+mod auth;
 mod env;
 mod error;
 mod eventsdb;
@@ -40,10 +41,11 @@ mod signals;
 mod utils;
 mod viewers;
 
+use async_redis_session::RedisSessionStore;
 use aws_config::meta::region::RegionProviderChain;
-use aws_sdk_dynamodb::{Credentials, Endpoint};
+use aws_sdk_dynamodb::Credentials;
 use axum::{
-    http::Uri,
+    http::header,
     routing::{get, post},
     Router,
 };
@@ -51,12 +53,17 @@ use sentry::integrations::{
     tower::{NewSentryLayer, SentryHttpLayer},
     tracing::EventFilter,
 };
-use std::{net::SocketAddr, str::FromStr, sync::Arc};
-use tower_http::{cors::CorsLayer, trace::TraceLayer};
+use std::{iter::once, net::SocketAddr, sync::Arc};
+use tower::ServiceBuilder;
+use tower_http::{
+    cors::CorsLayer, sensitive_headers::SetSensitiveRequestHeadersLayer, trace::TraceLayer,
+};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 use crate::{
     app::App,
+    auth::{admin_user_handler, login_handler, logout_handler},
+    env::session_secret,
     error::Result,
     eventsdb::DynamoEventsDB,
     handle::push_handler,
@@ -84,7 +91,7 @@ pub const fn is_debug() -> bool {
 fn setup_cors() -> CorsLayer {
     if use_relaxed_cors() {
         tracing::info!("cors setup: very_permissive");
-        CorsLayer::very_permissive()
+        CorsLayer::very_permissive().allow_credentials(true)
     } else {
         tracing::info!("cors setup: default");
         CorsLayer::new()
@@ -138,7 +145,7 @@ async fn dynamo_client() -> Result<aws_sdk_dynamodb::Client> {
 
         config
             .credentials_provider(Credentials::new("aid", "sid", None, None, "local"))
-            .endpoint_resolver(Endpoint::immutable(Uri::from_str(&url)?))
+            .endpoint_url(&url)
     } else {
         config
     };
@@ -213,7 +220,7 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
         tracing::error!("payment auth error: {}", e);
     }
 
-    let pubsub = Arc::new(PubSubRedis::new(redis_pool.clone(), redis_url).await);
+    let pubsub = Arc::new(PubSubRedis::new(redis_pool.clone(), redis_url.clone()).await);
     let viewers = Arc::new(RedisViewers::new(redis_pool));
 
     let eventsdb = Arc::new(DynamoEventsDB::new(dynamo_client().await?, use_local_db()).await?);
@@ -226,6 +233,26 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     ));
 
     pubsub.set_receiver(app.clone()).await;
+
+    let secret = session_secret()
+        .ok_or_else(|| error::InternalError::General(String::from("invalid session secret")))?;
+
+    let (session_layer, auth_layer) = auth::setup(
+        secret.as_ref(),
+        RedisSessionStore::new(redis_url)?.with_prefix("session/"),
+    );
+
+    let middleware = ServiceBuilder::new()
+        .layer(SetSensitiveRequestHeadersLayer::new(once(header::COOKIE)))
+        .layer(SentryHttpLayer::with_transaction())
+        .layer(NewSentryLayer::new_from_top())
+        .layer(TraceLayer::new_for_http())
+        .layer(setup_cors());
+
+    let admin_routes = Router::new()
+        .route("/user", get(admin_user_handler))
+        .route("/login", post(login_handler))
+        .route("/logout", get(logout_handler));
 
     #[rustfmt::skip]
     let mod_routes = Router::new()
@@ -249,11 +276,11 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
         .route("/api/event/question/:id/:question_id", get(handle::get_question))
         .route("/api/event/:id", get(handle::getevent_handler))
         .route("/push/:id", get(push_handler))
-        .nest("/api/mod/event",mod_routes)
-        .layer(SentryHttpLayer::with_transaction())
-        .layer(NewSentryLayer::new_from_top())
-        .layer(TraceLayer::new_for_http())
-        .layer(setup_cors())
+        .nest("/api/mod/event", mod_routes)
+        .nest("/api/admin", admin_routes)
+        .layer(auth_layer)
+        .layer(session_layer)
+        .layer(middleware)
         .with_state(Arc::clone(&app));
 
     let addr = SocketAddr::from(([0, 0, 0, 0], get_port()));

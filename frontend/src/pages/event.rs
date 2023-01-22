@@ -208,10 +208,8 @@ impl Component for Event {
             }
             Msg::GlobalEvent(ev) => match ev {
                 GlobalEvent::QuestionCreated(id) => {
-                    self.dispatch.reduce(|old| State {
-                        event: old.event.clone(),
-                        new_question: Some(id),
-                    });
+                    self.dispatch
+                        .reduce(|old| (*old).clone().set_new_question(Some(id)));
                     self.state = self.dispatch.get();
                     true
                 }
@@ -529,6 +527,13 @@ impl Event {
                 Mode::Viewer => "questions-seperator",
             });
 
+            let blurr = self
+                .state
+                .event
+                .as_ref()
+                .map(|e| e.timed_out && !e.admin)
+                .unwrap_or_default();
+
             return html! {
                 <div>
                     <div class={title_classes}>
@@ -536,7 +541,7 @@ impl Event {
                     </div>
                     <div class="questions">
                         {
-                            for items.iter().enumerate().map(|(e,i)|self.view_item(ctx,can_vote,e,i))
+                            for items.iter().enumerate().map(|(e,i)|self.view_item(ctx,can_vote,blurr,e,i))
                         }
                     </div>
                 </div>
@@ -550,17 +555,12 @@ impl Event {
         &self,
         ctx: &Context<Self>,
         can_vote: bool,
+        blurr: bool,
         index: usize,
         item: &Rc<QuestionItem>,
     ) -> Html {
         let local_like = LocalCache::is_liked(&self.event_id, item.id);
         let mod_view = matches!(self.mode, Mode::Moderator);
-        let timed_out = self
-            .state
-            .event
-            .as_ref()
-            .map(|e| e.timed_out)
-            .unwrap_or_default();
         let is_new = self
             .state
             .new_question
@@ -576,7 +576,7 @@ impl Event {
                 key={item.id}
                 {local_like}
                 {mod_view}
-                {timed_out}
+                {blurr}
                 on_click={ctx.link().callback(Msg::QuestionClick)}
                 />
         }
@@ -783,9 +783,11 @@ impl Event {
             };
         }
         if res.is_some() {
-            self.dispatch.reduce(|old| State {
-                event: Some(res.clone().unwrap_throw()),
-                new_question: old.new_question,
+            self.dispatch.reduce(|old| {
+                (*old)
+                    .clone()
+                    .set_event(Some(res.clone().unwrap_throw()))
+                    .set_admin(res.as_ref().map(|res| res.admin).unwrap_or_default())
             });
             self.state = self.dispatch.get();
 
@@ -848,17 +850,17 @@ impl Event {
                         .and_then(|text| text.parse::<i64>().ok())
                         .unwrap_or_default();
 
-                    self.dispatch.reduce(|old| State {
-                        event: Some(GetEventResponse {
+                    self.dispatch.reduce(|old| {
+                        (*old).clone().set_event(Some(GetEventResponse {
                             info: old
                                 .event
                                 .as_ref()
                                 .map(|e| e.info.clone())
                                 .unwrap_or_default(),
                             timed_out: old.event.as_ref().map(|e| e.timed_out).unwrap_or_default(),
+                            admin: old.event.as_ref().map(|e| e.admin).unwrap_or_default(),
                             viewers,
-                        }),
-                        new_question: old.new_question,
+                        }))
                     });
                     self.state = self.dispatch.get();
 

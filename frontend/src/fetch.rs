@@ -3,7 +3,8 @@
 use gloo_utils::format::JsValueSerdeExt;
 use shared::{
     AddEvent, AddQuestion, EditLike, EventData, EventInfo, EventState, EventUpgrade,
-    GetEventResponse, ModEventState, ModQuestion, PaymentCapture, QuestionItem, States,
+    GetEventResponse, GetUserInfo, ModEventState, ModQuestion, PaymentCapture, QuestionItem,
+    States, UserLogin,
 };
 use std::{
     error::Error,
@@ -11,7 +12,7 @@ use std::{
 };
 use wasm_bindgen::{JsCast, JsValue};
 use wasm_bindgen_futures::JsFuture;
-use web_sys::{Request, RequestInit, RequestMode, Response};
+use web_sys::{Request, RequestCredentials, RequestInit, RequestMode, Response};
 
 /// Something wrong has occurred while fetching an external resource.
 #[derive(Debug)]
@@ -73,6 +74,7 @@ pub async fn fetch_event(
     let mut opts = RequestInit::new();
     opts.method("GET");
     opts.mode(RequestMode::Cors);
+    opts.credentials(RequestCredentials::Include);
 
     let request = Request::new_with_str_and_init(&url, &opts)?;
 
@@ -248,7 +250,7 @@ pub async fn create_event(
     base_api: &str,
     name: String,
     desc: String,
-    email: String,
+    email: Option<String>,
 ) -> Result<EventInfo, FetchError> {
     let body = AddEvent {
         data: EventData {
@@ -256,14 +258,8 @@ pub async fn create_event(
             description: desc,
             long_url: None,
             short_url: String::new(),
-            mail: if email.is_empty() {
-                None
-            } else {
-                Some(email.clone())
-            },
         },
         test: false,
-        //TODO: get rid of
         moderator_email: email,
     };
     let body = serde_json::to_string(&body)?;
@@ -284,6 +280,72 @@ pub async fn create_event(
     let res = JsValueSerdeExt::into_serde::<EventInfo>(&json)?;
 
     Ok(res)
+}
+
+pub async fn admin_login(base_api: &str, name: String, pwd_hash: String) -> Result<(), FetchError> {
+    let body = UserLogin { name, pwd_hash };
+    let body = serde_json::to_string(&body)?;
+    let body = JsValue::from_str(&body);
+
+    let mut opts = RequestInit::new();
+    opts.method("POST");
+    opts.body(Some(&body));
+    opts.credentials(RequestCredentials::Include);
+
+    let request = Request::new_with_str_and_init(&format!("{base_api}/api/admin/login"), &opts)?;
+    request.headers().set("content-type", "application/json")?;
+
+    let window = gloo_utils::window();
+
+    let resp = JsFuture::from(window.fetch_with_request(&request)).await?;
+    let resp: Response = resp.dyn_into()?;
+
+    if resp.ok() {
+        Ok(())
+    } else {
+        Err(FetchError::Generic("request failed".into()))
+    }
+}
+
+pub async fn fetch_user(base_api: &str) -> Result<GetUserInfo, FetchError> {
+    let url = format!("{base_api}/api/admin/user");
+
+    let mut opts = RequestInit::new();
+    opts.method("GET");
+    opts.mode(RequestMode::Cors);
+    opts.credentials(RequestCredentials::Include);
+
+    let request = Request::new_with_str_and_init(&url, &opts)?;
+
+    let window = gloo_utils::window();
+    let resp_value = JsFuture::from(window.fetch_with_request(&request)).await?;
+    let resp: Response = resp_value.dyn_into()?;
+
+    let json = JsFuture::from(resp.json()?).await?;
+    let res = JsValueSerdeExt::into_serde::<GetUserInfo>(&json)?;
+
+    Ok(res)
+}
+
+pub async fn admin_logout(base_api: &str) -> Result<(), FetchError> {
+    let url = format!("{base_api}/api/admin/logout");
+
+    let mut opts = RequestInit::new();
+    opts.method("GET");
+    opts.mode(RequestMode::Cors);
+    opts.credentials(RequestCredentials::Include);
+
+    let request = Request::new_with_str_and_init(&url, &opts)?;
+
+    let window = gloo_utils::window();
+    let resp = JsFuture::from(window.fetch_with_request(&request)).await?;
+    let resp: Response = resp.dyn_into()?;
+
+    if resp.ok() {
+        Ok(())
+    } else {
+        Err(FetchError::Generic("request failed".into()))
+    }
 }
 
 pub async fn delete_event(

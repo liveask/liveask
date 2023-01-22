@@ -16,6 +16,7 @@ pub enum Msg {
     Example,
     CreateEvent,
     Privacy,
+    Admin,
     VersionReceived(Option<String>),
 }
 impl Component for Home {
@@ -42,6 +43,10 @@ impl Component for Home {
             }
             Msg::Privacy => {
                 ctx.link().history().unwrap_throw().push(Route::Privacy);
+                false
+            }
+            Msg::Admin => {
+                ctx.link().history().unwrap_throw().push(Route::Login);
                 false
             }
             Msg::VersionReceived(api_version) => {
@@ -192,6 +197,12 @@ impl Home {
 
                 <div class="version">
                     { format!("v.{VERSION_STR}-{git_sha} {branch} {api_version}") }
+                </div>
+
+                <div id="admin">
+                    <div class="inner" onclick={ctx.link().callback(|_| Msg::Admin)}>
+                        <img src="/assets/admin.svg" />
+                    </div>
                 </div>
             </div>
         }

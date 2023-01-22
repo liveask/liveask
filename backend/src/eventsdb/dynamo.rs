@@ -90,9 +90,9 @@ impl EventsDB for DynamoEventsDB {
 
         //Note: filter out conditional error
         if let Err(e) = request.send().await {
-            if matches!(&e,SdkError::<PutItemError>::ServiceError { err, .. }
+            if matches!(&e,SdkError::<PutItemError>::ServiceError (err)
             if matches!(
-                err.kind,
+                err.err().kind,
                 PutItemErrorKind::ConditionalCheckFailedException(_)
             )) {
                 return Err(Error::Concurrency);

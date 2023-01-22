@@ -5,15 +5,20 @@ edition = "2021"
 build = "build.rs"
 
 [dependencies]
+async-redis-session = "0.2"
 async-trait = "0.1"
-aws-config = "0.51"
-aws-sdk-dynamodb = "0.21"
+aws-config = "0.53"
+aws-sdk-dynamodb = "0.23"
 axum = { version = "0.6", features = ["ws"] }
+axum-login = "0.4"
+axum-sessions = "0.4"
 chrono = "0.4"
 deadpool-redis = { version = "0.11", default-features = false, features = ["rt_tokio_1"] }
+eyre = "0.6"
 futures-util = "0.3"
 mailjet-rs = "0.3" 
 paypal-rust = "0.0.5-alpha"
+rand = { version = "0.8", features = ["min_const_gen"] }
 redis = { version = "0.22", default-features = false, features = ["tokio-comp","connection-manager"] }
 reqwest = { version = "0.11", features = ["json"] }
 sentry = { version = "0.29", features = ["tracing", "tower", "tower-http"] }
@@ -25,7 +30,7 @@ tinyurl-rs = "0.1"
 tokio = { version = "1", features = ["full"] }
 tokio-stream = "0.1"
 tower = "0.4"
-tower-http = { version = "0.3", features = ["cors", "trace"] }
+tower-http = { version = "0.3", features = ["cors", "trace", "auth", "sensitive-headers"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 ulid = "1.0"

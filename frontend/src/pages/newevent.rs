@@ -49,7 +49,11 @@ impl Component for NewEvent {
             Msg::Create => {
                 let name = self.name.clone();
                 let desc = self.desc.clone();
-                let email = self.email.clone();
+                let email: Option<String> = if self.email.trim().is_empty() {
+                    None
+                } else {
+                    Some(self.email.trim().to_owned())
+                };
 
                 tracking::track_event(tracking::EVNT_NEWEVENT_FINISH);
 
