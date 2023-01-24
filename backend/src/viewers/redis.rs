@@ -13,6 +13,8 @@ impl RedisViewers {
     }
 }
 
+const KEY_TTL: usize = 60 * 60 * 24 * 7;
+
 #[async_trait]
 impl Viewers for RedisViewers {
     #[instrument(skip(self))]
@@ -27,14 +29,18 @@ impl Viewers for RedisViewers {
     #[instrument(skip(self))]
     async fn add(&self, key: &str) {
         if let Ok(mut db) = self.redis.get().await {
-            db.incr::<_, isize, isize>(create_key(key), 1).await.ok();
+            let key = create_key(key);
+            db.incr::<_, isize, isize>(key.clone(), 1).await.ok();
+            db.expire::<_, isize>(key, KEY_TTL).await.ok();
         }
     }
 
     #[instrument(skip(self))]
     async fn remove(&self, key: &str) {
         if let Ok(mut db) = self.redis.get().await {
-            db.decr::<_, isize, isize>(create_key(key), 1).await.ok();
+            let key = create_key(key);
+            db.decr::<_, isize, isize>(key.clone(), 1).await.ok();
+            db.expire::<_, isize>(key, KEY_TTL).await.ok();
         }
     }
 }
