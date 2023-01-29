@@ -55,7 +55,7 @@ use crate::{
     pages::{Event, Home, NewEvent, Print, Privacy},
 };
 
-pub const VERSION_STR: &str = "2.1.5";
+pub const VERSION_STR: &str = "2.1.6";
 
 #[derive(Default, Clone, Eq, PartialEq, Store)]
 pub struct State {
