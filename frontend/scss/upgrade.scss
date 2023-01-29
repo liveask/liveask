@@ -33,14 +33,26 @@
     }
 
     .expanded {
+      margin: 15px;
+
       .features {
-        margin-top: 35px;
-        margin-bottom: 35px;
+        margin-top: 15px;
+        margin-bottom: 15px;
 
         li {
           &.tbd {
             color: rgb(120, 120, 120);
           }
+        }
+      }
+
+      .tmp-subscription {
+        margin: 10px;
+
+        a {
+          text-decoration: none;
+          color: black;
+          text-decoration: underline;
         }
       }
     }

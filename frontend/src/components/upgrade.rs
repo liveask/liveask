@@ -106,6 +106,14 @@ impl Upgrade {
                 </ul>
                 </div>
 
+                <div class="tmp-subscription">
+                    {"For super users planning regular events we are planing a subscription, for the time being reach "}
+                    <a href="mailto:mail@live-ask.com">
+                        {"out to us"}
+                    </a>
+                    {" for discounts on multiple premium events."}
+                </div>
+
                 <button class="button" hidden={pending} onclick={ctx.link().callback(|_| Msg::UpgradeClicked)}>
                     {"upgrade"}
                 </button>
