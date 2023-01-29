@@ -54,7 +54,6 @@ use sentry::integrations::{
     tracing::EventFilter,
 };
 use std::{iter::once, net::SocketAddr, sync::Arc};
-use tower::ServiceBuilder;
 use tower_http::{
     cors::CorsLayer, sensitive_headers::SetSensitiveRequestHeadersLayer, trace::TraceLayer,
 };
@@ -242,13 +241,6 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
         RedisSessionStore::new(redis_url)?.with_prefix("session/"),
     );
 
-    let middleware = ServiceBuilder::new()
-        .layer(SetSensitiveRequestHeadersLayer::new(once(header::COOKIE)))
-        .layer(SentryHttpLayer::with_transaction())
-        .layer(NewSentryLayer::new_from_top())
-        .layer(TraceLayer::new_for_http())
-        .layer(setup_cors());
-
     let admin_routes = Router::new()
         .route("/user", get(admin_user_handler))
         .route("/login", post(login_handler))
@@ -281,7 +273,11 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
         .nest("/api/admin", admin_routes)
         .layer(auth_layer)
         .layer(session_layer)
-        .layer(middleware)
+        .layer(SetSensitiveRequestHeadersLayer::new(once(header::COOKIE)))
+        .layer(SentryHttpLayer::with_transaction())
+        .layer(NewSentryLayer::new_from_top())
+        .layer(TraceLayer::new_for_http())
+        .layer(setup_cors())
         .with_state(Arc::clone(&app));
 
     let addr = SocketAddr::from(([0, 0, 0, 0], get_port()));
