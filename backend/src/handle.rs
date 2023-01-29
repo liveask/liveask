@@ -202,6 +202,12 @@ pub async fn panic_handler() -> Html<&'static str> {
     todo!()
 }
 
+#[instrument]
+pub async fn error_handler() -> Html<&'static str> {
+    tracing::error!("error handler");
+    Html("error")
+}
+
 #[cfg(test)]
 mod test_db_conflicts {
     use super::*;
