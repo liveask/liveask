@@ -57,7 +57,7 @@ use crate::{
 
 pub use agents::WordCloudAgent;
 
-pub const VERSION_STR: &str = "2.1.6";
+pub const VERSION_STR: &str = "2.1.7";
 
 #[derive(Default, Clone, Eq, PartialEq, Store)]
 pub struct State {
