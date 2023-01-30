@@ -100,8 +100,8 @@ impl Upgrade {
                     <li>{"Remove 7 Day Event Timeout"}</li>
                     <li>{"Live Stats (participants, likes ..)"}</li>
                     <li>{"Export Data"}</li>
+                    <li>{"Word Cloud"}</li>
                     <li class="tbd">{"Prescreen Questions (coming soon..)"}</li>
-                    <li class="tbd">{"Word Cloud (coming soon..)"}</li>
                     <li class="tbd">{"Answer Questions (coming soon..)"}</li>
                 </ul>
                 </div>
