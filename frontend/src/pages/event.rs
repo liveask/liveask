@@ -491,9 +491,19 @@ impl Event {
     }
 
     fn view_cloud(&self) -> Html {
-        self.wordcloud
-            .as_ref()
-            .map_or_else(|| html!(), |cloud| cloud_as_yew_img(cloud))
+        self.wordcloud.as_ref().map_or_else(
+            || html!(),
+            |cloud| {
+                html! {
+                    <div>
+                    <div class="questions-seperator">
+                        {"Word Cloud"}
+                    </div>
+                    {cloud_as_yew_img(cloud)}
+                    </div>
+                }
+            },
+        )
     }
 
     #[allow(clippy::if_not_else)]
@@ -788,8 +798,10 @@ impl Event {
             self.unanswered = unanswered.collect();
             self.hidden = hidden.collect();
 
-            self.wordcloud_agent
-                .send(WordCloudInput(e.info.questions.clone()));
+            if e.info.premium {
+                self.wordcloud_agent
+                    .send(WordCloudInput(e.info.questions.clone()));
+            }
         }
     }
 

@@ -4,7 +4,7 @@ use shared::QuestionItem;
 use std::collections::HashSet;
 use yew_agent::{Agent, AgentLink, HandlerId};
 
-use crate::cloud::create_cloud;
+use crate::{cloud::create_cloud, pwd::pwd_hash};
 
 #[derive(Serialize, Deserialize)]
 pub struct WordCloudInput(pub Vec<QuestionItem>);
@@ -16,6 +16,7 @@ pub struct WordCloudOutput(pub String);
 pub struct WordCloudAgent {
     link: AgentLink<Self>,
     subscribers: HashSet<HandlerId>,
+    cache: Option<(String, String)>,
 }
 
 impl Agent for WordCloudAgent {
@@ -28,6 +29,7 @@ impl Agent for WordCloudAgent {
         Self {
             link,
             subscribers: HashSet::new(),
+            cache: None,
         }
     }
 
@@ -45,15 +47,33 @@ impl Agent for WordCloudAgent {
             .collect::<Vec<_>>()
             .join(" ");
 
-        log::info!(target: "worker", "[wc] text generated: {}ms",elapsed(start));
+        let hash = pwd_hash(&text);
+
+        log::info!(target: "worker", "[wc] text generated [{hash}]: {}ms",elapsed(start));
+
+        if let Some((cached_hash, data)) = &self.cache {
+            if &hash == cached_hash {
+                log::info!(target: "worker", "[wc] result from cache: {}ms",elapsed(start));
+
+                self.link.respond(id, WordCloudOutput(data.clone()));
+
+                log::info!(target: "worker", "[wc] send: {}ms",elapsed(start));
+
+                return;
+            }
+        }
 
         match create_cloud(&text) {
             Ok(cloud) => {
                 log::info!(target: "worker", "[wc] generated: {}ms",elapsed(start));
 
-                self.link.respond(id, WordCloudOutput(cloud));
+                self.link.respond(id, WordCloudOutput(cloud.clone()));
 
                 log::info!(target: "worker", "[wc] send: {}ms",elapsed(start));
+
+                self.cache = Some((hash, cloud));
+
+                log::info!(target: "worker", "[wc] cached: {}ms",elapsed(start));
             }
 
             Err(e) => {

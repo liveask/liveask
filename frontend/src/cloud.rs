@@ -7,7 +7,16 @@ use std::{collections::HashMap, io::Cursor};
 use wordcloud_rs::{Colors, Token, WordCloud};
 use yew::html;
 
+// Cargo.toml
+//
+// wordcloud-rs = "0.1"
+// image="0.24"
+// regex = "1.7"
+// lazy_static = "1.4"
+// base64 = "0.20"
+
 lazy_static! {
+    //TODO: get rid of allow and `expect`
     static ref RE_TOKEN: Regex = Regex::new(r"\w+").expect("regex error");
 }
 
@@ -39,14 +48,6 @@ fn tokenize(text: &str) -> Vec<(Token, f32)> {
         .map(|(k, v)| (Token::Text(k), v as f32))
         .collect()
 }
-
-// Cargo.toml
-//
-// wordcloud-rs = "0.1"
-// image="0.24"
-// regex = "1.7"
-// lazy_static = "1.4"
-// base64 = "0.20"
 
 pub fn create_cloud(text: &str) -> anyhow::Result<String> {
     let img = WordCloud::new()
