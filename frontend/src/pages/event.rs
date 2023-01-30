@@ -11,12 +11,16 @@ use yew_router::{prelude::Location, scope_ext::RouterScopeExt};
 use yewdux::prelude::*;
 
 use crate::{
-    agents::{EventAgent, GlobalEvent, SocketInput, WebSocketAgent, WsResponse},
+    agents::{
+        EventAgent, GlobalEvent, SocketInput, WebSocketAgent, WordCloudInput, WordCloudOutput,
+        WsResponse,
+    },
+    cloud::cloud_as_yew_img,
     components::{DeletePopup, Question, QuestionClickType, QuestionPopup, SharePopup, Upgrade},
     environment::{la_env, LiveAskEnv},
     fetch,
     local_cache::LocalCache,
-    tracking, State,
+    tracking, State, WordCloudAgent,
 };
 
 enum Mode {
@@ -63,6 +67,7 @@ struct QueryParams {
 pub struct Event {
     event_id: String,
     copied_to_clipboard: bool,
+    wordcloud: Option<String>,
     query_params: QueryParams,
     mode: Mode,
     state: Rc<State>,
@@ -73,6 +78,7 @@ pub struct Event {
     dispatch: Dispatch<State>,
     socket_agent: Box<dyn Bridge<WebSocketAgent>>,
     events: Box<dyn Bridge<EventAgent>>,
+    wordcloud_agent: Box<dyn Bridge<WordCloudAgent>>,
 }
 pub enum Msg {
     ShareEventClick,
@@ -88,6 +94,7 @@ pub enum Msg {
     StateChanged,
     CopyLink,
     GlobalEvent(GlobalEvent),
+    WordCloud(WordCloudOutput),
 }
 impl Component for Event {
     type Message = Msg;
@@ -115,6 +122,7 @@ impl Component for Event {
         Self {
             event_id,
             query_params,
+            wordcloud: None,
             copied_to_clipboard: false,
             mode: if ctx.props().secret.is_some() {
                 Mode::Moderator
@@ -129,6 +137,7 @@ impl Component for Event {
             dispatch: Dispatch::<State>::subscribe(Callback::noop()),
             socket_agent: ws,
             events: EventAgent::bridge(ctx.link().callback(Msg::GlobalEvent)),
+            wordcloud_agent: WordCloudAgent::bridge(ctx.link().callback(Msg::WordCloud)),
         }
     }
 
@@ -171,6 +180,10 @@ impl Component for Event {
                 false
             }
 
+            Msg::WordCloud(w) => {
+                self.wordcloud = Some(w.0);
+                true
+            }
             Msg::ModDelete => {
                 self.events.send(GlobalEvent::DeletePopup);
                 false
@@ -469,10 +482,18 @@ impl Event {
 
                     {self.view_questions(ctx,e)}
 
+                    {self.view_cloud()}
+
                     {Self::view_ask_question(mod_view,ctx,e)}
                 </div>
             }
         })
+    }
+
+    fn view_cloud(&self) -> Html {
+        self.wordcloud
+            .as_ref()
+            .map_or_else(|| html!(), |cloud| cloud_as_yew_img(cloud))
     }
 
     #[allow(clippy::if_not_else)]
@@ -766,6 +787,9 @@ impl Event {
             self.answered = answered.collect();
             self.unanswered = unanswered.collect();
             self.hidden = hidden.collect();
+
+            self.wordcloud_agent
+                .send(WordCloudInput(e.info.questions.clone()));
         }
     }
 

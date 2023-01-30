@@ -1,6 +1,6 @@
 
 serve:
-	cargo make serve --disable-check-for-updates
+	cargo make serve --release --disable-check-for-updates
 
 check:
 	cargo make checks
