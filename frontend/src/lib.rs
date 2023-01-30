@@ -45,7 +45,6 @@ use pages::AdminLogin;
 use routes::Route;
 use shared::GetEventResponse;
 use std::rc::Rc;
-use wasm_bindgen::prelude::*;
 use yew::prelude::*;
 use yew_agent::{Bridge, Bridged};
 use yew_router::prelude::*;
@@ -91,7 +90,7 @@ pub enum Msg {
     Event(GlobalEvent),
 }
 
-struct AppRoot {
+pub struct AppRoot {
     connected: bool,
     state: Rc<State>,
     _dispatch: Dispatch<State>,
@@ -174,12 +173,4 @@ fn switch(switch: &Route) -> Html {
             html! { <AdminLogin /> }
         }
     }
-}
-
-#[wasm_bindgen(start)]
-pub fn run_app() {
-    console_error_panic_hook::set_once();
-
-    wasm_logger::init(wasm_logger::Config::new(log::Level::Info));
-    yew::start_app::<AppRoot>();
 }
