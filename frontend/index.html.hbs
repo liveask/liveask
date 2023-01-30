@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
     <title>Live-Ask</title>
@@ -8,13 +8,15 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
 
+    <link data-trunk rel="rust" href="Cargo.toml" data-wasm-opt="z" data-bin="app" data-type="main" />
+    <link data-trunk rel="rust" href="Cargo.toml" data-wasm-opt="z" data-bin="worker" data-type="worker" />
+
     <link data-trunk rel="sass" href="scss/all.scss" />
     <link data-trunk rel="copy-dir" href="assets/" />
-    <link data-trunk rel="rust" data-wasm-opt="z" />
+
     <link data-trunk rel="icon" href="favicon.ico" />
     <link data-trunk rel="copy-file" href="inline-assets/apple-touch-icon.png" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png">
-    <!-- <link data-trunk rel="copy-file" href="robots.txt" /> -->
 
     <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
 
