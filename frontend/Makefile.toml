@@ -48,7 +48,6 @@ args = ["build","--release"]
 
 [tasks.check-size]
 script_runner = "@shell"
-dependencies = ["build-release"]
 script = '''
 ls -lh dist/*.wasm
 '''
