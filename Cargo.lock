@@ -1669,7 +1669,6 @@ name = "frontend"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "base64 0.21.0",
  "chrono",
  "console_error_panic_hook",
  "const_format",
@@ -1679,16 +1678,12 @@ dependencies = [
  "gloo-storage",
  "gloo-utils",
  "handlebars",
- "image 0.24.5",
  "js-sys",
  "konst",
- "lazy_static",
  "log",
  "qrcode",
- "regex",
  "serde",
  "serde_json",
- "sha2 0.10.6",
  "shared",
  "split-iter",
  "urlencoding",
@@ -1699,7 +1694,7 @@ dependencies = [
  "wasm-logger",
  "wasm-sockets",
  "web-sys",
- "wordcloud-rs",
+ "worker",
  "yew",
  "yew-agent",
  "yew-router",
@@ -5207,6 +5202,25 @@ dependencies = [
  "palette",
  "rand 0.8.5",
  "rand_distr",
+]
+
+[[package]]
+name = "worker"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "base64 0.21.0",
+ "chrono",
+ "console_error_panic_hook",
+ "image 0.24.5",
+ "lazy_static",
+ "log",
+ "regex",
+ "serde",
+ "sha2 0.10.6",
+ "wasm-logger",
+ "wordcloud-rs",
+ "yew-agent",
 ]
 
 [[package]]

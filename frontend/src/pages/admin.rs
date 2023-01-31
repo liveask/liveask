@@ -1,9 +1,10 @@
 use shared::{GetUserInfo, UserInfo};
 use wasm_bindgen::UnwrapThrowExt;
 use web_sys::HtmlInputElement;
+use worker::pwd_hash;
 use yew::prelude::*;
 
-use crate::{fetch, pwd::pwd_hash};
+use crate::fetch;
 
 use super::BASE_API;
 

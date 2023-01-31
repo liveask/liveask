@@ -2,6 +2,7 @@
 members=[
     "shared",
     "frontend",
+    "frontend/worker",
     "backend-e2e",
     "backend"
 ]

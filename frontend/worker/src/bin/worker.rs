@@ -1,4 +1,4 @@
-use frontend::WordCloudAgent;
+use worker::WordCloudAgent;
 use yew_agent::Threaded;
 
 fn main() {

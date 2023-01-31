@@ -30,13 +30,11 @@
     clippy::let_unit_value
 )]
 mod agents;
-mod cloud;
 mod components;
 mod environment;
 mod fetch;
 mod local_cache;
 mod pages;
-mod pwd;
 mod routes;
 mod tracking;
 
@@ -54,8 +52,6 @@ use crate::{
     components::IconBar,
     pages::{Event, Home, NewEvent, Print, Privacy},
 };
-
-pub use agents::WordCloudAgent;
 
 pub const VERSION_STR: &str = "2.1.7";
 

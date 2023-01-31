@@ -5,22 +5,19 @@ use shared::{EventInfo, GetEventResponse, ModQuestion, QuestionItem, States};
 use std::{rc::Rc, str::FromStr};
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 use web_sys::HtmlAnchorElement;
+use worker::{WordCloudAgent, WordCloudInput, WordCloudOutput};
 use yew::prelude::*;
 use yew_agent::{Bridge, Bridged};
 use yew_router::{prelude::Location, scope_ext::RouterScopeExt};
 use yewdux::prelude::*;
 
 use crate::{
-    agents::{
-        EventAgent, GlobalEvent, SocketInput, WebSocketAgent, WordCloudInput, WordCloudOutput,
-        WsResponse,
-    },
-    cloud::cloud_as_yew_img,
+    agents::{EventAgent, GlobalEvent, SocketInput, WebSocketAgent, WsResponse},
     components::{DeletePopup, Question, QuestionClickType, QuestionPopup, SharePopup, Upgrade},
     environment::{la_env, LiveAskEnv},
     fetch,
     local_cache::LocalCache,
-    tracking, State, WordCloudAgent,
+    tracking, State,
 };
 
 enum Mode {
@@ -799,8 +796,13 @@ impl Event {
             self.hidden = hidden.collect();
 
             if e.info.premium {
-                self.wordcloud_agent
-                    .send(WordCloudInput(e.info.questions.clone()));
+                self.wordcloud_agent.send(WordCloudInput(
+                    e.info
+                        .questions
+                        .iter()
+                        .map(|q| q.text.clone())
+                        .collect::<Vec<_>>(),
+                ));
             }
         }
     }
@@ -917,5 +919,13 @@ impl Event {
                 !fetch_event
             }
         }
+    }
+}
+
+pub fn cloud_as_yew_img(b64: &str) -> yew::Html {
+    html! {
+        <div class="cloud">
+         <img src={format!("data:image/png;base64,{b64}")} />
+        </div>
     }
 }

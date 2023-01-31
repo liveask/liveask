@@ -46,6 +46,11 @@ install_crate = "trunk"
 command = "trunk"
 args = ["build","--release"]
 
+[tasks.build]
+install_crate = "trunk"
+command = "trunk"
+args = ["build"]
+
 [tasks.check-size]
 script_runner = "@shell"
 script = '''

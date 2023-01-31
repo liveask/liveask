@@ -1,13 +1,12 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use shared::QuestionItem;
 use std::collections::HashSet;
 use yew_agent::{Agent, AgentLink, HandlerId};
 
 use crate::{cloud::create_cloud, pwd::pwd_hash};
 
 #[derive(Serialize, Deserialize)]
-pub struct WordCloudInput(pub Vec<QuestionItem>);
+pub struct WordCloudInput(pub Vec<String>);
 
 #[derive(Serialize, Deserialize)]
 pub struct WordCloudOutput(pub String);
@@ -43,7 +42,7 @@ impl Agent for WordCloudAgent {
         let text = input
             .0
             .into_iter()
-            .map(|q| q.text)
+            // .map(|q| q.text)
             .collect::<Vec<_>>()
             .join(" ");
 

@@ -5,7 +5,6 @@ use lazy_static::lazy_static;
 use regex::Regex;
 use std::{collections::HashMap, io::Cursor};
 use wordcloud_rs::{Colors, Token, WordCloud};
-use yew::html;
 
 // Cargo.toml
 //
@@ -67,12 +66,4 @@ fn base64_encode(data: &[u8]) -> String {
     use base64::{engine::general_purpose, Engine as _};
 
     general_purpose::STANDARD.encode(data)
-}
-
-pub fn cloud_as_yew_img(b64: &str) -> yew::Html {
-    html! {
-        <div class="cloud">
-         <img src={format!("data:image/png;base64,{b64}")} />
-        </div>
-    }
 }
