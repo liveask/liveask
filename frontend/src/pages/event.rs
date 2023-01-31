@@ -488,12 +488,14 @@ impl Event {
     }
 
     fn view_cloud(&self) -> Html {
+        let title_classes = self.question_separator_classes();
+
         self.wordcloud.as_ref().map_or_else(
             || html!(),
             |cloud| {
                 html! {
                     <div>
-                    <div class="questions-seperator">
+                    <div class={title_classes}>
                         {"Word Cloud"}
                     </div>
                     {cloud_as_yew_img(cloud)}
@@ -516,6 +518,13 @@ impl Event {
                 </div>
             }
         }
+    }
+
+    fn question_separator_classes(&self) -> Classes {
+        classes!(match self.mode {
+            Mode::Moderator => "questions-seperator modview",
+            Mode::Viewer => "questions-seperator",
+        })
     }
 
     fn view_questions(&self, ctx: &Context<Self>, e: &GetEventResponse) -> Html {
@@ -550,10 +559,7 @@ impl Event {
         can_vote: bool,
     ) -> Html {
         if !items.is_empty() {
-            let title_classes = classes!(match self.mode {
-                Mode::Moderator => "questions-seperator modview",
-                Mode::Viewer => "questions-seperator",
-            });
+            let title_classes = self.question_separator_classes();
 
             let blurr = self
                 .state
