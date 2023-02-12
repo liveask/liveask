@@ -23,13 +23,18 @@ args = ["sort","-c"]
 command = "cargo"
 args = ["test","--target=wasm32-unknown-unknown"]
 
+[tasks.udeps]
+command = "cargo"
+toolchain="nightly"
+args = ["udeps","--target=wasm32-unknown-unknown"]
+
 [tasks.format]
 install_crate = "fmt"
 command = "cargo"
 args = ["fmt","--","--check"]
 
 [tasks.checks]
-dependencies = ["cargo-sort","format","cargo-check","clippy"]
+dependencies = ["cargo-sort","format","cargo-check","clippy","udeps"]
 
 [tasks.serve]
 install_crate = "trunk"
