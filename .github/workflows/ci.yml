@@ -53,11 +53,11 @@ jobs:
     - name: Check FE
       run: |
         cd frontend
-        cargo make checks
+        cargo make checks_ci
     - name: Check BE
       run: |
         cd backend
-        cargo make checks
+        cargo make checks_ci
     - name: Test FE
       run: |
         cd frontend
@@ -66,6 +66,45 @@ jobs:
       run: |
         cd backend
         cargo t
+
+  check_udeps:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        rust: [nightly]
+    runs-on: ${{ matrix.os }}
+    steps:
+    - uses: actions/checkout@v2
+    - name: Restore cargo cache
+      uses: actions/cache@v2
+      env:
+        cache-name: ci
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          ~/.cargo/bin
+          target
+        key: ${{ matrix.os }}-${{ env.cache-name }}-${{ matrix.rust }}-${{ hashFiles('Cargo.lock') }}
+    - name: Install Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: ${{ matrix.rust }}
+        target: wasm32-unknown-unknown
+        default: true
+        profile: minimal
+    - name: Install cargo-make
+      run: |
+        which cargo-make || cargo install cargo-make
+    - name: Check FE
+      run: |
+        cd frontend
+        cargo make udeps
+    - name: Check BE
+      run: |
+        cd backend
+        cargo make udeps
 
 # DEPLOY
 

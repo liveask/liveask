@@ -36,6 +36,9 @@ args = ["fmt","--","--check"]
 [tasks.checks]
 dependencies = ["cargo-sort","format","cargo-check","clippy","udeps"]
 
+[tasks.checks_ci]
+dependencies = ["cargo-sort","format","cargo-check","clippy"]
+
 [tasks.serve]
 install_crate = "trunk"
 command = "trunk"
