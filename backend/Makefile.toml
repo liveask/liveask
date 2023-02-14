@@ -39,6 +39,9 @@ args = ["udeps"]
 [tasks.checks]
 dependencies = ["cargo-sort","format","tests","clippy","udeps"]
 
+[tasks.checks_ci]
+dependencies = ["cargo-sort","format","tests","clippy"]
+
 [tasks.run-release]
 command = "cargo"
 args = ["r","--release"]
