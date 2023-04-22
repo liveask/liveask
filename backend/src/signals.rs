@@ -17,7 +17,7 @@ pub fn create_term_signal_handler(sender: tokio::sync::oneshot::Sender<()>) {
             }
         }
 
-        let _ = sender.send(());
+        let _: Result<(), _> = sender.send(());
     });
 }
 
