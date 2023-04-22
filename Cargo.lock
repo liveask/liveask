@@ -2984,9 +2984,9 @@ dependencies = [
 
 [[package]]
 name = "paypal-rust"
-version = "0.0.6-alpha"
+version = "0.0.8-alpha"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d99ce3557c951a0bfa8f9be85c797e39a309cb458888111a7f4f7992a961ae34"
+checksum = "340ede5355c58b6f117914f2c7f2bc88368afe76fc775277f5155ea46595eec5"
 dependencies = [
  "base64 0.13.1",
  "chrono",
@@ -3910,6 +3910,7 @@ version = "1.0.91"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "877c235533714907a8c2464236f5c4b2a17262ef1bd71f38f35ea592c8da6883"
 dependencies = [
+ "indexmap",
  "itoa 1.0.5",
  "ryu",
  "serde",
