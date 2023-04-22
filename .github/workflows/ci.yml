@@ -153,16 +153,16 @@ jobs:
         docker push liveask/server
         docker tag liveask/server liveask/server:beta
         docker push liveask/server:beta
-    - name: Deploy
-      env:
-        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_KEY_ID }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_KEY_SECRET }}
-        AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
-        ECS_CLUSTER: la-ecs-cluster-beta
-      run: |
-        aws sts get-caller-identity
-        ECS_SERVICE_ARN=$(aws ecs list-services --region=${AWS_DEFAULT_REGION} --cluster=${ECS_CLUSTER} --output=text | head -1 | awk '{print $2}')
-        aws ecs update-service --region=${AWS_DEFAULT_REGION} --service=${ECS_SERVICE_ARN} --cluster=${ECS_CLUSTER} --force-new-deployment
+    # - name: Deploy
+    #   env:
+    #     AWS_ACCESS_KEY_ID: ${{ secrets.AWS_KEY_ID }}
+    #     AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_KEY_SECRET }}
+    #     AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
+    #     ECS_CLUSTER: la-ecs-cluster-beta
+    #   run: |
+    #     aws sts get-caller-identity
+    #     ECS_SERVICE_ARN=$(aws ecs list-services --region=${AWS_DEFAULT_REGION} --cluster=${ECS_CLUSTER} --output=text | head -1 | awk '{print $2}')
+    #     aws ecs update-service --region=${AWS_DEFAULT_REGION} --service=${ECS_SERVICE_ARN} --cluster=${ECS_CLUSTER} --force-new-deployment
     - name: Set short git SHA
       id: vars
       run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
@@ -199,10 +199,10 @@ jobs:
         toolchain: stable
         default: true
         profile: minimal
-    - name: Test Beta
-      run: |
-        cd backend-e2e
-        make e2e-test-beta
+    # - name: Test Beta
+    #   run: |
+    #     cd backend-e2e
+    #     make e2e-test-beta
     - name: Test Prod
       run: |
         cd backend-e2e
@@ -250,17 +250,17 @@ jobs:
         #TODO: un-dupe once we have a better solution to change FE configs
         cargo make cargo-check
         cargo make build-and-check
-    - name: Deploy
-      env:
-        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_KEY_ID }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_KEY_SECRET }}
-        AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
-      run: |
-        cd frontend/dist
-        aws sts get-caller-identity
-        aws s3 sync . s3://beta.live-ask.com --acl public-read --no-progress --delete --cache-control "public, max-age=5184000" --exclude index.html
-        aws s3 cp ./index.html s3://beta.live-ask.com --acl public-read --no-progress --cache-control "public, max-age=21600"
-        aws cloudfront create-invalidation --distribution-id EJFNBPSNYQSP9 --paths /index.html
+    # - name: Deploy
+    #   env:
+    #     AWS_ACCESS_KEY_ID: ${{ secrets.AWS_KEY_ID }}
+    #     AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_KEY_SECRET }}
+    #     AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
+    #   run: |
+    #     cd frontend/dist
+    #     aws sts get-caller-identity
+    #     aws s3 sync . s3://beta.live-ask.com --acl public-read --no-progress --delete --cache-control "public, max-age=5184000" --exclude index.html
+    #     aws s3 cp ./index.html s3://beta.live-ask.com --acl public-read --no-progress --cache-control "public, max-age=21600"
+    #     aws cloudfront create-invalidation --distribution-id EJFNBPSNYQSP9 --paths /index.html
     - name: Set short SHA
       id: vars
       run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
