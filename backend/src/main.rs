@@ -27,7 +27,6 @@
 #![allow(clippy::module_name_repetitions)]
 //TODO: get rid of having to allow this
 #![allow(clippy::result_large_err)]
-#![allow(clippy::let_with_type_underscore)]
 mod app;
 mod auth;
 mod env;
