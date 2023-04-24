@@ -27,7 +27,8 @@
 #![allow(
     clippy::use_self,
     clippy::module_name_repetitions,
-    clippy::let_unit_value
+    clippy::let_unit_value,
+    clippy::let_underscore_untyped
 )]
 mod agents;
 mod components;
