@@ -1366,12 +1366,12 @@ dependencies = [
 
 [[package]]
 name = "deadpool-redis"
-version = "0.11.1"
+version = "0.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2b8bde44cbfdf17ae5baa45c9f43073b320f1a19955389315629304a23909ad2"
+checksum = "5f1760f60ffc6653b4afd924c5792098d8c00d9a3deb6b3d989eac17949dc422"
 dependencies = [
  "deadpool",
- "redis 0.22.3",
+ "redis 0.23.0",
 ]
 
 [[package]]
@@ -2576,7 +2576,7 @@ dependencies = [
  "paypal-rust",
  "pretty_assertions",
  "rand 0.8.5",
- "redis 0.22.3",
+ "redis 0.23.0",
  "reqwest",
  "sentry",
  "serde",
@@ -3414,9 +3414,9 @@ dependencies = [
 
 [[package]]
 name = "redis"
-version = "0.22.3"
+version = "0.23.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "aa8455fa3621f6b41c514946de66ea0531f57ca017b2e6c7cc368035ea5b46df"
+checksum = "3ea8c51b5dc1d8e5fd3350ec8167f464ec0995e79f2e90a075b63371500d557f"
 dependencies = [
  "arc-swap",
  "async-trait",

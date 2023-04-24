@@ -13,13 +13,13 @@ axum = { version = "0.6", features = ["ws"] }
 axum-login = "0.4"
 axum-sessions = "0.4"
 chrono = "0.4"
-deadpool-redis = { version = "0.11", default-features = false, features = ["rt_tokio_1"] }
+deadpool-redis = { version = "0.12", default-features = false, features = ["rt_tokio_1"] }
 eyre = "0.6"
 futures-util = "0.3"
 mailjet-rs = "0.3" 
 paypal-rust = "0.0.8-alpha"
 rand = { version = "0.8", features = ["min_const_gen"] }
-redis = { version = "0.22", default-features = false, features = ["tokio-comp","connection-manager"] }
+redis = { version = "0.23", default-features = false, features = ["tokio-comp","connection-manager"] }
 reqwest = { version = "0.11", features = ["json"] }
 sentry = { version = "0.31", features = ["tracing", "tower", "tower-http"] }
 serde = "1" 
