@@ -1,0 +1,22 @@
+[package]
+name = "async-redis-session"
+version = "0.2.2"
+authors = ["Jacob Rothstein <hi@jbr.me>"]
+edition = "2018"
+description = "redis session store for async-session"
+readme = "README.md"
+repository = "https://github.com/jbr/async-redis-session"
+documentation = "https://docs.rs/async-redis-session"
+license = "MIT OR Apache-2.0"
+keywords = ["sessions", "tide", "async-session", "redis"]
+categories = ["web-programming::http-server", "web-programming", "database"]
+
+[dependencies.redis]
+version = "0.23.0"
+features = ["aio", "async-std-comp"]
+
+[dependencies]
+async-session = "3.0.0"
+
+[dev-dependencies]
+async-std = { version = "1.9.0", features = ["attributes"] }

@@ -4,7 +4,8 @@ members=[
     "frontend",
     "frontend/worker",
     "backend-e2e",
-    "backend"
+    "backend",
+    "async-redis-session"
 ]
 resolver = "2"
 
