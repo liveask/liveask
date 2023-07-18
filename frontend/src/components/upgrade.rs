@@ -116,6 +116,8 @@ impl Upgrade {
 
                 <button class="button" hidden={pending} onclick={ctx.link().callback(|_| Msg::UpgradeClicked)}>
                     {"upgrade"}
+                    <div class="via">{"on"}</div>
+                    <img class="paypal-logo-small" src="/assets/paypal.svg" />
                 </button>
 
                 <PaymentPopup tokens={self.data.tokens.clone()}/>
