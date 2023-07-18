@@ -130,7 +130,7 @@ pub fn setup(
         .with_persistence_policy(axum_login::axum_sessions::PersistencePolicy::ExistingOnly)
         .with_session_ttl(Some(std::time::Duration::from_secs(60 * 60)));
 
-    let auth_layer = AuthLayer::new(DumbAdminUserStore::default(), secret);
+    let auth_layer = AuthLayer::new(DumbAdminUserStore {}, secret);
 
     (session_layer, auth_layer)
 }
@@ -147,7 +147,7 @@ pub fn setup_test() -> (
         .with_persistence_policy(axum_login::axum_sessions::PersistencePolicy::ExistingOnly)
         .with_session_ttl(Some(std::time::Duration::from_secs(60 * 60)));
 
-    let auth_layer = AuthLayer::new(DumbAdminUserStore::default(), secret.as_bytes());
+    let auth_layer = AuthLayer::new(DumbAdminUserStore {}, secret.as_bytes());
 
     (session_layer, auth_layer)
 }
