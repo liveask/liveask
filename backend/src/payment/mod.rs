@@ -67,7 +67,7 @@ impl Payment {
                 Environment::Live
             },
         )?
-        .with_app_info(AppInfo {
+        .with_app_info(&AppInfo {
             name: "liveask".to_string(),
             version: "1.0".to_string(),
             website: None,
