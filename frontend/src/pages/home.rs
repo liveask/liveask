@@ -159,7 +159,7 @@ impl Home {
             format!("({})", env!("VERGEN_GIT_BRANCH"))
         };
 
-        let git_sha = env!("VERGEN_GIT_SHA_SHORT");
+        let git_sha = env!("VERGEN_GIT_SHA");
 
         let api_version = self
             .api_version
