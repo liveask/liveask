@@ -7,8 +7,8 @@ build = "build.rs"
 [dependencies]
 async-redis-session = { path = "../async-redis-session" }
 async-trait = "0.1"
-aws-config = "0.54"
-aws-sdk-dynamodb = "0.24"
+aws-config = "0.55"
+aws-sdk-dynamodb = "0.28"
 axum = { version = "0.6", features = ["ws"] }
 # axum-login = "0.5"
 axum-login = { git = "https://github.com/maxcountryman/axum-login.git" }

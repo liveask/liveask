@@ -43,7 +43,7 @@ mod viewers;
 
 use async_redis_session::RedisSessionStore;
 use aws_config::meta::region::RegionProviderChain;
-use aws_sdk_dynamodb::Credentials;
+use aws_sdk_dynamodb::config::Credentials;
 use axum::{
     http::header,
     routing::{get, post},

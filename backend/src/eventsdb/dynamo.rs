@@ -1,11 +1,11 @@
 use async_trait::async_trait;
 use aws_sdk_dynamodb::{
-    error::{PutItemError, PutItemErrorKind},
-    model::{
+    error::SdkError,
+    operation::put_item::PutItemError,
+    types::{
         AttributeDefinition, AttributeValue, KeySchemaElement, KeyType, ProvisionedThroughput,
         ScalarAttributeType,
     },
-    types::SdkError,
 };
 use tracing::instrument;
 
@@ -92,8 +92,8 @@ impl EventsDB for DynamoEventsDB {
         if let Err(e) = request.send().await {
             if matches!(&e,SdkError::<PutItemError>::ServiceError (err)
             if matches!(
-                err.err().kind,
-                PutItemErrorKind::ConditionalCheckFailedException(_)
+                err.err(),PutItemError::ConditionalCheckFailedException(_)
+
             )) {
                 return Err(Error::Concurrency);
             }

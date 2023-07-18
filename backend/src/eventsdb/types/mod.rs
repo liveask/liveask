@@ -1,7 +1,7 @@
 mod conversion;
 
 use crate::utils::timestamp_now;
-use aws_sdk_dynamodb::model::AttributeValue;
+use aws_sdk_dynamodb::types::AttributeValue;
 use chrono::{DateTime, Duration, TimeZone, Utc};
 use serde::{Deserialize, Serialize};
 use shared::{EventData, EventInfo, EventState, EventTokens, QuestionItem};

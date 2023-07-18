@@ -1,9 +1,7 @@
-use aws_sdk_dynamodb::model::AttributeValue;
-use shared::{EventData, EventState, EventTokens, QuestionItem, States};
-
-use crate::eventsdb::Error;
-
 use super::{ApiEventInfo, AttributeMap};
+use crate::eventsdb::Error;
+use aws_sdk_dynamodb::types::AttributeValue;
+use shared::{EventData, EventState, EventTokens, QuestionItem, States};
 
 const ATTR_EVENT_INFO_LAST_EDIT: &str = "last_edit";
 const ATTR_EVENT_INFO_DELETE_TIME: &str = "delete_time";

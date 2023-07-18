@@ -1,8 +1,11 @@
 use std::num::ParseIntError;
 
 use aws_sdk_dynamodb::{
-    error::{CreateTableError, GetItemError, ListTablesError, PutItemError},
-    types::SdkError,
+    error::SdkError,
+    operation::{
+        create_table::CreateTableError, get_item::GetItemError, list_tables::ListTablesError,
+        put_item::PutItemError,
+    },
 };
 use thiserror::Error;
 
