@@ -13,7 +13,7 @@ axum = { version = "0.6", features = ["ws"] }
 # axum-login = "0.5"
 axum-login = { git = "https://github.com/maxcountryman/axum-login.git", rev="45a33debddedee9e1138b32cf3d7b6ba6e290449" }
 axum-sessions = "0.5"
-chrono = "0.4"
+chrono = { version = "0.4", default-features = false }
 deadpool-redis = { version = "0.12", default-features = false, features = ["rt_tokio_1"] }
 eyre = "0.6"
 futures-util = "0.3"
