@@ -26,6 +26,7 @@ impl EventsDB for InMemoryEventsDB {
     }
 
     #[instrument(skip(self), err)]
+    #[allow(clippy::significant_drop_tightening)]
     async fn put(&self, event: EventEntry) -> Result<()> {
         let key = event_key(&event.event.tokens.public_token);
 
