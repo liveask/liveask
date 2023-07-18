@@ -219,7 +219,7 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
         tracing::error!("payment auth error: {}", e);
     }
 
-    let pubsub = Arc::new(PubSubRedis::new(redis_pool.clone(), redis_url.clone()).await);
+    let pubsub = Arc::new(PubSubRedis::new(redis_pool.clone(), redis_url.clone()));
     let viewers = Arc::new(RedisViewers::new(redis_pool));
 
     let eventsdb = Arc::new(DynamoEventsDB::new(dynamo_client().await?, use_local_db()).await?);

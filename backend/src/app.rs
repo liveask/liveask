@@ -189,8 +189,7 @@ impl App {
                 result.data.name.clone(),
                 result.data.short_url.clone(),
                 self.mod_link(&result.tokens),
-            )
-            .await;
+            );
         }
 
         Ok(result.into())
@@ -489,6 +488,8 @@ impl App {
     }
 
     //TODO: validate event is still open
+    //TODO: fix clippy-allow
+    #[allow(clippy::cast_possible_wrap)]
     pub async fn add_question(
         &self,
         id: String,
@@ -694,7 +695,7 @@ impl App {
         self.pubsub_publish.publish(&event_id, &msg).await;
     }
 
-    async fn send_mail(
+    fn send_mail(
         &self,
         receiver: String,
         event_name: String,

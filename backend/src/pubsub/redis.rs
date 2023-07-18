@@ -16,7 +16,7 @@ pub struct PubSubRedis {
 }
 
 impl PubSubRedis {
-    pub async fn new(redis: deadpool_redis::Pool, url: String) -> Self {
+    pub fn new(redis: deadpool_redis::Pool, url: String) -> Self {
         let new = Self {
             redis,
             url,
@@ -65,14 +65,14 @@ impl PubSubRedis {
             tracing::debug!(target: "received", bytes = payload.len(), topic = ?topic);
 
             if let Some(topic) = topic.strip_prefix("la/") {
-                self.forward_to_receiver(topic.to_string(), payload).await;
+                self.forward_to_receiver(topic.to_string(), payload);
             }
         }
 
         Ok(())
     }
 
-    async fn forward_to_receiver(&self, topic: String, payload: String) {
+    fn forward_to_receiver(&self, topic: String, payload: String) {
         let receiver = self.receiver.clone();
 
         tokio::spawn(async move {
