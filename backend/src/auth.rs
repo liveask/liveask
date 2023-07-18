@@ -17,7 +17,7 @@ pub struct User {
     password_hash: String,
 }
 
-impl AuthUser for User {
+impl AuthUser<String> for User {
     fn get_id(&self) -> String {
         self.id.clone()
     }
@@ -27,7 +27,7 @@ impl AuthUser for User {
     }
 }
 
-type AuthContext = axum_login::extractors::AuthContext<User, DumbAdminUserStore>;
+type AuthContext = axum_login::extractors::AuthContext<String, User, DumbAdminUserStore>;
 
 pub async fn login_handler(
     mut auth: AuthContext,
@@ -96,21 +96,23 @@ where
 pub struct DumbAdminUserStore;
 
 #[async_trait]
-impl<Role> UserStore<Role> for DumbAdminUserStore
+impl<Role> UserStore<String, Role> for DumbAdminUserStore
 where
     Role: PartialOrd + PartialEq + Clone + Send + Sync + 'static,
-    User: AuthUser<Role>,
+    User: AuthUser<String, Role>,
 {
     type User = User;
 
+    type Error = std::convert::Infallible;
+
     async fn load_user(
         &self,
-        user_id: &str,
-    ) -> std::result::Result<Option<Self::User>, eyre::Error> {
+        user_id: &String,
+    ) -> std::result::Result<Option<Self::User>, Self::Error> {
         tracing::debug!("load_user: {}", user_id);
 
         let admin = admin_user();
-        if user_id == admin.id {
+        if user_id == &admin.id {
             Ok(Some(admin))
         } else {
             Ok(None)
@@ -123,7 +125,7 @@ pub fn setup(
     session_store: RedisSessionStore,
 ) -> (
     SessionLayer<RedisSessionStore>,
-    AuthLayer<DumbAdminUserStore, User>,
+    AuthLayer<DumbAdminUserStore, String, User>,
 ) {
     let session_layer = SessionLayer::new(session_store, secret)
         .with_cookie_name("sid")
@@ -138,7 +140,7 @@ pub fn setup(
 #[cfg(test)]
 pub fn setup_test() -> (
     SessionLayer<axum_login::axum_sessions::async_session::MemoryStore>,
-    AuthLayer<DumbAdminUserStore, User>,
+    AuthLayer<DumbAdminUserStore, String, User>,
 ) {
     let secret = "0123456789012345678901234567890123456789012345678901234567890123";
     let session_store = axum_login::axum_sessions::async_session::MemoryStore::new();

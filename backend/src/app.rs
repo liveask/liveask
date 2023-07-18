@@ -736,12 +736,8 @@ impl PubSubReceiver for App {
 
         if let Err(e) = tokio::spawn(async move {
             //TODO: lookup subscriber based on topic name
-            for (_user_id, (_id, c)) in channels
-                .read()
-                .await
-                .iter()
-                .filter(|(_, (id, _))| id == &topic)
-            {
+            let receivers = channels.read().await.clone();
+            for (_user_id, (_id, c)) in receivers.iter().filter(|(_, (id, _))| id == &topic) {
                 if let Err(e) = c.send(Ok(msg.clone())) {
                     tracing::error!("pubsub send error: {}", e);
                 }
