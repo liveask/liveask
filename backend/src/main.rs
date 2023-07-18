@@ -72,7 +72,7 @@ use crate::{
     viewers::RedisViewers,
 };
 
-pub const GIT_HASH: &str = env!("VERGEN_GIT_SHA_SHORT");
+pub const GIT_HASH: &str = env!("VERGEN_GIT_SHA");
 pub const GIT_BRANCH: &str = env!("VERGEN_GIT_BRANCH");
 
 #[cfg(not(debug_assertions))]

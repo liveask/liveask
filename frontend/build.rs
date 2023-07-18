@@ -8,7 +8,7 @@ use std::{
 
 use handlebars::Handlebars;
 use konst::eq_str;
-use vergen::{Config, ShaKind};
+use vergen::EmitBuilder;
 
 fn get_git_hash() -> String {
     use std::process::Command;
@@ -94,10 +94,7 @@ fn main() -> anyhow::Result<()> {
     let git = get_git_hash();
     process_html_template(&git);
 
-    let mut config = Config::default();
-    *config.git_mut().sha_kind_mut() = ShaKind::Short;
-
-    vergen::vergen(config)?;
+    EmitBuilder::builder().git_sha(true).git_branch().emit()?;
 
     Ok(())
 }

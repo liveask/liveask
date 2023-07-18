@@ -44,4 +44,4 @@ pretty_assertions = "1"
 
 [build-dependencies]
 anyhow = "1"
-vergen = "7"
+vergen = { version = "8.0", features = ["git","gitcl"] }
