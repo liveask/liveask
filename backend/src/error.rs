@@ -14,9 +14,6 @@ pub enum InternalError {
     #[error("Invalid Login Error")]
     InvalidLogin,
 
-    #[error("EyreReport: {0}")]
-    EyreReport(#[from] eyre::Report),
-
     #[error("Acceesssing Deleted Event: {0}")]
     AccessingDeletedEvent(String),
 
@@ -57,11 +54,6 @@ impl IntoResponse for InternalError {
             Self::InvalidLogin => {
                 tracing::error!("{}", Self::InvalidLogin);
                 (StatusCode::FORBIDDEN, "").into_response()
-            }
-
-            Self::EyreReport(e) => {
-                tracing::error!("{e}");
-                (StatusCode::INTERNAL_SERVER_ERROR, "").into_response()
             }
 
             Self::AccessingDeletedEvent(id) => {
