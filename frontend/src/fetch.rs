@@ -269,7 +269,7 @@ pub async fn create_event(
     opts.method("POST");
     opts.body(Some(&body));
 
-    let request = Request::new_with_str_and_init(&format!("{base_api}/api/addevent"), &opts)?;
+    let request = Request::new_with_str_and_init(&format!("{base_api}/api/event/add"), &opts)?;
     request.headers().set("content-type", "application/json")?;
 
     let window = gloo_utils::window();

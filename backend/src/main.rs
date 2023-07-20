@@ -262,8 +262,9 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
         .route("/api/version", get(handle::version_handler))
         .route("/api/panic", get(handle::panic_handler))
         .route("/api/error", get(handle::error_handler))
-        .route("/api/addevent", post(handle::addevent_handler))
         .route("/api/payment/webhook", post(handle::payment_webhook))
+        .route("/api/addevent", post(handle::addevent_handler)) //<- remove 
+        .route("/api/event/add", post(handle::addevent_handler))
         .route("/api/event/editlike/:id", post(handle::editlike_handler))
         .route("/api/event/addquestion/:id", post(handle::addquestion_handler))
         .route("/api/event/question/:id/:question_id", get(handle::get_question))
