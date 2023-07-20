@@ -161,6 +161,8 @@ impl App {
             deleted: false,
             premium_order: None,
             questions: Vec::new(),
+            screening: Vec::new(),
+            do_screening: false,
             state: EventState {
                 state: States::Open,
             },

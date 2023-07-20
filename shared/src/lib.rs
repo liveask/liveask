@@ -36,6 +36,13 @@ pub struct QuestionItem {
 }
 
 #[derive(Serialize, Deserialize, Default, Debug, Clone, Eq, PartialEq)]
+pub struct PrescreenQuestion {
+    pub id: i64,
+    pub text: String,
+    pub create_time_unix: i64,
+}
+
+#[derive(Serialize, Deserialize, Default, Debug, Clone, Eq, PartialEq)]
 pub struct EventUpgrade {
     pub url: String,
 }
@@ -57,6 +64,7 @@ pub struct EventInfo {
     #[serde(rename = "lastEditUnix")]
     pub last_edit_unix: i64,
     pub questions: Vec<QuestionItem>,
+    pub screening: Vec<PrescreenQuestion>,
     pub state: EventState,
     #[serde(default)]
     pub premium: bool,
