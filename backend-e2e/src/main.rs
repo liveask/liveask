@@ -46,7 +46,7 @@ async fn get_event(public: String, secret: Option<String>) -> Option<GetEventRes
 
 async fn add_event(name: String) -> EventInfo {
     let res = reqwest::Client::new()
-        .post(format!("{}/api/event/add", server_rest()))
+        .post(format!("{}/api/addevent", server_rest()))
         .json(&json!({
             "eventData":{
                 "maxLikes":0,
