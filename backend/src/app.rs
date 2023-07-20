@@ -161,7 +161,6 @@ impl App {
             deleted: false,
             premium_order: None,
             questions: Vec::new(),
-            screening: Vec::new(),
             do_screening: false,
             state: EventState {
                 state: States::Open,
@@ -242,7 +241,7 @@ impl App {
             e.questions = e
                 .questions
                 .into_iter()
-                .filter(|q| !q.hidden)
+                .filter(|q| !q.hidden && q.screened)
                 .collect::<Vec<_>>();
         }
 
@@ -274,7 +273,11 @@ impl App {
     ) -> Result<QuestionItem> {
         let e = self.eventsdb.get(&id).await?.event;
 
-        let can_see_hidden = e
+        if e.deleted {
+            return Err(InternalError::AccessingDeletedEvent(id));
+        }
+
+        let is_mod = e
             .tokens
             .moderator_token
             .clone()
@@ -289,7 +292,7 @@ impl App {
             .ok_or_else(|| InternalError::General("q not found".into()))?
             .clone();
 
-        if q.hidden && !can_see_hidden {
+        if (!q.screened || q.hidden) && !is_mod {
             bail!("q not found")
         }
 
@@ -331,6 +334,9 @@ impl App {
 
             q.hidden = state.hide;
             q.answered = state.answered;
+            if !q.screened && state.screened {
+                q.screened = true;
+            }
         }
 
         entry.bump();
@@ -370,6 +376,46 @@ impl App {
         }
 
         e.state = state;
+
+        let result = e.clone();
+
+        entry.bump();
+
+        self.eventsdb.put(entry).await?;
+
+        self.notify_subscribers(id, Notification::Event).await;
+
+        Ok(result.into())
+    }
+
+    pub async fn edit_event_screening(
+        &self,
+        id: String,
+        secret: String,
+        screening: bool,
+    ) -> Result<EventInfo> {
+        let mut entry = self.eventsdb.get(&id).await?.clone();
+
+        let e = &mut entry.event;
+
+        if e.deleted {
+            bail!("event not found");
+        }
+
+        if e.premium_order.is_none() {
+            bail!("event not premium");
+        }
+
+        if e.tokens
+            .moderator_token
+            .as_ref()
+            .map(|mod_token| mod_token != &secret)
+            .unwrap_or_default()
+        {
+            bail!("wrong mod token");
+        }
+
+        e.do_screening = screening;
 
         let result = e.clone();
 
@@ -512,6 +558,7 @@ impl App {
             answered: false,
             create_time_unix: timestamp_now(),
             hidden: false,
+            screened: !e.do_screening,
             id: question_id,
             likes: 1,
         };
@@ -756,7 +803,7 @@ impl PubSubReceiver for App {
 mod test {
     use super::*;
     use crate::{
-        eventsdb::InMemoryEventsDB,
+        eventsdb::{event_key, InMemoryEventsDB},
         pubsub::{PubSubInMemory, PubSubReceiverInMemory},
         viewers::MockViewers,
     };
@@ -861,6 +908,7 @@ mod test {
             ModQuestion {
                 hide: true,
                 answered: false,
+                screened: true,
             },
         )
         .await
@@ -875,5 +923,146 @@ mod test {
             pubsubreceiver.log.read().await[1].clone(),
             (res.tokens.public_token.clone(), format!("q:{}", q.id))
         );
+    }
+
+    #[tokio::test]
+    async fn test_screening_question() {
+        // env_logger::init();
+
+        let pubsubreceiver = Arc::new(PubSubReceiverInMemory::default());
+        let pubsub = PubSubInMemory::default();
+        pubsub.set_receiver(pubsubreceiver.clone()).await;
+        let events = Arc::new(InMemoryEventsDB::default());
+        let app = App::new(
+            events.clone(),
+            Arc::new(pubsub),
+            Arc::new(MockViewers::new()),
+            Arc::new(Payment::default()),
+            String::new(),
+        );
+
+        let res = app
+            .create_event(AddEvent {
+                data: EventData {
+                    name: String::from("123456789"),
+                    description: String::from("123456789 123456789 123456789 !"),
+                    short_url: String::new(),
+                    long_url: None,
+                },
+                moderator_email: None,
+                test: false,
+            })
+            .await
+            .unwrap();
+
+        events
+            .db
+            .lock()
+            .await
+            .get_mut(&event_key(&res.tokens.public_token))
+            .unwrap()
+            .event
+            .do_screening = true;
+
+        let q = app
+            .add_question(
+                res.tokens.public_token.clone(),
+                AddQuestion {
+                    text: String::from("question"),
+                },
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(q.screened, false);
+
+        let e = app
+            .get_event(res.tokens.public_token.clone(), None, false)
+            .await
+            .unwrap();
+
+        assert_eq!(e.info.questions.len(), 0);
+
+        let e = app
+            .get_event(
+                res.tokens.public_token.clone(),
+                Some(res.tokens.moderator_token.clone().unwrap()),
+                false,
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(e.info.questions.len(), 1);
+
+        app.mod_edit_question(
+            res.tokens.public_token.clone(),
+            res.tokens.moderator_token.clone().unwrap(),
+            q.id,
+            ModQuestion {
+                hide: false,
+                answered: false,
+                screened: true,
+            },
+        )
+        .await
+        .unwrap();
+
+        let e = app
+            .get_event(res.tokens.public_token.clone(), None, false)
+            .await
+            .unwrap();
+
+        assert_eq!(e.info.questions.len(), 1);
+    }
+
+    #[tokio::test]
+    async fn test_screening_enable() {
+        // env_logger::init();
+
+        let pubsubreceiver = Arc::new(PubSubReceiverInMemory::default());
+        let pubsub = PubSubInMemory::default();
+        pubsub.set_receiver(pubsubreceiver.clone()).await;
+        let events = Arc::new(InMemoryEventsDB::default());
+        let app = App::new(
+            events.clone(),
+            Arc::new(pubsub),
+            Arc::new(MockViewers::new()),
+            Arc::new(Payment::default()),
+            String::new(),
+        );
+
+        let res = app
+            .create_event(AddEvent {
+                data: EventData {
+                    name: String::from("123456789"),
+                    description: String::from("123456789 123456789 123456789 !"),
+                    short_url: String::new(),
+                    long_url: None,
+                },
+                moderator_email: None,
+                test: false,
+            })
+            .await
+            .unwrap();
+
+        events
+            .db
+            .lock()
+            .await
+            .get_mut(&event_key(&res.tokens.public_token))
+            .unwrap()
+            .event
+            .premium_order = Some(String::from("foo"));
+
+        let e = app
+            .edit_event_screening(
+                res.tokens.public_token.clone(),
+                res.tokens.moderator_token.clone().unwrap(),
+                true,
+            )
+            .await
+            .unwrap();
+
+        assert!(e.screening);
     }
 }

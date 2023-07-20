@@ -31,14 +31,8 @@ pub struct QuestionItem {
     pub text: String,
     pub hidden: bool,
     pub answered: bool,
+    pub screened: bool,
     #[serde(rename = "createTimeUnix")]
-    pub create_time_unix: i64,
-}
-
-#[derive(Serialize, Deserialize, Default, Debug, Clone, Eq, PartialEq)]
-pub struct PrescreenQuestion {
-    pub id: i64,
-    pub text: String,
     pub create_time_unix: i64,
 }
 
@@ -64,10 +58,11 @@ pub struct EventInfo {
     #[serde(rename = "lastEditUnix")]
     pub last_edit_unix: i64,
     pub questions: Vec<QuestionItem>,
-    pub screening: Vec<PrescreenQuestion>,
     pub state: EventState,
     #[serde(default)]
     pub premium: bool,
+    #[serde(default)]
+    pub screening: bool,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, Default)]
@@ -123,6 +118,7 @@ pub struct AddQuestion {
 pub struct ModQuestion {
     pub hide: bool,
     pub answered: bool,
+    pub screened: bool,
 }
 
 ///

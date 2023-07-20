@@ -4,7 +4,7 @@ use crate::utils::timestamp_now;
 use aws_sdk_dynamodb::types::AttributeValue;
 use chrono::{DateTime, Duration, TimeZone, Utc};
 use serde::{Deserialize, Serialize};
-use shared::{EventData, EventInfo, EventState, EventTokens, PrescreenQuestion, QuestionItem};
+use shared::{EventData, EventInfo, EventState, EventTokens, QuestionItem};
 use std::collections::HashMap;
 
 use self::conversion::{attributes_to_event, event_to_attributes};
@@ -23,7 +23,6 @@ pub struct ApiEventInfo {
     #[serde(rename = "lastEditUnix")]
     pub last_edit_unix: i64,
     pub questions: Vec<QuestionItem>,
-    pub screening: Vec<PrescreenQuestion>,
     pub do_screening: bool,
     pub state: EventState,
     pub premium_order: Option<String>,
@@ -75,8 +74,8 @@ impl From<ApiEventInfo> for EventInfo {
             deleted: val.deleted,
             last_edit_unix: val.last_edit_unix,
             questions: val.questions,
-            screening: val.screening,
             state: val.state,
+            screening: val.do_screening,
             premium: val.premium_order.is_some(),
         }
     }
@@ -193,12 +192,8 @@ mod test_serialization {
                     text: String::from("q"),
                     hidden: false,
                     answered: true,
+                    screened: true,
                     create_time_unix: 3,
-                }],
-                screening: vec![PrescreenQuestion {
-                    id: 1,
-                    text: String::from("q"),
-                    create_time_unix: 4,
                 }],
                 do_screening: true,
                 state: EventState {
@@ -244,9 +239,10 @@ mod test_serialization {
                     text: String::from("q"),
                     hidden: false,
                     answered: true,
+                    screened: false,
                     create_time_unix: 3,
                 }],
-                screening: vec![],
+
                 do_screening: false,
                 state: EventState {
                     state: States::Closed,

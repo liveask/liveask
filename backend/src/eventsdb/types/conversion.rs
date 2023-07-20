@@ -1,7 +1,7 @@
 use super::{ApiEventInfo, AttributeMap};
 use crate::eventsdb::Error;
 use aws_sdk_dynamodb::types::AttributeValue;
-use shared::{EventData, EventState, EventTokens, PrescreenQuestion, QuestionItem, States};
+use shared::{EventData, EventState, EventTokens, QuestionItem, States};
 
 const ATTR_EVENT_INFO_LAST_EDIT: &str = "last_edit";
 const ATTR_EVENT_INFO_DELETE_TIME: &str = "delete_time";
@@ -11,7 +11,6 @@ const ATTR_EVENT_INFO_DO_SCREENING: &str = "do_screening";
 const ATTR_EVENT_INFO_STATE: &str = "state";
 const ATTR_EVENT_INFO_TOKENS: &str = "tokens";
 const ATTR_EVENT_INFO_ITEMS: &str = "items";
-const ATTR_EVENT_INFO_SCREENING: &str = "screening";
 const ATTR_EVENT_INFO_DATA: &str = "data";
 const ATTR_EVENT_INFO_PREMIUM: &str = "premium";
 const ATTR_EVENT_INFO_MODMAIL: &str = "mod_email";
@@ -25,10 +24,6 @@ pub fn event_to_attributes(value: ApiEventInfo) -> AttributeMap {
         (
             ATTR_EVENT_INFO_ITEMS.into(),
             AttributeValue::L(questions_to_attributes(value.questions)),
-        ),
-        (
-            ATTR_EVENT_INFO_SCREENING.into(),
-            AttributeValue::L(screening_to_attributes(value.screening)),
         ),
         (
             ATTR_EVENT_INFO_DATA.into(),
@@ -95,12 +90,6 @@ pub fn attributes_to_event(value: &AttributeMap) -> Result<ApiEventInfo, super::
             .map_err(|_| Error::MalformedObject(ATTR_EVENT_INFO_ITEMS.into()))?,
     )?;
 
-    let screening = attributes_to_screening(
-        value[ATTR_EVENT_INFO_SCREENING]
-            .as_l()
-            .map_err(|_| Error::MalformedObject(ATTR_EVENT_INFO_SCREENING.into()))?,
-    )?;
-
     let last_edit_unix = value[ATTR_EVENT_INFO_LAST_EDIT]
         .as_n()
         .map_err(|_| Error::MalformedObject(ATTR_EVENT_INFO_LAST_EDIT.into()))?
@@ -152,7 +141,6 @@ pub fn attributes_to_event(value: &AttributeMap) -> Result<ApiEventInfo, super::
         deleted,
         last_edit_unix,
         questions,
-        screening,
         do_screening,
         state,
         premium_order,
@@ -261,6 +249,7 @@ const ATTR_QUESTION_ID: &str = "id";
 const ATTR_QUESTION_LIKES: &str = "likes";
 const ATTR_QUESTION_CREATED: &str = "created";
 const ATTR_QUESTION_ANSWERED: &str = "answered";
+const ATTR_QUESTION_SCREENING: &str = "screening";
 const ATTR_QUESTION_HIDDEN: &str = "hidden";
 
 fn question_to_attributes(value: QuestionItem) -> AttributeMap {
@@ -286,23 +275,9 @@ fn question_to_attributes(value: QuestionItem) -> AttributeMap {
     if value.hidden {
         map.insert(ATTR_QUESTION_HIDDEN.into(), AttributeValue::Bool(true));
     }
-
-    map
-}
-
-fn screening_item_to_attributes(value: PrescreenQuestion) -> AttributeMap {
-    let mut map = AttributeMap::new();
-
-    map.insert(
-        ATTR_QUESTION_ID.into(),
-        AttributeValue::N(value.id.to_string()),
-    );
-    map.insert(ATTR_QUESTION_TEXT.into(), AttributeValue::S(value.text));
-
-    map.insert(
-        ATTR_QUESTION_CREATED.into(),
-        AttributeValue::N(value.create_time_unix.to_string()),
-    );
+    if value.screened {
+        map.insert(ATTR_QUESTION_SCREENING.into(), AttributeValue::Bool(true));
+    }
 
     map
 }
@@ -333,6 +308,11 @@ fn attributes_to_question(value: &AttributeMap) -> Result<QuestionItem, super::E
         .and_then(|value| value.as_bool().ok().copied())
         .unwrap_or_default();
 
+    let screening = value
+        .get(ATTR_QUESTION_SCREENING)
+        .and_then(|value| value.as_bool().ok().copied())
+        .unwrap_or_default();
+
     let hidden = value
         .get(ATTR_QUESTION_HIDDEN)
         .and_then(|value| value.as_bool().ok().copied())
@@ -344,29 +324,7 @@ fn attributes_to_question(value: &AttributeMap) -> Result<QuestionItem, super::E
         text,
         hidden,
         answered,
-        create_time_unix,
-    })
-}
-
-fn attributes_to_screening_item(value: &AttributeMap) -> Result<PrescreenQuestion, super::Error> {
-    let id = value[ATTR_QUESTION_ID]
-        .as_n()
-        .map_err(|_| Error::MalformedObject(ATTR_QUESTION_ID.into()))?
-        .parse::<i64>()?;
-
-    let text = value[ATTR_QUESTION_TEXT]
-        .as_s()
-        .map_err(|_| Error::MalformedObject(ATTR_QUESTION_TEXT.into()))?
-        .clone();
-
-    let create_time_unix = value[ATTR_QUESTION_CREATED]
-        .as_n()
-        .map_err(|_| Error::MalformedObject(ATTR_QUESTION_CREATED.into()))?
-        .parse::<i64>()?;
-
-    Ok(PrescreenQuestion {
-        id,
-        text,
+        screened: screening,
         create_time_unix,
     })
 }
@@ -378,13 +336,6 @@ fn questions_to_attributes(value: Vec<QuestionItem>) -> Vec<AttributeValue> {
         .collect()
 }
 
-fn screening_to_attributes(value: Vec<PrescreenQuestion>) -> Vec<AttributeValue> {
-    value
-        .into_iter()
-        .map(|i| AttributeValue::M(screening_item_to_attributes(i)))
-        .collect()
-}
-
 fn attributes_to_questions(value: &Vec<AttributeValue>) -> Result<Vec<QuestionItem>, super::Error> {
     let mut list = Vec::with_capacity(value.len());
 
@@ -392,20 +343,6 @@ fn attributes_to_questions(value: &Vec<AttributeValue>) -> Result<Vec<QuestionIt
         list.push(attributes_to_question(
             i.as_m()
                 .map_err(|_| Error::General("question is not a map".into()))?,
-        )?);
-    }
-
-    Ok(list)
-}
-
-fn attributes_to_screening(
-    value: &Vec<AttributeValue>,
-) -> Result<Vec<PrescreenQuestion>, super::Error> {
-    let mut list = Vec::with_capacity(value.len());
-
-    for i in value {
-        list.push(attributes_to_screening_item(
-            i.as_m().map_err(|_| Error::General("not a map".into()))?,
         )?);
     }
 
