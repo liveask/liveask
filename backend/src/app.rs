@@ -334,7 +334,12 @@ impl App {
 
             q.hidden = state.hide;
             q.answered = state.answered;
+
             if !q.screened && state.screened {
+                q.screened = true;
+            }
+            if !q.screened && state.hide {
+                //hiding an unscreened question equals a dis-approval
                 q.screened = true;
             }
         }
@@ -1013,6 +1018,81 @@ mod test {
             .unwrap();
 
         assert_eq!(e.info.questions.len(), 1);
+    }
+
+    #[tokio::test]
+    async fn test_screening_question_disapprove() {
+        // env_logger::init();
+
+        let pubsubreceiver = Arc::new(PubSubReceiverInMemory::default());
+        let pubsub = PubSubInMemory::default();
+        pubsub.set_receiver(pubsubreceiver.clone()).await;
+        let events = Arc::new(InMemoryEventsDB::default());
+        let app = App::new(
+            events.clone(),
+            Arc::new(pubsub),
+            Arc::new(MockViewers::new()),
+            Arc::new(Payment::default()),
+            String::new(),
+        );
+
+        let res = app
+            .create_event(AddEvent {
+                data: EventData {
+                    name: String::from("123456789"),
+                    description: String::from("123456789 123456789 123456789 !"),
+                    short_url: String::new(),
+                    long_url: None,
+                },
+                moderator_email: None,
+                test: false,
+            })
+            .await
+            .unwrap();
+
+        events
+            .db
+            .lock()
+            .await
+            .get_mut(&event_key(&res.tokens.public_token))
+            .unwrap()
+            .event
+            .do_screening = true;
+
+        let q = app
+            .add_question(
+                res.tokens.public_token.clone(),
+                AddQuestion {
+                    text: String::from("question"),
+                },
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(q.screened, false);
+
+        let e = app
+            .get_event(res.tokens.public_token.clone(), None, false)
+            .await
+            .unwrap();
+
+        assert_eq!(e.info.questions.len(), 0);
+
+        let e = app
+            .mod_edit_question(
+                res.tokens.public_token.clone(),
+                res.tokens.moderator_token.clone().unwrap(),
+                q.id,
+                ModQuestion {
+                    hide: true,
+                    answered: false,
+                    screened: false,
+                },
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(e.questions[0].screened, true);
     }
 
     #[tokio::test]

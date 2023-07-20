@@ -163,6 +163,7 @@ async fn hide_question(event: String, secret: String, question_id: i64) {
     let body = shared::ModQuestion {
         answered: false,
         hide: true,
+        screened: false,
     };
 
     let res = reqwest::Client::new()

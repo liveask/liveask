@@ -13,6 +13,7 @@ pub enum QuestionClickType {
     Like,
     Hide,
     Answer,
+    Approve,
 }
 
 //TODO: use bitflag to rid us of this warning
@@ -42,6 +43,7 @@ pub enum Msg {
     Like,
     ToggleHide,
     ToggleAnswered,
+    Approve,
     /// used to start the reorder animation
     StartAnimation,
     EndAnimation,
@@ -88,6 +90,12 @@ impl Component for Question {
                 ctx.props()
                     .on_click
                     .emit((self.data.item.id, QuestionClickType::Answer));
+                true
+            }
+            Msg::Approve => {
+                ctx.props()
+                    .on_click
+                    .emit((self.data.item.id, QuestionClickType::Approve));
                 true
             }
             Msg::UpdateAge => self.animation_time.is_none(),
@@ -227,34 +235,52 @@ impl Question {
         let hidden = self.data.item.hidden;
         let answered = self.data.item.answered;
 
-        html! {
-            <div class="options">
-                <button class={classes!("button-hide",hidden.then_some("reverse"))}
-                    onclick={ctx.link().callback(|_| Msg::ToggleHide)}
-                    hidden={answered}
-                    >
-                    {
-                        if hidden {
-                            html!{"unhide"}
-                        }else{
-                            html!{"hide"}
+        if self.data.item.screened {
+            html! {
+                <div class="options">
+                    <button class={classes!("button-hide",hidden.then_some("reverse"))}
+                        onclick={ctx.link().callback(|_| Msg::ToggleHide)}
+                        hidden={answered}
+                        >
+                        {
+                            if hidden {
+                                html!{"unhide"}
+                            }else{
+                                html!{"hide"}
+                            }
                         }
-                    }
-                </button>
+                    </button>
 
-                <button class={classes!("button-answered",answered.then_some("reverse"))}
-                    onclick={ctx.link().callback(|_| Msg::ToggleAnswered)}
-                    hidden={hidden}
-                    >
-                    {
-                        if answered {
-                            html!{"not answered"}
-                        }else{
-                            html!{"answered"}
+                    <button class={classes!("button-answered",answered.then_some("reverse"))}
+                        onclick={ctx.link().callback(|_| Msg::ToggleAnswered)}
+                        hidden={hidden}
+                        >
+                        {
+                            if answered {
+                                html!{"not answered"}
+                            }else{
+                                html!{"answered"}
+                            }
                         }
-                    }
-                </button>
-            </div>
+                    </button>
+                </div>
+            }
+        } else {
+            html! {
+                <div class="options">
+                    <button class={classes!("button-hide",hidden.then_some("reverse"))}
+                        onclick={ctx.link().callback(|_| Msg::ToggleHide)}
+                        >
+                        {"hide"}
+                    </button>
+
+                    <button class="button-answered"
+                        onclick={ctx.link().callback(|_| Msg::Approve)}
+                        >
+                        {"approve"}
+                    </button>
+                </div>
+            }
         }
     }
 

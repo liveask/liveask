@@ -149,6 +149,11 @@ pub struct ModEventState {
     pub state: EventState,
 }
 
+#[derive(Serialize, Deserialize, Debug, Copy, Clone, Eq, PartialEq)]
+pub struct ModEditScreening {
+    pub screening: bool,
+}
+
 #[derive(Serialize, Deserialize, Debug, Copy, Clone, Eq, PartialEq, Default)]
 pub struct EventState {
     pub state: States,
