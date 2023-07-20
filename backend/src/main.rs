@@ -246,6 +246,13 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
         .route("/login", post(login_handler))
         .route("/logout", get(logout_handler));
 
+    let event_routes = Router::new()
+        .route("/add", post(handle::addevent_handler))
+        .route("/editlike/:id", post(handle::editlike_handler))
+        .route("/addquestion/:id", post(handle::addquestion_handler))
+        .route("/question/:id/:question_id", get(handle::get_question))
+        .route("/:id", get(handle::getevent_handler));
+
     #[rustfmt::skip]
     let mod_routes = Router::new()
         .route("/:id/:secret", get(handle::mod_get_event))
@@ -263,12 +270,8 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
         .route("/api/panic", get(handle::panic_handler))
         .route("/api/error", get(handle::error_handler))
         .route("/api/payment/webhook", post(handle::payment_webhook))
-        .route("/api/event/add", post(handle::addevent_handler))
-        .route("/api/event/editlike/:id", post(handle::editlike_handler))
-        .route("/api/event/addquestion/:id", post(handle::addquestion_handler))
-        .route("/api/event/question/:id/:question_id", get(handle::get_question))
-        .route("/api/event/:id", get(handle::getevent_handler))
         .route("/push/:id", get(push_handler))
+        .nest("/api/event", event_routes)
         .nest("/api/mod/event", mod_routes)
         .nest("/api/admin", admin_routes)
         .layer(auth_layer)
