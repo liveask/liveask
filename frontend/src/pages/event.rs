@@ -867,6 +867,10 @@ impl Event {
             let mut questions = e.info.questions.clone();
             questions.sort_by(|a, b| b.likes.cmp(&a.likes));
 
+            let local_unscreened = LocalCache::unscreened_questions(&e.info.tokens.public_token);
+
+            questions.extend(local_unscreened.into_iter());
+
             let (unscreened, screened) = questions.into_iter().map(Rc::new).split(|i| i.screened);
             let (not_hidden, hidden) = screened.into_iter().split(|i| i.hidden);
             let (unanswered, answered) = not_hidden.into_iter().split(|i| i.answered);

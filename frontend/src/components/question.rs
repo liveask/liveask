@@ -9,6 +9,8 @@ use web_sys::Element;
 use web_sys::HtmlElement;
 use yew::prelude::*;
 
+use crate::not;
+
 pub enum QuestionClickType {
     Like,
     Hide,
@@ -71,7 +73,11 @@ impl Component for Question {
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
             Msg::Like => {
-                if ctx.props().can_vote && !self.data.item.answered && !self.data.item.hidden {
+                if ctx.props().can_vote
+                    && self.data.item.screened
+                    && !self.data.item.answered
+                    && !self.data.item.hidden
+                {
                     ctx.props()
                         .on_click
                         .emit((self.data.item.id, QuestionClickType::Like));
@@ -169,9 +175,10 @@ impl Component for Question {
         let liked = ctx.props().local_like;
         let mod_view = ctx.props().mod_view;
         let blurred = ctx.props().blurr;
+        let can_vote = ctx.props().can_vote && self.data.item.screened;
 
         html! {
-            <div class="question-host questions-move"
+            <div class={classes!("question-host","questions-move",not(self.data.item.screened).then_some("unscreened-question"),)}
                 ref={self.node_ref.clone()}>
                 <a class="questionanchor" onclick={ctx.link().callback(|_| Msg::Like)}>
 
@@ -180,20 +187,23 @@ impl Component for Question {
                     </div>
 
                     {
-                        if liked {
-                            Self::get_bubble_liked(self.data.item.likes)
-                        }
-                        else
+                        if self.data.item.screened
                         {
-                            Self::get_bubble_not_liked(self.data.item.likes)
-                        }
+                            if liked {
+                                Self::get_bubble_liked(self.data.item.likes)
+                            }
+                            else
+                            {
+                                Self::get_bubble_not_liked(self.data.item.likes)
+                            }
+                        } else { html!() }
                     }
 
                     <div class={classes!("text",self.data.item.answered.then_some("answered"),blurred.then_some("blurr"))}>
                         {&self.data.item.text}
                     </div>
 
-                    {self.view_like(ctx.props().can_vote,liked,mod_view)}
+                    {self.view_like(can_vote,liked,mod_view)}
 
                     {self.view_checkmark(mod_view)}
                 </a>
