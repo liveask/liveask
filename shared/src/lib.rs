@@ -31,6 +31,7 @@ pub struct QuestionItem {
     pub text: String,
     pub hidden: bool,
     pub answered: bool,
+    #[serde(default)]
     pub screened: bool,
     #[serde(rename = "createTimeUnix")]
     pub create_time_unix: i64,
