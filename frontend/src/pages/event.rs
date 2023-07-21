@@ -302,6 +302,7 @@ fn request_toggle_answered(
     });
 }
 
+#[allow(clippy::needless_pass_by_value)]
 fn request_approve_question(
     event: String,
     secret: String,
