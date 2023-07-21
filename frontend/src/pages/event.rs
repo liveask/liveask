@@ -794,10 +794,9 @@ impl Event {
     fn mod_view_screening(ctx: &Context<Self>, e: &GetEventResponse) -> Html {
         if e.info.premium {
             html! {
-                <div class="deadline">
-                    <div class="linkbox-copy" onclick={ctx.link().callback(|_| Msg::ModEditScreening)}>
-                    {"screening"}
-                    </div>
+                <div class="deadline" onclick={ctx.link().callback(|_| Msg::ModEditScreening)}>
+                    <input type="checkbox" id="vehicle1" name="vehicle1" checked={e.info.screening} />
+                    {"Screening"}
                 </div>
             }
         } else {
