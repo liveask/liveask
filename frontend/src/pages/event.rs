@@ -874,7 +874,7 @@ impl Event {
             let local_unscreened =
                 LocalCache::unscreened_questions(&e.info.tokens.public_token, &questions);
 
-            questions.extend(local_unscreened.into_iter());
+            questions.extend(local_unscreened);
 
             let (unscreened, screened) = questions.into_iter().map(Rc::new).split(|i| i.screened);
             let (not_hidden, hidden) = screened.into_iter().split(|i| i.hidden);
