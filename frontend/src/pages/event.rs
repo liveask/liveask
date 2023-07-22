@@ -871,7 +871,8 @@ impl Event {
             let mut questions = e.info.questions.clone();
             questions.sort_by(|a, b| b.likes.cmp(&a.likes));
 
-            let local_unscreened = LocalCache::unscreened_questions(&e.info.tokens.public_token);
+            let local_unscreened =
+                LocalCache::unscreened_questions(&e.info.tokens.public_token, &questions);
 
             questions.extend(local_unscreened.into_iter());
 
