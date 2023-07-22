@@ -31,6 +31,7 @@ pub struct Props {
 
 pub struct Question {
     data: Props,
+    age_text: String,
     node_ref: NodeRef,
     last_pos: Option<i64>,
     timeout: Option<Timeout>,
@@ -58,6 +59,7 @@ impl Component for Question {
 
         Self {
             data: ctx.props().clone(),
+            age_text: String::new(),
             node_ref: NodeRef::default(),
             last_pos: None,
             timeout: None,
@@ -90,7 +92,14 @@ impl Component for Question {
                     .emit((self.data.item.id, QuestionClickType::Answer));
                 true
             }
-            Msg::UpdateAge => self.animation_time.is_none(),
+            Msg::UpdateAge => {
+                let age = self.get_age();
+                if age != self.age_text {
+                    self.age_text = age;
+                    return true;
+                }
+                false
+            }
             Msg::EndAnimation => {
                 self.animation_time = None;
                 false
