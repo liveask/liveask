@@ -585,6 +585,10 @@ impl Event {
         })
     }
 
+    const fn is_mod(&self) -> bool {
+        matches!(self.mode, Mode::Moderator)
+    }
+
     fn view_questions(&self, ctx: &Context<Self>, e: &GetEventResponse) -> Html {
         if e.info.questions.is_empty() {
             let no_questions_classes = classes!(match self.mode {
@@ -599,9 +603,10 @@ impl Event {
             }
         } else {
             let can_vote = !e.is_closed();
+            let is_mod = self.is_mod();
             html! {
                 <>
-                    {self.view_items(ctx,&self.unscreened,"Screening",can_vote)}
+                    {self.view_items(ctx,&self.unscreened,if is_mod {"For review"} else {"Questions currently in review by host"},can_vote)}
                     {self.view_items(ctx,&self.unanswered,"Hot Questions",can_vote)}
                     {self.view_items(ctx,&self.answered,"Answered",can_vote)}
                     {self.view_items(ctx,&self.hidden,"Hidden",can_vote)}
