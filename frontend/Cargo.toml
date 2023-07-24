@@ -53,7 +53,10 @@ features = [
     "Headers",
     "DomTokenList",
     "HtmlSelectElement",
-    "HtmlAnchorElement"]
+    "HtmlAnchorElement",
+    "ScrollIntoViewOptions",
+    "ScrollLogicalPosition",
+    "ScrollBehavior"]
 
 [dev-dependencies]
 wasm-bindgen-test = "0.3.0"

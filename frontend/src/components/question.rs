@@ -7,6 +7,9 @@ use wasm_bindgen::JsCast;
 use wasm_bindgen::UnwrapThrowExt;
 use web_sys::Element;
 use web_sys::HtmlElement;
+use web_sys::ScrollBehavior;
+use web_sys::ScrollIntoViewOptions;
+use web_sys::ScrollLogicalPosition;
 use yew::prelude::*;
 
 use crate::not;
@@ -43,10 +46,7 @@ pub struct Question {
 }
 pub enum Msg {
     UpdateAge,
-    Like,
-    ToggleHide,
-    ToggleAnswered,
-    Approve,
+    QuestionClick(QuestionClickType),
     /// used to start the reorder animation
     StartAnimation,
     EndAnimation,
@@ -74,36 +74,21 @@ impl Component for Question {
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
-            Msg::Like => {
-                if ctx.props().can_vote
-                    && self.data.item.screened
-                    && !self.data.item.answered
-                    && !self.data.item.hidden
-                {
-                    ctx.props()
-                        .on_click
-                        .emit((self.data.item.id, QuestionClickType::Like));
-                    true
-                } else {
-                    false
+            Msg::QuestionClick(click_type) => {
+                if matches!(click_type, QuestionClickType::Like) {
+                    if ctx.props().can_vote
+                        && self.data.item.screened
+                        && !self.data.item.answered
+                        && !self.data.item.hidden
+                    {
+                        ctx.props()
+                            .on_click
+                            .emit((self.data.item.id, QuestionClickType::Like));
+                        return true;
+                    }
+                    return false;
                 }
-            }
-            Msg::ToggleHide => {
-                ctx.props()
-                    .on_click
-                    .emit((self.data.item.id, QuestionClickType::Hide));
-                true
-            }
-            Msg::ToggleAnswered => {
-                ctx.props()
-                    .on_click
-                    .emit((self.data.item.id, QuestionClickType::Answer));
-                true
-            }
-            Msg::Approve => {
-                ctx.props()
-                    .on_click
-                    .emit((self.data.item.id, QuestionClickType::Approve));
+                ctx.props().on_click.emit((self.data.item.id, click_type));
                 true
             }
             Msg::UpdateAge => {
@@ -176,7 +161,12 @@ impl Component for Question {
         }
 
         if first_render && self.data.is_new {
-            elem.scroll_into_view();
+            // log::info!("scroll to: {} ({}), ", self.data.item.id, element_y);
+            elem.scroll_into_view_with_scroll_into_view_options(
+                ScrollIntoViewOptions::new()
+                    .block(ScrollLogicalPosition::Center)
+                    .behavior(ScrollBehavior::Smooth),
+            );
         }
     }
 
@@ -189,7 +179,7 @@ impl Component for Question {
         html! {
             <div class={classes!("question-host","questions-move",not(self.data.item.screened).then_some("unscreened-question"),)}
                 ref={self.node_ref.clone()}>
-                <a class="questionanchor" onclick={ctx.link().callback(|_| Msg::Like)}>
+                <a class="questionanchor" onclick={ctx.link().callback(|_| Msg::QuestionClick(QuestionClickType::Like))}>
 
                     <div class="time-since">
                         {self.get_age()}
@@ -258,7 +248,7 @@ impl Question {
             html! {
                 <div class="options">
                     <button class={classes!("button-hide",hidden.then_some("reverse"))}
-                        onclick={ctx.link().callback(|_| Msg::ToggleHide)}
+                        onclick={ctx.link().callback(|_| Msg::QuestionClick(QuestionClickType::Hide))}
                         hidden={answered}
                         >
                         {
@@ -271,7 +261,7 @@ impl Question {
                     </button>
 
                     <button class={classes!("button-answered",answered.then_some("reverse"))}
-                        onclick={ctx.link().callback(|_| Msg::ToggleAnswered)}
+                        onclick={ctx.link().callback(|_| Msg::QuestionClick(QuestionClickType::Answer))}
                         hidden={hidden}
                         >
                         {
@@ -288,13 +278,13 @@ impl Question {
             html! {
                 <div class="options">
                     <button class={classes!("button-hide",hidden.then_some("reverse"))}
-                        onclick={ctx.link().callback(|_| Msg::ToggleHide)}
+                        onclick={ctx.link().callback(|_| Msg::QuestionClick(QuestionClickType::Hide))}
                         >
                         {"hide"}
                     </button>
 
                     <button class="button-answered"
-                        onclick={ctx.link().callback(|_| Msg::Approve)}
+                        onclick={ctx.link().callback(|_| Msg::QuestionClick(QuestionClickType::Approve))}
                         >
                         {"approve"}
                     </button>
