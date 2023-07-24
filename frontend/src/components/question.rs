@@ -161,7 +161,6 @@ impl Component for Question {
         }
 
         if first_render && self.data.is_new {
-            // log::info!("scroll to: {} ({}), ", self.data.item.id, element_y);
             elem.scroll_into_view_with_scroll_into_view_options(
                 ScrollIntoViewOptions::new()
                     .block(ScrollLogicalPosition::Center)
