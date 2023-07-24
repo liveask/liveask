@@ -23,6 +23,7 @@ pub struct ApiEventInfo {
     #[serde(rename = "lastEditUnix")]
     pub last_edit_unix: i64,
     pub questions: Vec<QuestionItem>,
+    #[serde(default)]
     pub do_screening: bool,
     pub state: EventState,
     pub premium_order: Option<String>,
