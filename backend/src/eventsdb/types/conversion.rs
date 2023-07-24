@@ -110,10 +110,11 @@ pub fn attributes_to_event(value: &AttributeMap) -> Result<ApiEventInfo, super::
         .map_err(|_| Error::MalformedObject(ATTR_EVENT_INFO_DELETED.into()))?
         .to_owned();
 
-    let do_screening = value[ATTR_EVENT_INFO_DO_SCREENING]
-        .as_bool()
-        .map_err(|_| Error::MalformedObject(ATTR_EVENT_INFO_DO_SCREENING.into()))?
-        .to_owned();
+    let do_screening = value
+        .get(ATTR_EVENT_INFO_DO_SCREENING)
+        .and_then(|val| val.as_bool().ok())
+        .copied()
+        .unwrap_or_default();
 
     let premium_order = value
         .get(ATTR_EVENT_INFO_PREMIUM)
