@@ -710,7 +710,7 @@ impl Event {
 
                 {
                     if self.is_premium() {
-                        self.mod_view_premium(ctx,e)
+                        Self::mod_view_premium(ctx,e)
                     }else {html!{}}
                 }
 
@@ -732,7 +732,7 @@ impl Event {
         }
     }
 
-    fn mod_view_premium(&self, ctx: &Context<Self>, e: &GetEventResponse) -> Html {
+    fn mod_view_premium(ctx: &Context<Self>, e: &GetEventResponse) -> Html {
         html! {
             <div class="premium">
                 <div class="title">
