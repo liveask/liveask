@@ -709,8 +709,11 @@ impl Event {
                 </button>
 
                 {
-                    self.mod_view_export(ctx)
+                    if self.is_premium() {
+                        self.mod_view_premium(ctx,e)
+                    }else {html!{}}
                 }
+
 
             </div>
 
@@ -721,7 +724,6 @@ impl Event {
             }
 
             {Self::mod_view_deadline(e)}
-            {Self::mod_view_screening(ctx,e)}
 
             </>
             }
@@ -730,15 +732,20 @@ impl Event {
         }
     }
 
-    fn mod_view_export(&self, ctx: &Context<Self>) -> Html {
-        if self.is_premium() {
-            html! {
+    fn mod_view_premium(&self, ctx: &Context<Self>, e: &GetEventResponse) -> Html {
+        html! {
+            <div class="premium">
+                <div class="title">
+                    {"This is a premium event"}
+                </div>
+                <div class="screening-option" onclick={ctx.link().callback(|_| Msg::ModEditScreening)}>
+                    <input type="checkbox" id="vehicle1" name="vehicle1" checked={e.info.screening} />
+                    {"Screening"}
+                </div>
                 <button class="button-white" onclick={ctx.link().callback(|_|Msg::ModExport)} >
                     {"Export"}
                 </button>
-            }
-        } else {
-            html! {}
+            </div>
         }
     }
 
@@ -793,19 +800,6 @@ impl Event {
                 {". Please upgrade to premium to make it permanent."}
                 </div>
             }
-        }
-    }
-
-    fn mod_view_screening(ctx: &Context<Self>, e: &GetEventResponse) -> Html {
-        if e.info.premium {
-            html! {
-                <div class="deadline" onclick={ctx.link().callback(|_| Msg::ModEditScreening)}>
-                    <input type="checkbox" id="vehicle1" name="vehicle1" checked={e.info.screening} />
-                    {"Screening"}
-                </div>
-            }
-        } else {
-            html! {}
         }
     }
 
