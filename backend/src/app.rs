@@ -66,16 +66,7 @@ impl App {
         payment: Arc<Payment>,
         base_url: String,
     ) -> Self {
-        let tiny_url_token = std::env::var(env::ENV_TINY_TOKEN).ok();
-
-        if tiny_url_token.clone().unwrap_or_default().trim().is_empty() {
-            tracing::warn!("no url shorten token set, use `ENV_TINY_TOKEN` to do so");
-        } else {
-            tracing::info!(
-                "tinyurl-token set (len: {})",
-                tiny_url_token.clone().unwrap_or_default().trim().len()
-            );
-        }
+        let tiny_url_token = Self::tinyurl_token();
 
         let mailjet_config = MailjetConfig::new();
 
@@ -96,6 +87,21 @@ impl App {
             viewers,
             shutdown: Arc::new(AtomicBool::new(false)),
         }
+    }
+
+    fn tinyurl_token() -> Option<String> {
+        let tiny_url_token = std::env::var(env::ENV_TINY_TOKEN).ok();
+
+        if tiny_url_token.clone().unwrap_or_default().trim().is_empty() {
+            tracing::warn!("no url shorten token set, use `ENV_TINY_TOKEN` to do so");
+        } else {
+            tracing::info!(
+                "tinyurl-token set (len: {})",
+                tiny_url_token.clone().unwrap_or_default().trim().len()
+            );
+        }
+
+        tiny_url_token
     }
 
     #[instrument(skip(self))]
