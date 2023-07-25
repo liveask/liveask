@@ -12,8 +12,6 @@ use web_sys::ScrollIntoViewOptions;
 use web_sys::ScrollLogicalPosition;
 use yew::prelude::*;
 
-use crate::not;
-
 pub enum QuestionClickType {
     Like,
     Hide,
@@ -77,7 +75,7 @@ impl Component for Question {
             Msg::QuestionClick(click_type) => {
                 if matches!(click_type, QuestionClickType::Like) {
                     if ctx.props().can_vote
-                        && self.data.item.screened
+                        && !self.data.item.screening
                         && !self.data.item.answered
                         && !self.data.item.hidden
                     {
@@ -173,10 +171,11 @@ impl Component for Question {
         let liked = ctx.props().local_like;
         let mod_view = ctx.props().mod_view;
         let blurred = ctx.props().blurr;
-        let can_vote = ctx.props().can_vote && self.data.item.screened;
+        let can_vote = ctx.props().can_vote && !self.data.item.screening;
+        let screened = !self.data.item.screening;
 
         html! {
-            <div class={classes!("question-host","questions-move",not(self.data.item.screened).then_some("unscreened-question"),)}
+            <div class={classes!("question-host","questions-move",self.data.item.screening.then_some("unscreened-question"),)}
                 ref={self.node_ref.clone()}>
                 <a class="questionanchor" onclick={ctx.link().callback(|_| Msg::QuestionClick(QuestionClickType::Like))}>
 
@@ -185,8 +184,7 @@ impl Component for Question {
                     </div>
 
                     {
-                        if self.data.item.screened
-                        {
+                        if screened {
                             if liked {
                                 Self::get_bubble_liked(self.data.item.likes)
                             }
@@ -242,8 +240,9 @@ impl Question {
 
         let hidden = self.data.item.hidden;
         let answered = self.data.item.answered;
+        let screened = !self.data.item.screening;
 
-        if self.data.item.screened {
+        if screened {
             html! {
                 <div class="options">
                     <button class={classes!("button-hide",hidden.then_some("reverse"))}

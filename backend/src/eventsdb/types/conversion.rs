@@ -276,7 +276,7 @@ fn question_to_attributes(value: QuestionItem) -> AttributeMap {
     if value.hidden {
         map.insert(ATTR_QUESTION_HIDDEN.into(), AttributeValue::Bool(true));
     }
-    if value.screened {
+    if value.screening {
         map.insert(ATTR_QUESTION_SCREENING.into(), AttributeValue::Bool(true));
     }
 
@@ -325,7 +325,7 @@ fn attributes_to_question(value: &AttributeMap) -> Result<QuestionItem, super::E
         text,
         hidden,
         answered,
-        screened: screening,
+        screening,
         create_time_unix,
     })
 }

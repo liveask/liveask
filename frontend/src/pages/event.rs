@@ -270,7 +270,7 @@ fn request_toggle_hide(
         let modify = ModQuestion {
             hide: !item.hidden,
             answered: item.answered,
-            screened: item.screened,
+            screened: !item.screening,
         };
         if let Err(res) = fetch::mod_question(BASE_API, event, secret, item.id, modify).await {
             log::error!("hide error: {}", res);
@@ -291,7 +291,7 @@ fn request_toggle_answered(
         let modify = ModQuestion {
             hide: item.hidden,
             answered: !item.answered,
-            screened: item.screened,
+            screened: !item.screening,
         };
 
         if let Err(e) = fetch::mod_question(BASE_API, event, secret, item.id, modify).await {
@@ -871,7 +871,7 @@ impl Event {
 
             questions.extend(local_unscreened);
 
-            let (unscreened, screened) = questions.into_iter().map(Rc::new).split(|i| i.screened);
+            let (unscreened, screened) = questions.into_iter().map(Rc::new).split(|i| !i.screening);
             let (not_hidden, hidden) = screened.into_iter().split(|i| i.hidden);
             let (unanswered, answered) = not_hidden.into_iter().split(|i| i.answered);
 

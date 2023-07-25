@@ -262,7 +262,7 @@ impl App {
             e.questions = e
                 .questions
                 .into_iter()
-                .filter(|q| !q.hidden && q.screened)
+                .filter(|q| !q.hidden && !q.screening)
                 .collect::<Vec<_>>();
         }
 
@@ -313,7 +313,7 @@ impl App {
             .ok_or_else(|| InternalError::General("q not found".into()))?
             .clone();
 
-        if (!q.screened || q.hidden) && !is_mod {
+        if (q.screening || q.hidden) && !is_mod {
             bail!("q not found")
         }
 
@@ -356,12 +356,12 @@ impl App {
             q.hidden = state.hide;
             q.answered = state.answered;
 
-            if !q.screened && state.screened {
-                q.screened = true;
+            if q.screening && state.screened {
+                q.screening = false;
             }
-            if !q.screened && state.hide {
+            if q.screening && state.hide {
                 //hiding an unscreened question equals a dis-approval
-                q.screened = true;
+                q.screening = false;
             }
         }
 
@@ -605,7 +605,7 @@ impl App {
             answered: false,
             create_time_unix: timestamp_now(),
             hidden: false,
-            screened: !e.do_screening,
+            screening: e.do_screening,
             id: question_id,
             likes: 1,
         };
@@ -1021,7 +1021,7 @@ mod test {
             .await
             .unwrap();
 
-        assert_eq!(q.screened, false);
+        assert_eq!(q.screening, true);
 
         let e = app
             .get_event(res.tokens.public_token.clone(), None, false)
@@ -1111,7 +1111,7 @@ mod test {
             .await
             .unwrap();
 
-        assert_eq!(q.screened, false);
+        assert_eq!(q.screening, true);
 
         let e = app
             .get_event(res.tokens.public_token.clone(), None, false)
@@ -1134,7 +1134,7 @@ mod test {
             .await
             .unwrap();
 
-        assert_eq!(e.questions[0].screened, true);
+        assert_eq!(e.questions[0].screening, false);
     }
 
     #[tokio::test]

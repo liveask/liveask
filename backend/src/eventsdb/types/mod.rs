@@ -193,7 +193,7 @@ mod test_serialization {
                     text: String::from("q"),
                     hidden: false,
                     answered: true,
-                    screened: true,
+                    screening: false,
                     create_time_unix: 3,
                 }],
                 do_screening: true,
@@ -240,7 +240,7 @@ mod test_serialization {
                     text: String::from("q"),
                     hidden: false,
                     answered: true,
-                    screened: false,
+                    screening: true,
                     create_time_unix: 3,
                 }],
 
