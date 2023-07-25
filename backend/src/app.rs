@@ -193,7 +193,10 @@ impl App {
 
         let url = format!("{}/event/{}", self.base_url, e.tokens.public_token);
 
-        e.data.short_url = self.shorten_url(&url).await;
+        //Note: only use shortener outside of e2e tests
+        if !request.test {
+            e.data.short_url = self.shorten_url(&url).await;
+        }
         e.data.long_url = Some(url);
 
         let result = e.clone();
