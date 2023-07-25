@@ -68,7 +68,7 @@ impl App {
     ) -> Self {
         let tiny_url_token = std::env::var(env::ENV_TINY_TOKEN).ok();
 
-        if tiny_url_token.is_none() {
+        if tiny_url_token.clone().unwrap_or_default().trim().is_empty() {
             tracing::warn!("no url shorten token set, use `ENV_TINY_TOKEN` to do so");
         }
 
@@ -119,25 +119,32 @@ impl App {
     #[instrument(skip(self))]
     async fn shorten_url(&self, url: &str) -> String {
         if let Some(tiny_url_token) = &self.tiny_url_token {
-            let tiny = TinyUrlAPI {
-                token: tiny_url_token.clone(),
-            };
+            if !tiny_url_token.trim().is_empty() {
+                let tiny = TinyUrlAPI {
+                    token: tiny_url_token.clone(),
+                };
 
-            let now = Instant::now();
-            let res = tiny
-                .create(CreateRequest::new(url.to_string()))
-                .await
-                .map(|res| res.data.map(|url| url.tiny_url).unwrap_or_default())
-                .unwrap_or_default();
+                let now = Instant::now();
+                let res = tiny
+                    .create(CreateRequest::new(url.to_string()))
+                    .await
+                    .map(|res| res.data.map(|url| url.tiny_url).unwrap_or_default());
 
-            tracing::info!("tiny url: '{}' (in {}ms)", res, now.elapsed().as_millis());
-
-            res
-        } else {
-            tracing::warn!("no url shorten token set");
-
-            url.to_owned()
+                return match res {
+                    Ok(res) => {
+                        tracing::info!("tiny url: '{}' (in {}ms)", res, now.elapsed().as_millis());
+                        res
+                    }
+                    Err(e) => {
+                        tracing::error!("tiny url err: '{}' ", e);
+                        url.to_owned()
+                    }
+                };
+            }
         }
+
+        tracing::info!("no tiny url token");
+        url.to_owned()
     }
 
     #[instrument(skip(self, request))]
