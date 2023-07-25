@@ -70,6 +70,11 @@ impl App {
 
         if tiny_url_token.clone().unwrap_or_default().trim().is_empty() {
             tracing::warn!("no url shorten token set, use `ENV_TINY_TOKEN` to do so");
+        } else {
+            tracing::info!(
+                "tinyurl-token set (len: {})",
+                tiny_url_token.clone().unwrap_or_default().trim().len()
+            );
         }
 
         let mailjet_config = MailjetConfig::new();
