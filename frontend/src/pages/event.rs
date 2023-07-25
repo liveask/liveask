@@ -499,6 +499,7 @@ impl Event {
             });
 
             let mod_view = matches!(self.mode, Mode::Moderator);
+            let admin = e.admin;
 
             html! {
                 <div>
@@ -531,7 +532,7 @@ impl Event {
                         </div>
                     </div>
 
-                    {self.mod_urls(ctx)}
+                    {self.mod_urls(ctx,admin)}
 
                     {self.view_viewers()}
 
@@ -803,8 +804,8 @@ impl Event {
         }
     }
 
-    fn mod_urls(&self, ctx: &Context<Self>) -> Html {
-        if matches!(self.mode, Mode::Moderator) {
+    fn mod_urls(&self, ctx: &Context<Self>, admin: bool) -> Html {
+        if matches!(self.mode, Mode::Moderator) || (matches!(self.mode, Mode::Viewer) && admin) {
             html! {
                 <div id="moderator-urls">
                     <div class="linkbox-title">{"This is your moderation link"}</div>
