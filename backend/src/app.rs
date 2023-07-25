@@ -160,7 +160,7 @@ impl App {
 
     #[instrument(skip(self, request))]
     pub async fn create_event(&self, request: AddEvent) -> Result<EventInfo> {
-        let mut validation = shared::CreateEventErrors::default();
+        let mut validation = shared::CreateEventValidation::default();
 
         validation.check(&request.data.name, &request.data.description);
 
@@ -566,6 +566,14 @@ impl App {
         id: String,
         question: shared::AddQuestion,
     ) -> Result<QuestionItem> {
+        let mut validation = shared::AddQuestionValidation::default();
+
+        validation.check(&question.text);
+
+        if validation.has_any() {
+            bail!("request validation failed: {:?}", validation);
+        }
+
         let mut entry = self.eventsdb.get(&id).await?;
 
         let e = &mut entry.event;
@@ -831,7 +839,7 @@ mod test {
         viewers::MockViewers,
     };
     use pretty_assertions::assert_eq;
-    use shared::{AddQuestion, EventData};
+    use shared::{AddQuestion, EventData, TEST_VALID_QUESTION};
     use std::sync::Arc;
 
     #[tokio::test]
@@ -918,7 +926,7 @@ mod test {
             .add_question(
                 res.tokens.public_token.clone(),
                 AddQuestion {
-                    text: String::from("question"),
+                    text: String::from(TEST_VALID_QUESTION),
                 },
             )
             .await
@@ -991,7 +999,7 @@ mod test {
             .add_question(
                 res.tokens.public_token.clone(),
                 AddQuestion {
-                    text: String::from("question"),
+                    text: String::from(TEST_VALID_QUESTION),
                 },
             )
             .await
@@ -1081,7 +1089,7 @@ mod test {
             .add_question(
                 res.tokens.public_token.clone(),
                 AddQuestion {
-                    text: String::from("question"),
+                    text: String::from(TEST_VALID_QUESTION),
                 },
             )
             .await

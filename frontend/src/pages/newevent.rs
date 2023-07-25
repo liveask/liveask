@@ -1,5 +1,5 @@
 use crate::{fetch, routes::Route, tracking};
-use shared::{CreateEventErrors, EventInfo, ValidationError};
+use shared::{CreateEventError, CreateEventValidation, EventInfo};
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 use web_sys::{Element, HtmlInputElement, HtmlTextAreaElement};
 use yew::prelude::*;
@@ -12,7 +12,7 @@ pub struct NewEvent {
     desc: String,
     email: String,
     name_ref: NodeRef,
-    errors: CreateEventErrors,
+    errors: CreateEventValidation,
 }
 
 #[derive(Debug)]
@@ -40,7 +40,7 @@ impl Component for NewEvent {
             desc: String::new(),
             email: String::new(),
             name_ref: NodeRef::default(),
-            errors: CreateEventErrors::default(),
+            errors: CreateEventValidation::default(),
         }
     }
 
@@ -179,11 +179,11 @@ impl NewEvent {
 
     fn desc_error(&self) -> Option<String> {
         match self.errors.desc {
-            Some(ValidationError::Empty) => Some("Description cannot be empty".to_string()),
-            Some(ValidationError::MinLength(len, max)) => Some(format!(
+            Some(CreateEventError::Empty) => Some("Description cannot be empty".to_string()),
+            Some(CreateEventError::MinLength(len, max)) => Some(format!(
                 "Description must be at least {max} characters long. ({len}/{max})",
             )),
-            Some(ValidationError::MaxLength(_, max)) => Some(format!(
+            Some(CreateEventError::MaxLength(_, max)) => Some(format!(
                 "Description cannot be longer than {max} characters.",
             )),
             Some(_) => Some("unknown error".to_string()),
@@ -193,14 +193,14 @@ impl NewEvent {
 
     fn name_error(&self) -> Option<String> {
         match self.errors.name {
-            Some(ValidationError::Empty) => Some("Name is required.".to_string()),
-            Some(ValidationError::MinLength(len, max)) => Some(format!(
+            Some(CreateEventError::Empty) => Some("Name is required.".to_string()),
+            Some(CreateEventError::MinLength(len, max)) => Some(format!(
                 "Name must be at least {max} characters long. ({len}/{max})"
             )),
-            Some(ValidationError::MaxLength(_, max)) => {
+            Some(CreateEventError::MaxLength(_, max)) => {
                 Some(format!("Name cannot be longer than {max} characters."))
             }
-            Some(ValidationError::MaxWords(_, max)) => {
+            Some(CreateEventError::MaxWords(_, max)) => {
                 Some(format!("Name must not contain more than {max} words."))
             }
             None => None,

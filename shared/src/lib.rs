@@ -4,7 +4,12 @@ use serde::{Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
 use std::{str::FromStr, time::Duration};
 
-pub use validation::{CreateEventErrors, ValidationError};
+pub use validation::{
+    add_question::{AddQuestionError, AddQuestionValidation},
+    create_event::{CreateEventError, CreateEventValidation},
+};
+
+pub const TEST_VALID_QUESTION: &str = "1 2 3fourfive";
 
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Default)]
 pub struct EventTokens {
