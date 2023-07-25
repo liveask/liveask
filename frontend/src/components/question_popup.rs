@@ -72,6 +72,9 @@ impl Component for QuestionPopup {
                 ctx.link().send_future(async move {
                     if let Ok(item) = fetch::add_question(BASE_API, event_id.clone(), text).await {
                         LocalCache::set_like_state(&event_id, item.id, true);
+                        if !item.screened {
+                            LocalCache::add_unscreened_question(&event_id, &item);
+                        }
                         Msg::QuestionCreated(Some(item.id))
                     } else {
                         Msg::QuestionCreated(None)

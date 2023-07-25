@@ -23,6 +23,8 @@ pub struct ApiEventInfo {
     #[serde(rename = "lastEditUnix")]
     pub last_edit_unix: i64,
     pub questions: Vec<QuestionItem>,
+    #[serde(default)]
+    pub do_screening: bool,
     pub state: EventState,
     pub premium_order: Option<String>,
     #[serde(default)]
@@ -74,6 +76,7 @@ impl From<ApiEventInfo> for EventInfo {
             last_edit_unix: val.last_edit_unix,
             questions: val.questions,
             state: val.state,
+            screening: val.do_screening,
             premium: val.premium_order.is_some(),
         }
     }
@@ -190,8 +193,10 @@ mod test_serialization {
                     text: String::from("q"),
                     hidden: false,
                     answered: true,
+                    screened: true,
                     create_time_unix: 3,
                 }],
+                do_screening: true,
                 state: EventState {
                     state: States::Closed,
                 },
@@ -235,8 +240,11 @@ mod test_serialization {
                     text: String::from("q"),
                     hidden: false,
                     answered: true,
+                    screened: false,
                     create_time_unix: 3,
                 }],
+
+                do_screening: false,
                 state: EventState {
                     state: States::Closed,
                 },

@@ -7,6 +7,7 @@ const ATTR_EVENT_INFO_LAST_EDIT: &str = "last_edit";
 const ATTR_EVENT_INFO_DELETE_TIME: &str = "delete_time";
 const ATTR_EVENT_INFO_CREATE_TIME: &str = "create_time";
 const ATTR_EVENT_INFO_DELETED: &str = "deleted";
+const ATTR_EVENT_INFO_DO_SCREENING: &str = "do_screening";
 const ATTR_EVENT_INFO_STATE: &str = "state";
 const ATTR_EVENT_INFO_TOKENS: &str = "tokens";
 const ATTR_EVENT_INFO_ITEMS: &str = "items";
@@ -35,6 +36,10 @@ pub fn event_to_attributes(value: ApiEventInfo) -> AttributeMap {
         (
             ATTR_EVENT_INFO_DELETED.into(),
             AttributeValue::Bool(value.deleted),
+        ),
+        (
+            ATTR_EVENT_INFO_DO_SCREENING.into(),
+            AttributeValue::Bool(value.do_screening),
         ),
         (
             ATTR_EVENT_INFO_CREATE_TIME.into(),
@@ -105,6 +110,12 @@ pub fn attributes_to_event(value: &AttributeMap) -> Result<ApiEventInfo, super::
         .map_err(|_| Error::MalformedObject(ATTR_EVENT_INFO_DELETED.into()))?
         .to_owned();
 
+    let do_screening = value
+        .get(ATTR_EVENT_INFO_DO_SCREENING)
+        .and_then(|val| val.as_bool().ok())
+        .copied()
+        .unwrap_or_default();
+
     let premium_order = value
         .get(ATTR_EVENT_INFO_PREMIUM)
         .and_then(|value| value.as_s().ok().cloned());
@@ -131,6 +142,7 @@ pub fn attributes_to_event(value: &AttributeMap) -> Result<ApiEventInfo, super::
         deleted,
         last_edit_unix,
         questions,
+        do_screening,
         state,
         premium_order,
         mod_email,
@@ -238,6 +250,7 @@ const ATTR_QUESTION_ID: &str = "id";
 const ATTR_QUESTION_LIKES: &str = "likes";
 const ATTR_QUESTION_CREATED: &str = "created";
 const ATTR_QUESTION_ANSWERED: &str = "answered";
+const ATTR_QUESTION_SCREENING: &str = "screening";
 const ATTR_QUESTION_HIDDEN: &str = "hidden";
 
 fn question_to_attributes(value: QuestionItem) -> AttributeMap {
@@ -262,6 +275,9 @@ fn question_to_attributes(value: QuestionItem) -> AttributeMap {
     }
     if value.hidden {
         map.insert(ATTR_QUESTION_HIDDEN.into(), AttributeValue::Bool(true));
+    }
+    if value.screened {
+        map.insert(ATTR_QUESTION_SCREENING.into(), AttributeValue::Bool(true));
     }
 
     map
@@ -293,6 +309,11 @@ fn attributes_to_question(value: &AttributeMap) -> Result<QuestionItem, super::E
         .and_then(|value| value.as_bool().ok().copied())
         .unwrap_or_default();
 
+    let screening = value
+        .get(ATTR_QUESTION_SCREENING)
+        .and_then(|value| value.as_bool().ok().copied())
+        .unwrap_or_default();
+
     let hidden = value
         .get(ATTR_QUESTION_HIDDEN)
         .and_then(|value| value.as_bool().ok().copied())
@@ -304,6 +325,7 @@ fn attributes_to_question(value: &AttributeMap) -> Result<QuestionItem, super::E
         text,
         hidden,
         answered,
+        screened: screening,
         create_time_unix,
     })
 }

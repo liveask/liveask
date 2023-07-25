@@ -71,6 +71,7 @@ pub struct Event {
     unanswered: Vec<Rc<QuestionItem>>,
     answered: Vec<Rc<QuestionItem>>,
     hidden: Vec<Rc<QuestionItem>>,
+    unscreened: Vec<Rc<QuestionItem>>,
     loading_state: LoadingState,
     dispatch: Dispatch<State>,
     socket_agent: Box<dyn Bridge<WebSocketAgent>>,
@@ -90,6 +91,7 @@ pub enum Msg {
     ModStateChange(yew::Event),
     StateChanged,
     CopyLink,
+    ModEditScreening,
     GlobalEvent(GlobalEvent),
     WordCloud(WordCloudOutput),
 }
@@ -131,6 +133,7 @@ impl Component for Event {
             unanswered: Vec::new(),
             answered: Vec::new(),
             hidden: Vec::new(),
+            unscreened: Vec::new(),
             dispatch: Dispatch::<State>::subscribe(Callback::noop()),
             socket_agent: ws,
             events: EventAgent::bridge(ctx.link().callback(Msg::GlobalEvent)),
@@ -171,6 +174,20 @@ impl Component for Event {
                     self.event_id.clone(),
                     ctx.props().secret.clone(),
                     new_state,
+                    ctx.link(),
+                );
+
+                false
+            }
+            Msg::ModEditScreening => {
+                request_screening_change(
+                    self.event_id.clone(),
+                    ctx.props().secret.clone(),
+                    self.state
+                        .event
+                        .as_ref()
+                        .map(|e| !e.info.screening)
+                        .unwrap_or_default(),
                     ctx.link(),
                 );
 
@@ -253,6 +270,7 @@ fn request_toggle_hide(
         let modify = ModQuestion {
             hide: !item.hidden,
             answered: item.answered,
+            screened: item.screened,
         };
         if let Err(res) = fetch::mod_question(BASE_API, event, secret, item.id, modify).await {
             log::error!("hide error: {}", res);
@@ -273,6 +291,29 @@ fn request_toggle_answered(
         let modify = ModQuestion {
             hide: item.hidden,
             answered: !item.answered,
+            screened: item.screened,
+        };
+
+        if let Err(e) = fetch::mod_question(BASE_API, event, secret, item.id, modify).await {
+            log::error!("mod_questio error: {e}");
+        }
+
+        Msg::QuestionUpdated(item.id)
+    });
+}
+
+#[allow(clippy::needless_pass_by_value)]
+fn request_approve_question(
+    event: String,
+    secret: String,
+    item: QuestionItem,
+    link: &html::Scope<Event>,
+) {
+    link.send_future(async move {
+        let modify = ModQuestion {
+            hide: false,
+            answered: false,
+            screened: true,
         };
 
         if let Err(e) = fetch::mod_question(BASE_API, event, secret, item.id, modify).await {
@@ -321,6 +362,23 @@ fn request_state_change(
     link.send_future(async move {
         if let Err(e) = fetch::mod_state_change(BASE_API, id, secret.unwrap_throw(), state).await {
             log::error!("mod_state_change error: {e}");
+        }
+
+        Msg::StateChanged
+    });
+}
+
+fn request_screening_change(
+    id: String,
+    secret: Option<String>,
+    screening: bool,
+    link: &html::Scope<Event>,
+) {
+    link.send_future(async move {
+        if let Err(e) =
+            fetch::mod_edit_screening(BASE_API, id, secret.unwrap_throw(), screening).await
+        {
+            log::error!("mod_edit_screening error: {e}");
         }
 
         Msg::StateChanged
@@ -527,6 +585,10 @@ impl Event {
         })
     }
 
+    const fn is_mod(&self) -> bool {
+        matches!(self.mode, Mode::Moderator)
+    }
+
     fn view_questions(&self, ctx: &Context<Self>, e: &GetEventResponse) -> Html {
         if e.info.questions.is_empty() {
             let no_questions_classes = classes!(match self.mode {
@@ -541,8 +603,10 @@ impl Event {
             }
         } else {
             let can_vote = !e.is_closed();
+            let is_mod = self.is_mod();
             html! {
                 <>
+                    {self.view_items(ctx,&self.unscreened,if is_mod {"For review"} else {"Questions currently in review by host"},can_vote)}
                     {self.view_items(ctx,&self.unanswered,"Hot Questions",can_vote)}
                     {self.view_items(ctx,&self.answered,"Answered",can_vote)}
                     {self.view_items(ctx,&self.hidden,"Hidden",can_vote)}
@@ -645,8 +709,11 @@ impl Event {
                 </button>
 
                 {
-                    self.mod_view_export(ctx)
+                    if self.is_premium() {
+                        Self::mod_view_premium(ctx,e)
+                    }else {html!{}}
                 }
+
 
             </div>
 
@@ -665,15 +732,20 @@ impl Event {
         }
     }
 
-    fn mod_view_export(&self, ctx: &Context<Self>) -> Html {
-        if self.is_premium() {
-            html! {
+    fn mod_view_premium(ctx: &Context<Self>, e: &GetEventResponse) -> Html {
+        html! {
+            <div class="premium">
+                <div class="title">
+                    {"This is a premium event"}
+                </div>
+                <div class="screening-option" onclick={ctx.link().callback(|_| Msg::ModEditScreening)}>
+                    <input type="checkbox" id="vehicle1" name="vehicle1" checked={e.info.screening} />
+                    {"Screening"}
+                </div>
                 <button class="button-white" onclick={ctx.link().callback(|_|Msg::ModExport)} >
                     {"Export"}
                 </button>
-            }
-        } else {
-            html! {}
+            </div>
         }
     }
 
@@ -793,10 +865,16 @@ impl Event {
             let mut questions = e.info.questions.clone();
             questions.sort_by(|a, b| b.likes.cmp(&a.likes));
 
-            let (not_hidden, hidden) = questions.into_iter().map(Rc::new).split(|i| i.hidden);
+            let local_unscreened =
+                LocalCache::unscreened_questions(&e.info.tokens.public_token, &questions);
 
+            questions.extend(local_unscreened);
+
+            let (unscreened, screened) = questions.into_iter().map(Rc::new).split(|i| i.screened);
+            let (not_hidden, hidden) = screened.into_iter().split(|i| i.hidden);
             let (unanswered, answered) = not_hidden.into_iter().split(|i| i.answered);
 
+            self.unscreened = unscreened.collect();
             self.answered = answered.collect();
             self.unanswered = unanswered.collect();
             self.hidden = hidden.collect();
@@ -864,6 +942,16 @@ impl Event {
             QuestionClickType::Answer => {
                 if let Some(q) = self.state.event.as_ref().unwrap_throw().get_question(id) {
                     request_toggle_answered(
+                        self.event_id.clone(),
+                        ctx.props().secret.clone().unwrap_throw(),
+                        q,
+                        ctx.link(),
+                    );
+                }
+            }
+            QuestionClickType::Approve => {
+                if let Some(q) = self.state.event.as_ref().unwrap_throw().get_question(id) {
+                    request_approve_question(
                         self.event_id.clone(),
                         ctx.props().secret.clone().unwrap_throw(),
                         q,

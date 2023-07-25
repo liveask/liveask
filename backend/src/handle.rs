@@ -187,6 +187,20 @@ pub async fn mod_edit_state(
     Ok(Json(app.edit_event_state(id, secret, payload.state).await?))
 }
 
+#[instrument(skip(app))]
+pub async fn mod_edit_screening(
+    Path((id, secret)): Path<(String, String)>,
+    State(app): State<SharedApp>,
+    Json(payload): Json<shared::ModEditScreening>,
+) -> std::result::Result<impl IntoResponse, InternalError> {
+    tracing::info!("mod_edit_screening");
+
+    Ok(Json(
+        app.edit_event_screening(id, secret, payload.screening)
+            .await?,
+    ))
+}
+
 #[instrument]
 pub async fn ping_handler() -> Html<&'static str> {
     Html("pong")

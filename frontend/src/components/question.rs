@@ -7,12 +7,18 @@ use wasm_bindgen::JsCast;
 use wasm_bindgen::UnwrapThrowExt;
 use web_sys::Element;
 use web_sys::HtmlElement;
+use web_sys::ScrollBehavior;
+use web_sys::ScrollIntoViewOptions;
+use web_sys::ScrollLogicalPosition;
 use yew::prelude::*;
+
+use crate::not;
 
 pub enum QuestionClickType {
     Like,
     Hide,
     Answer,
+    Approve,
 }
 
 //TODO: use bitflag to rid us of this warning
@@ -40,9 +46,7 @@ pub struct Question {
 }
 pub enum Msg {
     UpdateAge,
-    Like,
-    ToggleHide,
-    ToggleAnswered,
+    QuestionClick(QuestionClickType),
     /// used to start the reorder animation
     StartAnimation,
     EndAnimation,
@@ -70,26 +74,21 @@ impl Component for Question {
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
-            Msg::Like => {
-                if ctx.props().can_vote && !self.data.item.answered && !self.data.item.hidden {
-                    ctx.props()
-                        .on_click
-                        .emit((self.data.item.id, QuestionClickType::Like));
-                    true
-                } else {
-                    false
+            Msg::QuestionClick(click_type) => {
+                if matches!(click_type, QuestionClickType::Like) {
+                    if ctx.props().can_vote
+                        && self.data.item.screened
+                        && !self.data.item.answered
+                        && !self.data.item.hidden
+                    {
+                        ctx.props()
+                            .on_click
+                            .emit((self.data.item.id, QuestionClickType::Like));
+                        return true;
+                    }
+                    return false;
                 }
-            }
-            Msg::ToggleHide => {
-                ctx.props()
-                    .on_click
-                    .emit((self.data.item.id, QuestionClickType::Hide));
-                true
-            }
-            Msg::ToggleAnswered => {
-                ctx.props()
-                    .on_click
-                    .emit((self.data.item.id, QuestionClickType::Answer));
+                ctx.props().on_click.emit((self.data.item.id, click_type));
                 true
             }
             Msg::UpdateAge => {
@@ -162,7 +161,11 @@ impl Component for Question {
         }
 
         if first_render && self.data.is_new {
-            elem.scroll_into_view();
+            elem.scroll_into_view_with_scroll_into_view_options(
+                ScrollIntoViewOptions::new()
+                    .block(ScrollLogicalPosition::Center)
+                    .behavior(ScrollBehavior::Smooth),
+            );
         }
     }
 
@@ -170,31 +173,35 @@ impl Component for Question {
         let liked = ctx.props().local_like;
         let mod_view = ctx.props().mod_view;
         let blurred = ctx.props().blurr;
+        let can_vote = ctx.props().can_vote && self.data.item.screened;
 
         html! {
-            <div class="question-host questions-move"
+            <div class={classes!("question-host","questions-move",not(self.data.item.screened).then_some("unscreened-question"),)}
                 ref={self.node_ref.clone()}>
-                <a class="questionanchor" onclick={ctx.link().callback(|_| Msg::Like)}>
+                <a class="questionanchor" onclick={ctx.link().callback(|_| Msg::QuestionClick(QuestionClickType::Like))}>
 
                     <div class="time-since">
                         {self.get_age()}
                     </div>
 
                     {
-                        if liked {
-                            Self::get_bubble_liked(self.data.item.likes)
-                        }
-                        else
+                        if self.data.item.screened
                         {
-                            Self::get_bubble_not_liked(self.data.item.likes)
-                        }
+                            if liked {
+                                Self::get_bubble_liked(self.data.item.likes)
+                            }
+                            else
+                            {
+                                Self::get_bubble_not_liked(self.data.item.likes)
+                            }
+                        } else { html!() }
                     }
 
                     <div class={classes!("text",self.data.item.answered.then_some("answered"),blurred.then_some("blurr"))}>
                         {&self.data.item.text}
                     </div>
 
-                    {self.view_like(ctx.props().can_vote,liked,mod_view)}
+                    {self.view_like(can_vote,liked,mod_view)}
 
                     {self.view_checkmark(mod_view)}
                 </a>
@@ -236,34 +243,52 @@ impl Question {
         let hidden = self.data.item.hidden;
         let answered = self.data.item.answered;
 
-        html! {
-            <div class="options">
-                <button class={classes!("button-hide",hidden.then_some("reverse"))}
-                    onclick={ctx.link().callback(|_| Msg::ToggleHide)}
-                    hidden={answered}
-                    >
-                    {
-                        if hidden {
-                            html!{"unhide"}
-                        }else{
-                            html!{"hide"}
+        if self.data.item.screened {
+            html! {
+                <div class="options">
+                    <button class={classes!("button-hide",hidden.then_some("reverse"))}
+                        onclick={ctx.link().callback(|_| Msg::QuestionClick(QuestionClickType::Hide))}
+                        hidden={answered}
+                        >
+                        {
+                            if hidden {
+                                html!{"unhide"}
+                            }else{
+                                html!{"hide"}
+                            }
                         }
-                    }
-                </button>
+                    </button>
 
-                <button class={classes!("button-answered",answered.then_some("reverse"))}
-                    onclick={ctx.link().callback(|_| Msg::ToggleAnswered)}
-                    hidden={hidden}
-                    >
-                    {
-                        if answered {
-                            html!{"not answered"}
-                        }else{
-                            html!{"answered"}
+                    <button class={classes!("button-answered",answered.then_some("reverse"))}
+                        onclick={ctx.link().callback(|_| Msg::QuestionClick(QuestionClickType::Answer))}
+                        hidden={hidden}
+                        >
+                        {
+                            if answered {
+                                html!{"not answered"}
+                            }else{
+                                html!{"answered"}
+                            }
                         }
-                    }
-                </button>
-            </div>
+                    </button>
+                </div>
+            }
+        } else {
+            html! {
+                <div class="options">
+                    <button class={classes!("button-hide",hidden.then_some("reverse"))}
+                        onclick={ctx.link().callback(|_| Msg::QuestionClick(QuestionClickType::Hide))}
+                        >
+                        {"hide"}
+                    </button>
+
+                    <button class="button-answered"
+                        onclick={ctx.link().callback(|_| Msg::QuestionClick(QuestionClickType::Approve))}
+                        >
+                        {"approve"}
+                    </button>
+                </div>
+            }
         }
     }
 

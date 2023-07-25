@@ -31,6 +31,8 @@ pub struct QuestionItem {
     pub text: String,
     pub hidden: bool,
     pub answered: bool,
+    #[serde(default)]
+    pub screened: bool,
     #[serde(rename = "createTimeUnix")]
     pub create_time_unix: i64,
 }
@@ -60,6 +62,8 @@ pub struct EventInfo {
     pub state: EventState,
     #[serde(default)]
     pub premium: bool,
+    #[serde(default)]
+    pub screening: bool,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, Default)]
@@ -115,6 +119,7 @@ pub struct AddQuestion {
 pub struct ModQuestion {
     pub hide: bool,
     pub answered: bool,
+    pub screened: bool,
 }
 
 ///
@@ -143,6 +148,11 @@ impl FromStr for States {
 #[derive(Serialize, Deserialize, Debug, Copy, Clone, Eq, PartialEq)]
 pub struct ModEventState {
     pub state: EventState,
+}
+
+#[derive(Serialize, Deserialize, Debug, Copy, Clone, Eq, PartialEq)]
+pub struct ModEditScreening {
+    pub screening: bool,
 }
 
 #[derive(Serialize, Deserialize, Debug, Copy, Clone, Eq, PartialEq, Default)]

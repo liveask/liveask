@@ -3,8 +3,8 @@
 use gloo_utils::format::JsValueSerdeExt;
 use shared::{
     AddEvent, AddQuestion, EditLike, EventData, EventInfo, EventState, EventUpgrade,
-    GetEventResponse, GetUserInfo, ModEventState, ModQuestion, PaymentCapture, QuestionItem,
-    States, UserLogin,
+    GetEventResponse, GetUserInfo, ModEditScreening, ModEventState, ModQuestion, PaymentCapture,
+    QuestionItem, States, UserLogin,
 };
 use std::{
     error::Error,
@@ -101,6 +101,35 @@ pub async fn mod_state_change(
     let body = JsValue::from_str(&body);
 
     let url = format!("{base_api}/api/mod/event/state/{id}/{secret}");
+
+    let mut opts = RequestInit::new();
+    opts.method("POST");
+    opts.body(Some(&body));
+
+    let request = Request::new_with_str_and_init(&url, &opts)?;
+    request.headers().set("content-type", "application/json")?;
+
+    let window = gloo_utils::window();
+    let resp_value = JsFuture::from(window.fetch_with_request(&request)).await?;
+    let resp: Response = resp_value.dyn_into()?;
+
+    let json = JsFuture::from(resp.json()?).await?;
+    let res = JsValueSerdeExt::into_serde::<EventInfo>(&json)?;
+
+    Ok(res)
+}
+
+pub async fn mod_edit_screening(
+    base_api: &str,
+    id: String,
+    secret: String,
+    screening: bool,
+) -> Result<EventInfo, FetchError> {
+    let body = ModEditScreening { screening };
+    let body = serde_json::to_string(&body)?;
+    let body = JsValue::from_str(&body);
+
+    let url = format!("{base_api}/api/mod/event/screening/{id}/{secret}");
 
     let mut opts = RequestInit::new();
     opts.method("POST");

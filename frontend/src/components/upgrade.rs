@@ -101,7 +101,7 @@ impl Upgrade {
                     <li>{"Live Stats (participants, likes ..)"}</li>
                     <li>{"Export Data"}</li>
                     <li>{"Word Cloud"}</li>
-                    <li class="tbd">{"Prescreen Questions (coming soon..)"}</li>
+                    <li>{"Prescreen Questions"}</li>
                     <li class="tbd">{"Answer Questions (coming soon..)"}</li>
                 </ul>
                 </div>
