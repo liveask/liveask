@@ -196,7 +196,7 @@ impl Home {
                 </a>
 
                 <div class="version">
-                    { format!("v.{VERSION_STR}-{git_sha} {branch} {api_version}") }
+                    { format!("v{VERSION_STR}-{git_sha} {branch} {api_version}") }
                 </div>
 
                 <div id="admin">
