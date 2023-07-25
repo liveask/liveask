@@ -566,9 +566,11 @@ impl App {
         id: String,
         question: shared::AddQuestion,
     ) -> Result<QuestionItem> {
+        let trimmed_question = question.text.trim().to_string();
+
         let mut validation = shared::AddQuestionValidation::default();
 
-        validation.check(&question.text);
+        validation.check(&trimmed_question);
 
         if validation.has_any() {
             bail!("request validation failed: {:?}", validation);
@@ -582,10 +584,21 @@ impl App {
             return Err(InternalError::TimedOutFreeEvent(id));
         }
 
+        if e.questions.len() > 500 {
+            bail!("max number of questions reached");
+        }
+
+        if e.questions
+            .iter()
+            .any(|q| q.text.trim() == trimmed_question)
+        {
+            return Err(InternalError::DuplicateQuestion);
+        }
+
         let question_id = e.questions.len() as i64;
 
         let question = shared::QuestionItem {
-            text: question.text,
+            text: trimmed_question,
             answered: false,
             create_time_unix: timestamp_now(),
             hidden: false,
@@ -593,10 +606,6 @@ impl App {
             id: question_id,
             likes: 1,
         };
-
-        if e.questions.len() > 500 {
-            bail!("max number of questions reached");
-        }
 
         e.questions.push(question.clone());
 
@@ -1174,5 +1183,59 @@ mod test {
             .unwrap();
 
         assert!(e.screening);
+    }
+
+    #[tokio::test]
+    async fn test_duplicate_question_check() {
+        // env_logger::init();
+
+        let pubsubreceiver = Arc::new(PubSubReceiverInMemory::default());
+        let pubsub = PubSubInMemory::default();
+        pubsub.set_receiver(pubsubreceiver.clone()).await;
+        let events = Arc::new(InMemoryEventsDB::default());
+        let app = App::new(
+            events.clone(),
+            Arc::new(pubsub),
+            Arc::new(MockViewers::new()),
+            Arc::new(Payment::default()),
+            String::new(),
+        );
+
+        let res = app
+            .create_event(AddEvent {
+                data: EventData {
+                    name: String::from("123456789"),
+                    description: String::from("123456789 123456789 123456789 !"),
+                    short_url: String::new(),
+                    long_url: None,
+                },
+                moderator_email: None,
+                test: false,
+            })
+            .await
+            .unwrap();
+
+        app.add_question(
+            res.tokens.public_token.clone(),
+            AddQuestion {
+                text: String::from(TEST_VALID_QUESTION),
+            },
+        )
+        .await
+        .unwrap();
+
+        let request = app
+            .add_question(
+                res.tokens.public_token.clone(),
+                AddQuestion {
+                    text: String::from(TEST_VALID_QUESTION),
+                },
+            )
+            .await;
+
+        assert!(matches!(
+            request.unwrap_err(),
+            InternalError::DuplicateQuestion
+        ))
     }
 }

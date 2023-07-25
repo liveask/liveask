@@ -20,6 +20,9 @@ pub enum InternalError {
     #[error("Trying to modify timed out Event: {0}")]
     TimedOutFreeEvent(String),
 
+    #[error("Duplicate Question Error")]
+    DuplicateQuestion,
+
     #[error("Events DB Error: {0}")]
     EventsDB(#[from] eventsdb::Error),
 
@@ -65,6 +68,8 @@ impl IntoResponse for InternalError {
                 tracing::info!("trying to modify timed out Event: {id}");
                 (StatusCode::BAD_REQUEST, "").into_response()
             }
+
+            Self::DuplicateQuestion => (StatusCode::BAD_REQUEST, "").into_response(),
 
             Self::Payment(e) => {
                 tracing::error!("payment error: {e}");
