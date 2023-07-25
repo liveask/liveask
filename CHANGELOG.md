@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## [2.3.0] - 2022-07-25
+
 ### Added
 * premium feature: queestion screening/reviewing/whitelisting ([PR #26](https://github.com/liveask/liveask/pull/26))
 * server side question validation (min/max length...)
