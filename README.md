@@ -24,6 +24,8 @@ Live-Ask.com provides a simple, free, and real-time service for the audience to 
 * **2018-04-06** - Initial Launch of Live-Ask
 * **2017** - Work started on Live-Ask
 
+See detailed [changelog](CHANGELOG.md).
+
 ## Build & Usages Details 
 (coming soon) 
 
