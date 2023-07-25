@@ -2,7 +2,7 @@
 
 use reqwest::{header::CONTENT_TYPE, StatusCode};
 use serde_json::json;
-use shared::{EventInfo, GetEventResponse};
+use shared::{EventInfo, GetEventResponse, TEST_VALID_QUESTION};
 
 const MIN_DESC: &str = "minimum desc length possible!!";
 const MIN_NAME: &str = "min name";
@@ -116,7 +116,7 @@ async fn add_question(event: String) -> shared::QuestionItem {
     let res = reqwest::Client::new()
         .post(format!("{}/api/event/addquestion/{}", server_rest(), event))
         .json(&json!({
-            "text":"test"
+            "text":TEST_VALID_QUESTION
         }))
         .send()
         .await
@@ -133,7 +133,7 @@ async fn add_question(event: String) -> shared::QuestionItem {
 
     let q = res.json::<shared::QuestionItem>().await.unwrap();
 
-    assert_eq!(q.text, "test");
+    assert_eq!(q.text, TEST_VALID_QUESTION);
 
     q
 }
