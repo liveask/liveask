@@ -973,6 +973,10 @@ impl Event {
                 } else if msg.starts_with("q:") {
                     //TODO: do we want to act differently here? only fetch q on "q"?
                     log::info!("received question update: {}", msg);
+
+                    //TODO: populate if question not found
+                    // self.state.new_question
+
                     true
                 } else if msg.starts_with("v:") {
                     log::info!("received viewer update: {}", msg);
