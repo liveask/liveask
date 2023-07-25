@@ -594,6 +594,10 @@ impl App {
             likes: 1,
         };
 
+        if e.questions.len() > 500 {
+            bail!("max number of questions reached");
+        }
+
         e.questions.push(question.clone());
 
         entry.bump();
