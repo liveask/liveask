@@ -41,8 +41,10 @@ pub struct Question {
     timeout: Option<Timeout>,
     reorder_animation_timeout: Option<Timeout>,
     highlight_animation_timeout: Option<Timeout>,
+    wiggle_animation_timeout: Option<Timeout>,
     _interval: Interval,
     highlighted: bool,
+    wiggle: bool,
 }
 
 pub enum AnimationState {
@@ -55,6 +57,7 @@ pub enum Msg {
     QuestionClick(QuestionClickType),
     ReorderAnimation(AnimationState),
     HighlightEnd,
+    WiggleEnd,
 }
 impl Component for Question {
     type Message = Msg;
@@ -74,8 +77,10 @@ impl Component for Question {
             timeout: None,
             reorder_animation_timeout: None,
             highlight_animation_timeout: None,
+            wiggle_animation_timeout: None,
             _interval: interval,
             highlighted: false,
+            wiggle: false,
         };
 
         if res.data.is_new {
@@ -144,6 +149,12 @@ impl Component for Question {
                 self.highlight_animation_timeout = None;
                 true
             }
+
+            Msg::WiggleEnd => {
+                self.wiggle = false;
+                self.wiggle_animation_timeout = None;
+                true
+            }
         }
     }
 
@@ -156,13 +167,18 @@ impl Component for Question {
 
             let likes_changed = self.data.item.likes != props.item.likes;
             if likes_changed {
-                log::info!(
-                    "q: {} likes changed (old: {})",
-                    self.data.item.id,
-                    self.data.item.likes
-                );
+                // log::info!(
+                //     "q: {} likes changed (old: {})",
+                //     self.data.item.id,
+                //     self.data.item.likes
+                // );
 
-                //TODO: animate bubble
+                self.wiggle = true;
+
+                let link = ctx.link().clone();
+                self.wiggle_animation_timeout = Some(Timeout::new(1000, move || {
+                    link.send_message(Msg::WiggleEnd);
+                }));
             }
             self.data = props;
             true
@@ -239,11 +255,11 @@ impl Component for Question {
                     {
                         if screened {
                             if liked {
-                                Self::get_bubble_liked(self.data.item.likes)
+                                Self::get_bubble_liked(self.data.item.likes,self.wiggle)
                             }
                             else
                             {
-                                Self::get_bubble_not_liked(self.data.item.likes)
+                                Self::get_bubble_not_liked(self.data.item.likes,self.wiggle)
                             }
                         } else { html!() }
                     }
@@ -364,9 +380,9 @@ impl Question {
         }
     }
 
-    fn get_bubble_liked(likes: i32) -> Html {
+    fn get_bubble_liked(likes: i32, wiggle: bool) -> Html {
         html! {
-        <span class="bubble">
+        <span class={classes!("bubble",wiggle.then_some("wiggle"))}>
             <svg width="29px" height="19px" viewBox="0 0 29 19">
                 <g id="Mobile" stroke="none" stroke-width="1" fill-rule="evenodd">
                     <g id="Audience-Page-Questions" transform="translate(-327.000000, -493.000000)">
@@ -389,9 +405,9 @@ impl Question {
         }
     }
 
-    fn get_bubble_not_liked(likes: i32) -> Html {
+    fn get_bubble_not_liked(likes: i32, wiggle: bool) -> Html {
         html! {
-        <span class="bubble">
+        <span class={classes!("bubble",wiggle.then_some("wiggle"))}>
             <svg width="29px" height="19px" viewBox="0 0 29 19">
                 <g id="Mobile" stroke="none" stroke-width="1" fill-rule="evenodd">
                     <g id="Audience-Page-Questions" transform="translate(-327.000000, -493.000000)">

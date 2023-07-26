@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 * highlight newly added question ([PR #28](https://github.com/liveask/liveask/pull/28))
+* animation on question that changed like count ([PR #30](https://github.com/liveask/liveask/pull/30))
 
 ### Fixes
 * use shared validation for `/addquestion` ([PR #29](https://github.com/liveask/liveask/pull/29))
