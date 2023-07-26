@@ -4,11 +4,13 @@ pub enum AddQuestionError {
     MaxLength(usize, usize),
     MinLength(usize, usize),
     MinWordCount(usize, usize),
+    WordLengthMax(usize),
 }
 
 const TRIMMED_MIN_LEN: usize = 10;
 const TRIMMED_MAX_LEN: usize = 200;
 const WORD_MIN: usize = 3;
+const WORD_LEN_MAX: usize = 30;
 
 #[derive(Default, Debug)]
 pub struct AddQuestionValidation {
@@ -35,6 +37,11 @@ impl AddQuestionValidation {
             Some(AddQuestionError::MaxLength(trimmed_len, TRIMMED_MAX_LEN))
         } else if words < WORD_MIN {
             Some(AddQuestionError::MinWordCount(words, WORD_MIN))
+        } else if v
+            .split_ascii_whitespace()
+            .any(|word| word.len() > WORD_LEN_MAX)
+        {
+            Some(AddQuestionError::WordLengthMax(WORD_LEN_MAX))
         } else {
             None
         }
