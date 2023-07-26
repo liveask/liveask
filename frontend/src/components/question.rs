@@ -82,7 +82,7 @@ impl Component for Question {
             res.highlighted = true;
             log::info!("highlight on");
             let link = ctx.link().clone();
-            res.highlight_animation_timeout = Some(Timeout::new(1000, move || {
+            res.highlight_animation_timeout = Some(Timeout::new(800, move || {
                 log::info!("highlight off");
                 link.send_message(Msg::HighlightEnd);
             }));
@@ -155,6 +155,17 @@ impl Component for Question {
             false
         } else {
             // log::info!("changed: {}", props.item.id);
+
+            let likes_changed = self.data.item.likes != props.item.likes;
+            if likes_changed {
+                log::info!(
+                    "q: {} likes changed (old: {})",
+                    self.data.item.id,
+                    self.data.item.likes
+                );
+
+                //TODO: animate bubble
+            }
             self.data = props;
             true
         }
