@@ -128,7 +128,6 @@ impl Component for NewEvent {
                                 placeholder="event name"
                                 value={self.name.clone()}
                                 maxlength="30"
-                                // autocomplete="off"
                                 required=true
                                 oninput={ctx.link().callback(|input| Msg::InputChange(Input::Name,input))}/>
                         </div>
@@ -150,7 +149,6 @@ impl Component for NewEvent {
                                 name="desc"
                                 placeholder="event description"
                                 value={self.desc.clone()}
-                                // mintrimlength="10"
                                 maxlength="1000"
                                 required=true
                                 oninput={ctx.link().callback(|input| Msg::InputChange(Input::Desc,input))}>
