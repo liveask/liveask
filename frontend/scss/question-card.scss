@@ -36,122 +36,122 @@
       text-shadow: 0 0 8px #000;
     }
   }
+
+  .questionanchor {
+    height: 100%;
+    width: 100%;
+    display: inline-block;
+    position: relative;
+    text-align: left;
+    color: black;
+    cursor: default;
+    box-shadow: 0px 0px 0px 0px rgba(0, 255, 0, 0);
+    transition: box-shadow ease-in-out 500ms;
+    transition-property: box-shadow, background-color;
+
+    .time-since {
+      color: #B0B0B0;
+
+      margin-left: 20px;
+      margin-top: 13px;
+      float: left;
+
+      font-size: 10px;
+      letter-spacing: 0.16px;
+      line-height: 11px;
+    }
+
+    &.highlighted {
+      box-shadow: 0px 0px 10px 1px $pink-bg;
+      background-color: #999;
+    }
+  }
+
+  .like-action {
+    color: $pink-bg;
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    margin-right: 13px;
+    margin-bottom: 25px;
+
+    font-size: 14px;
+    letter-spacing: 0.22px;
+    line-height: 16px;
+    font-weight: bold;
+    text-transform: uppercase;
+    text-align: right;
+
+    cursor: pointer;
+
+    .liked {
+      color: #B0B0B0
+    }
+  }
+
+  .like-count-text {
+    font-weight: bold;
+    text-anchor: middle;
+  }
+
+  .bubble {
+    margin-top: 11px;
+    margin-right: 9px;
+
+    position: absolute;
+    right: 0;
+
+    cursor: pointer;
+  }
+
+  .checkmark {
+    text-align: right;
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    margin-right: 13px;
+    margin-bottom: 25px;
+  }
+
+  .options {
+    position: relative;
+    top: -45px;
+
+    .button-hide {
+      color: $pink-button;
+
+      margin-top: 15px;
+      margin-left: 20px;
+      cursor: pointer;
+
+      border: none;
+      background-color: transparent;
+    }
+
+    .button-answered {
+      float: right;
+
+      color: #7BBE31;
+
+      margin-top: 15px;
+      margin-right: 19px;
+      cursor: pointer;
+
+      border: none;
+      background-color: transparent;
+    }
+
+    .button-hide.reverse {
+      color: $col-button-disabled;
+    }
+
+    .button-answered.reverse {
+      color: $col-button-disabled;
+    }
+  }
 }
 
 .unscreened-question {
   background: lightgray;
   border-color: lightgray;
-}
-
-.questionanchor {
-  height: 100%;
-  width: 100%;
-  display: inline-block;
-  position: relative;
-  text-align: left;
-  color: black;
-  cursor: default;
-  box-shadow: 0px 0px 0px 0px rgba(0, 255, 0, 0);
-  transition: box-shadow ease-in-out 500ms;
-  transition-property: box-shadow, background-color;
-}
-
-.highlighted {
-  box-shadow: 0px 0px 10px 1px $pink-bg;
-  background-color: #fff2f5;
-}
-
-.time-since {
-  color: #B0B0B0;
-
-  margin-left: 20px;
-  margin-top: 13px;
-  float: left;
-
-  font-size: 10px;
-  letter-spacing: 0.16px;
-  line-height: 11px;
-}
-
-.like-action {
-  color: $pink-bg;
-  position: absolute;
-  bottom: 0;
-  right: 0;
-  margin-right: 13px;
-  margin-bottom: 25px;
-
-  font-size: 14px;
-  letter-spacing: 0.22px;
-  line-height: 16px;
-  font-weight: bold;
-  text-transform: uppercase;
-  text-align: right;
-
-  cursor: pointer;
-}
-
-.like-action.liked {
-  color: #B0B0B0
-}
-
-.like-count-text {
-  font-weight: bold;
-  text-anchor: middle;
-}
-
-.bubble {
-  margin-top: 11px;
-  margin-right: 9px;
-
-  position: absolute;
-  right: 0;
-
-  cursor: pointer;
-}
-
-.checkmark {
-  text-align: right;
-  position: absolute;
-  bottom: 0;
-  right: 0;
-  margin-right: 13px;
-  margin-bottom: 25px;
-}
-
-.button-hide {
-  color: $pink-button;
-
-  margin-top: 15px;
-  margin-left: 20px;
-  cursor: pointer;
-
-  border: none;
-  background-color: transparent;
-}
-
-.button-answered {
-  float: right;
-
-  color: #7BBE31;
-
-  margin-top: 15px;
-  margin-right: 19px;
-  cursor: pointer;
-
-  border: none;
-  background-color: transparent;
-}
-
-.button-hide.reverse {
-  color: $col-button-disabled;
-}
-
-.button-answered.reverse {
-  color: $col-button-disabled;
-}
-
-.options {
-  position: relative;
-  top: -45px;
 }

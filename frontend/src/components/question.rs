@@ -39,15 +39,22 @@ pub struct Question {
     node_ref: NodeRef,
     last_pos: Option<i64>,
     timeout: Option<Timeout>,
-    animation_time: Option<Timeout>,
+    reorder_animation_timeout: Option<Timeout>,
+    highlight_animation_timeout: Option<Timeout>,
     _interval: Interval,
+    highlighted: bool,
 }
+
+pub enum AnimationState {
+    Start,
+    End,
+}
+
 pub enum Msg {
     UpdateAge,
     QuestionClick(QuestionClickType),
-    /// used to start the reorder animation
-    StartAnimation,
-    EndAnimation,
+    ReorderAnimation(AnimationState),
+    HighlightEnd,
 }
 impl Component for Question {
     type Message = Msg;
@@ -59,15 +66,29 @@ impl Component for Question {
             Interval::new(1000, move || link.send_message(Msg::UpdateAge))
         };
 
-        Self {
+        let mut res = Self {
             data: ctx.props().clone(),
             age_text: String::new(),
             node_ref: NodeRef::default(),
             last_pos: None,
             timeout: None,
-            animation_time: None,
+            reorder_animation_timeout: None,
+            highlight_animation_timeout: None,
             _interval: interval,
+            highlighted: false,
+        };
+
+        if res.data.is_new {
+            res.highlighted = true;
+            log::info!("highlight on");
+            let link = ctx.link().clone();
+            res.highlight_animation_timeout = Some(Timeout::new(800, move || {
+                log::info!("highlight off");
+                link.send_message(Msg::HighlightEnd);
+            }));
         }
+
+        res
     }
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
@@ -97,21 +118,33 @@ impl Component for Question {
                 }
                 false
             }
-            Msg::EndAnimation => {
-                self.animation_time = None;
-                false
+            Msg::ReorderAnimation(state) => {
+                match state {
+                    AnimationState::End => {
+                        self.reorder_animation_timeout = None;
+                        false
+                    }
+                    AnimationState::Start => {
+                        self.reset_transition();
+
+                        let handle = {
+                            let link = ctx.link().clone();
+                            //note: 500ms needs to be synced with css
+                            Timeout::new(500, move || {
+                                link.send_message(Msg::ReorderAnimation(AnimationState::End));
+                            })
+                        };
+                        self.reorder_animation_timeout = Some(handle);
+
+                        false
+                    }
+                }
             }
-            Msg::StartAnimation => {
-                self.reset_transition();
 
-                let handle = {
-                    let link = ctx.link().clone();
-                    //note: 500ms needs to be synced with css
-                    Timeout::new(500, move || link.send_message(Msg::EndAnimation))
-                };
-                self.animation_time = Some(handle);
-
-                false
+            Msg::HighlightEnd => {
+                self.highlighted = false;
+                self.highlight_animation_timeout = None;
+                true
             }
         }
     }
@@ -122,6 +155,17 @@ impl Component for Question {
             false
         } else {
             // log::info!("changed: {}", props.item.id);
+
+            let likes_changed = self.data.item.likes != props.item.likes;
+            if likes_changed {
+                log::info!(
+                    "q: {} likes changed (old: {})",
+                    self.data.item.id,
+                    self.data.item.likes
+                );
+
+                //TODO: animate bubble
+            }
             self.data = props;
             true
         }
@@ -132,7 +176,10 @@ impl Component for Question {
         let elem: HtmlElement = elem.dyn_into::<HtmlElement>().unwrap_throw();
 
         if let Some(last_pos) = self.last_pos {
-            if self.animation_time.is_none() && self.timeout.is_none() && last_pos != element_y {
+            if self.reorder_animation_timeout.is_none()
+                && self.timeout.is_none()
+                && last_pos != element_y
+            {
                 let diff = last_pos - element_y;
 
                 let style = elem.style();
@@ -146,7 +193,9 @@ impl Component for Question {
 
                 let handle = {
                     let link = ctx.link().clone();
-                    Timeout::new(0, move || link.send_message(Msg::StartAnimation))
+                    Timeout::new(0, move || {
+                        link.send_message(Msg::ReorderAnimation(AnimationState::Start));
+                    })
                 };
 
                 self.timeout = Some(handle);
@@ -154,7 +203,7 @@ impl Component for Question {
         }
 
         //do not save pos while animating
-        if self.animation_time.is_none() {
+        if self.reorder_animation_timeout.is_none() {
             self.last_pos = Some(element_y);
         }
 
@@ -173,11 +222,17 @@ impl Component for Question {
         let blurred = ctx.props().blurr;
         let can_vote = ctx.props().can_vote && !self.data.item.screening;
         let screened = !self.data.item.screening;
+        let main_classes = classes!(
+            "question-host",
+            "questions-move",
+            self.data.item.screening.then_some("unscreened-question"),
+        );
 
         html! {
-            <div class={classes!("question-host","questions-move",self.data.item.screening.then_some("unscreened-question"),)}
+            <div class={main_classes}
                 ref={self.node_ref.clone()}>
-                <a class="questionanchor" onclick={ctx.link().callback(|_| Msg::QuestionClick(QuestionClickType::Like))}>
+                <a class={classes!("questionanchor",self.highlighted.then_some("highlighted"),)}
+                    onclick={ctx.link().callback(|_| Msg::QuestionClick(QuestionClickType::Like))}>
 
                     <div class="time-since">
                         {self.get_age()}

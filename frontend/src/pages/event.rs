@@ -970,9 +970,27 @@ impl Event {
                 let fetch_event = if msg == "e" {
                     log::info!("received event update");
                     true
-                } else if msg.starts_with("q:") {
-                    //TODO: do we want to act differently here? only fetch q on "q"?
-                    log::info!("received question update: {}", msg);
+                } else if let Some(stripped_msg) = msg.strip_prefix("q:") {
+                    //TODO: only fetch q on "q"?
+
+                    let id = stripped_msg.parse::<i64>().unwrap_throw();
+
+                    log::info!("received question update: {}", id);
+
+                    let found = self
+                        .state
+                        .event
+                        .as_ref()
+                        .map(|e| e.info.questions.iter().any(|q| q.id == id))
+                        .unwrap_or_default();
+
+                    if !found {
+                        log::info!("new question: {}", id);
+                        self.dispatch
+                            .reduce(|old| (*old).clone().set_new_question(Some(id)));
+                        self.state = self.dispatch.get();
+                    }
+
                     true
                 } else if msg.starts_with("v:") {
                     log::info!("received viewer update: {}", msg);
