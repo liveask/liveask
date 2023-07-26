@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Unreleased
 
 ### Added
-* highlight freshly added question
+* highlight newly added question ([PR #28](https://github.com/liveask/liveask/pull/28))
 
 ## [2.3.0/2.3.1] - 2022-07-25
 
