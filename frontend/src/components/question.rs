@@ -80,10 +80,8 @@ impl Component for Question {
 
         if res.data.is_new {
             res.highlighted = true;
-            log::info!("highlight on");
             let link = ctx.link().clone();
             res.highlight_animation_timeout = Some(Timeout::new(800, move || {
-                log::info!("highlight off");
                 link.send_message(Msg::HighlightEnd);
             }));
         }
