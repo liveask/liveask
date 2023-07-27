@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## [2.3.2] - 2022-07-27
+
 ### Added
 * highlight newly added question ([PR #28](https://github.com/liveask/liveask/pull/28))
 * animation on question that changed like count ([PR #30](https://github.com/liveask/liveask/pull/30))
