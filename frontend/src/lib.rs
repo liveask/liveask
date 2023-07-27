@@ -55,6 +55,7 @@ use crate::{
 };
 
 pub const VERSION_STR: &str = "2.3.2";
+pub const GIT_BRANCH: &str = env!("VERGEN_GIT_BRANCH");
 
 #[derive(Default, Clone, Eq, PartialEq, Store)]
 pub struct State {

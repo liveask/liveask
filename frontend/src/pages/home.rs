@@ -2,7 +2,7 @@ use wasm_bindgen::UnwrapThrowExt;
 use yew::prelude::*;
 use yew_router::prelude::*;
 
-use crate::{fetch, routes::Route, VERSION_STR};
+use crate::{fetch, routes::Route, GIT_BRANCH, VERSION_STR};
 
 use super::BASE_API;
 
@@ -153,10 +153,10 @@ impl Home {
             Html::VRef(div.into())
         };
 
-        let branch = if env!("VERGEN_GIT_BRANCH") == "main" {
+        let branch = if GIT_BRANCH == "main" {
             String::new()
         } else {
-            format!("({})", env!("VERGEN_GIT_BRANCH"))
+            format!("({GIT_BRANCH})",)
         };
 
         let git_sha = env!("VERGEN_GIT_SHA");

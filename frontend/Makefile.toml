@@ -14,6 +14,12 @@ install_crate = "clippy"
 command = "cargo"
 args = ["clippy","--target=wasm32-unknown-unknown"]
 
+[tasks.clippy-nightly]
+script_runner = "@shell"
+script = '''
+cargo +nightly clippy --target=wasm32-unknown-unknown
+'''
+
 [tasks.cargo-sort]
 install_crate = "cargo-sort"
 command = "cargo"

@@ -7,6 +7,7 @@ serve-release:
 
 check:
 	cargo make checks
+	cargo make clippy-nightly
 
 release:
 	LA_ENV="prod" cargo make build-and-check
