@@ -11,6 +11,7 @@ run:
 
 check:
 	cargo make checks
+	cargo make clippy-nightly
 
 test-payment:
 	xh "${URL}/api/mod/event/upgrade/eventexample/eventexamplemod"
