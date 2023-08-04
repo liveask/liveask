@@ -7,6 +7,8 @@ use aws_sdk_dynamodb::{
         ScalarAttributeType,
     },
 };
+use aws_smithy_http::body::SdkBody;
+use axum::http::Response;
 use tracing::instrument;
 
 use crate::eventsdb::event_key;
@@ -90,7 +92,7 @@ impl EventsDB for DynamoEventsDB {
 
         //Note: filter out conditional error
         if let Err(e) = request.send().await {
-            if matches!(&e,SdkError::<PutItemError>::ServiceError (err)
+            if matches!(&e,SdkError::<PutItemError, Response<SdkBody>>::ServiceError (err)
             if matches!(
                 err.err(),PutItemError::ConditionalCheckFailedException(_)
 

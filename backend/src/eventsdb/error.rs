@@ -7,6 +7,8 @@ use aws_sdk_dynamodb::{
         put_item::PutItemError,
     },
 };
+use aws_smithy_http::body::SdkBody;
+use axum::http::Response;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -30,16 +32,16 @@ pub enum Error {
     ParseInt(#[from] ParseIntError),
 
     #[error("Dynamo PutItemError: {0}")]
-    DynamoPut(#[from] SdkError<PutItemError>),
+    DynamoPut(#[from] SdkError<PutItemError, Response<SdkBody>>),
 
     #[error("Dynamo ListTablesError: {0}")]
-    DynamoListTables(#[from] SdkError<ListTablesError>),
+    DynamoListTables(#[from] SdkError<ListTablesError, Response<SdkBody>>),
 
     #[error("Dynamo CreateTableError: {0}")]
-    DynamoCreateTable(#[from] SdkError<CreateTableError>),
+    DynamoCreateTable(#[from] SdkError<CreateTableError, Response<SdkBody>>),
 
     #[error("Dynamo GetItemError: {0}")]
-    DynamoGetItemError(#[from] SdkError<GetItemError>),
+    DynamoGetItemError(#[from] SdkError<GetItemError, Response<SdkBody>>),
 }
 
 pub type Result<T> = std::result::Result<T, Error>;
