@@ -74,7 +74,7 @@ impl Component for AdminLogin {
                     let res = fetch::admin_login(BASE_API, name, pwd_hash(&pwd)).await;
 
                     match res {
-                        Ok(_) => {
+                        Ok(()) => {
                             log::info!("login ok");
                             Msg::LoginResult(true)
                         }

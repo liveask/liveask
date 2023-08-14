@@ -201,8 +201,8 @@ impl WebSocketAgent {
     fn connect(&mut self) {
         log::info!("ws connect: {}", self.url);
 
-        let ws_close_callback = self.link.callback(|_| Msg::Disconnected);
-        let ws_connected_callback = self.link.callback(|_| Msg::Connected);
+        let ws_close_callback = self.link.callback(|()| Msg::Disconnected);
+        let ws_connected_callback = self.link.callback(|()| Msg::Connected);
         let ws_msg_callback = self.link.callback(Msg::MessageReceived);
 
         let mut client =

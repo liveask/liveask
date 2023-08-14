@@ -121,7 +121,7 @@ impl Component for SharePopup {
 
     fn view(&self, ctx: &Context<Self>) -> Html {
         if self.show {
-            let on_close = ctx.link().callback(|_| Msg::Close);
+            let on_close = ctx.link().callback(|()| Msg::Close);
             let on_click_copy = ctx.link().callback(|_| Msg::Copy);
             let on_click_share_twitter = ctx.link().callback(|_| Msg::Share(ShareLink::Twitter));
             let on_click_share_mail = ctx.link().callback(|_| Msg::Share(ShareLink::Mail));

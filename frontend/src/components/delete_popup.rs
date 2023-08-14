@@ -82,7 +82,7 @@ impl Component for DeletePopup {
 
     fn view(&self, ctx: &Context<Self>) -> Html {
         if self.show {
-            let on_close = ctx.link().callback(|_| Msg::Close);
+            let on_close = ctx.link().callback(|()| Msg::Close);
             let on_click_ok = ctx.link().callback(|_| Msg::ConfirmedDelete);
             let on_click_no = ctx.link().callback(|_| Msg::Close);
 
