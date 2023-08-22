@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Changed
+* backend: reduce sentry performance sampling in release builds
+* backend: some common non-critical errors downgraded to warnings
+* backend: cargo updates
+
 ## [2.3.3] - 2022-08-04
 
 ### Changed
