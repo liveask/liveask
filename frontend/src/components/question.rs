@@ -1,3 +1,4 @@
+use bitflags::bitflags;
 use chrono::Utc;
 use gloo::timers::callback::Interval;
 use gloo::timers::callback::Timeout;
@@ -19,18 +20,41 @@ pub enum QuestionClickType {
     Approve,
 }
 
-//TODO: use bitflag to rid us of this warning
-#[allow(clippy::struct_excessive_bools)]
+bitflags! {
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+    pub struct QuestionFlags: u32 {
+        const NEW_QUESTION = 1;
+        const MOD_VIEW = 1 << 1;
+        const LOCAL_LIKE = 1 << 2;
+        const CAN_VOTE = 1 << 3;
+        const BLURR = 1<< 4;
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, Properties)]
 pub struct Props {
     pub item: Rc<QuestionItem>,
     pub index: usize,
-    pub mod_view: bool,
-    pub is_new: bool,
-    pub local_like: bool,
-    pub can_vote: bool,
-    pub blurr: bool,
+    pub flags: QuestionFlags,
     pub on_click: Callback<(i64, QuestionClickType)>,
+}
+
+impl Props {
+    const fn can_vote(&self) -> bool {
+        self.flags.contains(QuestionFlags::CAN_VOTE)
+    }
+    const fn mod_view(&self) -> bool {
+        self.flags.contains(QuestionFlags::MOD_VIEW)
+    }
+    const fn blurr(&self) -> bool {
+        self.flags.contains(QuestionFlags::BLURR)
+    }
+    const fn local_like(&self) -> bool {
+        self.flags.contains(QuestionFlags::LOCAL_LIKE)
+    }
+    const fn is_new(&self) -> bool {
+        self.flags.contains(QuestionFlags::NEW_QUESTION)
+    }
 }
 
 pub struct Question {
@@ -83,7 +107,7 @@ impl Component for Question {
             wiggle: false,
         };
 
-        if res.data.is_new {
+        if res.data.is_new() {
             res.highlighted = true;
             let link = ctx.link().clone();
             res.highlight_animation_timeout = Some(Timeout::new(800, move || {
@@ -98,7 +122,7 @@ impl Component for Question {
         match msg {
             Msg::QuestionClick(click_type) => {
                 if matches!(click_type, QuestionClickType::Like) {
-                    if ctx.props().can_vote
+                    if ctx.props().can_vote()
                         && !self.data.item.screening
                         && !self.data.item.answered
                         && !self.data.item.hidden
@@ -221,7 +245,7 @@ impl Component for Question {
             self.last_pos = Some(element_y);
         }
 
-        if first_render && self.data.is_new {
+        if first_render && self.data.is_new() {
             elem.scroll_into_view_with_scroll_into_view_options(
                 ScrollIntoViewOptions::new()
                     .block(ScrollLogicalPosition::Center)
@@ -231,10 +255,10 @@ impl Component for Question {
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
-        let liked = ctx.props().local_like;
-        let mod_view = ctx.props().mod_view;
-        let blurred = ctx.props().blurr;
-        let can_vote = ctx.props().can_vote && !self.data.item.screening;
+        let liked = ctx.props().local_like();
+        let mod_view = ctx.props().mod_view();
+        let blurred = ctx.props().blurr();
+        let can_vote = ctx.props().can_vote() && !self.data.item.screening;
         let screened = !self.data.item.screening;
         let main_classes = classes!(
             "question-host",
@@ -303,7 +327,7 @@ impl Question {
     }
 
     fn view_mod(&self, ctx: &Context<Self>) -> Html {
-        if ctx.props().blurr {
+        if ctx.props().blurr() {
             return html! {};
         }
 

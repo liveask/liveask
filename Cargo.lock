@@ -1651,6 +1651,7 @@ name = "frontend"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "bitflags 2.4.0",
  "chrono",
  "console_error_panic_hook",
  "const_format",

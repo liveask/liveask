@@ -13,7 +13,9 @@ use yewdux::prelude::*;
 
 use crate::{
     agents::{EventAgent, GlobalEvent, SocketInput, WebSocketAgent, WsResponse},
-    components::{DeletePopup, Question, QuestionClickType, QuestionPopup, SharePopup, Upgrade},
+    components::{
+        DeletePopup, Question, QuestionClickType, QuestionFlags, QuestionPopup, SharePopup, Upgrade,
+    },
     environment::{la_env, LiveAskEnv},
     fetch,
     local_cache::LocalCache,
@@ -666,16 +668,20 @@ impl Event {
             .map(|id| id == item.id)
             .unwrap_or_default();
 
+        let mut flags = QuestionFlags::empty();
+
+        flags.set(QuestionFlags::NEW_QUESTION, is_new);
+        flags.set(QuestionFlags::MOD_VIEW, mod_view);
+        flags.set(QuestionFlags::LOCAL_LIKE, local_like);
+        flags.set(QuestionFlags::CAN_VOTE, can_vote);
+        flags.set(QuestionFlags::BLURR, blurr);
+
         html! {
             <Question
                 {item}
                 {index}
-                {is_new}
-                {can_vote}
                 key={item.id}
-                {local_like}
-                {mod_view}
-                {blurr}
+                {flags}
                 on_click={ctx.link().callback(Msg::QuestionClick)}
                 />
         }

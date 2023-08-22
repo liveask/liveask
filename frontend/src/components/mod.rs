@@ -13,7 +13,7 @@ pub use delete_popup::DeletePopup;
 pub use iconbar::IconBar;
 pub use popup::Popup;
 pub use qr::Qr;
-pub use question::{Question, QuestionClickType};
+pub use question::{Question, QuestionClickType, QuestionFlags};
 pub use question_popup::QuestionPopup;
 pub use share_popup::SharePopup;
 pub use spinner::Spinner;
