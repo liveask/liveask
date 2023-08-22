@@ -15,7 +15,6 @@ use crate::{
     GIT_HASH,
 };
 
-//TODO: not sure why we need this
 async fn socket_handler(ws: WebSocket, id: String, app: SharedApp) {
     app.push_subscriber(ws, id).await;
 }
@@ -209,11 +208,6 @@ pub async fn ping_handler() -> Html<&'static str> {
 #[instrument]
 pub async fn version_handler() -> Html<&'static str> {
     Html(GIT_HASH)
-}
-
-#[instrument]
-pub async fn panic_handler() -> Html<&'static str> {
-    todo!()
 }
 
 #[instrument]
