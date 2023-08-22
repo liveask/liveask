@@ -773,7 +773,7 @@ impl App {
         tokio::task::spawn(rx.forward(ws_sender).map(|result| {
             if let Err(e) = result {
                 if e.to_string() != "Connection closed normally" {
-                    tracing::error!("websocket send error: {}", e);
+                    tracing::warn!("websocket send error: {}", e);
                 }
             }
         }));
