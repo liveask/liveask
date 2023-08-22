@@ -285,7 +285,6 @@ impl App {
         })
     }
 
-    //TODO: validate event is not deleted
     pub async fn get_question(
         &self,
         id: String,
@@ -320,7 +319,6 @@ impl App {
         Ok(q)
     }
 
-    //TODO: validate event is not deleted
     pub async fn mod_edit_question(
         &self,
         id: String,
@@ -333,6 +331,10 @@ impl App {
         let mut entry = self.eventsdb.get(&id).await?;
         {
             let e = &mut entry.event;
+
+            if e.deleted {
+                return Err(InternalError::AccessingDeletedEvent(id));
+            }
 
             if e.is_timed_out_and_free() {
                 return Err(InternalError::TimedOutFreeEvent(id));
@@ -377,7 +379,6 @@ impl App {
         Ok(e.into())
     }
 
-    //TODO: validate event is not deleted
     pub async fn edit_event_state(
         &self,
         id: String,
@@ -387,6 +388,10 @@ impl App {
         let mut entry = self.eventsdb.get(&id).await?.clone();
 
         let e = &mut entry.event;
+
+        if e.deleted {
+            return Err(InternalError::AccessingDeletedEvent(id));
+        }
 
         if e.is_timed_out_and_free() {
             return Err(InternalError::TimedOutFreeEvent(id));
@@ -454,7 +459,6 @@ impl App {
         Ok(result.into())
     }
 
-    //TODO: keep allowing to delete timedout event?
     pub async fn delete_event(&self, id: String, secret: String) -> Result<()> {
         let mut entry = self.eventsdb.get(&id).await?;
 
@@ -561,7 +565,6 @@ impl App {
         }
     }
 
-    //TODO: validate event is still open
     //TODO: fix clippy-allow
     #[allow(clippy::cast_possible_wrap)]
     pub async fn add_question(
@@ -589,6 +592,10 @@ impl App {
 
         if e.questions.len() > 500 {
             bail!("max number of questions reached");
+        }
+
+        if !matches!(e.state.state, States::Open) {
+            bail!("event not open");
         }
 
         if e.questions
@@ -622,7 +629,6 @@ impl App {
         Ok(question)
     }
 
-    //TODO: validate event is still votable
     pub async fn edit_like(&self, id: String, edit: shared::EditLike) -> Result<QuestionItem> {
         let mut entry = self.eventsdb.get(&id).await?.clone();
 
@@ -630,6 +636,10 @@ impl App {
 
         if e.is_timed_out_and_free() {
             return Err(InternalError::TimedOutFreeEvent(id));
+        }
+
+        if matches!(e.state.state, States::Closed) {
+            bail!("event closed");
         }
 
         if let Some(f) = e.questions.iter_mut().find(|e| e.id == edit.question_id) {

@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Changed
+* backend: remove panic testing route 
+* backend: cleanup some todos around event validation 
+
 ## [2.3.4] - 2022-08-22
 
 ### Changed
