@@ -835,7 +835,11 @@ impl PubSubReceiver for App {
             let receivers = channels.read().await.clone();
             for (_user_id, (_id, c)) in receivers.iter().filter(|(_, (id, _))| id == &topic) {
                 if let Err(e) = c.send(Ok(msg.clone())) {
-                    tracing::error!("pubsub send error: {}", e);
+                    if let Err(inner_err) = &e.0 {
+                        tracing::error!("pubsub send err: {} ({})", e, inner_err);
+                    } else {
+                        tracing::warn!("pubsub send err: {}", e);
+                    }
                 }
             }
         })
