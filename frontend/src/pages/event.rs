@@ -607,7 +607,7 @@ impl Event {
             let is_mod = self.is_mod();
             html! {
                 <>
-                    {self.view_items(ctx,&self.unscreened,if is_mod {"For review"} else {"Questions currently in review by host"},can_vote)}
+                    {self.view_items(ctx,&self.unscreened,if is_mod {"For review"} else {"Your Questions in review by host"},can_vote)}
                     {self.view_items(ctx,&self.unanswered,"Hot Questions",can_vote)}
                     {self.view_items(ctx,&self.answered,"Answered",can_vote)}
                     {self.view_items(ctx,&self.hidden,"Hidden",can_vote)}
