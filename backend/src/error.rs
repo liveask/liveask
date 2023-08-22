@@ -2,6 +2,7 @@ use axum::response::{IntoResponse, Response};
 use deadpool_redis::{CreatePoolError, PoolError};
 use redis::RedisError;
 use reqwest::StatusCode;
+use shared::AddQuestionValidation;
 use thiserror::Error;
 
 use crate::{eventsdb, payment::PaymentError};
@@ -22,6 +23,9 @@ pub enum InternalError {
 
     #[error("Duplicate Question Error")]
     DuplicateQuestion,
+
+    #[error("Add Question Valdiation")]
+    AddQuestionValdiation(AddQuestionValidation),
 
     #[error("Events DB Error: {0}")]
     EventsDB(#[from] eventsdb::Error),
@@ -78,6 +82,11 @@ impl IntoResponse for InternalError {
 
             Self::SerdeJson(e) => {
                 tracing::error!("serde error: {e}");
+                (StatusCode::BAD_REQUEST, "").into_response()
+            }
+
+            Self::AddQuestionValdiation(e) => {
+                tracing::warn!("add question validation: {:?}", e);
                 (StatusCode::BAD_REQUEST, "").into_response()
             }
 

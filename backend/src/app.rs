@@ -576,7 +576,7 @@ impl App {
         validation.check(&trimmed_question);
 
         if validation.has_any() {
-            bail!("request validation failed: {:?}", validation);
+            return Err(InternalError::AddQuestionValdiation(validation));
         }
 
         let mut entry = self.eventsdb.get(&id).await?;
