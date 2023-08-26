@@ -292,21 +292,21 @@ mod test {
 
         assert_eq!(response.status(), StatusCode::SWITCHING_PROTOCOLS);
 
-        let msg = socket.read_message().expect("Error reading message");
+        let msg = socket.read().expect("Error reading message");
         assert_eq!(msg.into_text().unwrap(), "v:1".to_string());
 
         let question = add_question(event.clone()).await;
 
-        let msg = socket.read_message().expect("Error reading message");
+        let msg = socket.read().expect("Error reading message");
         assert_eq!(msg.into_text().unwrap(), format!("q:{}", question.id));
 
         like_question(event.clone(), question.id, true).await;
 
-        let msg = socket.read_message().expect("Error reading message");
+        let msg = socket.read().expect("Error reading message");
         assert_eq!(msg.into_text().unwrap(), format!("q:{}", question.id));
 
         change_event_state(event, secret, 1).await;
-        let msg = socket.read_message().expect("Error reading message");
+        let msg = socket.read().expect("Error reading message");
         assert_eq!(msg.into_text().unwrap(), "e");
     }
 }
