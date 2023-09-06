@@ -1,15 +1,16 @@
 [workspace]
-members=[
+members = [
     "shared",
     "frontend",
     "frontend/worker",
+    "frontend/tauri",
     "backend-e2e",
     "backend",
-    "async-redis-session"
+    "async-redis-session",
 ]
 resolver = "2"
 
 [profile.release]
 lto = true
-opt-level = 'z'  # Optimize for size.
+opt-level = 'z'   # Optimize for size.
 codegen-units = 1
