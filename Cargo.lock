@@ -1681,7 +1681,7 @@ dependencies = [
  "wasm-logger",
  "wasm-sockets",
  "web-sys",
- "worker",
+ "worker2",
  "yew",
  "yew-agent",
  "yew-router",
@@ -5166,7 +5166,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "worker"
+name = "worker2"
 version = "0.1.0"
 dependencies = [
  "anyhow",

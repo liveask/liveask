@@ -30,7 +30,7 @@ wasm-bindgen = "=0.2.83"
 wasm-bindgen-futures = "0.4"
 wasm-logger = "0.2"
 wasm-sockets = "1.0"
-worker = { path = "worker" }
+worker2 = { path = "worker" }
 yew = "0.19"
 yew-agent = "0.1"
 yew-router = "0.16"

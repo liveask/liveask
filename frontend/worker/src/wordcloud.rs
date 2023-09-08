@@ -84,7 +84,7 @@ impl Agent for WordCloudAgent {
     }
 
     fn name_of_resource() -> &'static str {
-        "worker.js"
+        "worker2.js"
     }
 
     fn resource_path_is_relative() -> bool {

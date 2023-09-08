@@ -5,7 +5,7 @@ use shared::{EventInfo, GetEventResponse, ModQuestion, QuestionItem, States};
 use std::{rc::Rc, str::FromStr};
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 use web_sys::HtmlAnchorElement;
-use worker::{WordCloudAgent, WordCloudInput, WordCloudOutput};
+use worker2::{WordCloudAgent, WordCloudInput, WordCloudOutput};
 use yew::prelude::*;
 use yew_agent::{Bridge, Bridged};
 use yew_router::{prelude::Location, scope_ext::RouterScopeExt};

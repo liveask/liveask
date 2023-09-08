@@ -1,7 +1,7 @@
 use shared::{GetUserInfo, UserInfo};
 use wasm_bindgen::UnwrapThrowExt;
 use web_sys::HtmlInputElement;
-use worker::pwd_hash;
+use worker2::pwd_hash;
 use yew::prelude::*;
 
 use crate::fetch;
