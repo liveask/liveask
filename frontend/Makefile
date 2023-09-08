@@ -1,4 +1,8 @@
 
+clean:
+	rm -rf dist
+	rm -rf ../target
+
 serve:
 	cargo make serve --disable-check-for-updates
 
