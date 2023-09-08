@@ -267,8 +267,9 @@ jobs:
       run: |
         cd frontend/dist
         aws sts get-caller-identity
-        aws s3 sync . s3://beta.live-ask.com --acl public-read --no-progress --delete --cache-control "public, max-age=5184000" --exclude index.html
-        aws s3 cp ./index.html s3://beta.live-ask.com --acl public-read --no-progress --cache-control "public, max-age=21600"
+        aws s3 sync . s3://beta.live-ask.com --acl public-read --no-progress --delete --cache-control "public, max-age=86400" --exclude "index.html" --exclude "worker2_bg.wasm"
+        aws s3 cp ./index.html s3://beta.live-ask.com --acl public-read --no-progress --cache-control "public, max-age=300"
+        aws s3 cp ./worker2_bg.wasm s3://beta.live-ask.com --acl public-read --no-progress --cache-control "public, max-age=300"
         aws cloudfront create-invalidation --distribution-id EJFNBPSNYQSP9 --paths /* 
 
     - name: Set short SHA
