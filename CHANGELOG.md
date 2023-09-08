@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## [2.3.6] - 2023-09-08
+
+### Fixes
+* fix worker caching issues via renaming
+
 ## [2.3.5] - 2023-09-08
 
 ### Fixes
