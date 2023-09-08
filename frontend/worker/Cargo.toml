@@ -10,13 +10,12 @@ chrono = "0.4"
 console_error_panic_hook = "0.1"
 image = "0.24"
 lazy_static = "1.4"
-# logging
 log = "0.4"
 regex = "1.7"
 serde = "1"
 sha2 = "0.10"
 wasm-logger = "0.2"
-wordcloud-rs = "0.1"
+wordcloud-rs = "=0.1.11"
 yew-agent = "0.1"
 
 [package.metadata.cargo-udeps.ignore]
