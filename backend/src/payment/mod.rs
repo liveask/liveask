@@ -69,7 +69,7 @@ impl Payment {
         )?
         .with_app_info(&AppInfo {
             name: "liveask".to_string(),
-            version: "1.0".to_string(),
+            version: crate::GIT_HASH.to_string(),
             website: Some("www.live-ask.com".to_string()),
         });
 
@@ -88,7 +88,12 @@ impl Payment {
         Ok(())
     }
 
-    pub async fn create_order(&self, event: String, return_url: String) -> PaymentResult<String> {
+    pub async fn create_order(
+        &self,
+        event: &str,
+        mod_url: &str,
+        return_url: &str,
+    ) -> PaymentResult<String> {
         self.authenticate().await?;
 
         let order = Order::create(
@@ -96,8 +101,8 @@ impl Payment {
             CreateOrderDto {
                 intent: OrderIntent::Capture,
                 purchase_units: vec![PurchaseUnitRequest {
-                    description: Some("live-ask premium event".to_string()),
-                    custom_id: Some(event.clone()),
+                    description: Some(format!("live-ask premium: {mod_url}")),
+                    custom_id: Some(event.to_string()),
                     amount: AmountWithBreakdown {
                         currency_code: String::from("EUR"),
                         value: String::from("5.99"),
@@ -105,7 +110,9 @@ impl Payment {
                     },
                     ..Default::default()
                 }],
-                application_context: Some(OrderApplicationContext::new().return_url(return_url)),
+                application_context: Some(
+                    OrderApplicationContext::new().return_url(return_url.to_string()),
+                ),
                 payer: None,
             },
         )

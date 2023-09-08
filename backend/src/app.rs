@@ -503,11 +503,13 @@ impl App {
             return Err(InternalError::AccessingDeletedEvent(id));
         }
 
+        let mod_url = self.mod_link(&e.tokens);
         let approve_url = self
             .payment
             .create_order(
-                e.tokens.public_token.clone(),
-                format!("{}?payment=true", self.mod_link(&e.tokens)),
+                &e.tokens.public_token,
+                &mod_url,
+                &format!("{mod_url}?payment=true"),
             )
             .await?;
 
