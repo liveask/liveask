@@ -70,7 +70,7 @@ impl Payment {
         .with_app_info(&AppInfo {
             name: "liveask".to_string(),
             version: "1.0".to_string(),
-            website: None,
+            website: Some("www.live-ask.com".to_string()),
         });
 
         Ok(Self {
@@ -96,6 +96,7 @@ impl Payment {
             CreateOrderDto {
                 intent: OrderIntent::Capture,
                 purchase_units: vec![PurchaseUnitRequest {
+                    description: Some("live-ask premium event".to_string()),
                     custom_id: Some(event.clone()),
                     amount: AmountWithBreakdown {
                         currency_code: String::from("EUR"),

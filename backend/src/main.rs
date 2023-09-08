@@ -208,16 +208,23 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let redis_pool = create_pool(&redis_url)?;
     ping_test_redis(&redis_pool).await?;
 
-    let payment = Arc::new(Payment::new(
-        std::env::var(env::ENV_PAYPAL_ID).unwrap_or_default(),
-        std::env::var(env::ENV_PAYPAL_SECRET).unwrap_or_default(),
-        //only use sandbox on non-prod
-        !is_prod(),
-    )?);
+    let payment = {
+        let paypal_id = std::env::var(env::ENV_PAYPAL_ID).unwrap_or_default();
+        let sandbox = !is_prod();
+        let payment = Arc::new(Payment::new(
+            paypal_id.clone(),
+            std::env::var(env::ENV_PAYPAL_SECRET).unwrap_or_default(),
+            sandbox,
+        )?);
 
-    if let Err(e) = payment.authenticate().await {
-        tracing::error!("payment auth error: {}", e);
-    }
+        if let Err(e) = payment.authenticate().await {
+            tracing::error!("payment auth error: [sandbox: {sandbox}] {}", e);
+        } else {
+            tracing::info!("payment auth ok: [sandbox: {sandbox}] {}", paypal_id);
+        }
+
+        payment
+    };
 
     let pubsub = Arc::new(PubSubRedis::new(redis_pool.clone(), redis_url.clone()));
     let viewers = Arc::new(RedisViewers::new(redis_pool));
