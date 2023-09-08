@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## [2.3.5] - 2022-09-08
+
 ### Fixes
 * fix wordcloud not working due to dependency bug ([#31](https://github.com/liveask/liveask/pull/31))
 
