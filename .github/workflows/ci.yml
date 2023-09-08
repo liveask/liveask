@@ -248,6 +248,7 @@ jobs:
       run: |
         wget -qO- https://github.com/thedodd/trunk/releases/download/${TRUNK_VERSION}/trunk-x86_64-unknown-linux-gnu.tar.gz | tar -xzf-
         mv trunk /usr/local/bin/trunk
+        trunk --version
     - name: Build
       env:
         LA_ENV: "beta"
