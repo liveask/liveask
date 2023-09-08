@@ -25,6 +25,8 @@ impl Agent for WordCloudAgent {
     type Output = WordCloudOutput;
 
     fn create(link: AgentLink<Self>) -> Self {
+        log::info!(target: "worker", "[wc] worker created");
+
         Self {
             link,
             subscribers: HashSet::new(),
@@ -82,7 +84,7 @@ impl Agent for WordCloudAgent {
     }
 
     fn name_of_resource() -> &'static str {
-        "./worker.js"
+        "worker.js"
     }
 
     fn resource_path_is_relative() -> bool {
