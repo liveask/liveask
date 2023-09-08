@@ -25,7 +25,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     continue-on-error: ${{ matrix.rust == 'nightly' }} # nightly is ok to fail
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Restore cargo cache
       uses: actions/cache@v2
       env:
@@ -76,7 +76,7 @@ jobs:
         rust: [nightly]
     runs-on: ${{ matrix.os }}
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Restore cargo cache
       uses: actions/cache@v2
       env:
@@ -116,7 +116,7 @@ jobs:
     environment: beta
     needs: ["check_and_test"]
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Restore cargo cache
       uses: actions/cache@v2
       env:
@@ -185,7 +185,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: ["be_deploy_beta"]
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Restore cargo cache
       uses: actions/cache@v2
       env:
@@ -221,7 +221,7 @@ jobs:
     environment: beta
     needs: ["check_and_test"]
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Restore cargo cache
       uses: actions/cache@v2
       env:
