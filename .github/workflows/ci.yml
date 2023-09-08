@@ -27,16 +27,9 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Restore cargo cache
-      uses: actions/cache@v2
-      env:
-        cache-name: ci
+      uses: Swatinem/rust-cache@v2
       with:
-        path: |
-          ~/.cargo/registry
-          ~/.cargo/git
-          ~/.cargo/bin
-          target
-        key: ${{ matrix.os }}-${{ env.cache-name }}-${{ matrix.rust }}-${{ hashFiles('Cargo.lock') }}
+        shared-key: ${{ matrix.os }}-${{ matrix.rust }}
     - name: Install Rust
       uses: dtolnay/rust-toolchain@master
       with:
@@ -76,16 +69,9 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Restore cargo cache
-      uses: actions/cache@v2
-      env:
-        cache-name: ci
+      uses: Swatinem/rust-cache@v2
       with:
-        path: |
-          ~/.cargo/registry
-          ~/.cargo/git
-          ~/.cargo/bin
-          target
-        key: ${{ matrix.os }}-${{ env.cache-name }}-${{ matrix.rust }}-${{ hashFiles('Cargo.lock') }}
+        shared-key: ${{ matrix.os }}-${{ matrix.rust }}
     - name: Install Rust
       uses: dtolnay/rust-toolchain@master
       with:
@@ -114,16 +100,9 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Restore cargo cache
-      uses: actions/cache@v2
-      env:
-        cache-name: ci
+      uses: Swatinem/rust-cache@v2
       with:
-        path: |
-          ~/.cargo/registry
-          ~/.cargo/git
-          ~/.cargo/bin
-          target
-        key: ${{ env.cache-name }}-${{ hashFiles('Cargo.lock') }}
+        shared-key: ubuntu-latest-stable
     - name: Install Rust
       uses: dtolnay/rust-toolchain@stable
     - name: BE release build
@@ -179,16 +158,9 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Restore cargo cache
-      uses: actions/cache@v2
-      env:
-        cache-name: ci
+      uses: Swatinem/rust-cache@v2
       with:
-        path: |
-          ~/.cargo/registry
-          ~/.cargo/git
-          ~/.cargo/bin
-          target
-        key: be-linux-${{ env.cache-name }}-stable_rust-${{ hashFiles('Cargo.lock') }}
+        shared-key: ubuntu-latest-stable
     - name: Install Rust
       uses: dtolnay/rust-toolchain@stable
     - name: Test Prod
@@ -211,16 +183,9 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Restore cargo cache
-      uses: actions/cache@v2
-      env:
-        cache-name: ci
+      uses: Swatinem/rust-cache@v2
       with:
-        path: |
-          ~/.cargo/registry
-          ~/.cargo/git
-          ~/.cargo/bin
-          target
-        key: linux-${{ env.cache-name }}-stable-${{ hashFiles('Cargo.lock') }}
+        shared-key: ubuntu-latest-stable
     - name: Install Rust
       uses: dtolnay/rust-toolchain@stable
       with:
