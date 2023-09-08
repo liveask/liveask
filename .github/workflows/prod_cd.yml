@@ -51,12 +51,9 @@ jobs:
           target
         key: linux-${{ env.cache-name }}-stable-${{ hashFiles('Cargo.lock') }}
     - name: Install Rust
-      uses: actions-rs/toolchain@v1
+      uses: dtolnay/rust-toolchain@stable
       with:
-        toolchain: stable
         target: wasm32-unknown-unknown
-        default: true
-        profile: minimal
     - name: Install cargo-make
       run: |
         which cargo-make || cargo install cargo-make

@@ -38,12 +38,10 @@ jobs:
           target
         key: ${{ matrix.os }}-${{ env.cache-name }}-${{ matrix.rust }}-${{ hashFiles('Cargo.lock') }}
     - name: Install Rust
-      uses: actions-rs/toolchain@v1
+      uses: dtolnay/rust-toolchain@master
       with:
         toolchain: ${{ matrix.rust }}
         target: wasm32-unknown-unknown
-        default: true
-        profile: minimal
         components: clippy
     - name: Install cargo-make
       run: |
@@ -89,12 +87,10 @@ jobs:
           target
         key: ${{ matrix.os }}-${{ env.cache-name }}-${{ matrix.rust }}-${{ hashFiles('Cargo.lock') }}
     - name: Install Rust
-      uses: actions-rs/toolchain@v1
+      uses: dtolnay/rust-toolchain@master
       with:
         toolchain: ${{ matrix.rust }}
         target: wasm32-unknown-unknown
-        default: true
-        profile: minimal
     - name: Install cargo-make
       run: |
         which cargo-make || cargo install cargo-make
@@ -129,11 +125,7 @@ jobs:
           target
         key: ${{ env.cache-name }}-${{ hashFiles('Cargo.lock') }}
     - name: Install Rust
-      uses: actions-rs/toolchain@v1
-      with:
-        toolchain: stable
-        default: true
-        profile: minimal
+      uses: dtolnay/rust-toolchain@stable
     - name: BE release build
       run: |
         cd backend
@@ -198,11 +190,7 @@ jobs:
           target
         key: be-linux-${{ env.cache-name }}-stable_rust-${{ hashFiles('Cargo.lock') }}
     - name: Install Rust
-      uses: actions-rs/toolchain@v1
-      with:
-        toolchain: stable
-        default: true
-        profile: minimal
+      uses: dtolnay/rust-toolchain@stable
     - name: Test Prod
       run: |
         cd backend-e2e
@@ -234,12 +222,9 @@ jobs:
           target
         key: linux-${{ env.cache-name }}-stable-${{ hashFiles('Cargo.lock') }}
     - name: Install Rust
-      uses: actions-rs/toolchain@v1
+      uses: dtolnay/rust-toolchain@stable
       with:
-        toolchain: stable
         target: wasm32-unknown-unknown
-        default: true
-        profile: minimal
         components: clippy
     - name: Install cargo-make
       run: |
