@@ -180,10 +180,10 @@ impl Home {
                     {"© 2023 Live-Ask. All right reserved"}
                 </div>
 
-                <a href="https://twitter.com/liveask1">
+                <a href="https://twitter.com/liveask1" target="_blank">
                     {twitter_svg}
                 </a>
-                <a href="https://github.com/liveask/liveask">
+                <a href="https://github.com/liveask/liveask" target="_blank">
                     {github_svg}
                 </a>
 
@@ -191,13 +191,13 @@ impl Home {
                     {"Privacy Policy"}
                 </a>
 
-                <a class="about" href="https://github.com/liveask/liveask">
+                <a class="about" href="https://github.com/liveask/liveask" target="_blank">
                     {"About"}
                 </a>
 
-                <div class="version">
+                <a class="version" href="https://github.com/liveask/liveask/blob/main/CHANGELOG.md" target="_blank">
                     { format!("v{VERSION_STR}-{git_sha} {branch} {api_version}") }
-                </div>
+                </a>
 
                 <div id="admin">
                     <div class="inner" onclick={ctx.link().callback(|_| Msg::Admin)}>

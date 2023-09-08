@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * backend: cleanup some todos around event validation 
 * backend: update, simplify and auto-format dependencies
 * frontend: merge multiple bool flags into bitflag (optimization and clippy cleanuo)
+* frontend: clicking version leads to changelog
 
 ## [2.3.4] - 2022-08-22
 
