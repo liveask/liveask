@@ -10,6 +10,7 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
+  TRUNK_VERSION: v0.17.5
 
 jobs:
 
@@ -245,7 +246,7 @@ jobs:
         which cargo-make || cargo install cargo-make
     - name: Install Trunk
       run: |
-        wget -qO- https://github.com/thedodd/trunk/releases/download/v0.16.0/trunk-x86_64-unknown-linux-gnu.tar.gz | tar -xzf-
+        wget -qO- https://github.com/thedodd/trunk/releases/download/${TRUNK_VERSION}/trunk-x86_64-unknown-linux-gnu.tar.gz | tar -xzf-
         mv trunk /usr/local/bin/trunk
     - name: Build
       env:
