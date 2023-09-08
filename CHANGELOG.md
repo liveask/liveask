@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Fixes
+* fix wordcloud not working due to dependency bug ([#31](https://github.com/liveask/liveask/pull/31))
+
 ### Changed
 * backend: remove panic testing route 
 * backend: cleanup some todos around event validation 
