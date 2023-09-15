@@ -13,7 +13,6 @@ Live-Ask.com provides a simple, free, and real-time service for the audience to 
 * Is **free** to use with premium features available
 
 ### Links 
-* Fullstack Rust Version: [www.live-ask.com](http://www.live-ask.com) 
 * Original Pitch Blogpost for the Project (2018): [Blog Post](https://blog.extrawurst.org/general/webdev/2018/04/02/liveask.html)
 * Follow us on [Linked.In](https://www.linkedin.com/company/live-ask/)
 * Follow us on Twitter/X [@liveask_dev](https://twitter.com/liveask_dev)
@@ -22,8 +21,8 @@ Live-Ask.com provides a simple, free, and real-time service for the audience to 
 <img src="/assets/desktop_modview.png" height="222" width="250" > <img src="/assets/desktop_partview.png" height="222" width="250" > <img src="/assets/desktop_share.png" height="222" width="250" >
 
 ## News & Updates 
-* **2022-11-28** - Complete Re-write in Rust 
-* **2018-04-06** - Initial Launch of Live-Ask
+* **2023** - Complete Re-write in Rust
+* **2018** - Initial Launch of Live-Ask
 * **2017** - Work started on Live-Ask
 
 See detailed [changelog](CHANGELOG.md).
