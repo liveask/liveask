@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixes
 * fix changed twitter/x link
+* add producthunt and linkedin social links
 
 ## [2.3.6] - 2023-09-08
 

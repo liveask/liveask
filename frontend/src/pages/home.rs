@@ -153,6 +153,24 @@ impl Home {
             Html::VRef(div.into())
         };
 
+        let linkedin_svg = {
+            let svg = include_str!("../../inline-assets/linkedin.svg");
+            let div = gloo_utils::document().create_element("div").unwrap_throw();
+            div.set_inner_html(svg);
+            div.set_id("linkedin");
+            div.set_class_name("social");
+            Html::VRef(div.into())
+        };
+
+        let producthunt_svg = {
+            let svg = include_str!("../../inline-assets/ph.svg");
+            let div = gloo_utils::document().create_element("div").unwrap_throw();
+            div.set_inner_html(svg);
+            div.set_id("producthunt");
+            div.set_class_name("social");
+            Html::VRef(div.into())
+        };
+
         let branch = if GIT_BRANCH == "main" {
             String::new()
         } else {
@@ -186,6 +204,14 @@ impl Home {
                 <a href="https://github.com/liveask/liveask" target="_blank">
                     {github_svg}
                 </a>
+                <a href="https://www.linkedin.com/company/live-ask" target="_blank">
+                    {linkedin_svg}
+                </a>
+                <a href="https://www.producthunt.com/products/live-ask" target="_blank">
+                    {producthunt_svg}
+                </a>
+
+
 
                 <a class="about" onclick={ctx.link().callback(|_| Msg::Privacy)}>
                     {"Privacy Policy"}
