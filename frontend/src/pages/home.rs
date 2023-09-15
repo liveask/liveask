@@ -180,7 +180,7 @@ impl Home {
                     {"© 2023 Live-Ask. All right reserved"}
                 </div>
 
-                <a href="https://twitter.com/liveask1" target="_blank">
+                <a href="https://twitter.com/liveask_dev" target="_blank">
                     {twitter_svg}
                 </a>
                 <a href="https://github.com/liveask/liveask" target="_blank">
