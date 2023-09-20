@@ -5,25 +5,25 @@ use crate::environment::{la_env, LiveAskEnv};
 #[wasm_bindgen]
 extern "C" {
     #[wasm_bindgen(js_namespace = window)]
-    fn track_event_js(metrical: &str, fathom: &str);
+    fn track_event_js(fathom: &str);
 }
 
-pub fn track_event((metrical, fathom_idx): (&str, usize)) {
+pub fn track_event(fathom_idx: usize) {
     if !matches!(la_env(Some(env!("LA_ENV"))), LiveAskEnv::Local) {
-        track_event_js(metrical, EVNT_FATHOM_IDS[fathom_idx]);
+        track_event_js(EVNT_FATHOM_IDS[fathom_idx]);
     }
 }
 
-pub const EVNT_NEWEVENT_FINISH: (&str, usize) = ("newevent_finish", 0);
-pub const EVNT_ASK_OPEN: (&str, usize) = ("ask_open", 1);
-pub const EVNT_ASK_SENT: (&str, usize) = ("ask_sent", 2);
-pub const EVNT_EVENT_DELETE: (&str, usize) = ("event_delete", 3);
-pub const EVNT_SHARE_OPEN: (&str, usize) = ("share_open", 4);
-pub const EVNT_QUESTION_LIKE: (&str, usize) = ("question_like", 5);
-pub const EVNT_QUESTION_UNLIKE: (&str, usize) = ("question_unlike", 6);
-pub const EVNT_PREMIUM_EXPAND: (&str, usize) = ("premium_expand", 7);
-pub const EVNT_PREMIUM_UPGRADE: (&str, usize) = ("premium_upgrade", 8);
-pub const EVNT_EXPORT: (&str, usize) = ("export_data", 9);
+pub const EVNT_NEWEVENT_FINISH: usize = 0;
+pub const EVNT_ASK_OPEN: usize = 1;
+pub const EVNT_ASK_SENT: usize = 2;
+pub const EVNT_EVENT_DELETE: usize = 3;
+pub const EVNT_SHARE_OPEN: usize = 4;
+pub const EVNT_QUESTION_LIKE: usize = 5;
+pub const EVNT_QUESTION_UNLIKE: usize = 6;
+pub const EVNT_PREMIUM_EXPAND: usize = 7;
+pub const EVNT_PREMIUM_UPGRADE: usize = 8;
+pub const EVNT_EXPORT: usize = 9;
 
 const EVNT_FATHOM_IDS_BETA: &[&str] = &[
     "FGTHLILK", "PTYICP9D", "2QLZ08FA", "RPUPYLYB", "MNJ3ZBU9", "1O6TRFHR", "D56OBEJZ", "PZMXZBMP",

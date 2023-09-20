@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Changed
+* FE: remove [metrical](https://metrical.xyz)
+
 ## [2.3.7] - 2023-09-15
 
 ### Fixes

@@ -53,22 +53,16 @@
         };
     </script>
 
-    <!-- Fathom - beautiful, simple website analytics -->
-    <script src="https://cdn.usefathom.com/script.js" data-site="" defer></script>
-    <!-- / Fathom -->
-
-    <!-- Metrical -->
     <script>
-        window.metrical = { "app": "" }
         window.track_event_js =
-            function track_event(metrical, fathom_id) {
-                window.metrical?.trackEvent(metrical);
+            function track_event(fathom_id) {
                 window.fathom?.trackGoal(fathom_id, 0);
             };
     </script>
-    <script async src="https://cdn.metrical.xyz/script.js" type="text/javascript">
-    </script>
-    <!-- / Metrical -->
+
+    <!-- Fathom - beautiful, simple website analytics -->
+    <script src="https://cdn.usefathom.com/script.js" data-site="" defer></script>
+    <!-- / Fathom -->
 </head>
 
 <body>
