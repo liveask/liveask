@@ -84,7 +84,7 @@ impl Component for PaymentPopup {
         if self.show {
             html! {
                 <Popup class="payment-popup">
-                    <img class="paypal-logo" src="/assets/paypal.svg" />
+                    <img alt="pay via paypal" class="paypal-logo" src="/assets/paypal.svg" />
                     <Spinner />
                 </Popup>
             }

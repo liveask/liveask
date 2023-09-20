@@ -166,7 +166,7 @@ impl Component for IconBar {
 
                     <div class="admin" hidden={!self.state.admin}>
                         <Link<Route> to={Route::Login}>
-                            <img src="/assets/admin.svg" />
+                            <img alt="admin" src="/assets/admin.svg" />
                         </Link<Route>>
                     </div>
 
@@ -226,7 +226,7 @@ impl IconBar {
                 class={classes!(is_online.then_some("hidden"))}
                 onclick={ctx.link().callback(|_| Msg::Reconnect)}
                 >
-                <img hidden={is_online} src="/assets/offline.svg" />
+                <img alt="offline" hidden={is_online} src="/assets/offline.svg" />
                 <div hidden={is_online} class="timeout">{format!("{seconds_till_reconnect}s")}</div>
             </div>
         }

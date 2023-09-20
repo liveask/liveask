@@ -782,11 +782,11 @@ impl Event {
 
         html! {
             <div class="statistics" >
-                <abbr title="current viewers" tabindex="0"><img src="/assets/symbols/viewers.svg"/></abbr>
+                <abbr title="current viewers" tabindex="0"><img alt="viewers" src="/assets/symbols/viewers.svg"/></abbr>
                 <div class="count">{{viewers}}</div>
-                <abbr title="all questions" tabindex="0"><img src="/assets/symbols/questions.svg"/></abbr>
+                <abbr title="all questions" tabindex="0"><img alt="questions" src="/assets/symbols/questions.svg"/></abbr>
                 <div class="count">{{questions}}</div>
-                <abbr title="all likes" tabindex="0"><img src="/assets/symbols/likes.svg"/></abbr>
+                <abbr title="all likes" tabindex="0"><img alt="likes" src="/assets/symbols/likes.svg"/></abbr>
                 <div class="count">{{likes}}</div>
             </div>
         }
@@ -1044,7 +1044,7 @@ impl Event {
 pub fn cloud_as_yew_img(b64: &str) -> yew::Html {
     html! {
         <div class="cloud">
-         <img src={format!("data:image/png;base64,{b64}")} />
+            <img alt="wordcloud" src={format!("data:image/png;base64,{b64}")} />
         </div>
     }
 }

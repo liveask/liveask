@@ -79,7 +79,7 @@ impl Component for Home {
                     <h1>
                         {"Incognito"}
                     </h1>
-                    <img class="img-simple" src="assets/main-incognito.png" />
+                    <img alt="anonymous" class="img-simple" src="assets/main-incognito.png" />
                     <p>
                         {"No registration necessary - everyone can ask questions and vote. Participant anonymity ensures freedom of speech and a smooth
                         user experience."}
@@ -90,7 +90,7 @@ impl Component for Home {
                     <h1>
                         {"Effortless"}
                     </h1>
-                    <img class="img-simple" src="assets/main-effortless.png" />
+                    <img alt="effortless" class="img-simple" src="assets/main-effortless.png" />
                     <p>
                         {"Set up your event in seconds! Share the link with your audience and let them decide what’s hot."}
                     </p>
@@ -100,7 +100,7 @@ impl Component for Home {
                     <h1>
                         {"Real-Time"}
                     </h1>
-                    <img class="img-simple" id="img-realtime" src="assets/main-realtime.png" />
+                    <img alt="realtime" class="img-simple" id="img-realtime" src="assets/main-realtime.png" />
                     <p>
                         {" Designed for live events. Questions can be asked and voted on in real time. This way, you can interact with everyone seamlessly."}
                     </p>
@@ -110,7 +110,7 @@ impl Component for Home {
                     <h1>
                         {"Cross Platform"}
                     </h1>
-                    <img class="img-simple" id="img-crossplatform" src="assets/main-crossplatform.png" />
+                    <img alt="simple" class="img-simple" id="img-crossplatform" src="assets/main-crossplatform.png" />
                     <p>
                         {"Use Live-Ask on your mobile phone, tablet, laptop or desktop computer. Go crazy and cast it to your smart TV, too!"}
                     </p>
@@ -120,7 +120,7 @@ impl Component for Home {
                     <h1>
                         {"Social"}
                     </h1>
-                    <img class="img-simple" src="assets/main-social.png" />
+                    <img alt="social" class="img-simple" src="assets/main-social.png" />
                     <p>
                         {"We want to make sharing as effortless as possible. Have you organized an awesome event? Live-Ask makes it easy to share it
                         with others. You bring the great content, we’ll help you spread the word."}
@@ -227,7 +227,7 @@ impl Home {
 
                 <div id="admin">
                     <div class="inner" onclick={ctx.link().callback(|_| Msg::Admin)}>
-                        <img src="/assets/admin.svg" />
+                        <img alt="admin-button" src="/assets/admin.svg" />
                     </div>
                 </div>
             </div>

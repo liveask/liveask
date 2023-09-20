@@ -63,7 +63,7 @@ impl Component for Upgrade {
                 <div class="rectangle">
                     <div class="toprow" onclick={ctx.link().callback(|_| Msg::ToggleExpansion)}>
                         <span>{"Upgrade to PREMIUM EVENT"}</span>
-                        <img class={classes!("dropdown",not(collapsed).then_some("rotated"))} src="/assets/dropdown.svg" />
+                        <img alt="dropdown" class={classes!("dropdown",not(collapsed).then_some("rotated"))} src="/assets/dropdown.svg" />
                     </div>
 
                     {self.view_expanded(ctx)}
@@ -117,7 +117,7 @@ impl Upgrade {
                 <button class="button" hidden={pending} onclick={ctx.link().callback(|_| Msg::UpgradeClicked)}>
                     {"upgrade"}
                     <div class="via">{"on"}</div>
-                    <img class="paypal-logo-small" src="/assets/paypal.svg" />
+                    <img alt="paypal" class="paypal-logo-small" src="/assets/paypal.svg" />
                 </button>
 
                 <PaymentPopup tokens={self.data.tokens.clone()}/>

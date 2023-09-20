@@ -152,16 +152,16 @@ impl Component for SharePopup {
 
                     <div class="sharebuttons">
                         <div onclick={on_click_share_twitter}>
-                            <img src="/assets/share/share-twitter.svg" />
+                            <img alt="share via twitter" src="/assets/share/share-twitter.svg" />
                         </div>
                         <div onclick={on_click_share_mail}>
-                            <img src="/assets/share/share-email.svg" />
+                            <img alt="share via email" src="/assets/share/share-email.svg" />
                         </div>
                         <div onclick={on_click_share_sms}>
-                            <img src="/assets/share/share-sms.svg" />
+                            <img alt="share via sms" src="/assets/share/share-sms.svg" />
                         </div>
                         <div onclick={on_click_share_whatsapp}>
-                            <img src="/assets/share/share-whatsapp.svg" />
+                            <img alt="share via whatsapp" src="/assets/share/share-whatsapp.svg" />
                         </div>
                     </div>
 
