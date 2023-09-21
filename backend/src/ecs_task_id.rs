@@ -28,16 +28,19 @@ pub async fn server_id() -> Option<String> {
 
     tracing::info!("[server-starting] fetched");
 
-    let parsed: Response = response.json().await.ok()?;
+    // let parsed: Response = response.json().await.ok()?;
+    let text = response.text().await.ok()?;
 
-    tracing::info!("[server-starting] parsed: {:?}", parsed);
+    tracing::info!("[server-starting] text: {text}");
 
-    Some(
-        parsed
-            .task_arn
-            .split('/')
-            .last()
-            .unwrap_or_default()
-            .to_string(),
-    )
+    // Some(
+    //     parsed
+    //         .task_arn
+    //         .split('/')
+    //         .last()
+    //         .unwrap_or_default()
+    //         .to_string(),
+    // )
+
+    None
 }
