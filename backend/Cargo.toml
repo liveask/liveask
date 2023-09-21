@@ -18,6 +18,7 @@ chrono = { version = "0.4", default-features = false }
 futures-util = "0.3"
 mailjet-rs = "0.3"
 paypal-rust = "0.0.9-alpha"
+posthog-rs = { git = "https://github.com/rivet-gg/posthog-rs.git", rev = "fa4d39a" }
 rand = { version = "0.8", features = ["min_const_gen"] }
 reqwest = { version = "0.11", features = ["json"] }
 sentry = { version = "0.31", features = ["tracing", "tower", "tower-http"] }

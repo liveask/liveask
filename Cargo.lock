@@ -2510,6 +2510,7 @@ dependencies = [
  "mime",
  "mockall",
  "paypal-rust",
+ "posthog-rs",
  "pretty_assertions",
  "rand 0.8.5",
  "redis",
@@ -3136,6 +3137,29 @@ dependencies = [
 ]
 
 [[package]]
+name = "posthog-core"
+version = "0.1.0"
+source = "git+https://github.com/rivet-gg/posthog-rs.git?rev=fa4d39a#fa4d39ac465aab259bf3fe67329c47cfd64dd4ea"
+dependencies = [
+ "chrono",
+ "serde",
+ "serde_json",
+ "thiserror",
+]
+
+[[package]]
+name = "posthog-rs"
+version = "0.2.3"
+source = "git+https://github.com/rivet-gg/posthog-rs.git?rev=fa4d39a#fa4d39ac465aab259bf3fe67329c47cfd64dd4ea"
+dependencies = [
+ "posthog-core",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "thiserror",
+]
+
+[[package]]
 name = "ppv-lite86"
 version = "0.2.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3453,6 +3477,7 @@ dependencies = [
  "http",
  "http-body",
  "hyper",
+ "hyper-rustls",
  "hyper-tls",
  "ipnet",
  "js-sys",
@@ -3463,16 +3488,20 @@ dependencies = [
  "once_cell",
  "percent-encoding",
  "pin-project-lite",
+ "rustls",
+ "rustls-pemfile",
  "serde",
  "serde_json",
  "serde_urlencoded",
  "tokio",
  "tokio-native-tls",
+ "tokio-rustls",
  "tower-service",
  "url",
  "wasm-bindgen",
  "wasm-bindgen-futures",
  "web-sys",
+ "webpki-roots",
  "winreg",
 ]
 
@@ -5026,6 +5055,12 @@ dependencies = [
  "js-sys",
  "wasm-bindgen",
 ]
+
+[[package]]
+name = "webpki-roots"
+version = "0.25.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "14247bb57be4f377dfb94c72830b8ce8fc6beac03cf4bf7b9732eadd414123fc"
 
 [[package]]
 name = "weezl"

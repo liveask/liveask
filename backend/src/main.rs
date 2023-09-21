@@ -29,6 +29,7 @@
 #![allow(clippy::result_large_err)]
 mod app;
 mod auth;
+mod ecs_task_id;
 mod env;
 mod error;
 mod eventsdb;
@@ -49,11 +50,12 @@ use axum::{
     routing::{get, post},
     Router,
 };
+use posthog_rs::{ClientOptions, Event};
 use sentry::integrations::{
     tower::{NewSentryLayer, SentryHttpLayer},
     tracing::EventFilter,
 };
-use std::{iter::once, net::SocketAddr, sync::Arc};
+use std::{collections::HashMap, iter::once, net::SocketAddr, sync::Arc};
 use tower_http::{
     cors::CorsLayer, sensitive_headers::SetSensitiveRequestHeadersLayer, trace::TraceLayer,
 };
@@ -62,6 +64,7 @@ use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use crate::{
     app::App,
     auth::{admin_user_handler, login_handler, logout_handler},
+    ecs_task_id::server_id,
     env::session_secret,
     error::Result,
     eventsdb::DynamoEventsDB,
@@ -130,6 +133,10 @@ fn get_redis_url() -> String {
     std::env::var(env::ENV_REDIS_URL).map_or_else(|_| "redis://localhost:6379".into(), |env| env)
 }
 
+fn posthog_key() -> String {
+    std::env::var(env::ENV_POSTHOG_KEY).map_or_else(|_| String::new(), |env| env)
+}
+
 async fn dynamo_client() -> Result<aws_sdk_dynamodb::Client> {
     use aws_sdk_dynamodb::Client;
 
@@ -195,6 +202,8 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
 
     let base_url = base_url();
 
+    let server_id = server_id().await.unwrap_or_else(|| "server".to_string());
+
     tracing::info!(
         git= %GIT_HASH,
         env= prod_env,
@@ -202,8 +211,17 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
         log_level,
         redis_url,
         base_url,
+        server_id,
         "server-starting",
     );
+
+    {
+        tokio::task::spawn_blocking(move || {
+            if let Err(e) = logger(&server_id, &prod_env, "server-start", None) {
+                tracing::error!("posthog error: {e}");
+            }
+        });
+    }
 
     let redis_pool = create_pool(&redis_url)?;
     ping_test_redis(&redis_pool).await?;
@@ -311,6 +329,37 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     if let Err(e) = app.shutdown().await {
         tracing::error!("app shutdown error: {}", e);
     }
+
+    Ok(())
+}
+
+fn logger(
+    server: &str,
+    env: &str,
+    event: &str,
+    properties: Option<HashMap<String, String>>,
+) -> std::result::Result<(), posthog_rs::Error> {
+    let mut client = ClientOptions::new(posthog_key());
+    client.api_endpoint("https://eu.posthog.com");
+    let client = client.build();
+
+    let mut event = Event::new(event, server);
+    event
+        .insert_prop("env", env)
+        .map_err(|e| posthog_rs::Error::PostHogCore { source: e })?;
+    event
+        .insert_prop("git", GIT_HASH)
+        .map_err(|e| posthog_rs::Error::PostHogCore { source: e })?;
+
+    if let Some(properties) = properties {
+        for (k, v) in properties {
+            event
+                .insert_prop(k, v)
+                .map_err(|e| posthog_rs::Error::PostHogCore { source: e })?;
+        }
+    }
+
+    client.capture(event)?;
 
     Ok(())
 }

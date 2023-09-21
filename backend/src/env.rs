@@ -12,6 +12,7 @@ pub const ENV_SENTRY_DSN: &str = "LA_SENTRY_DSN";
 pub const ENV_PORT: &str = "LA_PORT";
 pub const ENV_PAYPAL_ID: &str = "LA_PP_CLIENT_ID";
 pub const ENV_PAYPAL_SECRET: &str = "LA_PP_CLIENT_SECRET";
+pub const ENV_POSTHOG_KEY: &str = "LA_POSTHOG_KEY";
 const ENV_ADMIN_PWD_HASH: &str = "LA_ADMIN_PWD_HASH";
 const ENV_SESSION_SECRET: &str = "LA_SESSION_SECRET";
 
