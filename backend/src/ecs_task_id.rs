@@ -17,20 +17,24 @@ struct Response {
     pub known_status: String,
 }
 
+#[allow(clippy::cognitive_complexity)]
 pub async fn server_id() -> Option<String> {
     let url = std::env::var("ECS_CONTAINER_METADATA_URI_V4").ok()?;
+
+    tracing::info!(url, "[server-starting] read env",);
+
     let url = format!("{url}/task");
-    let res: Response = reqwest::Client::new()
-        .get(url)
-        .send()
-        .await
-        .ok()?
-        .json()
-        .await
-        .ok()?;
+    let response = reqwest::Client::new().get(url).send().await.ok()?;
+
+    tracing::info!("[server-starting] fetched");
+
+    let parsed: Response = response.json().await.ok()?;
+
+    tracing::info!("[server-starting] parsed: {:?}", parsed);
 
     Some(
-        res.task_arn
+        parsed
+            .task_arn
             .split('/')
             .last()
             .unwrap_or_default()
