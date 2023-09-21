@@ -236,9 +236,12 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
         )?);
 
         if let Err(e) = payment.authenticate().await {
-            tracing::error!("payment auth error: [sandbox: {sandbox}] {}", e);
+            tracing::error!(
+                "payment auth error: [sandbox: {sandbox}, id: {paypal_id}] {}",
+                e
+            );
         } else {
-            tracing::info!("payment auth ok: [sandbox: {sandbox}] {}", paypal_id);
+            tracing::info!("payment auth ok: [sandbox: {sandbox}, id: {paypal_id}]");
         }
 
         payment
