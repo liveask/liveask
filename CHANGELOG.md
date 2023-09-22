@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 * FE: remove [metrical](https://metrical.xyz)
 * FE: fix most yew warnings about img tags missing alt text
+* FE: easier debuggable paypal credentials
+* FE: more social links in footer of home page
 
 ## [2.3.7] - 2023-09-15
 
