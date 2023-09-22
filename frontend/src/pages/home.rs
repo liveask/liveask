@@ -134,7 +134,7 @@ impl Component for Home {
 }
 
 impl Home {
-    fn view_footer(&self, ctx: &Context<Self>) -> Html {
+    fn view_social() -> Html {
         let twitter_svg = {
             let svg = include_str!("../../inline-assets/twitter.svg");
             let div = gloo_utils::document().create_element("div").unwrap_throw();
@@ -170,7 +170,47 @@ impl Home {
             div.set_class_name("social");
             Html::VRef(div.into())
         };
+        let insta_svg = {
+            let svg = include_str!("../../inline-assets/insta.svg");
+            let div = gloo_utils::document().create_element("div").unwrap_throw();
+            div.set_inner_html(svg);
+            div.set_id("insta");
+            div.set_class_name("social");
+            Html::VRef(div.into())
+        };
+        let mastodon_svg = {
+            let svg = include_str!("../../inline-assets/mastodon.svg");
+            let div = gloo_utils::document().create_element("div").unwrap_throw();
+            div.set_inner_html(svg);
+            div.set_id("mastodon");
+            div.set_class_name("social");
+            Html::VRef(div.into())
+        };
 
+        html! {
+            <>
+            <a href="https://github.com/liveask/liveask" target="_blank">
+                {github_svg}
+            </a>
+            <a href="https://twitter.com/liveask_dev" target="_blank">
+                {twitter_svg}
+            </a>
+            <a href="https://www.instagram.com/liveaskapp/" target="_blank">
+                {insta_svg}
+            </a>
+            <a href="https://mastodon.social/@liveask" target="_blank">
+                {mastodon_svg}
+            </a>
+            <a href="https://www.linkedin.com/company/live-ask" target="_blank">
+                {linkedin_svg}
+            </a>
+            <a href="https://www.producthunt.com/products/live-ask" target="_blank">
+                {producthunt_svg}
+            </a>
+            </>
+        }
+    }
+    fn view_footer(&self, ctx: &Context<Self>) -> Html {
         let branch = if GIT_BRANCH == "main" {
             String::new()
         } else {
@@ -198,20 +238,7 @@ impl Home {
                     {"© 2023 Live-Ask. All right reserved"}
                 </div>
 
-                <a href="https://twitter.com/liveask_dev" target="_blank">
-                    {twitter_svg}
-                </a>
-                <a href="https://github.com/liveask/liveask" target="_blank">
-                    {github_svg}
-                </a>
-                <a href="https://www.linkedin.com/company/live-ask" target="_blank">
-                    {linkedin_svg}
-                </a>
-                <a href="https://www.producthunt.com/products/live-ask" target="_blank">
-                    {producthunt_svg}
-                </a>
-
-
+                {Self::view_social()}
 
                 <a class="about" onclick={ctx.link().callback(|_| Msg::Privacy)}>
                     {"Privacy Policy"}
