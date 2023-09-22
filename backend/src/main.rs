@@ -161,6 +161,35 @@ async fn dynamo_client() -> Result<aws_sdk_dynamodb::Client> {
     Ok(Client::new(&config))
 }
 
+async fn payment() -> Result<Arc<Payment>> {
+    let paypal_id = std::env::var(env::ENV_PAYPAL_ID).unwrap_or_default();
+    let paypal_secret = std::env::var(env::ENV_PAYPAL_SECRET).unwrap_or_default();
+
+    if paypal_secret.is_empty() {
+        tracing::warn!("paypal secret not provided for: {paypal_id}");
+    }
+
+    let sandbox = !is_prod();
+    let payment = Arc::new(Payment::new(
+        paypal_id.clone(),
+        paypal_secret.clone(),
+        sandbox,
+    )?);
+
+    if let Err(e) = payment.authenticate().await {
+        tracing::error!(
+            "payment auth error: [id: {paypal_id}, secret: {} ({}), sandbox: {sandbox}] {}",
+            &paypal_secret[..6],
+            paypal_secret.len(),
+            e
+        );
+    } else {
+        tracing::info!("payment auth ok: [sandbox: {sandbox}, id: {paypal_id}]");
+    }
+
+    Ok(payment)
+}
+
 #[allow(clippy::too_many_lines)]
 #[tokio::main]
 async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
@@ -226,26 +255,7 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let redis_pool = create_pool(&redis_url)?;
     ping_test_redis(&redis_pool).await?;
 
-    let payment = {
-        let paypal_id = std::env::var(env::ENV_PAYPAL_ID).unwrap_or_default();
-        let sandbox = !is_prod();
-        let payment = Arc::new(Payment::new(
-            paypal_id.clone(),
-            std::env::var(env::ENV_PAYPAL_SECRET).unwrap_or_default(),
-            sandbox,
-        )?);
-
-        if let Err(e) = payment.authenticate().await {
-            tracing::error!(
-                "payment auth error: [sandbox: {sandbox}, id: {paypal_id}] {}",
-                e
-            );
-        } else {
-            tracing::info!("payment auth ok: [sandbox: {sandbox}, id: {paypal_id}]");
-        }
-
-        payment
-    };
+    let payment = payment().await?;
 
     let pubsub = Arc::new(PubSubRedis::new(redis_pool.clone(), redis_url.clone()));
     let viewers = Arc::new(RedisViewers::new(redis_pool));
