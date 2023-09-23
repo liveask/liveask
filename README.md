@@ -40,7 +40,7 @@ Wnat to help support the project? Use the following links to help us 💪
 (coming soon)
 
 ### Socials
-<a href="https://x.com/liveask_dev?s=20"><img alt="Follow Us on X" src="[https://img.shields.io/badge/X-000000?style=for-the-badge&logo=x&logoColor=white"></a> 
+<a href="https://x.com/liveask_dev?s=20"><img alt="Follow Us on X" src="https://img.shields.io/badge/X-000000?style=for-the-badge&logo=x&logoColor=white"></a> 
 
 
 ![liveask readme footer](/assets/readme_footer.png)
