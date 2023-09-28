@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use posthog_rs::{ClientOptions, Event};
+use shared::EventData;
 
 use crate::GIT_HASH;
 
@@ -40,13 +41,17 @@ impl Tracking {
         });
     }
 
-    pub fn track_event_upgrade(&self, event: String, url: String) {
+    pub fn track_event_upgrade(&self, event: &str, data: &EventData) {
         let tracking = self.clone();
+        let name = data.name.clone();
+        let url = data.long_url.clone().unwrap_or_default();
+        let event = event.to_string();
 
         tokio::task::spawn_blocking(move || {
             let mut data = HashMap::with_capacity(1);
             data.insert("event".to_string(), event);
             data.insert("url".to_string(), url);
+            data.insert("name".to_string(), name);
             if let Err(e) = tracking.logger("event-upgraded", Some(data)) {
                 tracing::error!("posthog error: {e}");
             }

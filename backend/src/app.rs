@@ -525,10 +525,8 @@ impl App {
             )
             .await?;
 
-        self.tracking.track_event_upgrade(
-            e.tokens.public_token.clone(),
-            e.data.long_url.clone().unwrap_or_default(),
-        );
+        self.tracking
+            .track_event_upgrade(&e.tokens.public_token, &e.data);
 
         Ok(EventUpgrade { url: approve_url })
     }
