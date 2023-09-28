@@ -201,7 +201,7 @@ impl App {
         if !request.test {
             e.data.short_url = self.shorten_url(&url).await;
         }
-        e.data.long_url = Some(url);
+        e.data.long_url = Some(url.clone());
 
         let result = e.clone();
 
@@ -220,7 +220,7 @@ impl App {
 
         self.tracking.track_event_create(
             result.tokens.public_token.clone(),
-            result.data.short_url.clone(),
+            url,
             result.data.name.clone(),
         );
 
@@ -523,8 +523,10 @@ impl App {
             )
             .await?;
 
-        self.tracking
-            .track_event_upgrade(e.tokens.public_token.clone(), e.data.short_url.clone());
+        self.tracking.track_event_upgrade(
+            e.tokens.public_token.clone(),
+            e.data.long_url.clone().unwrap_or_default(),
+        );
 
         Ok(EventUpgrade { url: approve_url })
     }
