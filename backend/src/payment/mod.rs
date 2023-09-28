@@ -105,7 +105,7 @@ impl Payment {
                     custom_id: Some(event.to_string()),
                     amount: AmountWithBreakdown {
                         currency_code: String::from("EUR"),
-                        value: String::from("5.99"),
+                        value: String::from("7"),
                         breakdown: None,
                     },
                     ..Default::default()
