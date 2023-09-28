@@ -218,11 +218,13 @@ impl App {
             );
         }
 
-        self.tracking.track_event_create(
-            result.tokens.public_token.clone(),
-            url,
-            result.data.name.clone(),
-        );
+        if !request.test {
+            self.tracking.track_event_create(
+                result.tokens.public_token.clone(),
+                url,
+                result.data.name.clone(),
+            );
+        }
 
         Ok(result.into())
     }
