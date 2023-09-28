@@ -39,6 +39,7 @@ mod payment;
 mod pubsub;
 mod redis_pool;
 mod signals;
+mod tracking;
 mod utils;
 mod viewers;
 
@@ -50,12 +51,11 @@ use axum::{
     routing::{get, post},
     Router,
 };
-use posthog_rs::{ClientOptions, Event};
 use sentry::integrations::{
     tower::{NewSentryLayer, SentryHttpLayer},
     tracing::EventFilter,
 };
-use std::{collections::HashMap, iter::once, net::SocketAddr, sync::Arc};
+use std::{iter::once, net::SocketAddr, sync::Arc};
 use tower_http::{
     cors::CorsLayer, sensitive_headers::SetSensitiveRequestHeadersLayer, trace::TraceLayer,
 };
@@ -72,6 +72,7 @@ use crate::{
     payment::Payment,
     pubsub::PubSubRedis,
     redis_pool::{create_pool, ping_test_redis},
+    tracking::Tracking,
     viewers::RedisViewers,
 };
 
@@ -244,13 +245,9 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
         "server-starting",
     );
 
-    {
-        tokio::task::spawn_blocking(move || {
-            if let Err(e) = logger(&server_id, &prod_env, "server-start", None) {
-                tracing::error!("posthog error: {e}");
-            }
-        });
-    }
+    let tracking = Tracking::new(Some(posthog_key()), server_id.clone(), prod_env.clone());
+
+    tracking.track_server_start();
 
     let redis_pool = create_pool(&redis_url)?;
     ping_test_redis(&redis_pool).await?;
@@ -266,6 +263,7 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
         pubsub.clone(),
         viewers,
         payment,
+        tracking,
         base_url,
     ));
 
@@ -342,37 +340,6 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     if let Err(e) = app.shutdown().await {
         tracing::error!("app shutdown error: {}", e);
     }
-
-    Ok(())
-}
-
-fn logger(
-    server: &str,
-    env: &str,
-    event: &str,
-    properties: Option<HashMap<String, String>>,
-) -> std::result::Result<(), posthog_rs::Error> {
-    let mut client = ClientOptions::new(posthog_key());
-    client.api_endpoint("https://eu.posthog.com");
-    let client = client.build();
-
-    let mut event = Event::new(event, server);
-    event
-        .insert_prop("env", env)
-        .map_err(|e| posthog_rs::Error::PostHogCore { source: e })?;
-    event
-        .insert_prop("git", GIT_HASH)
-        .map_err(|e| posthog_rs::Error::PostHogCore { source: e })?;
-
-    if let Some(properties) = properties {
-        for (k, v) in properties {
-            event
-                .insert_prop(k, v)
-                .map_err(|e| posthog_rs::Error::PostHogCore { source: e })?;
-        }
-    }
-
-    client.capture(event)?;
 
     Ok(())
 }

@@ -27,6 +27,7 @@ use crate::{
     mail::MailjetConfig,
     payment::Payment,
     pubsub::{PubSubPublish, PubSubReceiver},
+    tracking::Tracking,
     utils::timestamp_now,
     viewers::Viewers,
 };
@@ -48,6 +49,7 @@ pub struct App {
     pubsub_publish: Arc<dyn PubSubPublish>,
     viewers: Arc<dyn Viewers>,
     payment: Arc<Payment>,
+    tracking: Tracking,
     base_url: String,
     tiny_url_token: Option<String>,
     mailjet_config: Option<MailjetConfig>,
@@ -64,6 +66,7 @@ impl App {
         pubsub_publish: Arc<dyn PubSubPublish>,
         viewers: Arc<dyn Viewers>,
         payment: Arc<Payment>,
+        tracking: Tracking,
         base_url: String,
     ) -> Self {
         let tiny_url_token = Self::tinyurl_token();
@@ -85,6 +88,7 @@ impl App {
             mailjet_config,
             payment,
             viewers,
+            tracking,
             shutdown: Arc::new(AtomicBool::new(false)),
         }
     }
@@ -213,6 +217,12 @@ impl App {
                 self.mod_link(&result.tokens),
             );
         }
+
+        self.tracking.track_event_create(
+            result.tokens.public_token.clone(),
+            result.data.short_url.clone(),
+            result.data.name.clone(),
+        );
 
         Ok(result.into())
     }
@@ -512,6 +522,9 @@ impl App {
                 &format!("{mod_url}?payment=true"),
             )
             .await?;
+
+        self.tracking
+            .track_event_upgrade(e.tokens.public_token.clone(), e.data.short_url.clone());
 
         Ok(EventUpgrade { url: approve_url })
     }
@@ -881,6 +894,7 @@ mod test {
             Arc::new(PubSubInMemory::default()),
             Arc::new(MockViewers::new()),
             Arc::new(Payment::default()),
+            Tracking::default(),
             String::new(),
         );
 
@@ -908,6 +922,7 @@ mod test {
             Arc::new(PubSubInMemory::default()),
             Arc::new(MockViewers::new()),
             Arc::new(Payment::default()),
+            Tracking::default(),
             String::new(),
         );
 
@@ -937,6 +952,7 @@ mod test {
             Arc::new(pubsub),
             Arc::new(MockViewers::new()),
             Arc::new(Payment::default()),
+            Tracking::default(),
             String::new(),
         );
 
@@ -1001,6 +1017,7 @@ mod test {
             Arc::new(pubsub),
             Arc::new(MockViewers::new()),
             Arc::new(Payment::default()),
+            Tracking::default(),
             String::new(),
         );
 
@@ -1091,6 +1108,7 @@ mod test {
             Arc::new(pubsub),
             Arc::new(MockViewers::new()),
             Arc::new(Payment::default()),
+            Tracking::default(),
             String::new(),
         );
 
@@ -1166,6 +1184,7 @@ mod test {
             Arc::new(pubsub),
             Arc::new(MockViewers::new()),
             Arc::new(Payment::default()),
+            Tracking::default(),
             String::new(),
         );
 
@@ -1217,6 +1236,7 @@ mod test {
             Arc::new(pubsub),
             Arc::new(MockViewers::new()),
             Arc::new(Payment::default()),
+            Tracking::default(),
             String::new(),
         );
 

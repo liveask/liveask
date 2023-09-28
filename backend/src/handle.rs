@@ -221,6 +221,7 @@ mod test_db_conflicts {
     use super::*;
     use crate::eventsdb::{ApiEventInfo, EventEntry, EventsDB};
     use crate::payment::Payment;
+    use crate::tracking::Tracking;
     use crate::utils::timestamp_now;
     use crate::viewers::MockViewers;
     use crate::{app::App, pubsub::PubSubInMemory};
@@ -268,6 +269,7 @@ mod test_db_conflicts {
             Arc::new(PubSubInMemory::default()),
             Arc::new(MockViewers::new()),
             Arc::new(Payment::default()),
+            Tracking::default(),
             String::new(),
         ));
 
@@ -314,6 +316,7 @@ mod test_db_item_not_found {
         eventsdb::{EventEntry, EventsDB},
         payment::Payment,
         pubsub::PubSubInMemory,
+        tracking::Tracking,
         viewers::MockViewers,
     };
     use async_trait::async_trait;
@@ -346,6 +349,7 @@ mod test_db_item_not_found {
             Arc::new(PubSubInMemory::default()),
             Arc::new(MockViewers::new()),
             Arc::new(Payment::default()),
+            Tracking::default(),
             String::new(),
         ));
 

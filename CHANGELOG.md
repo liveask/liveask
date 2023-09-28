@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Unreleased
 
 ### Changed
+* BE: use posthog for some event tracking
 * FE: remove [metrical](https://metrical.xyz)
 * FE: fix most yew warnings about img tags missing alt text
 * FE: easier debuggable paypal credentials
