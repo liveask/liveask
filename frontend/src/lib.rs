@@ -54,7 +54,7 @@ use crate::{
     pages::{Event, Home, NewEvent, Print, Privacy},
 };
 
-pub const VERSION_STR: &str = "2.3.7";
+pub const VERSION_STR: &str = "2.3.8";
 pub const GIT_BRANCH: &str = env!("VERGEN_GIT_BRANCH");
 
 #[derive(Default, Clone, Eq, PartialEq, Store)]

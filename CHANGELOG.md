@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## [2.3.8] - 2023-09-28
+
 ### Changed
 * BE: use posthog for some event tracking
 * FE: remove [metrical](https://metrical.xyz)
