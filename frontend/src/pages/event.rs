@@ -802,9 +802,9 @@ impl Event {
         } else {
             html! {
                 <div class="deadline">
-                {format!("Currently a free event is valid for {FREE_EVENT_DURATION_DAYS} days. Your event will be inaccessible on ")}
+                {"Currently a "}<strong>{"free"}</strong>{format!(" event is valid for {FREE_EVENT_DURATION_DAYS} days. Your event will be accessible until ")}
                 <span>{Self::get_event_timeout(&e.info)}</span>
-                {". Please upgrade to premium to make it permanent."}
+                {". Please upgrade to a "}<strong>{"premium"}</strong>{" event to make it "}<strong>{"permanent"}</strong>{"."}
                 </div>
             }
         }

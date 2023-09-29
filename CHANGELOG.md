@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 * BE: fix event upgrade tracking
+* FE: better free event timeout explenation and CTA
 
 ## [2.3.8] - 2023-09-28
 
