@@ -34,7 +34,7 @@ impl Component for Upgrade {
     fn create(ctx: &Context<Self>) -> Self {
         Self {
             data: ctx.props().clone(),
-            collapsed: true,
+            collapsed: false,
             events: EventAgent::bridge(Callback::noop()),
         }
     }
@@ -62,7 +62,7 @@ impl Component for Upgrade {
             <div class="premium-banner">
                 <div class="rectangle">
                     <div class="toprow" onclick={ctx.link().callback(|_| Msg::ToggleExpansion)}>
-                        <span>{"Upgrade to PREMIUM EVENT"}</span>
+                        <span>{"Upgrade now to PREMIUM EVENT"}</span>
                         <img alt="dropdown" class={classes!("dropdown",not(collapsed).then_some("rotated"))} src="/assets/dropdown.svg" />
                     </div>
 
@@ -97,21 +97,20 @@ impl Upgrade {
                 <div class="features">
                 {"To unlock the following features:"}
                 <ul>
-                    <li>{"Remove 7 Day Event Timeout"}</li>
-                    <li>{"Live Stats (participants, likes ..)"}</li>
-                    <li>{"Export Data"}</li>
-                    <li>{"Word Cloud"}</li>
-                    <li>{"Prescreen Questions"}</li>
-                    <li class="tbd">{"Answer Questions (coming soon..)"}</li>
+                    <li>{"Unlimited access to your event"}</li>
+                    <li>{"Realtime statistics (participants, likes ..)"}</li>
+                    <li>{"Export your event data"}</li>
+                    <li>{"Word-Cloud"}</li>
+                    <li>{"Prescreen questions before they appear"}</li>
                 </ul>
                 </div>
 
                 <div class="tmp-subscription">
-                    {"For super users planning regular events we are planing a subscription, for the time being reach "}
+                    {"Are you planning to host multiple events? "}
                     <a href="mailto:mail@live-ask.com">
-                        {"out to us"}
+                        {"Contact us"}
                     </a>
-                    {" for discounts on multiple premium events."}
+                    {" for special discounts."}
                 </div>
 
                 <button class="button" hidden={pending} onclick={ctx.link().callback(|_| Msg::UpgradeClicked)}>
