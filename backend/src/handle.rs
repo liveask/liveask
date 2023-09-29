@@ -101,7 +101,7 @@ pub async fn mod_premium_upgrade(
 ) -> std::result::Result<impl IntoResponse, InternalError> {
     tracing::info!("mod_premium_upgrade");
 
-    Ok(Json(app.premium_upgrade(id, secret).await?))
+    Ok(Json(app.request_premium_upgrade(id, secret).await?))
 }
 
 #[instrument(skip(app))]

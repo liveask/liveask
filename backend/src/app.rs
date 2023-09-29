@@ -385,7 +385,7 @@ impl App {
 
         self.eventsdb.put(entry).await?;
 
-        self.notify_subscribers(id, Notification::Question(question_id))
+        self.notify_subscribers(&id, Notification::Question(question_id))
             .await;
 
         Ok(e.into())
@@ -426,7 +426,7 @@ impl App {
 
         self.eventsdb.put(entry).await?;
 
-        self.notify_subscribers(id, Notification::Event).await;
+        self.notify_subscribers(&id, Notification::Event).await;
 
         Ok(result.into())
     }
@@ -466,7 +466,7 @@ impl App {
 
         self.eventsdb.put(entry).await?;
 
-        self.notify_subscribers(id, Notification::Event).await;
+        self.notify_subscribers(&id, Notification::Event).await;
 
         Ok(result.into())
     }
@@ -492,12 +492,16 @@ impl App {
 
         self.eventsdb.put(entry).await?;
 
-        self.notify_subscribers(id, Notification::Event).await;
+        self.notify_subscribers(&id, Notification::Event).await;
 
         Ok(())
     }
 
-    pub async fn premium_upgrade(&self, id: String, secret: String) -> Result<EventUpgrade> {
+    pub async fn request_premium_upgrade(
+        &self,
+        id: String,
+        secret: String,
+    ) -> Result<EventUpgrade> {
         let mut entry = self.eventsdb.get(&id).await?;
 
         let e = &mut entry.event;
@@ -524,9 +528,6 @@ impl App {
                 &format!("{mod_url}?payment=true"),
             )
             .await?;
-
-        self.tracking
-            .track_event_upgrade(&e.tokens.public_token, &e.data);
 
         Ok(EventUpgrade { url: approve_url })
     }
@@ -572,9 +573,13 @@ impl App {
 
             entry.bump();
 
+            let data = entry.event.data.clone();
+
             self.eventsdb.put(entry).await?;
 
-            self.notify_subscribers(event, Notification::Event).await;
+            self.notify_subscribers(&event, Notification::Event).await;
+
+            self.tracking.track_event_upgrade(&event, &data);
 
             Ok(true)
         } else {
@@ -640,7 +645,7 @@ impl App {
 
         self.eventsdb.put(entry).await?;
 
-        self.notify_subscribers(id, Notification::Question(question_id))
+        self.notify_subscribers(&id, Notification::Question(question_id))
             .await;
 
         Ok(question)
@@ -672,7 +677,7 @@ impl App {
 
             self.eventsdb.put(entry).await?;
 
-            self.notify_subscribers(id, Notification::Question(edit.question_id))
+            self.notify_subscribers(&id, Notification::Question(edit.question_id))
                 .await;
 
             Ok(res)
@@ -782,7 +787,7 @@ impl App {
 
             tracing::info!("notify viewer count: {count}");
 
-            app.notify_subscribers(event, Notification::Viewers(count))
+            app.notify_subscribers(&event, Notification::Viewers(count))
                 .await;
         });
     }
@@ -808,14 +813,14 @@ impl App {
         sender
     }
 
-    async fn notify_subscribers(&self, event_id: String, n: Notification) {
+    async fn notify_subscribers(&self, event_id: &str, n: Notification) {
         let msg = match n {
             Notification::Event => "e".to_string(),
             Notification::Question(id) => format!("q:{id}"),
             Notification::Viewers(count) => format!("v:{count}"),
         };
 
-        self.pubsub_publish.publish(&event_id, &msg).await;
+        self.pubsub_publish.publish(event_id, &msg).await;
     }
 
     fn send_mail(
