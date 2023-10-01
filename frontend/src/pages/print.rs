@@ -35,10 +35,10 @@ impl Component for Print {
                 match res {
                     Some(ev) => {
                         if ev.is_deleted() {
-                            self.loading_state = LoadingState::Deleted
+                            self.loading_state = LoadingState::Deleted;
                         } else {
                             self.loading_state = LoadingState::Loaded;
-                            self.event = Some(ev.clone());
+                            self.event = Some(ev);
                         }
                     }
                     None => self.loading_state = LoadingState::NotFound,
