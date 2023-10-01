@@ -71,6 +71,15 @@ pub struct EventInfo {
     pub screening: bool,
 }
 
+impl EventInfo {
+    pub fn deleted() -> Self {
+        Self {
+            deleted: true,
+            ..Default::default()
+        }
+    }
+}
+
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, Default)]
 pub struct GetEventResponse {
     pub info: EventInfo,
@@ -96,6 +105,18 @@ impl GetEventResponse {
     #[must_use]
     pub const fn is_closed(&self) -> bool {
         matches!(self.info.state.state, States::Closed) || self.timed_out
+    }
+
+    #[must_use]
+    pub const fn is_deleted(&self) -> bool {
+        self.info.deleted
+    }
+
+    pub fn deleted() -> Self {
+        Self {
+            info: EventInfo::deleted(),
+            ..Default::default()
+        }
     }
 }
 

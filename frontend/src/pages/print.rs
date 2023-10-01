@@ -32,13 +32,17 @@ impl Component for Print {
     fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
             Msg::Fetched(res) => {
-                self.loading_state = if res.is_none() {
-                    LoadingState::NotFound
-                } else {
-                    LoadingState::Loaded
-                };
-
-                self.event = res;
+                match res {
+                    Some(ev) => {
+                        if ev.is_deleted() {
+                            self.loading_state = LoadingState::Deleted
+                        } else {
+                            self.loading_state = LoadingState::Loaded;
+                            self.event = Some(ev.clone());
+                        }
+                    }
+                    None => self.loading_state = LoadingState::NotFound,
+                }
 
                 true
             }
@@ -80,6 +84,13 @@ impl Print {
                 html! {
                     <div class="noevent">
                         <h2>{"event not found"}</h2>
+                    </div>
+                }
+            }
+            LoadingState::Deleted => {
+                html! {
+                    <div class="noevent">
+                        <h2>{"event deleted"}</h2>
                     </div>
                 }
             }
