@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Unreleased
 
 ### Changed
-* show if an event was deleted
+* show if an event was deleted vs. never existed
 * BE: fix event upgrade tracking
 * FE: better free event timeout explenation and CTA
 
