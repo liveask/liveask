@@ -72,9 +72,13 @@ pub struct EventInfo {
 }
 
 impl EventInfo {
-    pub fn deleted() -> Self {
+    pub fn deleted(id: String) -> Self {
         Self {
             deleted: true,
+            tokens: EventTokens {
+                public_token: id,
+                ..Default::default()
+            },
             ..Default::default()
         }
     }
@@ -112,9 +116,9 @@ impl GetEventResponse {
         self.info.deleted
     }
 
-    pub fn deleted() -> Self {
+    pub fn deleted(id: String) -> Self {
         Self {
-            info: EventInfo::deleted(),
+            info: EventInfo::deleted(id),
             ..Default::default()
         }
     }

@@ -247,7 +247,7 @@ mod test {
 
         let e = get_event(e.tokens.public_token.clone(), e.tokens.moderator_token).await;
 
-        assert_eq!(e, None);
+        assert!(e.unwrap().info.deleted);
     }
 
     #[tokio::test]
