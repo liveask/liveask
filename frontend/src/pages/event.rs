@@ -36,6 +36,7 @@ pub struct Props {
 pub enum LoadingState {
     Loading,
     Loaded,
+    Deleted,
     NotFound,
 }
 
@@ -483,6 +484,13 @@ impl Event {
                     </div>
                 }
             }
+            LoadingState::Deleted => {
+                html! {
+                    <div class="noevent">
+                        <h2>{"event deleted"}</h2>
+                    </div>
+                }
+            }
         }
     }
 
@@ -905,22 +913,26 @@ impl Event {
             self.loading_state,
             LoadingState::Loading | LoadingState::NotFound
         ) {
-            self.loading_state = if res.is_none() {
-                LoadingState::NotFound
-            } else {
-                LoadingState::Loaded
-            };
-        }
-        if res.is_some() {
-            self.dispatch.reduce(|old| {
-                (*old)
-                    .clone()
-                    .set_event(Some(res.clone().unwrap_throw()))
-                    .set_admin(res.as_ref().map(|res| res.admin).unwrap_or_default())
-            });
-            self.state = self.dispatch.get();
+            match res {
+                Some(ev) => {
+                    if ev.is_deleted() && !ev.admin {
+                        self.loading_state = LoadingState::Deleted;
+                    } else {
+                        self.loading_state = LoadingState::Loaded;
 
-            self.init_event();
+                        self.dispatch.reduce(|old| {
+                            (*old)
+                                .clone()
+                                .set_event(Some(ev.clone()))
+                                .set_admin(ev.admin)
+                        });
+                        self.state = self.dispatch.get();
+
+                        self.init_event();
+                    }
+                }
+                None => self.loading_state = LoadingState::NotFound,
+            }
         }
     }
 

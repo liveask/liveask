@@ -264,7 +264,7 @@ impl App {
         }
 
         if e.deleted && !admin {
-            return Err(InternalError::AccessingDeletedEvent(id));
+            return Ok(GetEventResponse::deleted());
         }
 
         if secret.is_none() && !admin {
