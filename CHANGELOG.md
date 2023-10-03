@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## [2.3.10] - 2023-10-03
+
+### Changed
+* rename x/twitter profile to @liveaskapp
+
 ## [2.3.9] - 2023-10-03
 
 ### Changed

@@ -192,7 +192,7 @@ impl Home {
             <a href="https://github.com/liveask/liveask" target="_blank">
                 {github_svg}
             </a>
-            <a href="https://twitter.com/liveask_dev" target="_blank">
+            <a href="https://twitter.com/liveaskapp" target="_blank">
                 {twitter_svg}
             </a>
             <a href="https://www.instagram.com/liveaskapp/" target="_blank">
