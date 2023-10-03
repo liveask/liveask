@@ -232,7 +232,6 @@ mod test {
         assert_eq!(q_after.likes, q_before.likes + 1);
     }
 
-    #[ignore]
     #[tokio::test]
     async fn test_delete_event() {
         // env_logger::init();
