@@ -16,7 +16,7 @@ inject_scripts = true
 
 [watch]
 # Paths to watch. The `build.target`'s parent folder is watched by default.
-watch = ["../shared"]
+watch = ["../shared", "../frontend"]
 # Paths to ignore.
 ignore = [".vscode"]
 
