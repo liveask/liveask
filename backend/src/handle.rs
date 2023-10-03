@@ -213,7 +213,7 @@ pub async fn version_handler() -> Html<&'static str> {
 #[instrument]
 pub async fn error_handler() -> Html<&'static str> {
     tracing::error!("error handler");
-    Html("error")
+    Html("error!")
 }
 
 #[cfg(test)]
