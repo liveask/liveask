@@ -26,7 +26,6 @@
     .toprow {
       display: flex;
       flex-direction: row;
-      width: 80%;
       flex-grow: unset;
       justify-content: space-around;
       align-items: center;
@@ -59,6 +58,8 @@
 
       .button {
         width: 225px;
+        margin-top: 18px;
+        margin-bottom: 0px;
 
         .via {
           display: inline;
