@@ -833,10 +833,16 @@ impl Event {
                     </div>
 
                     <div class="floating-share">
-                        <button class="button-white" onclick={ctx.link().callback(|_| Msg::ShareEventClick)}>
+                        <button class="button-dark" onclick={ctx.link().callback(|_| Msg::ShareEventClick)}>
                             {"Share my event"}
                         </button>
+                        <button class="button-blue">
+                            <a class="feedback-anchor" href="https://forms.gle/DsD9ZEX5uv1QqDjV7" target="_blank">
+                                <div class="feedback-text">{"Give us feedback"}</div>
+                            </a>
+                        </button>
                     </div>
+
                 </div>
             }
         } else {

@@ -227,6 +227,7 @@
 
 .floating-share {
   position: fixed;
+  display: flex;
   width: 100%;
   left: 0;
   bottom: 10px;
@@ -240,10 +241,23 @@
     width: 180px;
     height: 50px;
     margin-bottom: 10px;
+    margin-left: 0px;
+    margin-right: 0px;
 
-    background-color: $event-bg;
     color: white;
     pointer-events: all;
+
+    .feedback-anchor {
+      height: 100%;
+      display: flex;
+
+      .feedback-text {
+        margin-top: auto;
+        margin-bottom: auto;
+        width: 100%;
+        color: white;
+      }
+    }
   }
 }
 

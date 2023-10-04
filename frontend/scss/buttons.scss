@@ -35,7 +35,7 @@ $button-border-color: rgba(255, 255, 255, 0.1);
     @extend .button;
 
     margin-top: 10px;
-    background-color: transparent;
+    background-color: $event-bg;
     border-color: $button-border-color;
 }
 
@@ -44,6 +44,15 @@ $button-border-color: rgba(255, 255, 255, 0.1);
 
     margin-top: 10px;
     background-color: white;
+    color: $pink-button;
+    border-color: $button-border-color;
+}
+
+.button-blue {
+    @extend .button;
+
+    margin-top: 10px;
+    background-color: #49BEFF;
     color: $pink-button;
     border-color: $button-border-color;
 }
