@@ -9,7 +9,7 @@ build = "build.rs"
 async-redis-session = { path = "../async-redis-session" }
 async-trait = "0.1"
 aws-config = "0.56"
-aws-sdk-dynamodb = "0.32"
+aws-sdk-dynamodb = "0.31"
 aws-smithy-http = "0.56"
 axum = { version = "0.6", features = ["ws"] }
 axum-login = "0.6"
@@ -35,7 +35,7 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 ulid = "1.0"
 
 [dependencies.deadpool-redis]
-version = "0.13"
+version = "0.12"
 default-features = false
 features = ["rt_tokio_1"]
 
