@@ -451,7 +451,7 @@ impl Event {
         wtr.write_record(["date (utc)", "text", "state", "likes"])
             .unwrap_throw();
         for q in questions {
-            let create_time = DateTime::<Utc>::from_utc(
+            let create_time = DateTime::<Utc>::from_naive_utc_and_offset(
                 NaiveDateTime::from_timestamp_opt(q.create_time_unix, 0).unwrap_throw(),
                 Utc,
             );
@@ -868,7 +868,7 @@ impl Event {
     fn get_event_timeout(e: &EventInfo) -> Html {
         let event_duration = Duration::days(FREE_EVENT_DURATION_DAYS);
 
-        let create_time = DateTime::<Utc>::from_utc(
+        let create_time = DateTime::<Utc>::from_naive_utc_and_offset(
             NaiveDateTime::from_timestamp_opt(e.create_time_unix, 0).unwrap_throw(),
             Utc,
         );
