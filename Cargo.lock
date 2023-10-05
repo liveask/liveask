@@ -5200,7 +5200,6 @@ dependencies = [
  "base64 0.21.4",
  "chrono",
  "console_error_panic_hook",
- "getrandom 0.2.10",
  "image 0.24.7",
  "lazy_static",
  "log",
