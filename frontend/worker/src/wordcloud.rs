@@ -5,6 +5,9 @@ use yew_agent::{Agent, AgentLink, HandlerId};
 
 use crate::{cloud::create_cloud, pwd::pwd_hash};
 
+static PACKAGE_VERSION: &str = env!("CARGO_PKG_VERSION");
+static BUILD_TIME: &str = env!("VERGEN_BUILD_TIMESTAMP");
+
 #[derive(Serialize, Deserialize)]
 pub struct WordCloudInput(pub Vec<String>);
 
@@ -25,7 +28,9 @@ impl Agent for WordCloudAgent {
     type Output = WordCloudOutput;
 
     fn create(link: AgentLink<Self>) -> Self {
-        log::info!(target: "worker", "[wc] worker created");
+        let v = format!("{PACKAGE_VERSION} ({BUILD_TIME})",);
+
+        log::info!(target: "worker", "[wc] worker created: {v}");
 
         Self {
             link,

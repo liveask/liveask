@@ -1,6 +1,6 @@
 [package]
 name = "worker2"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 
 [dependencies]
@@ -18,3 +18,7 @@ wasm-logger = "0.2"
 # see https://github.com/liveask/liveask/issues/31
 wordcloud-rs = "=0.1.11"
 yew-agent = "0.1"
+
+[build-dependencies]
+anyhow = "1"
+vergen = { version = "8", features = ["git", "gitcl", "build"] }

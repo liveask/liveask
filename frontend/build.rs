@@ -93,7 +93,11 @@ fn main() -> anyhow::Result<()> {
     let git = get_git_hash();
     process_html_template(&git);
 
-    EmitBuilder::builder().git_sha(true).git_branch().emit()?;
+    EmitBuilder::builder()
+        .git_sha(true)
+        .git_branch()
+        .all_build()
+        .emit()?;
 
     Ok(())
 }

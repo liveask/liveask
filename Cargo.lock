@@ -5198,7 +5198,7 @@ dependencies = [
 
 [[package]]
 name = "worker2"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "anyhow",
  "base64 0.21.4",
@@ -5210,6 +5210,7 @@ dependencies = [
  "regex",
  "serde",
  "sha2 0.10.8",
+ "vergen",
  "wasm-logger",
  "wordcloud-rs",
  "yew-agent",
