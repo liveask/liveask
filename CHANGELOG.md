@@ -7,8 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## [2.3.11] - 2023-10-03
+
 ### Changed
 * added a survey feedback request button
+
+### Fixes
+* live event reload was broken in `2.3.10`
 
 ## [2.3.10] - 2023-10-03
 
