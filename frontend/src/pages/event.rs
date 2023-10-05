@@ -923,22 +923,26 @@ impl Event {
                 Some(ev) => {
                     if ev.is_deleted() && !ev.admin {
                         self.loading_state = LoadingState::Deleted;
-                    } else {
-                        self.loading_state = LoadingState::Loaded;
-
-                        self.dispatch.reduce(|old| {
-                            (*old)
-                                .clone()
-                                .set_event(Some(ev.clone()))
-                                .set_admin(ev.admin)
-                        });
-                        self.state = self.dispatch.get();
-
-                        self.init_event();
+                        return;
                     }
+                    self.loading_state = LoadingState::Loaded;
                 }
-                None => self.loading_state = LoadingState::NotFound,
+                None => {
+                    self.loading_state = LoadingState::NotFound;
+                    return;
+                }
             }
+        }
+
+        if let Some(ev) = res {
+            self.dispatch.reduce(|old| {
+                (*old)
+                    .clone()
+                    .set_event(Some(ev.clone()))
+                    .set_admin(ev.admin)
+            });
+            self.state = self.dispatch.get();
+            self.init_event();
         }
     }
 
