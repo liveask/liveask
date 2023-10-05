@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Changed
+* added a survey feedback request button
+
 ## [2.3.10] - 2023-10-03
 
 ### Changed
