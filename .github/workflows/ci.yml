@@ -220,7 +220,7 @@ jobs:
         aws s3 sync . s3://beta.live-ask.com --acl public-read --no-progress --delete --cache-control "public, max-age=86400" --exclude "index.html" --exclude "worker2_bg.wasm"
         aws s3 cp ./index.html s3://beta.live-ask.com --acl public-read --no-progress --cache-control "public, max-age=120"
         aws s3 cp ./worker2_bg.wasm s3://beta.live-ask.com --acl public-read --no-progress --cache-control "public, max-age=120"
-        aws cloudfront create-invalidation --distribution-id EJFNBPSNYQSP9 --paths /* 
+        aws cloudfront create-invalidation --distribution-id EJFNBPSNYQSP9 --paths "/*"
 
     - name: Set short SHA
       id: vars
