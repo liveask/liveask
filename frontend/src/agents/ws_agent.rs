@@ -3,6 +3,7 @@ use gloo::timers::callback::Interval;
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use wasm_bindgen::UnwrapThrowExt;
+use web_sys::CloseEvent;
 use yew::Callback;
 use yew_agent::{Agent, AgentLink, Bridge, Bridged, HandlerId};
 
@@ -167,6 +168,8 @@ impl WebSocketAgent {
             //Note: doing this will lead to borrow panics
             // client.set_on_close(None);
             client.set_on_message(None);
+
+            client.close().unwrap_throw();
         }
         self.ws = None;
     }
@@ -198,8 +201,8 @@ impl WebSocketAgent {
     fn connect(&mut self) {
         log::info!("ws connect: {}", self.url);
 
-        let ws_close_callback = self.link.callback(|_| Msg::Disconnected);
-        let ws_connected_callback = self.link.callback(|_| Msg::Connected);
+        let ws_close_callback = self.link.callback(|()| Msg::Disconnected);
+        let ws_connected_callback = self.link.callback(|()| Msg::Connected);
         let ws_msg_callback = self.link.callback(Msg::MessageReceived);
 
         let mut client =
@@ -214,8 +217,8 @@ impl WebSocketAgent {
                 ws_connected_callback.emit(());
             },
         )));
-        client.set_on_close(Some(Box::new(move || {
-            log::info!("ws on_close");
+        client.set_on_close(Some(Box::new(move |event: CloseEvent| {
+            log::info!("ws on_close: {}", event.reason());
             ws_close_callback.emit(());
         })));
         client.set_on_message(Some(Box::new(

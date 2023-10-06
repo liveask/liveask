@@ -1,10 +1,11 @@
 use chrono::{DateTime, Duration, NaiveDateTime, Utc};
 use const_format::formatcp;
-use konst::eq_str;
 use serde::Deserialize;
-use shared::{EventInfo, EventUpgrade, ModQuestion, QuestionItem, States};
+use shared::{EventInfo, GetEventResponse, ModQuestion, QuestionItem, States};
 use std::{rc::Rc, str::FromStr};
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
+use web_sys::HtmlAnchorElement;
+use worker2::{WordCloudAgent, WordCloudInput, WordCloudOutput};
 use yew::prelude::*;
 use yew_agent::{Bridge, Bridged};
 use yew_router::{prelude::Location, scope_ext::RouterScopeExt};
@@ -12,10 +13,13 @@ use yewdux::prelude::*;
 
 use crate::{
     agents::{EventAgent, GlobalEvent, SocketInput, WebSocketAgent, WsResponse},
-    components::{DeletePopup, Question, QuestionClickType, QuestionPopup, SharePopup},
+    components::{
+        DeletePopup, Question, QuestionClickType, QuestionFlags, QuestionPopup, SharePopup, Upgrade,
+    },
+    environment::{la_env, LiveAskEnv},
     fetch,
     local_cache::LocalCache,
-    State,
+    tracking, State,
 };
 
 enum Mode {
@@ -32,21 +36,8 @@ pub struct Props {
 pub enum LoadingState {
     Loading,
     Loaded,
+    Deleted,
     NotFound,
-}
-
-enum LiveAskEnv {
-    Prod,
-    Beta,
-    Local,
-}
-
-const fn la_env(env: Option<&str>) -> LiveAskEnv {
-    match env {
-        Some(env) if eq_str(env, "prod") => LiveAskEnv::Prod,
-        Some(env) if eq_str(env, "beta") => LiveAskEnv::Beta,
-        _ => LiveAskEnv::Local,
-    }
 }
 
 const fn la_endpoints() -> (&'static str, &'static str) {
@@ -65,9 +56,10 @@ pub const BASE_SOCKET: &str = la_endpoints().1;
 pub const BASE_API_LOCAL: &str = "http://localhost:8090";
 pub const BASE_SOCKET_LOCAL: &str = "ws://localhost:8090";
 
+const FREE_EVENT_DURATION_DAYS: i64 = 7;
+
 #[derive(Debug, Default, Deserialize)]
 struct QueryParams {
-    pub payment: Option<bool>,
     #[serde(rename = "token")]
     pub paypal_token: Option<String>,
 }
@@ -75,31 +67,36 @@ struct QueryParams {
 pub struct Event {
     event_id: String,
     copied_to_clipboard: bool,
+    wordcloud: Option<String>,
     query_params: QueryParams,
     mode: Mode,
     state: Rc<State>,
     unanswered: Vec<Rc<QuestionItem>>,
     answered: Vec<Rc<QuestionItem>>,
     hidden: Vec<Rc<QuestionItem>>,
+    unscreened: Vec<Rc<QuestionItem>>,
     loading_state: LoadingState,
     dispatch: Dispatch<State>,
     socket_agent: Box<dyn Bridge<WebSocketAgent>>,
     events: Box<dyn Bridge<EventAgent>>,
+    wordcloud_agent: Box<dyn Bridge<WordCloudAgent>>,
 }
 pub enum Msg {
     ShareEventClick,
     AskQuestionClick,
-    Fetched(Option<EventInfo>),
+    Fetched(Option<GetEventResponse>),
+    Captured,
     SocketMsg(WsResponse),
     QuestionClick((i64, QuestionClickType)),
     QuestionUpdated(i64),
     ModDelete,
+    ModExport,
     ModStateChange(yew::Event),
     StateChanged,
-    UpgradeButtonPressed,
-    UpgradeRequested(Option<EventUpgrade>),
     CopyLink,
+    ModEditScreening,
     GlobalEvent(GlobalEvent),
+    WordCloud(WordCloudOutput),
 }
 impl Component for Event {
     type Message = Msg;
@@ -127,26 +124,32 @@ impl Component for Event {
         Self {
             event_id,
             query_params,
+            wordcloud: None,
             copied_to_clipboard: false,
             mode: if ctx.props().secret.is_some() {
                 Mode::Moderator
             } else {
                 Mode::Viewer
             },
-
             loading_state: LoadingState::Loading,
             state: Rc::default(),
             unanswered: Vec::new(),
             answered: Vec::new(),
             hidden: Vec::new(),
+            unscreened: Vec::new(),
             dispatch: Dispatch::<State>::subscribe(Callback::noop()),
             socket_agent: ws,
             events: EventAgent::bridge(ctx.link().callback(Msg::GlobalEvent)),
+            wordcloud_agent: WordCloudAgent::bridge(ctx.link().callback(Msg::WordCloud)),
         }
     }
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
+            Msg::Captured => {
+                log::info!("payment captured");
+                false
+            }
             Msg::QuestionClick((id, kind)) => {
                 self.on_question_click(&kind, id, ctx);
                 false
@@ -163,27 +166,7 @@ impl Component for Event {
                     .map(|c| c.write_text(&self.moderator_url()));
                 true
             }
-            Msg::SocketMsg(msg) => {
-                match msg {
-                    WsResponse::Ready | WsResponse::Disconnected => {}
-                    WsResponse::Message(msg) => {
-                        //TODO: do we want to act differently here? only fetch q on "q"?
-                        if msg == "e" {
-                            log::info!("received event update");
-                        } else if msg.starts_with('q') {
-                            log::info!("received question update: {}", msg);
-                        }
-
-                        request_fetch(
-                            self.event_id.clone(),
-                            ctx.props().secret.clone(),
-                            ctx.link(),
-                        );
-                    }
-                }
-
-                false
-            }
+            Msg::SocketMsg(msg) => self.push_received(msg, ctx),
             Msg::StateChanged => false, // nothing needs to happen here
             Msg::ModStateChange(ev) => {
                 let e: web_sys::HtmlSelectElement =
@@ -199,14 +182,24 @@ impl Component for Event {
 
                 false
             }
-            Msg::UpgradeButtonPressed => {
-                request_upgrade(
+            Msg::ModEditScreening => {
+                request_screening_change(
                     self.event_id.clone(),
                     ctx.props().secret.clone(),
+                    self.state
+                        .event
+                        .as_ref()
+                        .map(|e| !e.info.screening)
+                        .unwrap_or_default(),
                     ctx.link(),
                 );
 
                 false
+            }
+
+            Msg::WordCloud(w) => {
+                self.wordcloud = Some(w.0);
+                true
             }
             Msg::ModDelete => {
                 self.events.send(GlobalEvent::DeletePopup);
@@ -222,26 +215,31 @@ impl Component for Event {
             }
             Msg::Fetched(res) => {
                 self.on_fetched(&res);
+
+                if let Some(e) = res {
+                    if !e.info.premium && self.query_params.paypal_token.is_some() {
+                        request_capture(
+                            e.info.tokens.public_token,
+                            self.query_params
+                                .paypal_token
+                                .as_ref()
+                                .cloned()
+                                .unwrap_throw(),
+                            ctx.link(),
+                        );
+                    }
+                }
+
                 true
             }
-            Msg::UpgradeRequested(u) => {
-                if let Some(u) = u {
-                    log::info!("redirect to: {}", u.url);
-                    gloo::utils::window()
-                        .location()
-                        .assign(&u.url)
-                        .unwrap_throw();
-                    true
-                } else {
-                    false
-                }
+            Msg::ModExport => {
+                self.export_event();
+                false
             }
             Msg::GlobalEvent(ev) => match ev {
                 GlobalEvent::QuestionCreated(id) => {
-                    self.dispatch.reduce(|old| State {
-                        event: old.event.clone(),
-                        new_question: Some(id),
-                    });
+                    self.dispatch
+                        .reduce(|old| (*old).clone().set_new_question(Some(id)));
                     self.state = self.dispatch.get();
                     true
                 }
@@ -275,6 +273,7 @@ fn request_toggle_hide(
         let modify = ModQuestion {
             hide: !item.hidden,
             answered: item.answered,
+            screened: !item.screening,
         };
         if let Err(res) = fetch::mod_question(BASE_API, event, secret, item.id, modify).await {
             log::error!("hide error: {}", res);
@@ -295,6 +294,29 @@ fn request_toggle_answered(
         let modify = ModQuestion {
             hide: item.hidden,
             answered: !item.answered,
+            screened: !item.screening,
+        };
+
+        if let Err(e) = fetch::mod_question(BASE_API, event, secret, item.id, modify).await {
+            log::error!("mod_questio error: {e}");
+        }
+
+        Msg::QuestionUpdated(item.id)
+    });
+}
+
+#[allow(clippy::needless_pass_by_value)]
+fn request_approve_question(
+    event: String,
+    secret: String,
+    item: QuestionItem,
+    link: &html::Scope<Event>,
+) {
+    link.send_future(async move {
+        let modify = ModQuestion {
+            hide: false,
+            answered: false,
+            screened: true,
         };
 
         if let Err(e) = fetch::mod_question(BASE_API, event, secret, item.id, modify).await {
@@ -324,6 +346,16 @@ fn request_fetch(id: String, secret: Option<String>, link: &html::Scope<Event>) 
     });
 }
 
+fn request_capture(id: String, order_id: String, link: &html::Scope<Event>) {
+    link.send_future(async move {
+        if let Err(e) = fetch::mod_premium_capture(BASE_API, id, order_id).await {
+            log::error!("mod_premium_capture error: {e}");
+        }
+
+        Msg::Captured
+    });
+}
+
 fn request_state_change(
     id: String,
     secret: Option<String>,
@@ -339,19 +371,102 @@ fn request_state_change(
     });
 }
 
-fn request_upgrade(id: String, secret: Option<String>, link: &html::Scope<Event>) {
+fn request_screening_change(
+    id: String,
+    secret: Option<String>,
+    screening: bool,
+    link: &html::Scope<Event>,
+) {
     link.send_future(async move {
-        match fetch::mod_upgrade(BASE_API, id, secret.unwrap_throw()).await {
-            Err(e) => {
-                log::error!("mod_state_change error: {e}");
-                Msg::UpgradeRequested(None)
-            }
-            Ok(u) => Msg::UpgradeRequested(Some(u)),
+        if let Err(e) =
+            fetch::mod_edit_screening(BASE_API, id, secret.unwrap_throw(), screening).await
+        {
+            log::error!("mod_edit_screening error: {e}");
         }
+
+        Msg::StateChanged
     });
 }
 
+const fn question_state(q: &QuestionItem) -> &str {
+    if q.answered {
+        "answered"
+    } else if q.hidden {
+        "hidden"
+    } else {
+        "asked"
+    }
+}
+
 impl Event {
+    fn is_premium(&self) -> bool {
+        self.state
+            .event
+            .as_ref()
+            .map(|e| e.info.premium)
+            .unwrap_or_default()
+    }
+
+    fn export_event(&self) {
+        if !self.is_premium() {
+            return;
+        }
+
+        tracking::track_event(tracking::EVNT_EXPORT);
+
+        let name = self
+            .state
+            .event
+            .as_ref()
+            .map(|e| e.info.data.name.clone())
+            .unwrap_or_default();
+
+        let csv = self.event_as_csv().unwrap_or_default();
+
+        let anchor = gloo::utils::document()
+            .create_element("a")
+            .unwrap_throw()
+            .dyn_into::<HtmlAnchorElement>()
+            .unwrap_throw();
+
+        anchor.set_href(&format!(
+            "data:text/csv;charset=utf-8,{}",
+            js_sys::encode_uri_component(&csv)
+        ));
+        anchor.set_target("_blank");
+        anchor.set_download(&format!("live-ask:{name}.csv"));
+        anchor.click();
+    }
+
+    fn event_as_csv(&self) -> anyhow::Result<String> {
+        use csv::WriterBuilder;
+
+        let questions = self
+            .state
+            .event
+            .as_ref()
+            .map(|e| e.info.questions.clone())
+            .unwrap_or_default();
+        let mut wtr = WriterBuilder::new().from_writer(vec![]);
+        wtr.write_record(["date (utc)", "text", "state", "likes"])
+            .unwrap_throw();
+        for q in questions {
+            let create_time = DateTime::<Utc>::from_naive_utc_and_offset(
+                NaiveDateTime::from_timestamp_opt(q.create_time_unix, 0).unwrap_throw(),
+                Utc,
+            );
+            let state = question_state(&q).to_string();
+
+            wtr.write_record(&[
+                create_time.format("%Y-%m-%d %H:%M").to_string(),
+                q.text,
+                state,
+                q.likes.to_string(),
+            ])?;
+        }
+        Ok(String::from_utf8(wtr.into_inner()?)?)
+    }
+
     fn view_internal(&self, ctx: &Context<Self>) -> Html {
         match self.loading_state {
             LoadingState::Loaded => self.view_event(ctx),
@@ -369,16 +484,23 @@ impl Event {
                     </div>
                 }
             }
+            LoadingState::Deleted => {
+                html! {
+                    <div class="noevent">
+                        <h2>{"event deleted"}</h2>
+                    </div>
+                }
+            }
         }
     }
 
     #[allow(clippy::if_not_else)]
     fn view_event(&self, ctx: &Context<Self>) -> Html {
         self.state.event.as_ref().map_or_else(|| html! {}, |e| {
-            let share_url = if e.data.short_url.is_empty() {
-                e.data.long_url.clone().unwrap_or_default()
+            let share_url = if e.info.data.short_url.is_empty() {
+                e.info.data.long_url.clone().unwrap_or_default()
             } else {
-                e.data.short_url.clone()
+                e.info.data.short_url.clone()
             };
 
             let background = classes!(match self.mode {
@@ -387,38 +509,46 @@ impl Event {
             });
 
             let mod_view = matches!(self.mode, Mode::Moderator);
+            let admin = e.admin;
 
             html! {
                 <div>
                     <div class={background}>
                     </div>
 
-                    <QuestionPopup event={e.tokens.public_token.clone()} />
-                    <SharePopup url={share_url} event_id={e.tokens.public_token.clone()}/>
+                    <QuestionPopup event={e.info.tokens.public_token.clone()} />
+                    <SharePopup url={share_url} event_id={e.info.tokens.public_token.clone()}/>
 
                     <div class="event-block">
                         <div class="event-name-label">{"The Event"}</div>
-                        <div class="event-name">{&e.data.name.clone()}</div>
+                        <div class="event-name">{&e.info.data.name.clone()}</div>
                         //TODO: collapsable event desc
                         <div class="event-desc">
-                            {{&e.data.description.clone()}}
+                            {{&e.info.data.description.clone()}}
                         </div>
 
                         {self.mod_view(ctx,e)}
 
-                        <div class="not-open" hidden={!e.state.is_closed()}>
+                        <div class="not-open" hidden={!e.info.state.is_closed()}>
                             {"This event was closed by the moderator. You cannot add or vote questions anymore."}
                             <br/>
                             {"Updates by the moderator are still seen in real-time."}
                         </div>
-                        <div class="not-open" hidden={!e.state.is_vote_only()}>
+                        <div class="not-open" hidden={!e.info.state.is_vote_only()}>
                             {"This event is set to vote-only by the moderator. You cannot add new questions. You can still vote though."}
+                        </div>
+                        <div class="not-open" hidden={!e.timed_out}>
+                            {"This free event timed out. Only the moderator can upgrade it to be accessible again."}
                         </div>
                     </div>
 
-                    {self.mod_urls(ctx)}
+                    {self.mod_urls(ctx,admin)}
+
+                    {self.view_viewers()}
 
                     {self.view_questions(ctx,e)}
+
+                    {self.view_cloud()}
 
                     {Self::view_ask_question(mod_view,ctx,e)}
                 </div>
@@ -426,13 +556,31 @@ impl Event {
         })
     }
 
+    fn view_cloud(&self) -> Html {
+        let title_classes = self.question_separator_classes();
+
+        self.wordcloud.as_ref().map_or_else(
+            || html!(),
+            |cloud| {
+                html! {
+                    <div>
+                    <div class={title_classes}>
+                        {"Word Cloud"}
+                    </div>
+                    {cloud_as_yew_img(cloud)}
+                    </div>
+                }
+            },
+        )
+    }
+
     #[allow(clippy::if_not_else)]
-    fn view_ask_question(mod_view: bool, ctx: &Context<Self>, e: &EventInfo) -> Html {
+    fn view_ask_question(mod_view: bool, ctx: &Context<Self>, e: &GetEventResponse) -> Html {
         if mod_view {
             html! {}
         } else {
             html! {
-                <div class="addquestion" hidden={!e.state.is_open()}>
+                <div class="addquestion" hidden={!e.info.state.is_open()}>
                     <button class="button-red" onclick={ctx.link().callback(|_| Msg::AskQuestionClick)}>
                         {"Ask a Question"}
                     </button>
@@ -441,8 +589,19 @@ impl Event {
         }
     }
 
-    fn view_questions(&self, ctx: &Context<Self>, e: &EventInfo) -> Html {
-        if e.questions.is_empty() {
+    fn question_separator_classes(&self) -> Classes {
+        classes!(match self.mode {
+            Mode::Moderator => "questions-seperator modview",
+            Mode::Viewer => "questions-seperator",
+        })
+    }
+
+    const fn is_mod(&self) -> bool {
+        matches!(self.mode, Mode::Moderator)
+    }
+
+    fn view_questions(&self, ctx: &Context<Self>, e: &GetEventResponse) -> Html {
+        if e.info.questions.is_empty() {
             let no_questions_classes = classes!(match self.mode {
                 Mode::Moderator => "noquestions modview",
                 Mode::Viewer => "noquestions",
@@ -454,9 +613,11 @@ impl Event {
                 </div>
             }
         } else {
-            let can_vote = !e.state.is_closed();
+            let can_vote = !e.is_closed();
+            let is_mod = self.is_mod();
             html! {
                 <>
+                    {self.view_items(ctx,&self.unscreened,if is_mod {"For review"} else {"Your Questions in review by host"},can_vote)}
                     {self.view_items(ctx,&self.unanswered,"Hot Questions",can_vote)}
                     {self.view_items(ctx,&self.answered,"Answered",can_vote)}
                     {self.view_items(ctx,&self.hidden,"Hidden",can_vote)}
@@ -473,10 +634,14 @@ impl Event {
         can_vote: bool,
     ) -> Html {
         if !items.is_empty() {
-            let title_classes = classes!(match self.mode {
-                Mode::Moderator => "questions-seperator modview",
-                Mode::Viewer => "questions-seperator",
-            });
+            let title_classes = self.question_separator_classes();
+
+            let blurr = self
+                .state
+                .event
+                .as_ref()
+                .map(|e| e.timed_out && !e.admin)
+                .unwrap_or_default();
 
             return html! {
                 <div>
@@ -485,7 +650,7 @@ impl Event {
                     </div>
                     <div class="questions">
                         {
-                            for items.iter().enumerate().map(|(e,i)|self.view_item(ctx,can_vote,e,i))
+                            for items.iter().enumerate().map(|(e,i)|self.view_item(ctx,can_vote,blurr,e,i))
                         }
                     </div>
                 </div>
@@ -499,6 +664,7 @@ impl Event {
         &self,
         ctx: &Context<Self>,
         can_vote: bool,
+        blurr: bool,
         index: usize,
         item: &Rc<QuestionItem>,
     ) -> Html {
@@ -510,47 +676,67 @@ impl Event {
             .map(|id| id == item.id)
             .unwrap_or_default();
 
+        let mut flags = QuestionFlags::empty();
+
+        flags.set(QuestionFlags::NEW_QUESTION, is_new);
+        flags.set(QuestionFlags::MOD_VIEW, mod_view);
+        flags.set(QuestionFlags::LOCAL_LIKE, local_like);
+        flags.set(QuestionFlags::CAN_VOTE, can_vote);
+        flags.set(QuestionFlags::BLURR, blurr);
+
         html! {
             <Question
                 {item}
                 {index}
-                {is_new}
-                {can_vote}
                 key={item.id}
-                {local_like}
-                {mod_view}
+                {flags}
                 on_click={ctx.link().callback(Msg::QuestionClick)}
                 />
         }
     }
 
-    fn mod_view(&self, ctx: &Context<Self>, e: &EventInfo) -> Html {
-        let payment_allowed = self.query_params.payment.unwrap_or_default() && !e.premium;
+    fn mod_view(&self, ctx: &Context<Self>, e: &GetEventResponse) -> Html {
+        let payment_allowed = !e.info.premium;
+        let pending_payment = self.query_params.paypal_token.is_some() && !e.info.premium;
 
         if matches!(self.mode, Mode::Moderator) {
+            let timed_out = e.timed_out;
+
             html! {
             <>
             <div class="mod-panel" >
-                <DeletePopup tokens={e.tokens.clone()} />
+                <DeletePopup tokens={e.info.tokens.clone()} />
 
-                <div class="state">
-                    <select onchange={ctx.link().callback(Msg::ModStateChange)} >
-                        <option value="0" selected={e.state.is_open()}>{"Event open"}</option>
-                        <option value="1" selected={e.state.is_vote_only()}>{"Event vote only"}</option>
-                        <option value="2" selected={e.state.is_closed()}>{"Event closed"}</option>
-                    </select>
-                </div>
+                {
+                    if timed_out {html!{}}else {html!{
+                    <div class="state">
+                        <select onchange={ctx.link().callback(Msg::ModStateChange)} >
+                            <option value="0" selected={e.info.state.is_open()}>{"Event open"}</option>
+                            <option value="1" selected={e.info.state.is_vote_only()}>{"Event vote only"}</option>
+                            <option value="2" selected={e.info.state.is_closed()}>{"Event closed"}</option>
+                        </select>
+                    </div>
+                    }}
+                }
+
                 <button class="button-white" onclick={ctx.link().callback(|_|Msg::ModDelete)} >
                     {"Delete Event"}
                 </button>
+
                 {
-                    if payment_allowed {html!{
-                        <button class="button-white" onclick={ctx.link().callback(|_|Msg::UpgradeButtonPressed)} >
-                            {"Upgrade Event"}
-                        </button>
-                    }}else{html!{}}
+                    if self.is_premium() {
+                        Self::mod_view_premium(ctx,e)
+                    }else {html!{}}
                 }
+
+
             </div>
+
+            {
+                if payment_allowed {html!{
+                    <Upgrade pending={pending_payment} tokens={e.info.tokens.clone()} />
+                }}else{html!{}}
+            }
 
             {Self::mod_view_deadline(e)}
 
@@ -561,8 +747,61 @@ impl Event {
         }
     }
 
-    fn mod_view_deadline(e: &EventInfo) -> Html {
-        if e.premium {
+    fn mod_view_premium(ctx: &Context<Self>, e: &GetEventResponse) -> Html {
+        html! {
+            <div class="premium">
+                <div class="title">
+                    {"This is a premium event"}
+                </div>
+                <div class="screening-option" onclick={ctx.link().callback(|_| Msg::ModEditScreening)}>
+                    <input type="checkbox" id="vehicle1" name="vehicle1" checked={e.info.screening} />
+                    {"Screening"}
+                </div>
+                <button class="button-white" onclick={ctx.link().callback(|_|Msg::ModExport)} >
+                    {"Export"}
+                </button>
+            </div>
+        }
+    }
+
+    fn view_viewers(&self) -> Html {
+        if !self.is_premium() {
+            return html! {};
+        }
+
+        let viewers = self
+            .state
+            .event
+            .as_ref()
+            .map(|e| e.viewers)
+            .unwrap_or_default();
+        let likes = self
+            .state
+            .event
+            .as_ref()
+            .map(GetEventResponse::get_likes)
+            .unwrap_or_default();
+        let questions = self
+            .state
+            .event
+            .as_ref()
+            .map(|e| e.info.questions.len())
+            .unwrap_or_default();
+
+        html! {
+            <div class="statistics" >
+                <abbr title="current viewers" tabindex="0"><img alt="viewers" src="/assets/symbols/viewers.svg"/></abbr>
+                <div class="count">{{viewers}}</div>
+                <abbr title="all questions" tabindex="0"><img alt="questions" src="/assets/symbols/questions.svg"/></abbr>
+                <div class="count">{{questions}}</div>
+                <abbr title="all likes" tabindex="0"><img alt="likes" src="/assets/symbols/likes.svg"/></abbr>
+                <div class="count">{{likes}}</div>
+            </div>
+        }
+    }
+
+    fn mod_view_deadline(e: &GetEventResponse) -> Html {
+        if e.info.premium {
             html! {
                 <div class="deadline">
                 {"This is a premium event and will not time out!"}
@@ -571,20 +810,16 @@ impl Event {
         } else {
             html! {
                 <div class="deadline">
-                {"Currently an event is valid for 30 days. Your event will close on "}
-                <span>{Self::get_event_timeout(e)}</span>
-                {". Please "}
-                <a href="mailto:mail@live-ask.com">
-                {"contact us"}
-                </a>
-                {" if you need your event to persist."}
+                {"Currently a "}<strong>{"free"}</strong>{format!(" event is valid for {FREE_EVENT_DURATION_DAYS} days. Your event will be accessible until ")}
+                <span>{Self::get_event_timeout(&e.info)}</span>
+                {". Please upgrade to a "}<strong>{"premium"}</strong>{" event to make it "}<strong>{"permanent"}</strong>{"."}
                 </div>
             }
         }
     }
 
-    fn mod_urls(&self, ctx: &Context<Self>) -> Html {
-        if matches!(self.mode, Mode::Moderator) {
+    fn mod_urls(&self, ctx: &Context<Self>, admin: bool) -> Html {
+        if matches!(self.mode, Mode::Moderator) || (matches!(self.mode, Mode::Viewer) && admin) {
             html! {
                 <div id="moderator-urls">
                     <div class="linkbox-title">{"This is your moderation link"}</div>
@@ -598,10 +833,16 @@ impl Event {
                     </div>
 
                     <div class="floating-share">
-                        <button class="button-white" onclick={ctx.link().callback(|_| Msg::ShareEventClick)}>
+                        <button class="button-dark" onclick={ctx.link().callback(|_| Msg::ShareEventClick)}>
                             {"Share my event"}
                         </button>
+                        <button class="button-blue">
+                            <a class="feedback-anchor" href="https://forms.gle/DsD9ZEX5uv1QqDjV7" target="_blank">
+                                <div class="feedback-text">{"Give us feedback"}</div>
+                            </a>
+                        </button>
                     </div>
+
                 </div>
             }
         } else {
@@ -616,8 +857,8 @@ impl Event {
             .map(|e| {
                 format!(
                     "https://www.live-ask.com/eventmod/{}/{}",
-                    e.tokens.public_token,
-                    e.tokens.moderator_token.clone().unwrap_throw()
+                    e.info.tokens.public_token,
+                    e.info.tokens.moderator_token.clone().unwrap_throw()
                 )
             })
             .unwrap_or_default()
@@ -625,9 +866,9 @@ impl Event {
 
     //TODO: put event duration into object from backend
     fn get_event_timeout(e: &EventInfo) -> Html {
-        let event_duration = Duration::days(30);
+        let event_duration = Duration::days(FREE_EVENT_DURATION_DAYS);
 
-        let create_time = DateTime::<Utc>::from_utc(
+        let create_time = DateTime::<Utc>::from_naive_utc_and_offset(
             NaiveDateTime::from_timestamp_opt(e.create_time_unix, 0).unwrap_throw(),
             Utc,
         );
@@ -642,39 +883,65 @@ impl Event {
         self.unanswered.clear();
 
         if let Some(e) = &self.state.event {
-            let mut questions = e.questions.clone();
+            let mut questions = e.info.questions.clone();
             questions.sort_by(|a, b| b.likes.cmp(&a.likes));
 
-            let (not_hidden, hidden) = questions.into_iter().map(Rc::new).split(|i| i.hidden);
+            let local_unscreened =
+                LocalCache::unscreened_questions(&e.info.tokens.public_token, &questions);
 
+            questions.extend(local_unscreened);
+
+            let (unscreened, screened) = questions.into_iter().map(Rc::new).split(|i| !i.screening);
+            let (not_hidden, hidden) = screened.into_iter().split(|i| i.hidden);
             let (unanswered, answered) = not_hidden.into_iter().split(|i| i.answered);
 
+            self.unscreened = unscreened.collect();
             self.answered = answered.collect();
             self.unanswered = unanswered.collect();
             self.hidden = hidden.collect();
+
+            if e.info.premium {
+                self.wordcloud_agent.send(WordCloudInput(
+                    e.info
+                        .questions
+                        .iter()
+                        .map(|q| q.text.clone())
+                        .collect::<Vec<_>>(),
+                ));
+            }
         }
     }
 
-    fn on_fetched(&mut self, res: &Option<EventInfo>) {
+    fn on_fetched(&mut self, res: &Option<GetEventResponse>) {
         //TODO: in subsequent fetches only update data if succesfully fetched
 
         if matches!(
             self.loading_state,
             LoadingState::Loading | LoadingState::NotFound
         ) {
-            self.loading_state = if res.is_none() {
-                LoadingState::NotFound
-            } else {
-                LoadingState::Loaded
-            };
+            match res {
+                Some(ev) => {
+                    if ev.is_deleted() && !ev.admin {
+                        self.loading_state = LoadingState::Deleted;
+                        return;
+                    }
+                    self.loading_state = LoadingState::Loaded;
+                }
+                None => {
+                    self.loading_state = LoadingState::NotFound;
+                    return;
+                }
+            }
         }
-        if res.is_some() {
-            self.dispatch.reduce(|old| State {
-                event: Some(res.clone().unwrap_throw()),
-                new_question: old.new_question,
+
+        if let Some(ev) = res {
+            self.dispatch.reduce(|old| {
+                (*old)
+                    .clone()
+                    .set_event(Some(ev.clone()))
+                    .set_admin(ev.admin)
             });
             self.state = self.dispatch.get();
-
             self.init_event();
         }
     }
@@ -683,6 +950,11 @@ impl Event {
         match kind {
             QuestionClickType::Like => {
                 let liked = LocalCache::is_liked(&self.event_id, id);
+                if liked {
+                    tracking::track_event(tracking::EVNT_QUESTION_UNLIKE);
+                } else {
+                    tracking::track_event(tracking::EVNT_QUESTION_LIKE);
+                }
                 LocalCache::set_like_state(&self.event_id, id, !liked);
                 request_like(self.event_id.clone(), id, !liked, ctx.link());
             }
@@ -706,6 +978,95 @@ impl Event {
                     );
                 }
             }
+            QuestionClickType::Approve => {
+                if let Some(q) = self.state.event.as_ref().unwrap_throw().get_question(id) {
+                    request_approve_question(
+                        self.event_id.clone(),
+                        ctx.props().secret.clone().unwrap_throw(),
+                        q,
+                        ctx.link(),
+                    );
+                }
+            }
         }
+    }
+
+    fn push_received(&mut self, msg: WsResponse, ctx: &Context<Event>) -> bool {
+        match msg {
+            WsResponse::Ready | WsResponse::Disconnected => false,
+            WsResponse::Message(msg) => {
+                let fetch_event = if msg == "e" {
+                    log::info!("received event update");
+                    true
+                } else if let Some(stripped_msg) = msg.strip_prefix("q:") {
+                    //TODO: only fetch q on "q"?
+
+                    let id = stripped_msg.parse::<i64>().unwrap_throw();
+
+                    log::info!("received question update: {}", id);
+
+                    let found = self
+                        .state
+                        .event
+                        .as_ref()
+                        .map(|e| e.info.questions.iter().any(|q| q.id == id))
+                        .unwrap_or_default();
+
+                    if !found {
+                        log::info!("new question: {}", id);
+                        self.dispatch
+                            .reduce(|old| (*old).clone().set_new_question(Some(id)));
+                        self.state = self.dispatch.get();
+                    }
+
+                    true
+                } else if msg.starts_with("v:") {
+                    log::info!("received viewer update: {}", msg);
+
+                    let viewers = msg
+                        .split(':')
+                        .nth(1)
+                        .and_then(|text| text.parse::<i64>().ok())
+                        .unwrap_or_default();
+
+                    self.dispatch.reduce(|old| {
+                        (*old).clone().set_event(Some(GetEventResponse {
+                            info: old
+                                .event
+                                .as_ref()
+                                .map(|e| e.info.clone())
+                                .unwrap_or_default(),
+                            timed_out: old.event.as_ref().map(|e| e.timed_out).unwrap_or_default(),
+                            admin: old.event.as_ref().map(|e| e.admin).unwrap_or_default(),
+                            viewers,
+                        }))
+                    });
+                    self.state = self.dispatch.get();
+
+                    false
+                } else {
+                    log::error!("unknown push msg: {msg}",);
+                    true
+                };
+
+                if fetch_event {
+                    request_fetch(
+                        self.event_id.clone(),
+                        ctx.props().secret.clone(),
+                        ctx.link(),
+                    );
+                }
+
+                !fetch_event
+            }
+        }
+    }
+}
+
+pub fn cloud_as_yew_img(b64: &str) -> yew::Html {
+    html! {
+        <div class="cloud">
+            <img alt="wordcloud" src={format!("data:image/png;base64,{b64}")} />
+        </div>
     }
 }

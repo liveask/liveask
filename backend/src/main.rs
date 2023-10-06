@@ -28,6 +28,8 @@
 //TODO: get rid of having to allow this
 #![allow(clippy::result_large_err)]
 mod app;
+mod auth;
+mod ecs_task_id;
 mod env;
 mod error;
 mod eventsdb;
@@ -36,12 +38,16 @@ mod mail;
 mod payment;
 mod pubsub;
 mod redis_pool;
+mod signals;
+mod tracking;
 mod utils;
+mod viewers;
 
+use async_redis_session::RedisSessionStore;
 use aws_config::meta::region::RegionProviderChain;
-use aws_sdk_dynamodb::{Credentials, Endpoint};
+use aws_sdk_dynamodb::config::Credentials;
 use axum::{
-    http::Uri,
+    http::header,
     routing::{get, post},
     Router,
 };
@@ -49,21 +55,28 @@ use sentry::integrations::{
     tower::{NewSentryLayer, SentryHttpLayer},
     tracing::EventFilter,
 };
-use std::{net::SocketAddr, str::FromStr, sync::Arc};
-use tower_http::{cors::CorsLayer, trace::TraceLayer};
+use std::{iter::once, net::SocketAddr, sync::Arc};
+use tower_http::{
+    cors::CorsLayer, sensitive_headers::SetSensitiveRequestHeadersLayer, trace::TraceLayer,
+};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 use crate::{
     app::App,
+    auth::{admin_user_handler, login_handler, logout_handler},
+    ecs_task_id::server_id,
+    env::session_secret,
     error::Result,
     eventsdb::DynamoEventsDB,
     handle::push_handler,
     payment::Payment,
     pubsub::PubSubRedis,
     redis_pool::{create_pool, ping_test_redis},
+    tracking::Tracking,
+    viewers::RedisViewers,
 };
 
-pub const GIT_HASH: &str = env!("VERGEN_GIT_SHA_SHORT");
+pub const GIT_HASH: &str = env!("VERGEN_GIT_SHA");
 pub const GIT_BRANCH: &str = env!("VERGEN_GIT_BRANCH");
 
 #[cfg(not(debug_assertions))]
@@ -81,7 +94,7 @@ pub const fn is_debug() -> bool {
 fn setup_cors() -> CorsLayer {
     if use_relaxed_cors() {
         tracing::info!("cors setup: very_permissive");
-        CorsLayer::very_permissive()
+        CorsLayer::very_permissive().allow_credentials(true)
     } else {
         tracing::info!("cors setup: default");
         CorsLayer::new()
@@ -121,6 +134,10 @@ fn get_redis_url() -> String {
     std::env::var(env::ENV_REDIS_URL).map_or_else(|_| "redis://localhost:6379".into(), |env| env)
 }
 
+fn posthog_key() -> String {
+    std::env::var(env::ENV_POSTHOG_KEY).map_or_else(|_| String::new(), |env| env)
+}
+
 async fn dynamo_client() -> Result<aws_sdk_dynamodb::Client> {
     use aws_sdk_dynamodb::Client;
 
@@ -135,7 +152,7 @@ async fn dynamo_client() -> Result<aws_sdk_dynamodb::Client> {
 
         config
             .credentials_provider(Credentials::new("aid", "sid", None, None, "local"))
-            .endpoint_resolver(Endpoint::immutable(Uri::from_str(&url)?))
+            .endpoint_url(&url)
     } else {
         config
     };
@@ -145,6 +162,36 @@ async fn dynamo_client() -> Result<aws_sdk_dynamodb::Client> {
     Ok(Client::new(&config))
 }
 
+async fn payment() -> Result<Arc<Payment>> {
+    let paypal_id = std::env::var(env::ENV_PAYPAL_ID).unwrap_or_default();
+    let paypal_secret = std::env::var(env::ENV_PAYPAL_SECRET).unwrap_or_default();
+
+    if paypal_secret.is_empty() {
+        tracing::warn!("paypal secret not provided for: {paypal_id}");
+    }
+
+    let sandbox = !is_prod();
+    let payment = Arc::new(Payment::new(
+        paypal_id.clone(),
+        paypal_secret.clone(),
+        sandbox,
+    )?);
+
+    if let Err(e) = payment.authenticate().await {
+        tracing::error!(
+            "payment auth error: [id: {paypal_id}, secret: {} ({}), sandbox: {sandbox}] {}",
+            &paypal_secret[..6],
+            paypal_secret.len(),
+            e
+        );
+    } else {
+        tracing::info!("payment auth ok: [sandbox: {sandbox}, id: {paypal_id}]");
+    }
+
+    Ok(payment)
+}
+
+#[allow(clippy::too_many_lines)]
 #[tokio::main]
 async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let log_level = std::env::var("RUST_LOG")
@@ -157,7 +204,7 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
         sentry::ClientOptions {
             release: Some(GIT_HASH.into()),
             attach_stacktrace: true,
-            traces_sample_rate: if is_debug() { 1.0 } else { 0.01 },
+            traces_sample_rate: if is_debug() { 1.0 } else { 0.0 },
             environment: Some(prod_env.clone().into()),
             ..Default::default()
         },
@@ -185,6 +232,8 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
 
     let base_url = base_url();
 
+    let server_id = server_id().await.unwrap_or_else(|| "server".to_string());
+
     tracing::info!(
         git= %GIT_HASH,
         env= prod_env,
@@ -192,65 +241,105 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
         log_level,
         redis_url,
         base_url,
+        server_id,
         "server-starting",
     );
+
+    let tracking = Tracking::new(Some(posthog_key()), server_id.clone(), prod_env.clone());
+
+    tracking.track_server_start();
 
     let redis_pool = create_pool(&redis_url)?;
     ping_test_redis(&redis_pool).await?;
 
-    let payment = Arc::new(Payment::new(
-        std::env::var(env::ENV_PAYPAL_ID).unwrap_or_default(),
-        std::env::var(env::ENV_PAYPAL_SECRET).unwrap_or_default(),
-        //only use sandbox on non-prod
-        !is_prod(),
-    ));
+    let payment = payment().await?;
 
-    if let Err(e) = payment.authenticate().await {
-        tracing::error!("payment auth error: {}", e);
-    }
-
-    let pubsub = Arc::new(PubSubRedis::new(redis_pool, redis_url).await);
+    let pubsub = Arc::new(PubSubRedis::new(redis_pool.clone(), redis_url.clone()));
+    let viewers = Arc::new(RedisViewers::new(redis_pool));
 
     let eventsdb = Arc::new(DynamoEventsDB::new(dynamo_client().await?, use_local_db()).await?);
-    let app = Arc::new(App::new(eventsdb, pubsub.clone(), payment, base_url));
+    let app = Arc::new(App::new(
+        eventsdb,
+        pubsub.clone(),
+        viewers,
+        payment,
+        tracking,
+        base_url,
+    ));
 
     pubsub.set_receiver(app.clone()).await;
+
+    let secret = session_secret()
+        .ok_or_else(|| error::InternalError::General(String::from("invalid session secret")))?;
+
+    let (session_layer, auth_layer) = auth::setup(
+        secret.as_ref(),
+        RedisSessionStore::new(redis_url)?.with_prefix("session/"),
+    );
+
+    let admin_routes = Router::new()
+        .route("/user", get(admin_user_handler))
+        .route("/login", post(login_handler))
+        .route("/logout", get(logout_handler));
+
+    let event_routes = Router::new()
+        .route("/add", post(handle::addevent_handler))
+        .route("/editlike/:id", post(handle::editlike_handler))
+        .route("/addquestion/:id", post(handle::addquestion_handler))
+        .route("/question/:id/:question_id", get(handle::get_question))
+        .route("/:id", get(handle::getevent_handler));
 
     #[rustfmt::skip]
     let mod_routes = Router::new()
         .route("/:id/:secret", get(handle::mod_get_event))
         .route("/upgrade/:id/:secret", get(handle::mod_premium_upgrade))
+        .route("/capture/:id/:order", get(handle::mod_premium_capture))
         .route("/delete/:id/:secret", get(handle::mod_delete_event))
         .route("/question/:id/:secret/:question_id", get(handle::mod_get_question))
         .route("/questionmod/:id/:secret/:question_id", post(handle::mod_edit_question))
+        .route("/screening/:id/:secret", post(handle::mod_edit_screening))
         .route("/state/:id/:secret", post(handle::mod_edit_state));
 
     #[rustfmt::skip]
     let router = Router::new()
         .route("/api/ping", get(handle::ping_handler))
         .route("/api/version", get(handle::version_handler))
-        .route("/api/panic", get(handle::panic_handler))
-        .route("/api/addevent", post(handle::addevent_handler))
+        .route("/api/error", get(handle::error_handler))
         .route("/api/payment/webhook", post(handle::payment_webhook))
-        .route("/api/event/editlike/:id", post(handle::editlike_handler))
-        .route("/api/event/addquestion/:id", post(handle::addquestion_handler))
-        .route("/api/event/question/:id/:question_id", get(handle::get_question))
-        .route("/api/event/:id", get(handle::getevent_handler))
         .route("/push/:id", get(push_handler))
-        .nest("/api/mod/event",mod_routes)
+        .nest("/api/event", event_routes)
+        .nest("/api/mod/event", mod_routes)
+        .nest("/api/admin", admin_routes)
+        .layer(auth_layer)
+        .layer(session_layer)
+        .layer(SetSensitiveRequestHeadersLayer::new(once(header::COOKIE)))
         .layer(SentryHttpLayer::with_transaction())
         .layer(NewSentryLayer::new_from_top())
         .layer(TraceLayer::new_for_http())
         .layer(setup_cors())
-        .with_state(app);
+        .with_state(Arc::clone(&app));
 
     let addr = SocketAddr::from(([0, 0, 0, 0], get_port()));
 
     tracing::info!("listening on {}", addr);
 
-    axum::Server::bind(&addr)
-        .serve(router.into_make_service())
-        .await?;
+    let (tx, rx) = tokio::sync::oneshot::channel::<()>();
+
+    signals::create_term_signal_handler(tx);
+
+    let server = axum::Server::bind(&addr).serve(router.into_make_service());
+
+    let graceful = server.with_graceful_shutdown(async {
+        rx.await.ok();
+    });
+
+    if let Err(e) = graceful.await {
+        tracing::error!("server error: {}", e);
+    }
+
+    if let Err(e) = app.shutdown().await {
+        tracing::error!("app shutdown error: {}", e);
+    }
 
     Ok(())
 }

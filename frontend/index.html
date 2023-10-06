@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
     <title>Live-Ask</title>
@@ -8,13 +8,15 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
 
+    <link data-trunk rel="rust" href="Cargo.toml" data-wasm-opt="z" data-bin="app" data-type="main" />
+    <link data-trunk rel="rust" href="worker/Cargo.toml" data-wasm-opt="z" data-type="worker" />
+
     <link data-trunk rel="sass" href="scss/all.scss" />
     <link data-trunk rel="copy-dir" href="assets/" />
-    <link data-trunk rel="rust" data-wasm-opt="z" />
+
     <link data-trunk rel="icon" href="favicon.ico" />
     <link data-trunk rel="copy-file" href="inline-assets/apple-touch-icon.png" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png">
-    <!-- <link data-trunk rel="copy-file" href="robots.txt" /> -->
 
     <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
 
@@ -24,21 +26,43 @@
         Sentry.init({
             dsn: "https://2449cc52f1c847c6aa361dbde07e49c8@o4503948031426560.ingest.sentry.io/4503948034703360",
             environment: "local",
-            release: "addb142"
+            release: "bf31f45"
         });
+    </script>
+
+    <script defer>
+        window.onload = function () {
+            const wasm_supported = (() => {
+                try {
+                    if (typeof WebAssembly === "object"
+                        && typeof WebAssembly.instantiate === "function") {
+                        const module = new WebAssembly.Module(Uint8Array.of(0x0, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00));
+                        if (module instanceof WebAssembly.Module)
+                            return new WebAssembly.Instance(module) instanceof WebAssembly.Instance;
+                    }
+                } catch (e) {
+                }
+                return false;
+            })();
+
+            if (!wasm_supported) {
+                var elemDiv = document.createElement('div');
+                elemDiv.innerText = "No wasm support! This page requires WebAssembly support :(";
+                document.body.appendChild(elemDiv);
+            }
+        };
+    </script>
+
+    <script>
+        window.track_event_js =
+            function track_event(fathom_id) {
+                window.fathom?.trackGoal(fathom_id, 0);
+            };
     </script>
 
     <!-- Fathom - beautiful, simple website analytics -->
     <script src="https://cdn.usefathom.com/script.js" data-site="" defer></script>
     <!-- / Fathom -->
-
-    <!-- Metrical -->
-    <script>
-        window.metrical = { "app": "" }
-    </script>
-    <script async src="https://cdn.metrical.xyz/script.js" type="text/javascript">
-    </script>
-    <!-- / Metrical -->
 </head>
 
 <body>

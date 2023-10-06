@@ -2,7 +2,7 @@
 
 use reqwest::{header::CONTENT_TYPE, StatusCode};
 use serde_json::json;
-use shared::EventInfo;
+use shared::{EventInfo, GetEventResponse, TEST_VALID_QUESTION};
 
 const MIN_DESC: &str = "minimum desc length possible!!";
 const MIN_NAME: &str = "min name";
@@ -16,7 +16,7 @@ fn server_socket() -> String {
     std::env::var("SOCKET_URL").unwrap_or_else(|_| "ws://localhost:8090".into())
 }
 
-async fn get_event(public: String, secret: Option<String>) -> Option<EventInfo> {
+async fn get_event(public: String, secret: Option<String>) -> Option<GetEventResponse> {
     let url = if let Some(secret) = secret {
         format!("{}/api/mod/event/{}/{}", server_rest(), public, secret)
     } else {
@@ -34,9 +34,9 @@ async fn get_event(public: String, secret: Option<String>) -> Option<EventInfo> 
             .unwrap()
             .starts_with("application/json"),);
 
-        let e = res.json::<EventInfo>().await.unwrap();
+        let e = res.json::<GetEventResponse>().await.unwrap();
 
-        assert_eq!(e.tokens.public_token, public);
+        assert_eq!(e.info.tokens.public_token, public);
 
         Some(e)
     } else {
@@ -46,17 +46,16 @@ async fn get_event(public: String, secret: Option<String>) -> Option<EventInfo> 
 
 async fn add_event(name: String) -> EventInfo {
     let res = reqwest::Client::new()
-        .post(format!("{}/api/addevent", server_rest()))
+        .post(format!("{}/api/event/add", server_rest()))
         .json(&json!({
             "eventData":{
                 "maxLikes":0,
                 "name":name,
                 "description":MIN_DESC,
                 "shortUrl":"",
-                "mail:": null,
                 "longUrl":null},
             "test": true,
-            "moderatorEmail": "",
+            "moderatorEmail": null,
         }))
         .send()
         .await
@@ -117,7 +116,7 @@ async fn add_question(event: String) -> shared::QuestionItem {
     let res = reqwest::Client::new()
         .post(format!("{}/api/event/addquestion/{}", server_rest(), event))
         .json(&json!({
-            "text":"test"
+            "text":TEST_VALID_QUESTION
         }))
         .send()
         .await
@@ -134,7 +133,7 @@ async fn add_question(event: String) -> shared::QuestionItem {
 
     let q = res.json::<shared::QuestionItem>().await.unwrap();
 
-    assert_eq!(q.text, "test");
+    assert_eq!(q.text, TEST_VALID_QUESTION);
 
     q
 }
@@ -164,6 +163,7 @@ async fn hide_question(event: String, secret: String, question_id: i64) {
     let body = shared::ModQuestion {
         answered: false,
         hide: true,
+        screened: false,
     };
 
     let res = reqwest::Client::new()
@@ -216,10 +216,11 @@ mod test {
             e.tokens.moderator_token.clone(),
         )
         .await
-        .unwrap();
+        .unwrap()
+        .info;
 
         assert_eq!(e2, e);
-        let e3 = get_event(e.tokens.public_token, None).await.unwrap();
+        let e3 = get_event(e.tokens.public_token, None).await.unwrap().info;
         assert_eq!(e3.tokens.moderator_token, Some(String::new()));
     }
 
@@ -246,7 +247,7 @@ mod test {
 
         let e = get_event(e.tokens.public_token.clone(), e.tokens.moderator_token).await;
 
-        assert_eq!(e, None);
+        assert!(e.unwrap().info.deleted);
     }
 
     #[tokio::test]
@@ -264,14 +265,16 @@ mod test {
 
         let e = get_event(e_mod.tokens.public_token.clone(), None)
             .await
-            .unwrap();
+            .unwrap()
+            .info;
         assert_eq!(e.questions.len(), 0);
         let e = get_event(
             e_mod.tokens.public_token.clone(),
             e_mod.tokens.moderator_token,
         )
         .await
-        .unwrap();
+        .unwrap()
+        .info;
         assert_eq!(e.questions.len(), 1);
     }
 
@@ -289,18 +292,21 @@ mod test {
 
         assert_eq!(response.status(), StatusCode::SWITCHING_PROTOCOLS);
 
+        let msg = socket.read().expect("Error reading message");
+        assert_eq!(msg.into_text().unwrap(), "v:1".to_string());
+
         let question = add_question(event.clone()).await;
 
-        let msg = socket.read_message().expect("Error reading message");
+        let msg = socket.read().expect("Error reading message");
         assert_eq!(msg.into_text().unwrap(), format!("q:{}", question.id));
 
         like_question(event.clone(), question.id, true).await;
 
-        let msg = socket.read_message().expect("Error reading message");
+        let msg = socket.read().expect("Error reading message");
         assert_eq!(msg.into_text().unwrap(), format!("q:{}", question.id));
 
         change_event_state(event, secret, 1).await;
-        let msg = socket.read_message().expect("Error reading message");
+        let msg = socket.read().expect("Error reading message");
         assert_eq!(msg.into_text().unwrap(), "e");
     }
 }

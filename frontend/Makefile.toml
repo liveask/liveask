@@ -14,6 +14,12 @@ install_crate = "clippy"
 command = "cargo"
 args = ["clippy","--target=wasm32-unknown-unknown"]
 
+[tasks.clippy-nightly]
+script_runner = "@shell"
+script = '''
+cargo +nightly clippy --target=wasm32-unknown-unknown
+'''
+
 [tasks.cargo-sort]
 install_crate = "cargo-sort"
 command = "cargo"
@@ -23,12 +29,20 @@ args = ["sort","-c"]
 command = "cargo"
 args = ["test","--target=wasm32-unknown-unknown"]
 
+[tasks.udeps]
+command = "cargo"
+toolchain="nightly"
+args = ["udeps","--target=wasm32-unknown-unknown"]
+
 [tasks.format]
 install_crate = "fmt"
 command = "cargo"
 args = ["fmt","--","--check"]
 
 [tasks.checks]
+dependencies = ["cargo-sort","format","cargo-check","clippy","udeps"]
+
+[tasks.checks_ci]
 dependencies = ["cargo-sort","format","cargo-check","clippy"]
 
 [tasks.serve]
@@ -46,9 +60,13 @@ install_crate = "trunk"
 command = "trunk"
 args = ["build","--release"]
 
+[tasks.build]
+install_crate = "trunk"
+command = "trunk"
+args = ["build"]
+
 [tasks.check-size]
 script_runner = "@shell"
-dependencies = ["build-release"]
 script = '''
 ls -lh dist/*.wasm
 '''

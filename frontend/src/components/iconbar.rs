@@ -111,6 +111,7 @@ impl Component for IconBar {
         }
     }
 
+    #[allow(clippy::if_not_else)]
     fn view(&self, ctx: &Context<Self>) -> Html {
         let doc = gloo_utils::document();
 
@@ -146,22 +147,28 @@ impl Component for IconBar {
 
                 <div class="innerbox">
                     <div class="logo">
-                        <a class="clickable-logo" onclick={ctx.link().callback(|_| Msg::Home)}>
+                        <div class="link clickable-logo" onclick={ctx.link().callback(|_| Msg::Home)}>
                             {logo_svg}
-                        </a>
+                        </div>
                         {logo_text_svg}
                     </div>
 
                     {
                         if self.state.event.is_some() {
                             html! {
-                                <a class="share"
+                                <div class="link share"
                                     onclick={ctx.link().callback(|_| Msg::Share)}>
                                     {"Share"}
-                                </a>
+                                </div>
                             }
                         }else{html! {}}
                     }
+
+                    <div class="admin" hidden={!self.state.admin}>
+                        <Link<Route> to={Route::Login}>
+                            <img alt="admin" src="/assets/admin.svg" />
+                        </Link<Route>>
+                    </div>
 
                     <div class="iconbar">
                         {
@@ -190,16 +197,14 @@ impl IconBar {
             .state
             .event
             .as_ref()
-            .map(|e| e.state.is_open())
+            .map(|e| e.info.state.is_open())
             .unwrap_or_default();
 
         if is_open {
             return html! {
-                <a>
-                    <div class="createevent" onclick={ctx.link().callback(|_| Msg::Ask)}>
-                        {"Ask a question"}
-                    </div>
-                </a>
+                <div class="link createevent" onclick={ctx.link().callback(|_| Msg::Ask)}>
+                    {"Ask a question"}
+                </div>
             };
         }
         html! {}
@@ -219,7 +224,7 @@ impl IconBar {
                 class={classes!(is_online.then_some("hidden"))}
                 onclick={ctx.link().callback(|_| Msg::Reconnect)}
                 >
-                <img hidden={is_online} src="/assets/offline.svg" />
+                <img alt="offline" hidden={is_online} src="/assets/offline.svg" />
                 <div hidden={is_online} class="timeout">{format!("{seconds_till_reconnect}s")}</div>
             </div>
         }

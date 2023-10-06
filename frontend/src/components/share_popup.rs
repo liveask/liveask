@@ -3,6 +3,7 @@ use crate::{
     components::Popup,
     components::Qr,
     routes::Route,
+    tracking,
 };
 use wasm_bindgen::UnwrapThrowExt;
 use yew::prelude::*;
@@ -57,6 +58,7 @@ impl Component for SharePopup {
         match msg {
             Msg::GlobalEvent(e) => {
                 if matches!(e, GlobalEvent::OpenSharePopup) {
+                    tracking::track_event(tracking::EVNT_SHARE_OPEN);
                     self.show = true;
                     return true;
                 }
@@ -92,7 +94,10 @@ impl Component for SharePopup {
                             .open_with_url(
                                 format!(
                                     "https://twitter.com/intent/tweet?via=liveask1&text={}",
-                                    self.url
+                                    urlencoding::encode(&format!(
+                                        "{}?utm_source=share-twitter",
+                                        self.url
+                                    ))
                                 )
                                 .as_str(),
                             )
@@ -116,7 +121,7 @@ impl Component for SharePopup {
 
     fn view(&self, ctx: &Context<Self>) -> Html {
         if self.show {
-            let on_close = ctx.link().callback(|_| Msg::Close);
+            let on_close = ctx.link().callback(|()| Msg::Close);
             let on_click_copy = ctx.link().callback(|_| Msg::Copy);
             let on_click_share_twitter = ctx.link().callback(|_| Msg::Share(ShareLink::Twitter));
             let on_click_share_mail = ctx.link().callback(|_| Msg::Share(ShareLink::Mail));
@@ -132,13 +137,13 @@ impl Component for SharePopup {
                         }
                     </div>
 
-                    <div class="link-box">
+                    <div class="link-box" onclick={on_click_copy}>
                         <div class="link">
                             {
                                 self.url.clone()
                             }
                         </div>
-                        <div class="copy" onclick={on_click_copy}>
+                        <div class="copy">
                             {
                                 if self.copied_to_clipboard {"Copied"} else {"Copy"}
                             }
@@ -147,16 +152,16 @@ impl Component for SharePopup {
 
                     <div class="sharebuttons">
                         <div onclick={on_click_share_twitter}>
-                            <img src="/assets/share/share-twitter.svg" />
+                            <img alt="share via twitter" src="/assets/share/share-twitter.svg" />
                         </div>
                         <div onclick={on_click_share_mail}>
-                            <img src="/assets/share/share-email.svg" />
+                            <img alt="share via email" src="/assets/share/share-email.svg" />
                         </div>
                         <div onclick={on_click_share_sms}>
-                            <img src="/assets/share/share-sms.svg" />
+                            <img alt="share via sms" src="/assets/share/share-sms.svg" />
                         </div>
                         <div onclick={on_click_share_whatsapp}>
-                            <img src="/assets/share/share-whatsapp.svg" />
+                            <img alt="share via whatsapp" src="/assets/share/share-whatsapp.svg" />
                         </div>
                     </div>
 

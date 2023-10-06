@@ -1,10 +1,7 @@
-use vergen::{Config, ShaKind};
+use vergen::EmitBuilder;
 
 fn main() -> anyhow::Result<()> {
-    let mut config = Config::default();
-    *config.git_mut().sha_kind_mut() = ShaKind::Short;
-
-    vergen::vergen(config)?;
+    EmitBuilder::builder().git_sha(true).git_branch().emit()?;
 
     Ok(())
 }

@@ -12,6 +12,8 @@ pub enum Route {
     Print { id: String },
     #[at("/eventmod/:id/:secret")]
     EventMod { id: String, secret: String },
+    #[at("/login")]
+    Login,
     #[at("/")]
     Home,
 }

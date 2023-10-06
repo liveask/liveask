@@ -31,7 +31,15 @@ command = "cargo"
 toolchain="nightly"
 args = ["clippy"]
 
+[tasks.udeps]
+command = "cargo"
+toolchain="nightly"
+args = ["udeps"]
+
 [tasks.checks]
+dependencies = ["cargo-sort","format","tests","clippy","udeps"]
+
+[tasks.checks_ci]
 dependencies = ["cargo-sort","format","tests","clippy"]
 
 [tasks.run-release]

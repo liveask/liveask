@@ -1,3 +1,4 @@
+use bitflags::bitflags;
 use chrono::Utc;
 use gloo::timers::callback::Interval;
 use gloo::timers::callback::Timeout;
@@ -7,43 +8,80 @@ use wasm_bindgen::JsCast;
 use wasm_bindgen::UnwrapThrowExt;
 use web_sys::Element;
 use web_sys::HtmlElement;
+use web_sys::ScrollBehavior;
+use web_sys::ScrollIntoViewOptions;
+use web_sys::ScrollLogicalPosition;
 use yew::prelude::*;
 
 pub enum QuestionClickType {
     Like,
     Hide,
     Answer,
+    Approve,
 }
 
-//TODO: use bitflag to rid us of this warning
-#[allow(clippy::struct_excessive_bools)]
+bitflags! {
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+    pub struct QuestionFlags: u32 {
+        const NEW_QUESTION = 1;
+        const MOD_VIEW = 1 << 1;
+        const LOCAL_LIKE = 1 << 2;
+        const CAN_VOTE = 1 << 3;
+        const BLURR = 1<< 4;
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, Properties)]
 pub struct Props {
     pub item: Rc<QuestionItem>,
     pub index: usize,
-    pub mod_view: bool,
-    pub is_new: bool,
-    pub local_like: bool,
-    pub can_vote: bool,
+    pub flags: QuestionFlags,
     pub on_click: Callback<(i64, QuestionClickType)>,
+}
+
+impl Props {
+    const fn can_vote(&self) -> bool {
+        self.flags.contains(QuestionFlags::CAN_VOTE)
+    }
+    const fn mod_view(&self) -> bool {
+        self.flags.contains(QuestionFlags::MOD_VIEW)
+    }
+    const fn blurr(&self) -> bool {
+        self.flags.contains(QuestionFlags::BLURR)
+    }
+    const fn local_like(&self) -> bool {
+        self.flags.contains(QuestionFlags::LOCAL_LIKE)
+    }
+    const fn is_new(&self) -> bool {
+        self.flags.contains(QuestionFlags::NEW_QUESTION)
+    }
 }
 
 pub struct Question {
     data: Props,
+    age_text: String,
     node_ref: NodeRef,
     last_pos: Option<i64>,
     timeout: Option<Timeout>,
-    animation_time: Option<Timeout>,
+    reorder_animation_timeout: Option<Timeout>,
+    highlight_animation_timeout: Option<Timeout>,
+    wiggle_animation_timeout: Option<Timeout>,
     _interval: Interval,
+    highlighted: bool,
+    wiggle: bool,
 }
+
+pub enum AnimationState {
+    Start,
+    End,
+}
+
 pub enum Msg {
     UpdateAge,
-    Like,
-    ToggleHide,
-    ToggleAnswered,
-    /// used to start the reorder animation
-    StartAnimation,
-    EndAnimation,
+    QuestionClick(QuestionClickType),
+    ReorderAnimation(AnimationState),
+    HighlightEnd,
+    WiggleEnd,
 }
 impl Component for Question {
     type Message = Msg;
@@ -55,56 +93,91 @@ impl Component for Question {
             Interval::new(1000, move || link.send_message(Msg::UpdateAge))
         };
 
-        Self {
+        let mut res = Self {
             data: ctx.props().clone(),
+            age_text: String::new(),
             node_ref: NodeRef::default(),
             last_pos: None,
             timeout: None,
-            animation_time: None,
+            reorder_animation_timeout: None,
+            highlight_animation_timeout: None,
+            wiggle_animation_timeout: None,
             _interval: interval,
+            highlighted: false,
+            wiggle: false,
+        };
+
+        if res.data.is_new() {
+            res.highlighted = true;
+            let link = ctx.link().clone();
+            res.highlight_animation_timeout = Some(Timeout::new(800, move || {
+                link.send_message(Msg::HighlightEnd);
+            }));
         }
+
+        res
     }
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
-            Msg::Like => {
-                if ctx.props().can_vote && !self.data.item.answered && !self.data.item.hidden {
-                    ctx.props()
-                        .on_click
-                        .emit((self.data.item.id, QuestionClickType::Like));
-                    true
-                } else {
-                    false
+            Msg::QuestionClick(click_type) => {
+                if matches!(click_type, QuestionClickType::Like) {
+                    if ctx.props().can_vote()
+                        && !self.data.item.screening
+                        && !self.data.item.answered
+                        && !self.data.item.hidden
+                    {
+                        ctx.props()
+                            .on_click
+                            .emit((self.data.item.id, QuestionClickType::Like));
+                        return true;
+                    }
+                    return false;
+                }
+                ctx.props().on_click.emit((self.data.item.id, click_type));
+                true
+            }
+            Msg::UpdateAge => {
+                let age = self.get_age();
+                if age != self.age_text {
+                    self.age_text = age;
+                    return true;
+                }
+                false
+            }
+            Msg::ReorderAnimation(state) => {
+                match state {
+                    AnimationState::End => {
+                        self.reorder_animation_timeout = None;
+                        false
+                    }
+                    AnimationState::Start => {
+                        self.reset_transition();
+
+                        let handle = {
+                            let link = ctx.link().clone();
+                            //note: 500ms needs to be synced with css
+                            Timeout::new(500, move || {
+                                link.send_message(Msg::ReorderAnimation(AnimationState::End));
+                            })
+                        };
+                        self.reorder_animation_timeout = Some(handle);
+
+                        false
+                    }
                 }
             }
-            Msg::ToggleHide => {
-                ctx.props()
-                    .on_click
-                    .emit((self.data.item.id, QuestionClickType::Hide));
+
+            Msg::HighlightEnd => {
+                self.highlighted = false;
+                self.highlight_animation_timeout = None;
                 true
             }
-            Msg::ToggleAnswered => {
-                ctx.props()
-                    .on_click
-                    .emit((self.data.item.id, QuestionClickType::Answer));
+
+            Msg::WiggleEnd => {
+                self.wiggle = false;
+                self.wiggle_animation_timeout = None;
                 true
-            }
-            Msg::UpdateAge => self.animation_time.is_none(),
-            Msg::EndAnimation => {
-                self.animation_time = None;
-                false
-            }
-            Msg::StartAnimation => {
-                self.reset_transition();
-
-                let handle = {
-                    let link = ctx.link().clone();
-                    //note: 500ms needs to be synced with css
-                    Timeout::new(500, move || link.send_message(Msg::EndAnimation))
-                };
-                self.animation_time = Some(handle);
-
-                false
             }
         }
     }
@@ -115,6 +188,22 @@ impl Component for Question {
             false
         } else {
             // log::info!("changed: {}", props.item.id);
+
+            let likes_changed = self.data.item.likes != props.item.likes;
+            if likes_changed {
+                // log::info!(
+                //     "q: {} likes changed (old: {})",
+                //     self.data.item.id,
+                //     self.data.item.likes
+                // );
+
+                self.wiggle = true;
+
+                let link = ctx.link().clone();
+                self.wiggle_animation_timeout = Some(Timeout::new(1000, move || {
+                    link.send_message(Msg::WiggleEnd);
+                }));
+            }
             self.data = props;
             true
         }
@@ -125,7 +214,10 @@ impl Component for Question {
         let elem: HtmlElement = elem.dyn_into::<HtmlElement>().unwrap_throw();
 
         if let Some(last_pos) = self.last_pos {
-            if self.animation_time.is_none() && self.timeout.is_none() && last_pos != element_y {
+            if self.reorder_animation_timeout.is_none()
+                && self.timeout.is_none()
+                && last_pos != element_y
+            {
                 let diff = last_pos - element_y;
 
                 let style = elem.style();
@@ -139,7 +231,9 @@ impl Component for Question {
 
                 let handle = {
                     let link = ctx.link().clone();
-                    Timeout::new(0, move || link.send_message(Msg::StartAnimation))
+                    Timeout::new(0, move || {
+                        link.send_message(Msg::ReorderAnimation(AnimationState::Start));
+                    })
                 };
 
                 self.timeout = Some(handle);
@@ -147,46 +241,61 @@ impl Component for Question {
         }
 
         //do not save pos while animating
-        if self.animation_time.is_none() {
+        if self.reorder_animation_timeout.is_none() {
             self.last_pos = Some(element_y);
         }
 
-        if first_render && self.data.is_new {
-            elem.scroll_into_view();
+        if first_render && self.data.is_new() {
+            elem.scroll_into_view_with_scroll_into_view_options(
+                ScrollIntoViewOptions::new()
+                    .block(ScrollLogicalPosition::Center)
+                    .behavior(ScrollBehavior::Smooth),
+            );
         }
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
-        let liked = ctx.props().local_like;
-        let mod_view = ctx.props().mod_view;
+        let liked = ctx.props().local_like();
+        let mod_view = ctx.props().mod_view();
+        let blurred = ctx.props().blurr();
+        let can_vote = ctx.props().can_vote() && !self.data.item.screening;
+        let screened = !self.data.item.screening;
+        let main_classes = classes!(
+            "question-host",
+            "questions-move",
+            self.data.item.screening.then_some("unscreened-question"),
+        );
 
         html! {
-            <div class="question-host questions-move"
+            <div class={main_classes}
                 ref={self.node_ref.clone()}>
-                <a class="questionanchor" onclick={ctx.link().callback(|_| Msg::Like)}>
+                <div class={classes!("questionanchor",self.highlighted.then_some("highlighted"),)}
+                    onclick={ctx.link().callback(|_| Msg::QuestionClick(QuestionClickType::Like))}>
 
                     <div class="time-since">
                         {self.get_age()}
                     </div>
 
                     {
-                        if liked {
-                            Self::get_bubble_liked(self.data.item.likes)
-                        }
-                        else
-                        {
-                            Self::get_bubble_not_liked(self.data.item.likes)
-                        }
+                        if screened {
+                            if liked {
+                                Self::get_bubble_liked(self.data.item.likes,self.wiggle)
+                            }
+                            else
+                            {
+                                Self::get_bubble_not_liked(self.data.item.likes,self.wiggle)
+                            }
+                        } else { html!() }
                     }
 
-                    <div class={classes!("text",self.data.item.answered.then_some("answered"))}>
+                    <div class={classes!("text",self.data.item.answered.then_some("answered"),blurred.then_some("blurr"))}>
                         {&self.data.item.text}
                     </div>
 
-                    {self.view_like(ctx.props().can_vote,liked,mod_view)}
+                    {self.view_like(can_vote,liked,mod_view)}
 
                     {self.view_checkmark(mod_view)}
-                </a>
+                </div>
 
                 {
                     if mod_view{
@@ -218,34 +327,60 @@ impl Question {
     }
 
     fn view_mod(&self, ctx: &Context<Self>) -> Html {
-        html! {
-            <div class="options">
-                <button class={classes!("button-hide",self.data.item.hidden.then_some("reverse"))}
-                    onclick={ctx.link().callback(|_| Msg::ToggleHide)}
-                    hidden={self.data.item.answered}
-                    >
-                    {
-                        if self.data.item.hidden {
-                            html!{"unhide"}
-                        }else{
-                            html!{"hide"}
-                        }
-                    }
-                </button>
+        if ctx.props().blurr() {
+            return html! {};
+        }
 
-                <button class={classes!("button-answered",self.data.item.answered.then_some("reverse"))}
-                    onclick={ctx.link().callback(|_| Msg::ToggleAnswered)}
-                    hidden={self.data.item.hidden}
-                    >
-                    {
-                        if self.data.item.answered {
-                            html!{"not answered"}
-                        }else{
-                            html!{"answered"}
+        let hidden = self.data.item.hidden;
+        let answered = self.data.item.answered;
+        let screened = !self.data.item.screening;
+
+        if screened {
+            html! {
+                <div class="options">
+                    <button class={classes!("button-hide",hidden.then_some("reverse"))}
+                        onclick={ctx.link().callback(|_| Msg::QuestionClick(QuestionClickType::Hide))}
+                        hidden={answered}
+                        >
+                        {
+                            if hidden {
+                                html!{"unhide"}
+                            }else{
+                                html!{"hide"}
+                            }
                         }
-                    }
-                </button>
-            </div>
+                    </button>
+
+                    <button class={classes!("button-answered",answered.then_some("reverse"))}
+                        onclick={ctx.link().callback(|_| Msg::QuestionClick(QuestionClickType::Answer))}
+                        hidden={hidden}
+                        >
+                        {
+                            if answered {
+                                html!{"not answered"}
+                            }else{
+                                html!{"answered"}
+                            }
+                        }
+                    </button>
+                </div>
+            }
+        } else {
+            html! {
+                <div class="options">
+                    <button class={classes!("button-hide",hidden.then_some("reverse"))}
+                        onclick={ctx.link().callback(|_| Msg::QuestionClick(QuestionClickType::Hide))}
+                        >
+                        {"hide"}
+                    </button>
+
+                    <button class="button-answered"
+                        onclick={ctx.link().callback(|_| Msg::QuestionClick(QuestionClickType::Approve))}
+                        >
+                        {"approve"}
+                    </button>
+                </div>
+            }
         }
     }
 
@@ -269,9 +404,9 @@ impl Question {
         }
     }
 
-    fn get_bubble_liked(likes: i32) -> Html {
+    fn get_bubble_liked(likes: i32, wiggle: bool) -> Html {
         html! {
-        <span class="bubble">
+        <span class={classes!("bubble",wiggle.then_some("wiggle"))}>
             <svg width="29px" height="19px" viewBox="0 0 29 19">
                 <g id="Mobile" stroke="none" stroke-width="1" fill-rule="evenodd">
                     <g id="Audience-Page-Questions" transform="translate(-327.000000, -493.000000)">
@@ -294,9 +429,9 @@ impl Question {
         }
     }
 
-    fn get_bubble_not_liked(likes: i32) -> Html {
+    fn get_bubble_not_liked(likes: i32, wiggle: bool) -> Html {
         html! {
-        <span class="bubble">
+        <span class={classes!("bubble",wiggle.then_some("wiggle"))}>
             <svg width="29px" height="19px" viewBox="0 0 29 19">
                 <g id="Mobile" stroke="none" stroke-width="1" fill-rule="evenodd">
                     <g id="Audience-Page-Questions" transform="translate(-327.000000, -493.000000)">

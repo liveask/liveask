@@ -10,6 +10,7 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
+  TRUNK_VERSION: v0.17.5
 
 jobs:
 
@@ -24,25 +25,16 @@ jobs:
     runs-on: ${{ matrix.os }}
     continue-on-error: ${{ matrix.rust == 'nightly' }} # nightly is ok to fail
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Restore cargo cache
-      uses: actions/cache@v2
-      env:
-        cache-name: ci
+      uses: Swatinem/rust-cache@v2
       with:
-        path: |
-          ~/.cargo/registry
-          ~/.cargo/git
-          ~/.cargo/bin
-          target
-        key: ${{ matrix.os }}-${{ env.cache-name }}-${{ matrix.rust }}-${{ hashFiles('Cargo.lock') }}
+        shared-key: ${{ matrix.os }}-${{ matrix.rust }}
     - name: Install Rust
-      uses: actions-rs/toolchain@v1
+      uses: dtolnay/rust-toolchain@master
       with:
         toolchain: ${{ matrix.rust }}
         target: wasm32-unknown-unknown
-        default: true
-        profile: minimal
         components: clippy
     - name: Install cargo-make
       run: |
@@ -53,11 +45,11 @@ jobs:
     - name: Check FE
       run: |
         cd frontend
-        cargo make checks
+        cargo make checks_ci
     - name: Check BE
       run: |
         cd backend
-        cargo make checks
+        cargo make checks_ci
     - name: Test FE
       run: |
         cd frontend
@@ -66,6 +58,36 @@ jobs:
       run: |
         cd backend
         cargo t
+
+  check_udeps:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        rust: [nightly]
+    runs-on: ${{ matrix.os }}
+    steps:
+    - uses: actions/checkout@v3
+    - name: Restore cargo cache
+      uses: Swatinem/rust-cache@v2
+      with:
+        shared-key: ${{ matrix.os }}-${{ matrix.rust }}
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@master
+      with:
+        toolchain: ${{ matrix.rust }}
+        target: wasm32-unknown-unknown
+    - name: Install cargo-make
+      run: |
+        which cargo-make || cargo install cargo-make
+    - name: Check FE
+      run: |
+        cd frontend
+        cargo make udeps
+    - name: Check BE
+      run: |
+        cd backend
+        cargo make udeps
 
 # DEPLOY
 
@@ -76,24 +98,13 @@ jobs:
     environment: beta
     needs: ["check_and_test"]
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Restore cargo cache
-      uses: actions/cache@v2
-      env:
-        cache-name: ci
+      uses: Swatinem/rust-cache@v2
       with:
-        path: |
-          ~/.cargo/registry
-          ~/.cargo/git
-          ~/.cargo/bin
-          target
-        key: ${{ env.cache-name }}-${{ hashFiles('Cargo.lock') }}
+        shared-key: ubuntu-latest-stable
     - name: Install Rust
-      uses: actions-rs/toolchain@v1
-      with:
-        toolchain: stable
-        default: true
-        profile: minimal
+      uses: dtolnay/rust-toolchain@stable
     - name: BE release build
       run: |
         cd backend
@@ -114,6 +125,8 @@ jobs:
         docker push liveask/server
         docker tag liveask/server liveask/server:beta
         docker push liveask/server:beta
+
+    # comment when disabling beta (1/3)
     - name: Deploy
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_KEY_ID }}
@@ -124,6 +137,7 @@ jobs:
         aws sts get-caller-identity
         ECS_SERVICE_ARN=$(aws ecs list-services --region=${AWS_DEFAULT_REGION} --cluster=${ECS_CLUSTER} --output=text | head -1 | awk '{print $2}')
         aws ecs update-service --region=${AWS_DEFAULT_REGION} --service=${ECS_SERVICE_ARN} --cluster=${ECS_CLUSTER} --force-new-deployment
+
     - name: Set short git SHA
       id: vars
       run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
@@ -142,32 +156,23 @@ jobs:
     runs-on: ubuntu-latest
     needs: ["be_deploy_beta"]
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Restore cargo cache
-      uses: actions/cache@v2
-      env:
-        cache-name: ci
+      uses: Swatinem/rust-cache@v2
       with:
-        path: |
-          ~/.cargo/registry
-          ~/.cargo/git
-          ~/.cargo/bin
-          target
-        key: be-linux-${{ env.cache-name }}-stable_rust-${{ hashFiles('Cargo.lock') }}
+        shared-key: ubuntu-latest-stable
     - name: Install Rust
-      uses: actions-rs/toolchain@v1
-      with:
-        toolchain: stable
-        default: true
-        profile: minimal
-    - name: Test Beta
-      run: |
-        cd backend-e2e
-        make e2e-test-beta
+      uses: dtolnay/rust-toolchain@stable
     - name: Test Prod
       run: |
         cd backend-e2e
         make e2e-test-remote
+
+    # comment when disabling beta (2/3)
+    - name: Test Beta
+      run: |
+        cd backend-e2e
+        make e2e-test-beta
 
 # FRONTEND
   
@@ -176,33 +181,24 @@ jobs:
     environment: beta
     needs: ["check_and_test"]
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Restore cargo cache
-      uses: actions/cache@v2
-      env:
-        cache-name: ci
+      uses: Swatinem/rust-cache@v2
       with:
-        path: |
-          ~/.cargo/registry
-          ~/.cargo/git
-          ~/.cargo/bin
-          target
-        key: linux-${{ env.cache-name }}-stable-${{ hashFiles('Cargo.lock') }}
+        shared-key: ubuntu-latest-stable
     - name: Install Rust
-      uses: actions-rs/toolchain@v1
+      uses: dtolnay/rust-toolchain@stable
       with:
-        toolchain: stable
         target: wasm32-unknown-unknown
-        default: true
-        profile: minimal
         components: clippy
     - name: Install cargo-make
       run: |
         which cargo-make || cargo install cargo-make
     - name: Install Trunk
       run: |
-        wget -qO- https://github.com/thedodd/trunk/releases/download/v0.16.0/trunk-x86_64-unknown-linux-gnu.tar.gz | tar -xzf-
+        wget -qO- https://github.com/thedodd/trunk/releases/download/${TRUNK_VERSION}/trunk-x86_64-unknown-linux-gnu.tar.gz | tar -xzf-
         mv trunk /usr/local/bin/trunk
+        trunk --version
     - name: Build
       env:
         LA_ENV: "beta"
@@ -211,6 +207,8 @@ jobs:
         #TODO: un-dupe once we have a better solution to change FE configs
         cargo make cargo-check
         cargo make build-and-check
+
+    # comment when disabling beta (3/3)      
     - name: Deploy
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_KEY_ID }}
@@ -219,9 +217,11 @@ jobs:
       run: |
         cd frontend/dist
         aws sts get-caller-identity
-        aws s3 sync . s3://beta.live-ask.com --acl public-read --no-progress --delete --cache-control "public, max-age=5184000" --exclude index.html
-        aws s3 cp ./index.html s3://beta.live-ask.com --acl public-read --no-progress --cache-control "public, max-age=21600"
-        aws cloudfront create-invalidation --distribution-id EJFNBPSNYQSP9 --paths /index.html
+        aws s3 sync . s3://beta.live-ask.com --acl public-read --no-progress --delete --cache-control "public, max-age=86400" --exclude "index.html" --exclude "worker2_bg.wasm"
+        aws s3 cp ./index.html s3://beta.live-ask.com --acl public-read --no-progress --cache-control "public, max-age=120"
+        aws s3 cp ./worker2_bg.wasm s3://beta.live-ask.com --acl public-read --no-progress --cache-control "public, max-age=120"
+        aws cloudfront create-invalidation --distribution-id EJFNBPSNYQSP9 --paths "/*"
+
     - name: Set short SHA
       id: vars
       run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
