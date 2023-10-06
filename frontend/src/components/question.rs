@@ -269,7 +269,7 @@ impl Component for Question {
         html! {
             <div class={main_classes}
                 ref={self.node_ref.clone()}>
-                <a class={classes!("questionanchor",self.highlighted.then_some("highlighted"),)}
+                <div class={classes!("questionanchor",self.highlighted.then_some("highlighted"),)}
                     onclick={ctx.link().callback(|_| Msg::QuestionClick(QuestionClickType::Like))}>
 
                     <div class="time-since">
@@ -295,7 +295,7 @@ impl Component for Question {
                     {self.view_like(can_vote,liked,mod_view)}
 
                     {self.view_checkmark(mod_view)}
-                </a>
+                </div>
 
                 {
                     if mod_view{

@@ -240,9 +240,9 @@ impl Home {
 
                 {Self::view_social()}
 
-                <a class="about" onclick={ctx.link().callback(|_| Msg::Privacy)}>
+                <div class="link about" onclick={ctx.link().callback(|_| Msg::Privacy)}>
                     {"Privacy Policy"}
-                </a>
+                </div>
 
                 <a class="about" href="https://github.com/liveask/liveask" target="_blank">
                     {"About"}

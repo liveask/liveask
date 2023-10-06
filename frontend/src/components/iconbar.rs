@@ -147,19 +147,19 @@ impl Component for IconBar {
 
                 <div class="innerbox">
                     <div class="logo">
-                        <a class="clickable-logo" onclick={ctx.link().callback(|_| Msg::Home)}>
+                        <div class="link clickable-logo" onclick={ctx.link().callback(|_| Msg::Home)}>
                             {logo_svg}
-                        </a>
+                        </div>
                         {logo_text_svg}
                     </div>
 
                     {
                         if self.state.event.is_some() {
                             html! {
-                                <a class="share"
+                                <div class="link share"
                                     onclick={ctx.link().callback(|_| Msg::Share)}>
                                     {"Share"}
-                                </a>
+                                </div>
                             }
                         }else{html! {}}
                     }
@@ -202,11 +202,9 @@ impl IconBar {
 
         if is_open {
             return html! {
-                <a>
-                    <div class="createevent" onclick={ctx.link().callback(|_| Msg::Ask)}>
-                        {"Ask a question"}
-                    </div>
-                </a>
+                <div class="link createevent" onclick={ctx.link().callback(|_| Msg::Ask)}>
+                    {"Ask a question"}
+                </div>
             };
         }
         html! {}
