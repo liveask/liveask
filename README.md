@@ -40,7 +40,11 @@ Wnat to help support the project? Use the following links to help us 💪
 (coming soon)
 
 ### Socials
-<a href="https://x.com/liveask_dev?s=20"><img alt="Follow Us on X" src="[https://img.shields.io/badge/X-000000?style=for-the-badge&logo=x&logoColor=white]"></a> 
+[![Instagram](https://img.shields.io/badge/Instagram-%23E4405F.svg?style=for-the-badge&logo=Instagram&logoColor=white)](https://www.instagram.com/liveaskapp/?igshid=OGQ5ZDc2ODk2ZA%3D%3D&utm_source=qr)
+[![LinkedIn](https://img.shields.io/badge/linkedin-%230077B5.svg?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/company/live-ask/)
+[![Mastodon](https://img.shields.io/badge/-MASTODON-%232B90D9?style=for-the-badge&logo=mastodon&logoColor=white)](https://mastodon.social/@liveask)
+[![TikTok](https://img.shields.io/badge/TikTok-%23000000.svg?style=for-the-badge&logo=TikTok&logoColor=white)](https://www.tiktok.com/@liveaskapp)
+[![Twitter](https://img.shields.io/badge/Twitter-%231DA1F2.svg?style=for-the-badge&logo=Twitter&logoColor=white)](https://twitter.com/liveaskapp)
 
 
 ![liveask readme footer](/assets/readme_footer.png)
