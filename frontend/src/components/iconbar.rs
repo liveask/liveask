@@ -8,10 +8,10 @@ use yew_router::{prelude::*, scope_ext::HistoryHandle};
 use yewdux::prelude::*;
 
 use crate::{
-    agents::{EventAgent, GlobalEvent, SocketInput, WebSocketAgent},
+    agents::{GlobalEvent, SocketInput, WebSocketAgent},
     not,
     routes::Route,
-    State,
+    GlobalEvents, State,
 };
 
 pub enum Msg {
@@ -33,7 +33,7 @@ pub struct IconBar {
     reconnect_timeout: Option<chrono::DateTime<Utc>>,
     state: Rc<State>,
     _dispatch: Dispatch<State>,
-    events: Box<dyn Bridge<EventAgent>>,
+    events: GlobalEvents,
     socket_agent: Box<dyn Bridge<WebSocketAgent>>,
     _interal: Interval,
     _route_listener: HistoryHandle,
@@ -49,13 +49,18 @@ impl Component for IconBar {
             Interval::new(500, move || link.send_message(Msg::ReconnectTimer))
         };
 
-        let events = EventAgent::bridge(ctx.link().callback(Msg::Event));
+        let (mut global_events, _) = ctx
+            .link()
+            .context::<GlobalEvents>(Callback::noop())
+            .expect_throw("context to be set");
+
+        global_events.subscribe(ctx.link().callback(Msg::Event));
 
         Self {
             _dispatch: Dispatch::<State>::subscribe(ctx.link().callback(Msg::State)),
-            events,
             state: Rc::default(),
             connected: true,
+            events: global_events,
             socket_agent: WebSocketAgent::bridge(Callback::noop()),
             reconnect_timeout: None,
             _interal: timer_interval,
@@ -73,11 +78,12 @@ impl Component for IconBar {
                 true
             }
             Msg::Share => {
-                self.events.send(GlobalEvent::OpenSharePopup);
+                self.events.emit(GlobalEvent::OpenSharePopup);
                 false
             }
             Msg::Ask => {
-                self.events.send(GlobalEvent::OpenQuestionPopup);
+                log::info!("ask clicked");
+                self.events.emit(GlobalEvent::OpenQuestionPopup);
                 false
             }
             Msg::Home => {

@@ -1,16 +1,11 @@
 use crate::{
-    agents::{EventAgent, GlobalEvent},
-    components::Popup,
-    fetch,
-    local_cache::LocalCache,
-    pages::BASE_API,
-    tracking,
+    agents::GlobalEvent, components::Popup, fetch, local_cache::LocalCache, pages::BASE_API,
+    tracking, GlobalEvents,
 };
 use shared::{AddQuestionError, AddQuestionValidation};
 use wasm_bindgen::UnwrapThrowExt;
 use web_sys::HtmlTextAreaElement;
 use yew::prelude::*;
-use yew_agent::{Bridge, Bridged};
 
 pub enum Msg {
     GlobalEvent(GlobalEvent),
@@ -24,7 +19,7 @@ pub struct QuestionPopup {
     show: bool,
     text: String,
     errors: AddQuestionValidation,
-    events: Box<dyn Bridge<EventAgent>>,
+    events: GlobalEvents,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Properties)]
@@ -37,7 +32,12 @@ impl Component for QuestionPopup {
     type Properties = AddQuestionProps;
 
     fn create(ctx: &Context<Self>) -> Self {
-        let events = EventAgent::bridge(ctx.link().callback(Msg::GlobalEvent));
+        let (mut events, _) = ctx
+            .link()
+            .context::<GlobalEvents>(Callback::noop())
+            .expect_throw("context to be set");
+
+        events.subscribe(ctx.link().callback(Msg::GlobalEvent));
 
         Self {
             show: false,
@@ -50,6 +50,7 @@ impl Component for QuestionPopup {
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
             Msg::GlobalEvent(e) => {
+                log::info!("event received: {:?}", e);
                 if matches!(e, GlobalEvent::OpenQuestionPopup) {
                     tracking::track_event(tracking::EVNT_ASK_OPEN);
                     self.show = true;
@@ -62,7 +63,7 @@ impl Component for QuestionPopup {
                 true
             }
             Msg::Send => {
-                let event_id = ctx.props().event.clone();
+                let event_id: String = ctx.props().event.clone();
                 let text = self.text.clone();
 
                 tracking::track_event(tracking::EVNT_ASK_SENT);
@@ -86,7 +87,7 @@ impl Component for QuestionPopup {
             }
             Msg::QuestionCreated(id) => {
                 if let Some(id) = id {
-                    self.events.send(GlobalEvent::QuestionCreated(id));
+                    self.events.emit(GlobalEvent::QuestionCreated(id));
                 }
                 true
             }

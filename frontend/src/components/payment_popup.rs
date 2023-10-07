@@ -1,14 +1,14 @@
 use crate::{
-    agents::{EventAgent, GlobalEvent},
+    agents::GlobalEvent,
     components::{Popup, Spinner},
     fetch,
     pages::BASE_API,
+    GlobalEvents,
 };
 use gloo::timers::callback::Timeout;
 use shared::{EventTokens, EventUpgrade};
 use wasm_bindgen::UnwrapThrowExt;
 use yew::prelude::*;
-use yew_agent::{Bridge, Bridged};
 
 #[derive(Clone, Debug, Eq, PartialEq, Properties)]
 pub struct PaymentProps {
@@ -24,7 +24,7 @@ pub enum Msg {
 pub struct PaymentPopup {
     show: bool,
     timeout: Option<Timeout>,
-    _events: Box<dyn Bridge<EventAgent>>,
+    _events: GlobalEvents,
 }
 
 impl Component for PaymentPopup {
@@ -32,8 +32,12 @@ impl Component for PaymentPopup {
     type Properties = PaymentProps;
 
     fn create(ctx: &Context<Self>) -> Self {
-        let events = EventAgent::bridge(ctx.link().callback(Msg::GlobalEvent));
+        let (mut events, _) = ctx
+            .link()
+            .context::<GlobalEvents>(Callback::noop())
+            .expect_throw("context to be set");
 
+        events.subscribe(ctx.link().callback(Msg::GlobalEvent));
         Self {
             show: false,
             timeout: None,

@@ -12,14 +12,14 @@ use yew_router::{prelude::Location, scope_ext::RouterScopeExt};
 use yewdux::prelude::*;
 
 use crate::{
-    agents::{EventAgent, GlobalEvent, SocketInput, WebSocketAgent, WsResponse},
+    agents::{GlobalEvent, SocketInput, WebSocketAgent, WsResponse},
     components::{
         DeletePopup, Question, QuestionClickType, QuestionFlags, QuestionPopup, SharePopup, Upgrade,
     },
     environment::{la_env, LiveAskEnv},
     fetch,
     local_cache::LocalCache,
-    tracking, State,
+    tracking, GlobalEvents, State,
 };
 
 enum Mode {
@@ -78,7 +78,7 @@ pub struct Event {
     loading_state: LoadingState,
     dispatch: Dispatch<State>,
     socket_agent: Box<dyn Bridge<WebSocketAgent>>,
-    events: Box<dyn Bridge<EventAgent>>,
+    events: GlobalEvents,
     wordcloud_agent: Box<dyn Bridge<WordCloudAgent>>,
 }
 pub enum Msg {
@@ -121,6 +121,13 @@ impl Component for Event {
             log::info!("paypal-token: {}", token);
         }
 
+        let (mut events, _) = ctx
+            .link()
+            .context::<GlobalEvents>(Callback::noop())
+            .expect_throw("context to be set");
+
+        events.subscribe(ctx.link().callback(Msg::GlobalEvent));
+
         Self {
             event_id,
             query_params,
@@ -139,7 +146,7 @@ impl Component for Event {
             unscreened: Vec::new(),
             dispatch: Dispatch::<State>::subscribe(Callback::noop()),
             socket_agent: ws,
-            events: EventAgent::bridge(ctx.link().callback(Msg::GlobalEvent)),
+            events,
             wordcloud_agent: WordCloudAgent::bridge(ctx.link().callback(Msg::WordCloud)),
         }
     }
@@ -202,15 +209,15 @@ impl Component for Event {
                 true
             }
             Msg::ModDelete => {
-                self.events.send(GlobalEvent::DeletePopup);
+                self.events.emit(GlobalEvent::DeletePopup);
                 false
             }
             Msg::ShareEventClick => {
-                self.events.send(GlobalEvent::OpenSharePopup);
+                self.events.emit(GlobalEvent::OpenSharePopup);
                 false
             }
             Msg::AskQuestionClick => {
-                self.events.send(GlobalEvent::OpenQuestionPopup);
+                self.events.emit(GlobalEvent::OpenQuestionPopup);
                 false
             }
             Msg::Fetched(res) => {

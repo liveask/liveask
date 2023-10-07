@@ -4,12 +4,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use wasm_bindgen::UnwrapThrowExt;
 use web_sys::CloseEvent;
-use yew::Callback;
-use yew_agent::{Agent, AgentLink, Bridge, Bridged, HandlerId};
-
-use crate::agents::GlobalEvent;
-
-use super::EventAgent;
+use yew_agent::{Agent, AgentLink, HandlerId};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub enum SocketInput {
@@ -41,7 +36,6 @@ pub struct WebSocketAgent {
     subscribers: HashSet<HandlerId>,
     connected: bool,
     _ping_interval: Interval,
-    events: Box<dyn Bridge<EventAgent>>,
     reconnect_interval: Option<(Duration, Interval)>,
 }
 
@@ -64,7 +58,6 @@ impl Agent for WebSocketAgent {
             subscribers: HashSet::new(),
             connected: false,
             _ping_interval: ping_interval,
-            events: EventAgent::bridge(Callback::noop()),
             reconnect_interval: None,
         }
     }
@@ -74,10 +67,11 @@ impl Agent for WebSocketAgent {
             Msg::Connected => {
                 self.connected = true;
                 self.reconnect_interval = None;
-                self.events.send(GlobalEvent::SocketStatus {
-                    connected: true,
-                    timeout_secs: None,
-                });
+                //TODO:
+                // self.events.send(GlobalEvent::SocketStatus {
+                //     connected: true,
+                //     timeout_secs: None,
+                // });
                 self.respond_to_all(&WsResponse::Ready);
             }
             Msg::Disconnected => {
@@ -87,12 +81,12 @@ impl Agent for WebSocketAgent {
                 self.respond_to_all(&WsResponse::Disconnected);
 
                 if do_reconnect {
-                    let duration = self.set_reconnect();
-
-                    self.events.send(GlobalEvent::SocketStatus {
-                        connected: false,
-                        timeout_secs: Some(duration.num_seconds()),
-                    });
+                    //TODO:
+                    let _duration = self.set_reconnect();
+                    // self.events.send(GlobalEvent::SocketStatus {
+                    //     connected: false,
+                    //     timeout_secs: Some(duration.num_seconds()),
+                    // });
                 }
             }
             Msg::MessageReceived(res) => {

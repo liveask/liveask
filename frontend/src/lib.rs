@@ -39,13 +39,12 @@ mod pages;
 mod routes;
 mod tracking;
 
-use agents::{EventAgent, GlobalEvent};
+use agents::GlobalEvent;
 use pages::AdminLogin;
 use routes::Route;
 use shared::GetEventResponse;
-use std::rc::Rc;
+use std::{cell::RefCell, rc::Rc};
 use yew::prelude::*;
-use yew_agent::{Bridge, Bridged};
 use yew_router::prelude::*;
 use yewdux::{prelude::Dispatch, store::Store};
 
@@ -83,29 +82,52 @@ impl State {
     }
 }
 
+#[derive(Clone, Debug, PartialEq, Default)]
+pub struct GlobalEvents {
+    callbacks: Rc<RefCell<Vec<Callback<GlobalEvent>>>>,
+}
+
+impl GlobalEvents {
+    pub fn emit(&self, e: GlobalEvent) {
+        log::info!("event emit: {}", self.callbacks.borrow().len());
+
+        for c in self.callbacks.borrow().iter() {
+            c.emit(e);
+        }
+    }
+
+    pub fn subscribe(&mut self, e: Callback<GlobalEvent>) {
+        log::info!("event subscribe: {}", self.callbacks.borrow().len());
+
+        self.callbacks.borrow_mut().push(e);
+    }
+}
+
 pub enum Msg {
     State(Rc<State>),
-    Event(GlobalEvent),
+    GlobalEvent(GlobalEvent),
 }
 
 pub struct AppRoot {
     connected: bool,
+    context: GlobalEvents,
     state: Rc<State>,
     _dispatch: Dispatch<State>,
-    _events: Box<dyn Bridge<EventAgent>>,
 }
 impl Component for AppRoot {
     type Message = Msg;
     type Properties = ();
 
     fn create(ctx: &Context<Self>) -> Self {
-        let events = EventAgent::bridge(ctx.link().callback(Msg::Event));
+        let mut context = GlobalEvents::default();
+
+        context.subscribe(ctx.link().callback(Msg::GlobalEvent));
 
         Self {
             _dispatch: Dispatch::<State>::subscribe(ctx.link().callback(Msg::State)),
             state: Rc::default(),
-            _events: events,
             connected: true,
+            context,
         }
     }
 
@@ -115,7 +137,7 @@ impl Component for AppRoot {
                 self.state = state;
                 false
             }
-            Msg::Event(e) => match e {
+            Msg::GlobalEvent(e) => match e {
                 GlobalEvent::SocketStatus { connected, .. } => {
                     self.connected = connected;
                     true
@@ -129,6 +151,7 @@ impl Component for AppRoot {
         html! {
             <BrowserRouter>
                 <div class="app-host">
+                    <ContextProvider<GlobalEvents> context={self.context.clone()}>
                     <div class={classes!("main",not(self.connected).then_some("offline"))}>
                         <IconBar/>
 
@@ -136,6 +159,7 @@ impl Component for AppRoot {
                             <Switch<Route> render={Switch::render(switch)} />
                         </div>
                     </div>
+                    </ContextProvider<GlobalEvents>>
                 </div>
             </BrowserRouter>
         }
