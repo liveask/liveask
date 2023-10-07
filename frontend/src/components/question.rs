@@ -1,4 +1,5 @@
 //bitflags issue
+#![allow(unknown_lints)]
 #![allow(clippy::iter_without_into_iter)]
 
 use bitflags::bitflags;
