@@ -18,6 +18,7 @@ use crate::{
     },
     environment::{la_env, LiveAskEnv},
     fetch,
+    global_events::EventBridge,
     local_cache::LocalCache,
     tracking, GlobalEvent, GlobalEvents, State,
 };
@@ -78,7 +79,7 @@ pub struct Event {
     loading_state: LoadingState,
     dispatch: Dispatch<State>,
     socket_agent: Box<dyn Bridge<WebSocketAgent>>,
-    events: GlobalEvents,
+    events: EventBridge,
     wordcloud_agent: Box<dyn Bridge<WordCloudAgent>>,
 }
 pub enum Msg {
@@ -126,7 +127,7 @@ impl Component for Event {
             .context::<GlobalEvents>(Callback::noop())
             .expect_throw("context to be set");
 
-        events.subscribe(ctx.link().callback(Msg::GlobalEvent));
+        let events = events.subscribe(ctx.link().callback(Msg::GlobalEvent));
 
         Self {
             event_id,

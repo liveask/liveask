@@ -1,6 +1,7 @@
 use crate::{
     components::{Popup, Spinner},
     fetch,
+    global_events::EventBridge,
     pages::BASE_API,
     GlobalEvent, GlobalEvents,
 };
@@ -23,7 +24,7 @@ pub enum Msg {
 pub struct PaymentPopup {
     show: bool,
     timeout: Option<Timeout>,
-    _events: GlobalEvents,
+    _events: EventBridge,
 }
 
 impl Component for PaymentPopup {
@@ -36,7 +37,7 @@ impl Component for PaymentPopup {
             .context::<GlobalEvents>(Callback::noop())
             .expect_throw("context to be set");
 
-        events.subscribe(ctx.link().callback(Msg::GlobalEvent));
+        let events = events.subscribe(ctx.link().callback(Msg::GlobalEvent));
         Self {
             show: false,
             timeout: None,

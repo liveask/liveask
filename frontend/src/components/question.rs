@@ -1,3 +1,6 @@
+//bitflags issue
+#![allow(clippy::iter_without_into_iter)]
+
 use bitflags::bitflags;
 use chrono::Utc;
 use gloo::timers::callback::Interval;

@@ -1,6 +1,6 @@
 use crate::{
-    components::Popup, fetch, local_cache::LocalCache, pages::BASE_API, tracking, GlobalEvent,
-    GlobalEvents,
+    components::Popup, fetch, global_events::EventBridge, local_cache::LocalCache, pages::BASE_API,
+    tracking, GlobalEvent, GlobalEvents,
 };
 use shared::{AddQuestionError, AddQuestionValidation};
 use wasm_bindgen::UnwrapThrowExt;
@@ -19,7 +19,7 @@ pub struct QuestionPopup {
     show: bool,
     text: String,
     errors: AddQuestionValidation,
-    events: GlobalEvents,
+    events: EventBridge,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Properties)]
@@ -37,7 +37,7 @@ impl Component for QuestionPopup {
             .context::<GlobalEvents>(Callback::noop())
             .expect_throw("context to be set");
 
-        events.subscribe(ctx.link().callback(Msg::GlobalEvent));
+        let events = events.subscribe(ctx.link().callback(Msg::GlobalEvent));
 
         Self {
             show: false,

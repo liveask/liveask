@@ -1,5 +1,6 @@
 use crate::{
-    components::Popup, components::Qr, routes::Route, tracking, GlobalEvent, GlobalEvents,
+    components::Popup, components::Qr, global_events::EventBridge, routes::Route, tracking,
+    GlobalEvent, GlobalEvents,
 };
 use wasm_bindgen::UnwrapThrowExt;
 use yew::prelude::*;
@@ -31,7 +32,7 @@ pub struct SharePopup {
     show: bool,
     copied_to_clipboard: bool,
     url: String,
-    _events: GlobalEvents,
+    _events: EventBridge,
 }
 
 impl Component for SharePopup {
@@ -44,7 +45,7 @@ impl Component for SharePopup {
             .context::<GlobalEvents>(Callback::noop())
             .expect_throw("context to be set");
 
-        events.subscribe(ctx.link().callback(Msg::GlobalEvent));
+        let events = events.subscribe(ctx.link().callback(Msg::GlobalEvent));
 
         Self {
             url: ctx.props().url.clone(),

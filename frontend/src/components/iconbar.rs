@@ -9,6 +9,7 @@ use yewdux::prelude::*;
 
 use crate::{
     agents::{SocketInput, WebSocketAgent},
+    global_events::EventBridge,
     not,
     routes::Route,
     GlobalEvent, GlobalEvents, State,
@@ -33,7 +34,7 @@ pub struct IconBar {
     reconnect_timeout: Option<chrono::DateTime<Utc>>,
     state: Rc<State>,
     _dispatch: Dispatch<State>,
-    events: GlobalEvents,
+    events: EventBridge,
     socket_agent: Box<dyn Bridge<WebSocketAgent>>,
     _interal: Interval,
     _route_listener: HistoryHandle,
@@ -54,13 +55,13 @@ impl Component for IconBar {
             .context::<GlobalEvents>(Callback::noop())
             .expect_throw("context to be set");
 
-        global_events.subscribe(ctx.link().callback(Msg::Event));
+        let events = global_events.subscribe(ctx.link().callback(Msg::Event));
 
         Self {
             _dispatch: Dispatch::<State>::subscribe(ctx.link().callback(Msg::State)),
             state: Rc::default(),
             connected: true,
-            events: global_events,
+            events,
             socket_agent: WebSocketAgent::bridge(Callback::noop()),
             reconnect_timeout: None,
             _interal: timer_interval,
