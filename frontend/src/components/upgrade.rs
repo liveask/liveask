@@ -3,8 +3,7 @@ use wasm_bindgen::UnwrapThrowExt;
 use yew::prelude::*;
 
 use crate::tracking;
-use crate::GlobalEvents;
-use crate::{agents::GlobalEvent, components::Spinner, not};
+use crate::{components::Spinner, not, GlobalEvent, GlobalEvents};
 
 use super::payment_popup::PaymentPopup;
 

@@ -1,9 +1,8 @@
 use crate::{
-    agents::GlobalEvent,
     components::{Popup, Spinner},
     fetch,
     pages::BASE_API,
-    GlobalEvents,
+    GlobalEvent, GlobalEvents,
 };
 use gloo::timers::callback::Timeout;
 use shared::{EventTokens, EventUpgrade};

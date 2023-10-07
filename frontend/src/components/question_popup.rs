@@ -1,6 +1,6 @@
 use crate::{
-    agents::GlobalEvent, components::Popup, fetch, local_cache::LocalCache, pages::BASE_API,
-    tracking, GlobalEvents,
+    components::Popup, fetch, local_cache::LocalCache, pages::BASE_API, tracking, GlobalEvent,
+    GlobalEvents,
 };
 use shared::{AddQuestionError, AddQuestionValidation};
 use wasm_bindgen::UnwrapThrowExt;

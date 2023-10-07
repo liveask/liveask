@@ -34,16 +34,17 @@ mod agents;
 mod components;
 mod environment;
 mod fetch;
+mod global_events;
 mod local_cache;
 mod pages;
 mod routes;
 mod tracking;
 
-use agents::GlobalEvent;
+use global_events::{GlobalEvent, GlobalEvents};
 use pages::AdminLogin;
 use routes::Route;
 use shared::GetEventResponse;
-use std::{cell::RefCell, rc::Rc};
+use std::rc::Rc;
 use yew::prelude::*;
 use yew_router::prelude::*;
 use yewdux::{prelude::Dispatch, store::Store};
@@ -79,27 +80,6 @@ impl State {
     pub const fn set_admin(mut self, v: bool) -> Self {
         self.admin = v;
         self
-    }
-}
-
-#[derive(Clone, Debug, PartialEq, Default)]
-pub struct GlobalEvents {
-    callbacks: Rc<RefCell<Vec<Callback<GlobalEvent>>>>,
-}
-
-impl GlobalEvents {
-    pub fn emit(&self, e: GlobalEvent) {
-        log::info!("event emit: {}", self.callbacks.borrow().len());
-
-        for c in self.callbacks.borrow().iter() {
-            c.emit(e);
-        }
-    }
-
-    pub fn subscribe(&mut self, e: Callback<GlobalEvent>) {
-        log::info!("event subscribe: {}", self.callbacks.borrow().len());
-
-        self.callbacks.borrow_mut().push(e);
     }
 }
 

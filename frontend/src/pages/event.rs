@@ -12,14 +12,14 @@ use yew_router::{prelude::Location, scope_ext::RouterScopeExt};
 use yewdux::prelude::*;
 
 use crate::{
-    agents::{GlobalEvent, SocketInput, WebSocketAgent, WsResponse},
+    agents::{SocketInput, WebSocketAgent, WsResponse},
     components::{
         DeletePopup, Question, QuestionClickType, QuestionFlags, QuestionPopup, SharePopup, Upgrade,
     },
     environment::{la_env, LiveAskEnv},
     fetch,
     local_cache::LocalCache,
-    tracking, GlobalEvents, State,
+    tracking, GlobalEvent, GlobalEvents, State,
 };
 
 enum Mode {

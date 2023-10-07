@@ -8,10 +8,10 @@ use yew_router::{prelude::*, scope_ext::HistoryHandle};
 use yewdux::prelude::*;
 
 use crate::{
-    agents::{GlobalEvent, SocketInput, WebSocketAgent},
+    agents::{SocketInput, WebSocketAgent},
     not,
     routes::Route,
-    GlobalEvents, State,
+    GlobalEvent, GlobalEvents, State,
 };
 
 pub enum Msg {

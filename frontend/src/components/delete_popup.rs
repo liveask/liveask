@@ -1,6 +1,5 @@
 use crate::{
-    agents::GlobalEvent, components::Popup, fetch, pages::BASE_API, routes::Route, tracking,
-    GlobalEvents,
+    components::Popup, fetch, pages::BASE_API, routes::Route, tracking, GlobalEvent, GlobalEvents,
 };
 use wasm_bindgen::UnwrapThrowExt;
 use yew::prelude::*;
