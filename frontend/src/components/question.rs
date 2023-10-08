@@ -186,7 +186,7 @@ impl Component for Question {
         }
     }
 
-    fn changed(&mut self, ctx: &Context<Self>) -> bool {
+    fn changed(&mut self, ctx: &Context<Self>, _old_props: &Self::Properties) -> bool {
         let props = ctx.props().clone();
         if self.data == props {
             false

@@ -9,7 +9,7 @@ use web_sys::HtmlAnchorElement;
 use worker2::{WordCloudAgent, WordCloudInput, WordCloudOutput};
 use yew::{prelude::*, virtual_dom::AttrValue};
 use yew_agent::{Bridge, Bridged};
-use yew_router::{prelude::Location, scope_ext::RouterScopeExt};
+use yew_router::scope_ext::RouterScopeExt;
 use yewdux::prelude::*;
 
 use crate::{
@@ -71,12 +71,12 @@ pub struct Event {
     wordcloud: Option<String>,
     query_params: QueryParams,
     mode: Mode,
-    state: Rc<State>,
     unanswered: Vec<Rc<QuestionItem>>,
     answered: Vec<Rc<QuestionItem>>,
     hidden: Vec<Rc<QuestionItem>>,
     unscreened: Vec<Rc<QuestionItem>>,
     loading_state: LoadingState,
+    state: Rc<State>,
     dispatch: Dispatch<State>,
     events: EventBridge<GlobalEvent>,
     wordcloud_agent: Box<dyn Bridge<WordCloudAgent>>,
@@ -124,6 +124,13 @@ impl Component for Event {
             .unwrap_throw()
             .subscribe(ctx.link().callback(Msg::GlobalEvent));
 
+        let cb_wordcloud = {
+            let link = ctx.link().clone();
+            move |e| link.send_message(Msg::WordCloud(e))
+        };
+
+        let dispatch = Dispatch::<State>::subscribe(Callback::noop());
+
         Self {
             event_id,
             query_params,
@@ -135,14 +142,14 @@ impl Component for Event {
                 Mode::Viewer
             },
             loading_state: LoadingState::Loading,
-            state: Rc::default(),
+            state: dispatch.get(),
             unanswered: Vec::new(),
             answered: Vec::new(),
             hidden: Vec::new(),
             unscreened: Vec::new(),
-            dispatch: Dispatch::<State>::subscribe(Callback::noop()),
+            dispatch,
             events,
-            wordcloud_agent: WordCloudAgent::bridge(ctx.link().callback(Msg::WordCloud)),
+            wordcloud_agent: WordCloudAgent::bridge(Rc::new(cb_wordcloud)),
             socket_url,
             manual_reconnect: false,
         }
@@ -243,7 +250,7 @@ impl Component for Event {
             Msg::GlobalEvent(ev) => match ev {
                 GlobalEvent::QuestionCreated(id) => {
                     self.dispatch
-                        .reduce(|old| (*old).clone().set_new_question(Some(id)));
+                        .reduce(|old| (*old).clone().set_new_question(Some(id)).into());
                     self.state = self.dispatch.get();
                     true
                 }
@@ -257,7 +264,7 @@ impl Component for Event {
     }
 
     fn destroy(&mut self, _ctx: &Context<Self>) {
-        self.dispatch.reduce(|_| State::default());
+        self.dispatch.reduce(|_| State::default().into());
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
@@ -949,6 +956,7 @@ impl Event {
                     .clone()
                     .set_event(Some(ev.clone()))
                     .set_admin(ev.admin)
+                    .into()
             });
             self.state = self.dispatch.get();
             self.init_event();
@@ -1040,7 +1048,7 @@ impl Event {
                     if !found {
                         log::info!("new question: {}", id);
                         self.dispatch
-                            .reduce(|old| (*old).clone().set_new_question(Some(id)));
+                            .reduce(|old| (*old).clone().set_new_question(Some(id)).into());
                         self.state = self.dispatch.get();
                     }
 
@@ -1055,16 +1063,23 @@ impl Event {
                         .unwrap_or_default();
 
                     self.dispatch.reduce(|old| {
-                        (*old).clone().set_event(Some(GetEventResponse {
-                            info: old
-                                .event
-                                .as_ref()
-                                .map(|e| e.info.clone())
-                                .unwrap_or_default(),
-                            timed_out: old.event.as_ref().map(|e| e.timed_out).unwrap_or_default(),
-                            admin: old.event.as_ref().map(|e| e.admin).unwrap_or_default(),
-                            viewers,
-                        }))
+                        (*old)
+                            .clone()
+                            .set_event(Some(GetEventResponse {
+                                info: old
+                                    .event
+                                    .as_ref()
+                                    .map(|e| e.info.clone())
+                                    .unwrap_or_default(),
+                                timed_out: old
+                                    .event
+                                    .as_ref()
+                                    .map(|e| e.timed_out)
+                                    .unwrap_or_default(),
+                                admin: old.event.as_ref().map(|e| e.admin).unwrap_or_default(),
+                                viewers,
+                            }))
+                            .into()
                     });
                     self.state = self.dispatch.get();
 

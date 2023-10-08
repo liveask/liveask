@@ -32,21 +32,21 @@ impl Component for Home {
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
             Msg::CreateEvent => {
-                ctx.link().history().unwrap_throw().push(Route::NewEvent);
+                ctx.link().navigator().unwrap_throw().push(&Route::NewEvent);
                 false
             }
             Msg::Example => {
-                ctx.link().history().unwrap_throw().push(Route::Event {
+                ctx.link().navigator().unwrap_throw().push(&Route::Event {
                     id: "eventexample".into(),
                 });
                 false
             }
             Msg::Privacy => {
-                ctx.link().history().unwrap_throw().push(Route::Privacy);
+                ctx.link().navigator().unwrap_throw().push(&Route::Privacy);
                 false
             }
             Msg::Admin => {
-                ctx.link().history().unwrap_throw().push(Route::Login);
+                ctx.link().navigator().unwrap_throw().push(&Route::Login);
                 false
             }
             Msg::VersionReceived(api_version) => {

@@ -2,7 +2,7 @@ use crate::{components::Popup, fetch, pages::BASE_API, routes::Route, tracking, 
 use events::{event_context, EventBridge};
 use wasm_bindgen::UnwrapThrowExt;
 use yew::prelude::*;
-use yew_router::{prelude::History, scope_ext::RouterScopeExt};
+use yew_router::prelude::*;
 
 pub enum Msg {
     GlobalEvent(GlobalEvent),
@@ -69,7 +69,7 @@ impl Component for DeletePopup {
                 true
             }
             Msg::Sent => {
-                ctx.link().history().unwrap_throw().push(Route::Home);
+                ctx.link().navigator().unwrap_throw().push(&Route::Home);
                 false
             }
         }

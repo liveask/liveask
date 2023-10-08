@@ -73,10 +73,13 @@ impl Component for NewEvent {
 
             Msg::CreatedResult(event) => {
                 if let Some(event) = event {
-                    ctx.link().history().unwrap_throw().push(Route::EventMod {
-                        id: event.tokens.public_token,
-                        secret: event.tokens.moderator_token.unwrap_throw(),
-                    });
+                    ctx.link()
+                        .navigator()
+                        .unwrap_throw()
+                        .push(&Route::EventMod {
+                            id: event.tokens.public_token,
+                            secret: event.tokens.moderator_token.unwrap_throw(),
+                        });
                     false
                 } else {
                     log::error!("no event created");
