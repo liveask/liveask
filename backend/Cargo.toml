@@ -9,7 +9,7 @@ build = "build.rs"
 async-redis-session = { path = "../async-redis-session" }
 async-trait = "0.1"
 aws-config = "0.56"
-aws-sdk-dynamodb = "0.32"
+aws-sdk-dynamodb = "0.33"
 aws-smithy-http = "0.56"
 axum = { version = "0.6", features = ["ws"] }
 axum-login = "0.6"
