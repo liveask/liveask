@@ -1015,6 +1015,7 @@ impl Event {
                 false
             }
             SocketResponse::Connected => {
+                self.manual_reconnect = false;
                 self.events.emit(GlobalEvent::SocketStatus {
                     connected: true,
                     timeout_secs: None,
