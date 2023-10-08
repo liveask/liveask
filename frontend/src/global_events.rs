@@ -1,4 +1,4 @@
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum GlobalEvent {
     SocketStatus {
         connected: bool,
@@ -9,4 +9,5 @@ pub enum GlobalEvent {
     DeletePopup,
     QuestionCreated(i64),
     PayForUpgrade,
+    SocketManualReconnect,
 }

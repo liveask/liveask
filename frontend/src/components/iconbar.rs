@@ -4,16 +4,10 @@ use gloo::timers::callback::Interval;
 use std::rc::Rc;
 use wasm_bindgen::UnwrapThrowExt;
 use yew::prelude::*;
-use yew_agent::{Bridge, Bridged};
 use yew_router::{prelude::*, scope_ext::HistoryHandle};
 use yewdux::prelude::*;
 
-use crate::{
-    agents::{SocketInput, WebSocketAgent},
-    not,
-    routes::Route,
-    GlobalEvent, State,
-};
+use crate::{not, routes::Route, GlobalEvent, State};
 
 pub enum Msg {
     State(Rc<State>),
@@ -35,7 +29,6 @@ pub struct IconBar {
     state: Rc<State>,
     _dispatch: Dispatch<State>,
     events: EventBridge<GlobalEvent>,
-    socket_agent: Box<dyn Bridge<WebSocketAgent>>,
     _interal: Interval,
     _route_listener: HistoryHandle,
 }
@@ -62,7 +55,6 @@ impl Component for IconBar {
             state: Rc::default(),
             connected: true,
             events,
-            socket_agent: WebSocketAgent::bridge(Callback::noop()),
             reconnect_timeout: None,
             _interal: timer_interval,
             _route_listener: ctx
@@ -92,7 +84,7 @@ impl Component for IconBar {
                 false
             }
             Msg::Reconnect => {
-                self.socket_agent.send(SocketInput::Reconnect);
+                self.events.emit(GlobalEvent::SocketManualReconnect);
                 false
             }
             //ignore global events

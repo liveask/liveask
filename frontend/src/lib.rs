@@ -30,7 +30,6 @@
     clippy::let_unit_value,
     clippy::let_underscore_untyped
 )]
-mod agents;
 mod components;
 mod environment;
 mod fetch;
