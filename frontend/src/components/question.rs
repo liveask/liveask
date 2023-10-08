@@ -4,8 +4,8 @@
 
 use bitflags::bitflags;
 use chrono::Utc;
-use gloo::timers::callback::Interval;
-use gloo::timers::callback::Timeout;
+use gloo_timers::callback::Interval;
+use gloo_timers::callback::Timeout;
 use shared::QuestionItem;
 use std::rc::Rc;
 use wasm_bindgen::JsCast;

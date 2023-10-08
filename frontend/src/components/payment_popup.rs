@@ -5,7 +5,7 @@ use crate::{
     GlobalEvent,
 };
 use events::{event_context, EventBridge};
-use gloo::timers::callback::Timeout;
+use gloo_timers::callback::Timeout;
 use shared::{EventTokens, EventUpgrade};
 use wasm_bindgen::UnwrapThrowExt;
 use yew::prelude::*;
@@ -62,7 +62,7 @@ impl Component for PaymentPopup {
             }
             Msg::TimerDone(url) => {
                 log::info!("redirect to: {}", url);
-                gloo::utils::window().location().assign(&url).unwrap_throw();
+                gloo_utils::window().location().assign(&url).unwrap_throw();
                 false
             }
             Msg::UpgradeRequested(u) => {

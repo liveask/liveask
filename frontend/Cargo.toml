@@ -13,9 +13,8 @@ const_format = "0.2"
 csv = "1.2"
 easy-cast = "0.5"
 events = { path = "events" }
-#keep in sync with yews gloo version
-gloo = "0.8"
 gloo-storage = "0.2"
+gloo-timers = "0.2"
 gloo-utils = "0.1"
 js-sys = "0.3"
 konst = "0.3"

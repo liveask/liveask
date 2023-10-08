@@ -1,6 +1,6 @@
 use chrono::{Duration, Utc};
 use events::{event_context, EventBridge};
-use gloo::timers::callback::Interval;
+use gloo_timers::callback::Interval;
 use std::rc::Rc;
 use wasm_bindgen::UnwrapThrowExt;
 use yew::prelude::*;

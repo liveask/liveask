@@ -439,7 +439,7 @@ impl Event {
 
         let csv = self.event_as_csv().unwrap_or_default();
 
-        let anchor = gloo::utils::document()
+        let anchor = gloo_utils::document()
             .create_element("a")
             .unwrap_throw()
             .dyn_into::<HtmlAnchorElement>()
