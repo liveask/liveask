@@ -1,11 +1,11 @@
 use super::LoadingState;
 use crate::{components::Qr, fetch, pages::BASE_API};
 use shared::GetEventResponse;
-use yew::prelude::*;
+use yew::{prelude::*, virtual_dom::AttrValue};
 
 #[derive(Clone, Debug, Eq, PartialEq, Properties)]
 pub struct Props {
-    pub id: String,
+    pub id: AttrValue,
 }
 
 pub struct Print {
@@ -20,7 +20,7 @@ impl Component for Print {
     type Properties = Props;
 
     fn create(ctx: &Context<Self>) -> Self {
-        let event_id = ctx.props().id.clone();
+        let event_id = ctx.props().id.to_string();
         request_fetch(event_id, ctx.link());
 
         Self {

@@ -7,7 +7,7 @@ use std::{rc::Rc, str::FromStr};
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 use web_sys::HtmlAnchorElement;
 use worker2::{WordCloudAgent, WordCloudInput, WordCloudOutput};
-use yew::prelude::*;
+use yew::{prelude::*, virtual_dom::AttrValue};
 use yew_agent::{Bridge, Bridged};
 use yew_router::{prelude::Location, scope_ext::RouterScopeExt};
 use yewdux::prelude::*;
@@ -30,7 +30,7 @@ enum Mode {
 
 #[derive(Clone, Debug, Eq, PartialEq, Properties)]
 pub struct Props {
-    pub id: String,
+    pub id: AttrValue,
     pub secret: Option<String>,
 }
 
@@ -105,7 +105,7 @@ impl Component for Event {
     type Properties = Props;
 
     fn create(ctx: &Context<Self>) -> Self {
-        let event_id = ctx.props().id.clone();
+        let event_id = ctx.props().id.to_string();
         request_fetch(event_id.clone(), ctx.props().secret.clone(), ctx.link());
 
         let socket_url = format!("{BASE_SOCKET}/push/{event_id}",);

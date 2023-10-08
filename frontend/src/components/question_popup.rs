@@ -9,7 +9,7 @@ use events::{event_context, EventBridge};
 use shared::{AddQuestionError, AddQuestionValidation};
 use wasm_bindgen::UnwrapThrowExt;
 use web_sys::HtmlTextAreaElement;
-use yew::prelude::*;
+use yew::{prelude::*, virtual_dom::AttrValue};
 
 pub enum Msg {
     GlobalEvent(GlobalEvent),
@@ -28,7 +28,7 @@ pub struct QuestionPopup {
 
 #[derive(Clone, Debug, Eq, PartialEq, Properties)]
 pub struct AddQuestionProps {
-    pub event: String,
+    pub event: AttrValue,
 }
 
 impl Component for QuestionPopup {
@@ -63,7 +63,7 @@ impl Component for QuestionPopup {
                 true
             }
             Msg::Send => {
-                let event_id: String = ctx.props().event.clone();
+                let event_id: String = ctx.props().event.to_string();
                 let text = self.text.clone();
 
                 tracking::track_event(tracking::EVNT_ASK_SENT);

@@ -2,17 +2,19 @@
 
 use wasm_bindgen::UnwrapThrowExt;
 use web_sys::HtmlTextAreaElement;
-use yew::prelude::*;
+use yew::{prelude::*, virtual_dom::AttrValue};
 
-#[derive(Clone, Debug, Default, PartialEq, Properties)]
+#[derive(Clone, Debug, PartialEq, Properties)]
 pub struct TextAreaProps {
-    pub id: Option<String>,
-    pub name: String,
-    pub placeholder: String,
-    pub value: String,
-    pub maxlength: Option<String>,
-    pub required: Option<bool>,
-    pub autosize: Option<bool>,
+    pub id: AttrValue,
+    pub name: AttrValue,
+    pub placeholder: AttrValue,
+    pub value: AttrValue,
+    pub maxlength: AttrValue,
+    #[prop_or_default]
+    pub required: bool,
+    #[prop_or_default]
+    pub autosize: bool,
     pub oninput: Callback<InputEvent>,
 }
 
@@ -38,7 +40,7 @@ impl Component for TextArea {
                 let style = target.style();
                 style.set_property("height", "auto").unwrap_throw();
 
-                if ctx.props().autosize == Some(true) {
+                if ctx.props().autosize {
                     let height = target.scroll_height();
 
                     style
@@ -60,7 +62,7 @@ impl Component for TextArea {
                 placeholder={props.placeholder}
                 value={props.value}
                 maxlength={props.maxlength}
-                required={props.required.unwrap_or_default()}
+                required={props.required}
                 oninput={ctx.link().callback(Msg::Input)}>
             </textarea>
         }

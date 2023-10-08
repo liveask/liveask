@@ -2,7 +2,7 @@ use chrono::Duration;
 use gloo::timers::callback::Interval;
 use wasm_bindgen::UnwrapThrowExt;
 use web_sys::CloseEvent;
-use yew::{html::Scope, prelude::*};
+use yew::{html::Scope, prelude::*, virtual_dom::AttrValue};
 
 #[derive(Clone, Debug)]
 pub enum SocketResponse {
@@ -12,10 +12,10 @@ pub enum SocketResponse {
     Message(String),
 }
 
-#[derive(Clone, Debug, Default, PartialEq, Properties)]
+#[derive(Clone, Debug, PartialEq, Properties)]
 pub struct SocketProperties {
     pub reconnect: bool,
-    pub url: String,
+    pub url: AttrValue,
     pub msg: Callback<SocketResponse>,
 }
 

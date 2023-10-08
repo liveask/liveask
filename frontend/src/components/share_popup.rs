@@ -1,13 +1,13 @@
 use crate::{components::Popup, components::Qr, routes::Route, tracking, GlobalEvent};
 use events::{event_context, EventBridge};
 use wasm_bindgen::UnwrapThrowExt;
-use yew::prelude::*;
+use yew::{prelude::*, virtual_dom::AttrValue};
 use yew_router::{prelude::History, scope_ext::RouterScopeExt};
 
 #[derive(Clone, Debug, Eq, PartialEq, Properties)]
 pub struct ShareProps {
-    pub url: String,
-    pub event_id: String,
+    pub url: AttrValue,
+    pub event_id: AttrValue,
 }
 
 #[derive(Debug)]
@@ -43,7 +43,7 @@ impl Component for SharePopup {
             .subscribe(ctx.link().callback(Msg::GlobalEvent));
 
         Self {
-            url: ctx.props().url.clone(),
+            url: ctx.props().url.to_string(),
             show: false,
             copied_to_clipboard: false,
             _events: events,
@@ -67,7 +67,7 @@ impl Component for SharePopup {
             Msg::OpenPrint => {
                 self.show = false;
                 ctx.link().history().unwrap_throw().push(Route::Print {
-                    id: ctx.props().event_id.clone(),
+                    id: ctx.props().event_id.to_string(),
                 });
                 true
             }
