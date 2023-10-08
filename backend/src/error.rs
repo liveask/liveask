@@ -2,6 +2,7 @@ use axum::response::{IntoResponse, Response};
 use deadpool_redis::{CreatePoolError, PoolError};
 use redis::RedisError;
 use reqwest::StatusCode;
+use shared::AddQuestionValidation;
 use thiserror::Error;
 
 use crate::{eventsdb, payment::PaymentError};
@@ -11,8 +12,20 @@ pub enum InternalError {
     #[error("General Error: {0}")]
     General(String),
 
+    #[error("Invalid Login Error")]
+    InvalidLogin,
+
     #[error("Acceesssing Deleted Event: {0}")]
     AccessingDeletedEvent(String),
+
+    #[error("Trying to modify timed out Event: {0}")]
+    TimedOutFreeEvent(String),
+
+    #[error("Duplicate Question Error")]
+    DuplicateQuestion,
+
+    #[error("Add Question Valdiation")]
+    AddQuestionValdiation(AddQuestionValidation),
 
     #[error("Events DB Error: {0}")]
     EventsDB(#[from] eventsdb::Error),
@@ -45,10 +58,22 @@ impl IntoResponse for InternalError {
                 (StatusCode::INTERNAL_SERVER_ERROR, "").into_response()
             }
 
+            Self::InvalidLogin => {
+                tracing::error!("{}", Self::InvalidLogin);
+                (StatusCode::FORBIDDEN, "").into_response()
+            }
+
             Self::AccessingDeletedEvent(id) => {
                 tracing::info!("accessing deleted event: {id}");
                 (StatusCode::BAD_REQUEST, "").into_response()
             }
+
+            Self::TimedOutFreeEvent(id) => {
+                tracing::info!("trying to modify timed out Event: {id}");
+                (StatusCode::BAD_REQUEST, "").into_response()
+            }
+
+            Self::DuplicateQuestion => (StatusCode::BAD_REQUEST, "").into_response(),
 
             Self::Payment(e) => {
                 tracing::error!("payment error: {e}");
@@ -57,6 +82,11 @@ impl IntoResponse for InternalError {
 
             Self::SerdeJson(e) => {
                 tracing::error!("serde error: {e}");
+                (StatusCode::BAD_REQUEST, "").into_response()
+            }
+
+            Self::AddQuestionValdiation(e) => {
+                tracing::warn!("add question validation: {:?}", e);
                 (StatusCode::BAD_REQUEST, "").into_response()
             }
 

@@ -1,11 +1,11 @@
 mod conversion;
 
-use std::collections::HashMap;
-
 use crate::utils::timestamp_now;
-use aws_sdk_dynamodb::model::AttributeValue;
+use aws_sdk_dynamodb::types::AttributeValue;
+use chrono::{DateTime, Duration, TimeZone, Utc};
 use serde::{Deserialize, Serialize};
 use shared::{EventData, EventInfo, EventState, EventTokens, QuestionItem};
+use std::collections::HashMap;
 
 use self::conversion::{attributes_to_event, event_to_attributes};
 
@@ -23,9 +23,47 @@ pub struct ApiEventInfo {
     #[serde(rename = "lastEditUnix")]
     pub last_edit_unix: i64,
     pub questions: Vec<QuestionItem>,
+    #[serde(default)]
+    pub do_screening: bool,
     pub state: EventState,
     pub premium_order: Option<String>,
+    #[serde(default)]
+    pub mod_email: Option<String>,
 }
+
+impl ApiEventInfo {
+    fn is_timed_out(&self) -> bool {
+        Self::timestamp_to_datetime(self.create_time_unix).map_or_else(
+            || {
+                tracing::warn!("timeout calc error: {}", self.create_time_unix);
+                true
+            },
+            |create_date| {
+                let age: Duration = Utc::now() - create_date;
+                age.num_days() > 7
+            },
+        )
+    }
+
+    pub fn is_timed_out_and_free(&self) -> bool {
+        self.premium_order.is_none() && self.is_timed_out()
+    }
+
+    pub fn adapt_if_timedout(&mut self) {
+        if self.is_timed_out_and_free() {
+            for q in &mut self.questions {
+                let sentence = LOREM_IPSUM;
+                q.text = sentence[0..q.text.len().min(sentence.len())].to_string();
+            }
+        }
+    }
+
+    fn timestamp_to_datetime(timestamp: i64) -> Option<DateTime<Utc>> {
+        Utc.timestamp_opt(timestamp, 0).latest()
+    }
+}
+
+const LOREM_IPSUM:&str = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam diam eros, tincidunt ac placerat in, sodales sit amet nibh.";
 
 impl From<ApiEventInfo> for EventInfo {
     fn from(val: ApiEventInfo) -> Self {
@@ -38,6 +76,7 @@ impl From<ApiEventInfo> for EventInfo {
             last_edit_unix: val.last_edit_unix,
             questions: val.questions,
             state: val.state,
+            screening: val.do_screening,
             premium: val.premium_order.is_some(),
         }
     }
@@ -141,21 +180,23 @@ mod test_serialization {
                     description: String::from("desc"),
                     short_url: String::from(""),
                     long_url: None,
-                    mail: None,
                 },
                 create_time_unix: 1,
                 delete_time_unix: 0,
                 deleted: false,
                 premium_order: Some(String::from("order")),
                 last_edit_unix: 2,
+                mod_email: None,
                 questions: vec![QuestionItem {
                     id: 0,
                     likes: 2,
                     text: String::from("q"),
                     hidden: false,
                     answered: true,
+                    screening: false,
                     create_time_unix: 3,
                 }],
+                do_screening: true,
                 state: EventState {
                     state: States::Closed,
                 },
@@ -186,21 +227,24 @@ mod test_serialization {
                     description: String::from("desc"),
                     short_url: String::from(""),
                     long_url: Some(String::from("foo")),
-                    mail: Some(String::from("mail")),
                 },
                 create_time_unix: 1,
                 delete_time_unix: 0,
                 deleted: false,
                 premium_order: Some(String::from("order")),
                 last_edit_unix: 2,
+                mod_email: Some(String::from("mail")),
                 questions: vec![QuestionItem {
                     id: 0,
                     likes: 2,
                     text: String::from("q"),
                     hidden: false,
                     answered: true,
+                    screening: true,
                     create_time_unix: 3,
                 }],
+
+                do_screening: false,
                 state: EventState {
                     state: States::Closed,
                 },

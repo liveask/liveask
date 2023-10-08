@@ -1,6 +1,6 @@
 use super::LoadingState;
 use crate::{components::Qr, fetch, pages::BASE_API};
-use shared::EventInfo;
+use shared::GetEventResponse;
 use yew::prelude::*;
 
 #[derive(Clone, Debug, Eq, PartialEq, Properties)]
@@ -9,11 +9,11 @@ pub struct Props {
 }
 
 pub struct Print {
-    event: Option<EventInfo>,
+    event: Option<GetEventResponse>,
     loading_state: LoadingState,
 }
 pub enum Msg {
-    Fetched(Option<EventInfo>),
+    Fetched(Option<GetEventResponse>),
 }
 impl Component for Print {
     type Message = Msg;
@@ -32,13 +32,17 @@ impl Component for Print {
     fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
             Msg::Fetched(res) => {
-                self.loading_state = if res.is_none() {
-                    LoadingState::NotFound
-                } else {
-                    LoadingState::Loaded
-                };
-
-                self.event = res;
+                match res {
+                    Some(ev) => {
+                        if ev.is_deleted() {
+                            self.loading_state = LoadingState::Deleted;
+                        } else {
+                            self.loading_state = LoadingState::Loaded;
+                            self.event = Some(ev);
+                        }
+                    }
+                    None => self.loading_state = LoadingState::NotFound,
+                }
 
                 true
             }
@@ -83,6 +87,13 @@ impl Print {
                     </div>
                 }
             }
+            LoadingState::Deleted => {
+                html! {
+                    <div class="noevent">
+                        <h2>{"event deleted"}</h2>
+                    </div>
+                }
+            }
         }
     }
 
@@ -90,10 +101,10 @@ impl Print {
         self.event.as_ref().map_or_else(
             || html! {},
             |e| {
-                let share_url = if e.data.short_url.is_empty() {
-                    e.data.long_url.clone().unwrap_or_default()
+                let share_url = if e.info.data.short_url.is_empty() {
+                    e.info.data.long_url.clone().unwrap_or_default()
                 } else {
-                    e.data.short_url.clone()
+                    e.info.data.short_url.clone()
                 };
 
                 html! {
@@ -103,11 +114,11 @@ impl Print {
 
                         <div class="event-block">
 
-                            <div class="event-name printable">{&e.data.name.clone()}</div>
+                            <div class="event-name printable">{&e.info.data.name.clone()}</div>
 
                             <div class="event-desc printable"
                                 >
-                                {{&e.data.description.clone()}}
+                                {{&e.info.data.description.clone()}}
                             </div>
                         </div>
 

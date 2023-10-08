@@ -4,7 +4,9 @@ use crate::{
     fetch,
     local_cache::LocalCache,
     pages::BASE_API,
+    tracking,
 };
+use shared::{AddQuestionError, AddQuestionValidation};
 use wasm_bindgen::UnwrapThrowExt;
 use web_sys::HtmlTextAreaElement;
 use yew::prelude::*;
@@ -21,12 +23,9 @@ pub enum Msg {
 pub struct QuestionPopup {
     show: bool,
     text: String,
-    error: Option<String>,
+    errors: AddQuestionValidation,
     events: Box<dyn Bridge<EventAgent>>,
 }
-
-const MAX_WORD_LENGTH: usize = 30;
-const MIN_LENGTH: usize = 10;
 
 #[derive(Clone, Debug, Eq, PartialEq, Properties)]
 pub struct AddQuestionProps {
@@ -43,7 +42,7 @@ impl Component for QuestionPopup {
         Self {
             show: false,
             events,
-            error: None,
+            errors: AddQuestionValidation::default(),
             text: String::new(),
         }
     }
@@ -52,6 +51,7 @@ impl Component for QuestionPopup {
         match msg {
             Msg::GlobalEvent(e) => {
                 if matches!(e, GlobalEvent::OpenQuestionPopup) {
+                    tracking::track_event(tracking::EVNT_ASK_OPEN);
                     self.show = true;
                     return true;
                 }
@@ -65,9 +65,14 @@ impl Component for QuestionPopup {
                 let event_id = ctx.props().event.clone();
                 let text = self.text.clone();
 
+                tracking::track_event(tracking::EVNT_ASK_SENT);
+
                 ctx.link().send_future(async move {
                     if let Ok(item) = fetch::add_question(BASE_API, event_id.clone(), text).await {
                         LocalCache::set_like_state(&event_id, item.id, true);
+                        if item.screening {
+                            LocalCache::add_unscreened_question(&event_id, &item);
+                        }
                         Msg::QuestionCreated(Some(item.id))
                     } else {
                         Msg::QuestionCreated(None)
@@ -87,26 +92,8 @@ impl Component for QuestionPopup {
             }
             Msg::InputChanged(ev) => {
                 let target: HtmlTextAreaElement = ev.target_dyn_into().unwrap_throw();
-
                 self.text = target.value();
-
-                self.error = None;
-                if self.text.is_empty() {
-                    self.error = Some(String::from("Question cannot be empty"));
-                } else if self.text.trim().len() < MIN_LENGTH {
-                    self.error = Some(format!(
-                        "Question must be at least {MIN_LENGTH} characters long."
-                    ));
-                } else if self
-                    .text
-                    .split_ascii_whitespace()
-                    .any(|word| word.len() > MAX_WORD_LENGTH)
-                {
-                    self.error = Some(String::from(
-                        "Question contains a word exceeding max length.",
-                    ));
-                }
-
+                self.errors.check(&self.text);
                 true
             }
         }
@@ -115,7 +102,7 @@ impl Component for QuestionPopup {
     #[allow(clippy::if_not_else)]
     fn view(&self, ctx: &Context<Self>) -> Html {
         if self.show {
-            let on_close = ctx.link().callback(|_| Msg::Close);
+            let on_close = ctx.link().callback(|()| Msg::Close);
             let on_click_ask = ctx.link().callback(|_| Msg::Send);
 
             html! {
@@ -143,20 +130,19 @@ impl Component for QuestionPopup {
                             </code>
                         </div>
                         {
-                            self.error.as_ref().map_or_else(|| html!{}, |e|
-                                html!{
-                                    <div class="invalid">
+                            html!{
+                                <div hidden={!self.errors.has_any()} class="invalid">
                                     <div>
-                                       {e.clone()}
+                                    {self.error_text().unwrap_or_default()}
                                     </div>
-                                    </div>
-                                })
+                                </div>
+                            }
                         }
                     </div>
                 </div>
                 <button class="dlg-button"
                     onclick={on_click_ask}
-                    disabled={!self.is_valid()}
+                    disabled={self.errors.has_any()}
                     >
                     {"Ask!"}
                 </button>
@@ -170,7 +156,19 @@ impl Component for QuestionPopup {
 }
 
 impl QuestionPopup {
-    fn is_valid(&self) -> bool {
-        self.error.is_none() && !self.text.is_empty()
+    fn error_text(&self) -> Option<String> {
+        match self.errors.content {
+            Some(AddQuestionError::MinLength(_, _)) => Some("Question too short.".to_string()),
+            Some(AddQuestionError::MaxLength(_, max)) => {
+                Some(format!("Question too long. Max: {max})"))
+            }
+            Some(AddQuestionError::MinWordCount(_, min)) => {
+                Some(format!("Minimum words required: {min}."))
+            }
+            Some(AddQuestionError::WordLengthMax(max)) => {
+                Some(format!("No word can be longer than: {max}."))
+            }
+            None => None,
+        }
     }
 }

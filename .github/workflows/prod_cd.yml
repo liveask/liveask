@@ -4,12 +4,15 @@ on:
   # only manually
   workflow_dispatch:
 
+env:
+  TRUNK_VERSION: v0.17.5
+
 jobs:
   deploy_backend_prod:
     runs-on: ubuntu-latest
     environment: prod
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Login to Docker Hub
       run: |
         docker login \
@@ -35,32 +38,23 @@ jobs:
     runs-on: ubuntu-latest
     environment: prod
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Restore cargo cache
-      uses: actions/cache@v2
-      env:
-        cache-name: ci
+      uses: Swatinem/rust-cache@v2
       with:
-        path: |
-          ~/.cargo/registry
-          ~/.cargo/git
-          ~/.cargo/bin
-          target
-        key: linux-${{ env.cache-name }}-stable-${{ hashFiles('Cargo.lock') }}
+        shared-key: ubuntu-latest-stable
     - name: Install Rust
-      uses: actions-rs/toolchain@v1
+      uses: dtolnay/rust-toolchain@stable
       with:
-        toolchain: stable
         target: wasm32-unknown-unknown
-        default: true
-        profile: minimal
     - name: Install cargo-make
       run: |
         which cargo-make || cargo install cargo-make
     - name: Install Trunk
       run: |
-        wget -qO- https://github.com/thedodd/trunk/releases/download/v0.16.0/trunk-x86_64-unknown-linux-gnu.tar.gz | tar -xzf-
+        wget -qO- https://github.com/thedodd/trunk/releases/download/${TRUNK_VERSION}/trunk-x86_64-unknown-linux-gnu.tar.gz | tar -xzf-
         mv trunk /usr/local/bin/trunk
+        trunk --version
     - name: Build
       env:
         LA_ENV: "prod"
@@ -76,6 +70,7 @@ jobs:
         AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
       run: |
         cd frontend/dist
-        aws s3 sync . s3://www.live-ask.com --no-progress --delete --cache-control "public, max-age=5184000" --exclude index.html
-        aws s3 cp ./index.html s3://www.live-ask.com --no-progress --cache-control "public, max-age=21600"
-        aws cloudfront create-invalidation --distribution-id E3VSL6KHSMRDI2 --paths /index.html
+        aws s3 sync . s3://www.live-ask.com --no-progress --delete --cache-control "public, max-age=86400" --exclude "index.html" --exclude "worker2_bg.wasm"
+        aws s3 cp ./index.html s3://www.live-ask.com --no-progress --cache-control "public, max-age=300"
+        aws s3 cp ./worker2_bg.wasm s3://www.live-ask.com --no-progress --cache-control "public, max-age=300"
+        aws cloudfront create-invalidation --distribution-id E3VSL6KHSMRDI2 --paths "/index.html" "/worker*"

@@ -2,9 +2,14 @@ mod validation;
 
 use serde::{Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
-use std::str::FromStr;
+use std::{str::FromStr, time::Duration};
 
-pub use validation::{CreateEventErrors, ValidationError};
+pub use validation::{
+    add_question::{AddQuestionError, AddQuestionValidation},
+    create_event::{CreateEventError, CreateEventValidation},
+};
+
+pub const TEST_VALID_QUESTION: &str = "1 2 3fourfive";
 
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Default)]
 pub struct EventTokens {
@@ -22,7 +27,6 @@ pub struct EventData {
     pub short_url: String,
     #[serde(rename = "longUrl")]
     pub long_url: Option<String>,
-    pub mail: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Default, Debug, Clone, Eq, PartialEq)]
@@ -32,6 +36,8 @@ pub struct QuestionItem {
     pub text: String,
     pub hidden: bool,
     pub answered: bool,
+    #[serde(default)]
+    pub screening: bool,
     #[serde(rename = "createTimeUnix")]
     pub create_time_unix: i64,
 }
@@ -39,6 +45,11 @@ pub struct QuestionItem {
 #[derive(Serialize, Deserialize, Default, Debug, Clone, Eq, PartialEq)]
 pub struct EventUpgrade {
     pub url: String,
+}
+
+#[derive(Serialize, Deserialize, Default, Debug, Clone, Eq, PartialEq)]
+pub struct PaymentCapture {
+    pub order_captured: bool,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, Default)]
@@ -54,13 +65,62 @@ pub struct EventInfo {
     pub last_edit_unix: i64,
     pub questions: Vec<QuestionItem>,
     pub state: EventState,
+    #[serde(default)]
     pub premium: bool,
+    #[serde(default)]
+    pub screening: bool,
 }
 
 impl EventInfo {
+    pub fn deleted(id: String) -> Self {
+        Self {
+            deleted: true,
+            tokens: EventTokens {
+                public_token: id,
+                ..Default::default()
+            },
+            ..Default::default()
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, Default)]
+pub struct GetEventResponse {
+    pub info: EventInfo,
+    #[serde(default)]
+    pub timed_out: bool,
+    pub viewers: i64,
+    //TODO: not needed if client becomes aware of its user role
+    #[serde(default)]
+    pub admin: bool,
+}
+
+impl GetEventResponse {
     #[must_use]
     pub fn get_question(&self, id: i64) -> Option<QuestionItem> {
-        self.questions.iter().find(|i| i.id == id).cloned()
+        self.info.questions.iter().find(|i| i.id == id).cloned()
+    }
+
+    #[must_use]
+    pub fn get_likes(&self) -> i32 {
+        self.info.questions.iter().map(|q| q.likes).sum()
+    }
+
+    #[must_use]
+    pub const fn is_closed(&self) -> bool {
+        matches!(self.info.state.state, States::Closed) || self.timed_out
+    }
+
+    #[must_use]
+    pub const fn is_deleted(&self) -> bool {
+        self.info.deleted
+    }
+
+    pub fn deleted(id: String) -> Self {
+        Self {
+            info: EventInfo::deleted(id),
+            ..Default::default()
+        }
     }
 }
 
@@ -68,8 +128,8 @@ impl EventInfo {
 pub struct AddEvent {
     #[serde(rename = "eventData")]
     pub data: EventData,
-    #[serde(rename = "moderatorEmail")]
-    pub moderator_email: String,
+    #[serde(rename = "moderatorEmail", default)]
+    pub moderator_email: Option<String>,
     pub test: bool,
 }
 
@@ -89,6 +149,7 @@ pub struct AddQuestion {
 pub struct ModQuestion {
     pub hide: bool,
     pub answered: bool,
+    pub screened: bool,
 }
 
 ///
@@ -117,6 +178,11 @@ impl FromStr for States {
 #[derive(Serialize, Deserialize, Debug, Copy, Clone, Eq, PartialEq)]
 pub struct ModEventState {
     pub state: EventState,
+}
+
+#[derive(Serialize, Deserialize, Debug, Copy, Clone, Eq, PartialEq)]
+pub struct ModEditScreening {
+    pub screening: bool,
 }
 
 #[derive(Serialize, Deserialize, Debug, Copy, Clone, Eq, PartialEq, Default)]
@@ -162,4 +228,21 @@ impl EventState {
             _ => None?,
         })
     }
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct UserLogin {
+    pub name: String,
+    pub pwd_hash: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct UserInfo {
+    pub name: String,
+    pub expires: Duration,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct GetUserInfo {
+    pub user: Option<UserInfo>,
 }

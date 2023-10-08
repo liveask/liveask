@@ -7,6 +7,7 @@ use tracing::instrument;
 
 use crate::{
     app::SharedApp,
+    auth::OptionalUser,
     error::InternalError,
     payment::{
         PaymentCaptureRefundedResource, PaymentCheckoutApprovedResource, PaymentWebhookBase,
@@ -14,7 +15,6 @@ use crate::{
     GIT_HASH,
 };
 
-//TODO: not sure why we need this
 async fn socket_handler(ws: WebSocket, id: String, app: SharedApp) {
     app.push_subscriber(ws, id).await;
 }
@@ -46,11 +46,7 @@ pub async fn addevent_handler(
     State(app): State<SharedApp>,
     Json(payload): Json<shared::AddEvent>,
 ) -> std::result::Result<impl IntoResponse, InternalError> {
-    tracing::info!(
-        "create event: {} (by {})",
-        payload.data.name,
-        payload.moderator_email
-    );
+    tracing::info!("create event");
 
     Ok(Json(app.create_event(payload).await?))
 }
@@ -69,21 +65,23 @@ pub async fn addquestion_handler(
 #[instrument(skip(app))]
 pub async fn getevent_handler(
     Path(id): Path<String>,
+    OptionalUser(user): OptionalUser,
     State(app): State<SharedApp>,
 ) -> std::result::Result<impl IntoResponse, InternalError> {
     tracing::info!("getevent_handler");
 
-    Ok(Json(app.get_event(id, None).await?))
+    Ok(Json(app.get_event(id, None, user.is_some()).await?))
 }
 
 #[instrument(skip(app))]
 pub async fn mod_get_event(
     Path((id, secret)): Path<(String, String)>,
+    OptionalUser(user): OptionalUser,
     State(app): State<SharedApp>,
 ) -> std::result::Result<impl IntoResponse, InternalError> {
     tracing::info!("mod_get_event");
 
-    Ok(Json(app.get_event(id, Some(secret)).await?))
+    Ok(Json(app.get_event(id, Some(secret), user.is_some()).await?))
 }
 
 #[instrument(skip(app))]
@@ -103,7 +101,17 @@ pub async fn mod_premium_upgrade(
 ) -> std::result::Result<impl IntoResponse, InternalError> {
     tracing::info!("mod_premium_upgrade");
 
-    Ok(Json(app.premium_upgrade(id, secret).await?))
+    Ok(Json(app.request_premium_upgrade(id, secret).await?))
+}
+
+#[instrument(skip(app))]
+pub async fn mod_premium_capture(
+    Path((id, order)): Path<(String, String)>,
+    State(app): State<SharedApp>,
+) -> std::result::Result<impl IntoResponse, InternalError> {
+    tracing::info!("mod_premium_capture");
+
+    Ok(Json(app.premium_capture(id, order).await?))
 }
 
 #[instrument(skip(app, body))]
@@ -178,6 +186,20 @@ pub async fn mod_edit_state(
     Ok(Json(app.edit_event_state(id, secret, payload.state).await?))
 }
 
+#[instrument(skip(app))]
+pub async fn mod_edit_screening(
+    Path((id, secret)): Path<(String, String)>,
+    State(app): State<SharedApp>,
+    Json(payload): Json<shared::ModEditScreening>,
+) -> std::result::Result<impl IntoResponse, InternalError> {
+    tracing::info!("mod_edit_screening");
+
+    Ok(Json(
+        app.edit_event_screening(id, secret, payload.screening)
+            .await?,
+    ))
+}
+
 #[instrument]
 pub async fn ping_handler() -> Html<&'static str> {
     Html("pong")
@@ -189,8 +211,9 @@ pub async fn version_handler() -> Html<&'static str> {
 }
 
 #[instrument]
-pub async fn panic_handler() -> Html<&'static str> {
-    todo!()
+pub async fn error_handler() -> Html<&'static str> {
+    tracing::error!("error handler");
+    Html("error!")
 }
 
 #[cfg(test)]
@@ -198,6 +221,9 @@ mod test_db_conflicts {
     use super::*;
     use crate::eventsdb::{ApiEventInfo, EventEntry, EventsDB};
     use crate::payment::Payment;
+    use crate::tracking::Tracking;
+    use crate::utils::timestamp_now;
+    use crate::viewers::MockViewers;
     use crate::{app::App, pubsub::PubSubInMemory};
     use async_trait::async_trait;
     use axum::{
@@ -224,6 +250,7 @@ mod test_db_conflicts {
                         id: 1,
                         ..Default::default()
                     }],
+                    create_time_unix: timestamp_now(),
                     ..Default::default()
                 },
                 version: 1,
@@ -240,7 +267,9 @@ mod test_db_conflicts {
         let app = Arc::new(App::new(
             Arc::new(ConflictDB::default()),
             Arc::new(PubSubInMemory::default()),
+            Arc::new(MockViewers::new()),
             Arc::new(Payment::default()),
+            Tracking::default(),
             String::new(),
         ));
 
@@ -283,9 +312,12 @@ mod test_db_item_not_found {
     use super::*;
     use crate::{
         app::App,
+        auth,
         eventsdb::{EventEntry, EventsDB},
         payment::Payment,
         pubsub::PubSubInMemory,
+        tracking::Tracking,
+        viewers::MockViewers,
     };
     use async_trait::async_trait;
     use axum::{
@@ -315,12 +347,18 @@ mod test_db_item_not_found {
         let app = Arc::new(App::new(
             Arc::new(ItemNotFoundDB::default()),
             Arc::new(PubSubInMemory::default()),
+            Arc::new(MockViewers::new()),
             Arc::new(Payment::default()),
+            Tracking::default(),
             String::new(),
         ));
 
+        let (session, auth) = auth::setup_test();
+
         Router::new()
             .route("/api/event/:id", get(getevent_handler))
+            .layer(auth)
+            .layer(session)
             .layer(TraceLayer::new_for_http())
             .with_state(app)
     }

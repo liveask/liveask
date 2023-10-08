@@ -12,3 +12,25 @@ pub const ENV_SENTRY_DSN: &str = "LA_SENTRY_DSN";
 pub const ENV_PORT: &str = "LA_PORT";
 pub const ENV_PAYPAL_ID: &str = "LA_PP_CLIENT_ID";
 pub const ENV_PAYPAL_SECRET: &str = "LA_PP_CLIENT_SECRET";
+pub const ENV_POSTHOG_KEY: &str = "LA_POSTHOG_KEY";
+const ENV_ADMIN_PWD_HASH: &str = "LA_ADMIN_PWD_HASH";
+const ENV_SESSION_SECRET: &str = "LA_SESSION_SECRET";
+
+pub fn admin_pwd_hash() -> String {
+    std::env::var(ENV_ADMIN_PWD_HASH).unwrap_or_default()
+}
+
+pub fn session_secret() -> Option<Vec<u8>> {
+    let vec: Vec<_> = std::env::var(ENV_SESSION_SECRET)
+        .unwrap_or_else(|_| {
+            String::from("0123456789012345678901234567890123456789012345678901234567890123")
+        })
+        .as_bytes()
+        .into();
+
+    if vec.len() >= 64 {
+        Some(vec)
+    } else {
+        None
+    }
+}

@@ -1,19 +1,19 @@
-use aws_sdk_dynamodb::model::AttributeValue;
-use shared::{EventData, EventState, EventTokens, QuestionItem, States};
-
-use crate::eventsdb::Error;
-
 use super::{ApiEventInfo, AttributeMap};
+use crate::eventsdb::Error;
+use aws_sdk_dynamodb::types::AttributeValue;
+use shared::{EventData, EventState, EventTokens, QuestionItem, States};
 
 const ATTR_EVENT_INFO_LAST_EDIT: &str = "last_edit";
 const ATTR_EVENT_INFO_DELETE_TIME: &str = "delete_time";
 const ATTR_EVENT_INFO_CREATE_TIME: &str = "create_time";
 const ATTR_EVENT_INFO_DELETED: &str = "deleted";
+const ATTR_EVENT_INFO_DO_SCREENING: &str = "do_screening";
 const ATTR_EVENT_INFO_STATE: &str = "state";
 const ATTR_EVENT_INFO_TOKENS: &str = "tokens";
 const ATTR_EVENT_INFO_ITEMS: &str = "items";
 const ATTR_EVENT_INFO_DATA: &str = "data";
 const ATTR_EVENT_INFO_PREMIUM: &str = "premium";
+const ATTR_EVENT_INFO_MODMAIL: &str = "mod_email";
 
 pub fn event_to_attributes(value: ApiEventInfo) -> AttributeMap {
     let mut map: AttributeMap = vec![
@@ -38,6 +38,10 @@ pub fn event_to_attributes(value: ApiEventInfo) -> AttributeMap {
             AttributeValue::Bool(value.deleted),
         ),
         (
+            ATTR_EVENT_INFO_DO_SCREENING.into(),
+            AttributeValue::Bool(value.do_screening),
+        ),
+        (
             ATTR_EVENT_INFO_CREATE_TIME.into(),
             AttributeValue::N(value.create_time_unix.to_string()),
         ),
@@ -58,6 +62,10 @@ pub fn event_to_attributes(value: ApiEventInfo) -> AttributeMap {
             ATTR_EVENT_INFO_PREMIUM.into(),
             AttributeValue::S(premium_order),
         );
+    }
+
+    if let Some(mod_email) = value.mod_email {
+        map.insert(ATTR_EVENT_INFO_MODMAIL.into(), AttributeValue::S(mod_email));
     }
 
     map
@@ -102,8 +110,18 @@ pub fn attributes_to_event(value: &AttributeMap) -> Result<ApiEventInfo, super::
         .map_err(|_| Error::MalformedObject(ATTR_EVENT_INFO_DELETED.into()))?
         .to_owned();
 
+    let do_screening = value
+        .get(ATTR_EVENT_INFO_DO_SCREENING)
+        .and_then(|val| val.as_bool().ok())
+        .copied()
+        .unwrap_or_default();
+
     let premium_order = value
         .get(ATTR_EVENT_INFO_PREMIUM)
+        .and_then(|value| value.as_s().ok().cloned());
+
+    let mod_email = value
+        .get(ATTR_EVENT_INFO_MODMAIL)
         .and_then(|value| value.as_s().ok().cloned());
 
     let state = EventState::from_value(
@@ -124,8 +142,10 @@ pub fn attributes_to_event(value: &AttributeMap) -> Result<ApiEventInfo, super::
         deleted,
         last_edit_unix,
         questions,
+        do_screening,
         state,
         premium_order,
+        mod_email,
     })
 }
 
@@ -170,7 +190,6 @@ const ATTR_EVENT_DATA_NAME: &str = "name";
 const ATTR_EVENT_DATA_DESC: &str = "desc";
 const ATTR_EVENT_DATA_URL_SHORT: &str = "short_url";
 const ATTR_EVENT_DATA_URL_LONG: &str = "long_url";
-const ATTR_EVENT_DATA_MAIL: &str = "mail";
 
 fn eventdata_to_attributes(value: EventData) -> AttributeMap {
     let mut map = AttributeMap::new();
@@ -193,13 +212,6 @@ fn eventdata_to_attributes(value: EventData) -> AttributeMap {
         .and_then(|url| if url.is_empty() { None } else { Some(url) })
     {
         map.insert(ATTR_EVENT_DATA_URL_LONG.into(), AttributeValue::S(long_url));
-    }
-
-    if let Some(mail) = value
-        .mail
-        .and_then(|url| if url.is_empty() { None } else { Some(url) })
-    {
-        map.insert(ATTR_EVENT_DATA_MAIL.into(), AttributeValue::S(mail));
     }
 
     map
@@ -225,16 +237,11 @@ fn attributes_to_eventdata(value: &AttributeMap) -> Result<EventData, super::Err
         .get(ATTR_EVENT_DATA_URL_LONG)
         .and_then(|value| value.as_s().ok().cloned());
 
-    let mail = value
-        .get(ATTR_EVENT_DATA_MAIL)
-        .and_then(|value| value.as_s().ok().cloned());
-
     Ok(EventData {
         name,
         description,
         short_url,
         long_url,
-        mail,
     })
 }
 
@@ -243,6 +250,7 @@ const ATTR_QUESTION_ID: &str = "id";
 const ATTR_QUESTION_LIKES: &str = "likes";
 const ATTR_QUESTION_CREATED: &str = "created";
 const ATTR_QUESTION_ANSWERED: &str = "answered";
+const ATTR_QUESTION_SCREENING: &str = "screening";
 const ATTR_QUESTION_HIDDEN: &str = "hidden";
 
 fn question_to_attributes(value: QuestionItem) -> AttributeMap {
@@ -267,6 +275,9 @@ fn question_to_attributes(value: QuestionItem) -> AttributeMap {
     }
     if value.hidden {
         map.insert(ATTR_QUESTION_HIDDEN.into(), AttributeValue::Bool(true));
+    }
+    if value.screening {
+        map.insert(ATTR_QUESTION_SCREENING.into(), AttributeValue::Bool(true));
     }
 
     map
@@ -298,6 +309,11 @@ fn attributes_to_question(value: &AttributeMap) -> Result<QuestionItem, super::E
         .and_then(|value| value.as_bool().ok().copied())
         .unwrap_or_default();
 
+    let screening = value
+        .get(ATTR_QUESTION_SCREENING)
+        .and_then(|value| value.as_bool().ok().copied())
+        .unwrap_or_default();
+
     let hidden = value
         .get(ATTR_QUESTION_HIDDEN)
         .and_then(|value| value.as_bool().ok().copied())
@@ -309,6 +325,7 @@ fn attributes_to_question(value: &AttributeMap) -> Result<QuestionItem, super::E
         text,
         hidden,
         answered,
+        screening,
         create_time_unix,
     })
 }

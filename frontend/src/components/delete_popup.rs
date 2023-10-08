@@ -4,6 +4,7 @@ use crate::{
     fetch,
     pages::BASE_API,
     routes::Route,
+    tracking,
 };
 use wasm_bindgen::UnwrapThrowExt;
 use yew::prelude::*;
@@ -63,6 +64,8 @@ impl Component for DeletePopup {
                     .clone()
                     .unwrap_or_default();
 
+                tracking::track_event(tracking::EVNT_EVENT_DELETE);
+
                 ctx.link().send_future(async move {
                     let _res = fetch::delete_event(BASE_API, event_id.clone(), secret).await;
 
@@ -79,7 +82,7 @@ impl Component for DeletePopup {
 
     fn view(&self, ctx: &Context<Self>) -> Html {
         if self.show {
-            let on_close = ctx.link().callback(|_| Msg::Close);
+            let on_close = ctx.link().callback(|()| Msg::Close);
             let on_click_ok = ctx.link().callback(|_| Msg::ConfirmedDelete);
             let on_click_no = ctx.link().callback(|_| Msg::Close);
 

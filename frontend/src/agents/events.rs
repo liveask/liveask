@@ -12,6 +12,7 @@ pub enum GlobalEvent {
     OpenQuestionPopup,
     DeletePopup,
     QuestionCreated(i64),
+    PayForUpgrade,
 }
 
 pub struct EventAgent {

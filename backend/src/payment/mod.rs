@@ -45,17 +45,19 @@ pub struct Payment {
     authenticated: Arc<AtomicBool>,
 }
 
+#[cfg(test)]
+#[allow(clippy::expect_used)]
 impl Default for Payment {
     fn default() -> Self {
         Self {
-            client: Client::new(String::new(), String::new(), Environment::Sandbox),
+            client: Client::new(String::new(), String::new(), Environment::Sandbox).expect(""),
             authenticated: Arc::new(AtomicBool::new(false)),
         }
     }
 }
 
 impl Payment {
-    pub fn new(username: String, password: String, sandbox: bool) -> Self {
+    pub fn new(username: String, password: String, sandbox: bool) -> PaymentResult<Self> {
         let client = Client::new(
             username,
             password,
@@ -64,17 +66,17 @@ impl Payment {
             } else {
                 Environment::Live
             },
-        )
-        .with_app_info(AppInfo {
+        )?
+        .with_app_info(&AppInfo {
             name: "liveask".to_string(),
-            version: "1.0".to_string(),
-            website: None,
+            version: crate::GIT_HASH.to_string(),
+            website: Some("www.live-ask.com".to_string()),
         });
 
-        Self {
+        Ok(Self {
             client,
             authenticated: Arc::new(AtomicBool::new(false)),
-        }
+        })
     }
 
     pub async fn authenticate(&self) -> PaymentResult<()> {
@@ -86,7 +88,12 @@ impl Payment {
         Ok(())
     }
 
-    pub async fn create_order(&self, event: String, return_url: String) -> PaymentResult<String> {
+    pub async fn create_order(
+        &self,
+        event: &str,
+        mod_url: &str,
+        return_url: &str,
+    ) -> PaymentResult<String> {
         self.authenticate().await?;
 
         let order = Order::create(
@@ -94,15 +101,18 @@ impl Payment {
             CreateOrderDto {
                 intent: OrderIntent::Capture,
                 purchase_units: vec![PurchaseUnitRequest {
-                    custom_id: Some(event.clone()),
+                    description: Some(format!("live-ask premium: {mod_url}")),
+                    custom_id: Some(event.to_string()),
                     amount: AmountWithBreakdown {
                         currency_code: String::from("EUR"),
-                        value: String::from("5.99"),
+                        value: String::from("7"),
                         breakdown: None,
                     },
                     ..Default::default()
                 }],
-                application_context: Some(OrderApplicationContext::new().return_url(return_url)),
+                application_context: Some(
+                    OrderApplicationContext::new().return_url(return_url.to_string()),
+                ),
                 payer: None,
             },
         )

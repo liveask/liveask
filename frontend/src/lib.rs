@@ -24,19 +24,26 @@
     clippy::unneeded_field_pattern,
     clippy::verbose_file_reads
 )]
-#![allow(clippy::use_self, clippy::module_name_repetitions)]
+#![allow(
+    clippy::use_self,
+    clippy::module_name_repetitions,
+    clippy::let_unit_value,
+    clippy::let_underscore_untyped
+)]
 mod agents;
 mod components;
+mod environment;
 mod fetch;
 mod local_cache;
 mod pages;
 mod routes;
+mod tracking;
 
 use agents::{EventAgent, GlobalEvent};
+use pages::AdminLogin;
 use routes::Route;
-use shared::EventInfo;
+use shared::GetEventResponse;
 use std::rc::Rc;
-use wasm_bindgen::prelude::*;
 use yew::prelude::*;
 use yew_agent::{Bridge, Bridged};
 use yew_router::prelude::*;
@@ -47,12 +54,33 @@ use crate::{
     pages::{Event, Home, NewEvent, Print, Privacy},
 };
 
-pub const VERSION_STR: &str = "2.0.8";
+pub const VERSION_STR: &str = "2.3.11";
+pub const GIT_BRANCH: &str = env!("VERGEN_GIT_BRANCH");
 
 #[derive(Default, Clone, Eq, PartialEq, Store)]
 pub struct State {
-    pub event: Option<EventInfo>,
+    pub event: Option<GetEventResponse>,
     pub new_question: Option<i64>,
+    pub admin: bool,
+}
+
+impl State {
+    #[must_use]
+    pub const fn set_new_question(mut self, v: Option<i64>) -> Self {
+        self.new_question = v;
+        self
+    }
+    #[must_use]
+    #[allow(clippy::missing_const_for_fn)]
+    pub fn set_event(mut self, v: Option<GetEventResponse>) -> Self {
+        self.event = v;
+        self
+    }
+    #[must_use]
+    pub const fn set_admin(mut self, v: bool) -> Self {
+        self.admin = v;
+        self
+    }
 }
 
 pub enum Msg {
@@ -60,7 +88,7 @@ pub enum Msg {
     Event(GlobalEvent),
 }
 
-struct AppRoot {
+pub struct AppRoot {
     connected: bool,
     state: Rc<State>,
     _dispatch: Dispatch<State>,
@@ -139,13 +167,8 @@ fn switch(switch: &Route) -> Html {
         Route::Privacy => {
             html! { <Privacy /> }
         }
+        Route::Login => {
+            html! { <AdminLogin /> }
+        }
     }
-}
-
-#[wasm_bindgen(start)]
-pub fn run_app() {
-    console_error_panic_hook::set_once();
-
-    wasm_logger::init(wasm_logger::Config::new(log::Level::Info));
-    yew::start_app::<AppRoot>();
 }

@@ -3,20 +3,25 @@ name = "liveask-server"
 version = "0.1.0"
 edition = "2021"
 build = "build.rs"
+# ############################
 
 [dependencies]
+async-redis-session = { path = "../async-redis-session" }
 async-trait = "0.1"
-aws-config = "0.51"
-aws-sdk-dynamodb = "0.21"
+aws-config = "0.56"
+aws-sdk-dynamodb = "0.32"
+aws-smithy-http = "0.56"
 axum = { version = "0.6", features = ["ws"] }
-chrono = "0.4"
-deadpool-redis = { version = "0.11", default-features = false, features = ["rt_tokio_1"] }
+axum-login = "0.6"
+axum-sessions = "0.5"
+chrono = { version = "0.4", default-features = false }
 futures-util = "0.3"
-mailjet-rs = "0.3" 
-paypal-rust = { git = "https://github.com/extrawurst/paypal-rust", rev = "765d406" }
-redis = { version = "0.22", default-features = false, features = ["tokio-comp","connection-manager"] }
+mailjet-rs = "0.3"
+paypal-rust = "0.0.9-alpha"
+posthog-rs = { git = "https://github.com/rivet-gg/posthog-rs.git", rev = "fa4d39a" }
+rand = { version = "0.8", features = ["min_const_gen"] }
 reqwest = { version = "0.11", features = ["json"] }
-sentry = { version = "0.29", features = ["tracing", "tower", "tower-http"] }
+sentry = { version = "0.31", features = ["tracing", "tower", "tower-http"] }
 serde = "1"
 serde_json = "1"
 shared = { path = "../shared" }
@@ -25,16 +30,32 @@ tinyurl-rs = "0.1"
 tokio = { version = "1", features = ["full"] }
 tokio-stream = "0.1"
 tower = "0.4"
-tower-http = { version = "0.3", features = ["cors", "trace"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 ulid = "1.0"
 
+[dependencies.deadpool-redis]
+version = "0.13"
+default-features = false
+features = ["rt_tokio_1"]
+
+[dependencies.redis]
+version = "0.23"
+default-features = false
+features = ["tokio-comp", "connection-manager"]
+
+[dependencies.tower-http]
+version = "0.4"
+features = ["cors", "trace", "auth", "sensitive-headers"]
+# ############################
+
 [dev-dependencies]
 env_logger = "0.10"
 mime = "0.3"
+mockall = "0.11"
 pretty_assertions = "1"
+# ############################
 
 [build-dependencies]
 anyhow = "1"
-vergen = "7"
+vergen = { version = "8", features = ["git", "gitcl"] }

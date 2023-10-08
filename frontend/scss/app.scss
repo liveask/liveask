@@ -25,14 +25,13 @@
   color: white;
 }
 
-// h1 {
-//   font-size: 1.2em;
-//   color: #999;
-//   margin-bottom: 0;
-// }
+#admin {
+  display: flex;
+  justify-content: center;
 
-// h2 {
-//   font-size: 2em;
-//   margin-top: 0;
-//   padding-top: 0;
-// }
+  .inner {
+    cursor: pointer;
+    width: 35px;
+    padding-top: 20px;
+  }
+}

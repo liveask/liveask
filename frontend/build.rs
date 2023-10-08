@@ -8,7 +8,7 @@ use std::{
 
 use handlebars::Handlebars;
 use konst::eq_str;
-use vergen::{Config, ShaKind};
+use vergen::EmitBuilder;
 
 fn get_git_hash() -> String {
     use std::process::Command;
@@ -55,14 +55,13 @@ fn process_html_template(git_hash: &str) {
     match la_env(env::var("LA_ENV").ok().as_deref()) {
         LiveAskEnv::Prod => {
             println!("cargo:warning=env is prod");
-            data.insert("metrical", "xPuojp2x_");
+
             data.insert("fathom", "XWFWPSUF");
             data.insert("sentry", "production");
         }
         LiveAskEnv::Beta => {
             println!("cargo:warning=env is beta");
 
-            data.insert("metrical", "2LaPi-sYg");
             data.insert("fathom", "OAMRSQQM");
             data.insert("sentry", "beta");
         }
@@ -94,10 +93,11 @@ fn main() -> anyhow::Result<()> {
     let git = get_git_hash();
     process_html_template(&git);
 
-    let mut config = Config::default();
-    *config.git_mut().sha_kind_mut() = ShaKind::Short;
-
-    vergen::vergen(config)?;
+    EmitBuilder::builder()
+        .git_sha(true)
+        .git_branch()
+        .all_build()
+        .emit()?;
 
     Ok(())
 }
