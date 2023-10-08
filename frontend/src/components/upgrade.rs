@@ -1,3 +1,4 @@
+use events::event_context;
 use shared::EventTokens;
 use wasm_bindgen::UnwrapThrowExt;
 use yew::prelude::*;
@@ -27,15 +28,10 @@ impl Component for Upgrade {
     type Properties = Props;
 
     fn create(ctx: &Context<Self>) -> Self {
-        let (events, _) = ctx
-            .link()
-            .context::<Events<GlobalEvent>>(Callback::noop())
-            .expect_throw("context to be set");
-
         Self {
             data: ctx.props().clone(),
             collapsed: false,
-            events,
+            events: event_context(ctx).unwrap_throw(),
         }
     }
 

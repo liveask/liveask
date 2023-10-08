@@ -1,5 +1,5 @@
 use crate::{components::Popup, fetch, pages::BASE_API, routes::Route, tracking, GlobalEvent};
-use events::{EventBridge, Events};
+use events::{event_context, EventBridge};
 use wasm_bindgen::UnwrapThrowExt;
 use yew::prelude::*;
 use yew_router::{prelude::History, scope_ext::RouterScopeExt};
@@ -26,12 +26,9 @@ impl Component for DeletePopup {
     type Properties = DeletePopupProps;
 
     fn create(ctx: &Context<Self>) -> Self {
-        let (mut events, _) = ctx
-            .link()
-            .context::<Events<GlobalEvent>>(Callback::noop())
-            .expect_throw("context to be set");
-
-        let events = events.subscribe(ctx.link().callback(Msg::GlobalEvent));
+        let events = event_context(ctx)
+            .unwrap_throw()
+            .subscribe(ctx.link().callback(Msg::GlobalEvent));
 
         Self {
             show: false,

@@ -4,7 +4,7 @@ use crate::{
     pages::BASE_API,
     GlobalEvent,
 };
-use events::{EventBridge, Events};
+use events::{event_context, EventBridge};
 use gloo::timers::callback::Timeout;
 use shared::{EventTokens, EventUpgrade};
 use wasm_bindgen::UnwrapThrowExt;
@@ -32,12 +32,10 @@ impl Component for PaymentPopup {
     type Properties = PaymentProps;
 
     fn create(ctx: &Context<Self>) -> Self {
-        let (mut events, _) = ctx
-            .link()
-            .context::<Events<GlobalEvent>>(Callback::noop())
-            .expect_throw("context to be set");
+        let events = event_context(ctx)
+            .unwrap_throw()
+            .subscribe(ctx.link().callback(Msg::GlobalEvent));
 
-        let events = events.subscribe(ctx.link().callback(Msg::GlobalEvent));
         Self {
             show: false,
             timeout: None,

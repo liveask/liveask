@@ -1,6 +1,6 @@
 use chrono::{DateTime, Duration, NaiveDateTime, Utc};
 use const_format::formatcp;
-use events::{EventBridge, Events};
+use events::{event_context, EventBridge};
 use serde::Deserialize;
 use shared::{EventInfo, GetEventResponse, ModQuestion, QuestionItem, States};
 use std::{rc::Rc, str::FromStr};
@@ -120,12 +120,9 @@ impl Component for Event {
             log::info!("paypal-token: {}", token);
         }
 
-        let (mut events, _) = ctx
-            .link()
-            .context::<Events<GlobalEvent>>(Callback::noop())
-            .expect_throw("context to be set");
-
-        let events = events.subscribe(ctx.link().callback(Msg::GlobalEvent));
+        let events = event_context(ctx)
+            .unwrap_throw()
+            .subscribe(ctx.link().callback(Msg::GlobalEvent));
 
         Self {
             event_id,

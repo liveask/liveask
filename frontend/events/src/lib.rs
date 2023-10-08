@@ -60,7 +60,17 @@ impl<T: PartialEq + Clone> Default for Events<T> {
     }
 }
 
+///
+pub fn event_context<T: PartialEq + Clone + 'static, C: Component>(
+    ctx: &Context<C>,
+) -> Option<Events<T>> {
+    let (events, _) = ctx.link().context::<Events<T>>(Callback::noop())?;
+
+    Some(events)
+}
+
 impl<T: PartialEq + Clone> Events<T> {
+    ///
     #[allow(clippy::needless_pass_by_value)]
     pub fn emit(&self, e: T) {
         // log::info!("event emit: {}", self.callbacks.borrow().len());
@@ -70,6 +80,7 @@ impl<T: PartialEq + Clone> Events<T> {
         }
     }
 
+    ///
     pub fn subscribe(&mut self, e: Callback<T>) -> EventBridge<T> {
         let id = *self.ids.borrow();
 

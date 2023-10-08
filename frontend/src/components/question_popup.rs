@@ -1,7 +1,7 @@
 use crate::{
     components::Popup, fetch, local_cache::LocalCache, pages::BASE_API, tracking, GlobalEvent,
 };
-use events::{EventBridge, Events};
+use events::{event_context, EventBridge};
 use shared::{AddQuestionError, AddQuestionValidation};
 use wasm_bindgen::UnwrapThrowExt;
 use web_sys::HtmlTextAreaElement;
@@ -32,12 +32,9 @@ impl Component for QuestionPopup {
     type Properties = AddQuestionProps;
 
     fn create(ctx: &Context<Self>) -> Self {
-        let (mut events, _) = ctx
-            .link()
-            .context::<Events<GlobalEvent>>(Callback::noop())
-            .expect_throw("context to be set");
-
-        let events = events.subscribe(ctx.link().callback(Msg::GlobalEvent));
+        let events = event_context(ctx)
+            .unwrap_throw()
+            .subscribe(ctx.link().callback(Msg::GlobalEvent));
 
         Self {
             show: false,

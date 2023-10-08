@@ -1,5 +1,5 @@
 use chrono::{Duration, Utc};
-use events::{EventBridge, Events};
+use events::{event_context, EventBridge};
 use gloo::timers::callback::Interval;
 use std::rc::Rc;
 use wasm_bindgen::UnwrapThrowExt;
@@ -43,12 +43,9 @@ impl Component for IconBar {
             Interval::new(500, move || link.send_message(Msg::ReconnectTimer))
         };
 
-        let (mut global_events, _) = ctx
-            .link()
-            .context::<Events<GlobalEvent>>(Callback::noop())
-            .expect_throw("context to be set");
-
-        let events = global_events.subscribe(ctx.link().callback(Msg::Event));
+        let events = event_context(ctx)
+            .unwrap_throw()
+            .subscribe(ctx.link().callback(Msg::Event));
 
         Self {
             _dispatch: Dispatch::<State>::subscribe(ctx.link().callback(Msg::State)),
