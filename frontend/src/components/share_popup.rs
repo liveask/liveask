@@ -91,7 +91,7 @@ impl Component for SharePopup {
                         gloo_utils::window()
                             .open_with_url(
                                 format!(
-                                    "https://twitter.com/intent/tweet?via=liveask1&text={}",
+                                    "https://twitter.com/intent/tweet?via=liveaskapp&text={}",
                                     urlencoding::encode(&format!(
                                         "{}?utm_source=share-twitter",
                                         self.url
