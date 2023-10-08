@@ -45,7 +45,6 @@ features = [
     "Window",
     "DomRect",
     "CssStyleDeclaration",
-    "ValidityState",
     "Request",
     "RequestInit",
     "RequestCredentials",
