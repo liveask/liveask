@@ -18,10 +18,10 @@ Live-Ask.com provides a simple, free, and real-time service for the audience to 
 [![Mastodon](https://img.shields.io/badge/-MASTODON-%232B90D9?style=for-the-badge&logo=mastodon&logoColor=white)](https://mastodon.social/@liveask)
 [![TikTok](https://img.shields.io/badge/TikTok-%23000000.svg?style=for-the-badge&logo=TikTok&logoColor=white)](https://www.tiktok.com/@liveaskapp)
 [![Twitter](https://img.shields.io/badge/Twitter-%231DA1F2.svg?style=for-the-badge&logo=Twitter&logoColor=white)](https://twitter.com/liveaskapp)
+[![ProductHunt](https://img.shields.io/badge/Product%20Hunt-DA552F.svg?style=for-the-badge&logo=Product-Hunt&logoColor=white)](https://www.producthunt.com/products/live-ask)
 
 ### Links 
 * Original Pitch Blogpost for the Project (2018): [Blog Post](https://blog.extrawurst.org/general/webdev/2018/04/02/liveask.html)
-* Our ProductHunt Page: [ProductHunt](https://www.producthunt.com/products/live-ask)
 
 ### Screenshots 
 <img src="/assets/desktop_modview.png" height="222" width="250" > <img src="/assets/desktop_partview.png" height="222" width="250" > <img src="/assets/desktop_share.png" height="222" width="250" >
