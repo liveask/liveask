@@ -1,5 +1,6 @@
 use chrono::{DateTime, Duration, NaiveDateTime, Utc};
 use const_format::formatcp;
+use events::{event_context, EventBridge};
 use serde::Deserialize;
 use shared::{EventInfo, GetEventResponse, ModQuestion, QuestionItem, States};
 use std::{rc::Rc, str::FromStr};
@@ -12,14 +13,14 @@ use yew_router::{prelude::Location, scope_ext::RouterScopeExt};
 use yewdux::prelude::*;
 
 use crate::{
-    agents::{EventAgent, GlobalEvent, SocketInput, WebSocketAgent, WsResponse},
     components::{
-        DeletePopup, Question, QuestionClickType, QuestionFlags, QuestionPopup, SharePopup, Upgrade,
+        DeletePopup, EventSocket, Question, QuestionClickType, QuestionFlags, QuestionPopup,
+        SharePopup, SocketResponse, Upgrade,
     },
     environment::{la_env, LiveAskEnv},
     fetch,
     local_cache::LocalCache,
-    tracking, State,
+    tracking, GlobalEvent, State,
 };
 
 enum Mode {
@@ -77,16 +78,17 @@ pub struct Event {
     unscreened: Vec<Rc<QuestionItem>>,
     loading_state: LoadingState,
     dispatch: Dispatch<State>,
-    socket_agent: Box<dyn Bridge<WebSocketAgent>>,
-    events: Box<dyn Bridge<EventAgent>>,
+    events: EventBridge<GlobalEvent>,
     wordcloud_agent: Box<dyn Bridge<WordCloudAgent>>,
+    socket_url: String,
+    manual_reconnect: bool,
 }
 pub enum Msg {
     ShareEventClick,
     AskQuestionClick,
     Fetched(Option<GetEventResponse>),
     Captured,
-    SocketMsg(WsResponse),
+    SocketMsg(SocketResponse),
     QuestionClick((i64, QuestionClickType)),
     QuestionUpdated(i64),
     ModDelete,
@@ -106,10 +108,7 @@ impl Component for Event {
         let event_id = ctx.props().id.clone();
         request_fetch(event_id.clone(), ctx.props().secret.clone(), ctx.link());
 
-        let mut ws = WebSocketAgent::bridge(ctx.link().callback(Msg::SocketMsg));
-        ws.send(SocketInput::Connect(format!(
-            "{BASE_SOCKET}/push/{event_id}",
-        )));
+        let socket_url = format!("{BASE_SOCKET}/push/{event_id}",);
 
         let query_params = ctx
             .link()
@@ -120,6 +119,10 @@ impl Component for Event {
         if let Some(token) = &query_params.paypal_token {
             log::info!("paypal-token: {}", token);
         }
+
+        let events = event_context(ctx)
+            .unwrap_throw()
+            .subscribe(ctx.link().callback(Msg::GlobalEvent));
 
         Self {
             event_id,
@@ -138,9 +141,10 @@ impl Component for Event {
             hidden: Vec::new(),
             unscreened: Vec::new(),
             dispatch: Dispatch::<State>::subscribe(Callback::noop()),
-            socket_agent: ws,
-            events: EventAgent::bridge(ctx.link().callback(Msg::GlobalEvent)),
+            events,
             wordcloud_agent: WordCloudAgent::bridge(ctx.link().callback(Msg::WordCloud)),
+            socket_url,
+            manual_reconnect: false,
         }
     }
 
@@ -202,15 +206,15 @@ impl Component for Event {
                 true
             }
             Msg::ModDelete => {
-                self.events.send(GlobalEvent::DeletePopup);
+                self.events.emit(GlobalEvent::DeletePopup);
                 false
             }
             Msg::ShareEventClick => {
-                self.events.send(GlobalEvent::OpenSharePopup);
+                self.events.emit(GlobalEvent::OpenSharePopup);
                 false
             }
             Msg::AskQuestionClick => {
-                self.events.send(GlobalEvent::OpenQuestionPopup);
+                self.events.emit(GlobalEvent::OpenQuestionPopup);
                 false
             }
             Msg::Fetched(res) => {
@@ -243,6 +247,10 @@ impl Component for Event {
                     self.state = self.dispatch.get();
                     true
                 }
+                GlobalEvent::SocketManualReconnect => {
+                    self.manual_reconnect = true;
+                    true
+                }
                 _ => false,
             },
         }
@@ -250,12 +258,13 @@ impl Component for Event {
 
     fn destroy(&mut self, _ctx: &Context<Self>) {
         self.dispatch.reduce(|_| State::default());
-        self.socket_agent.send(SocketInput::Disconnect);
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
+        let msg = ctx.link().callback(Msg::SocketMsg);
         html! {
             <div class="event">
+                <EventSocket reconnect={self.manual_reconnect} url={self.socket_url.clone()} {msg}/>
                 {self.view_internal(ctx)}
             </div>
         }
@@ -991,10 +1000,26 @@ impl Event {
         }
     }
 
-    fn push_received(&mut self, msg: WsResponse, ctx: &Context<Event>) -> bool {
+    fn push_received(&mut self, msg: SocketResponse, ctx: &Context<Event>) -> bool {
         match msg {
-            WsResponse::Ready | WsResponse::Disconnected => false,
-            WsResponse::Message(msg) => {
+            SocketResponse::Connecting | SocketResponse::Connected => {
+                self.manual_reconnect = false;
+                self.events.emit(GlobalEvent::SocketStatus {
+                    connected: true,
+                    timeout_secs: None,
+                });
+
+                false
+            }
+            SocketResponse::Disconnected { reconnect } => {
+                self.events.emit(GlobalEvent::SocketStatus {
+                    connected: false,
+                    timeout_secs: reconnect.map(|duration| duration.num_seconds()),
+                });
+
+                false
+            }
+            SocketResponse::Message(msg) => {
                 let fetch_event = if msg == "e" {
                     log::info!("received event update");
                     true

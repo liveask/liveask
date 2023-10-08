@@ -1,13 +1,7 @@
-use crate::{
-    agents::{EventAgent, GlobalEvent},
-    components::Popup,
-    components::Qr,
-    routes::Route,
-    tracking,
-};
+use crate::{components::Popup, components::Qr, routes::Route, tracking, GlobalEvent};
+use events::{event_context, EventBridge};
 use wasm_bindgen::UnwrapThrowExt;
 use yew::prelude::*;
-use yew_agent::{Bridge, Bridged};
 use yew_router::{prelude::History, scope_ext::RouterScopeExt};
 
 #[derive(Clone, Debug, Eq, PartialEq, Properties)]
@@ -36,7 +30,7 @@ pub struct SharePopup {
     show: bool,
     copied_to_clipboard: bool,
     url: String,
-    _events: Box<dyn Bridge<EventAgent>>,
+    _events: EventBridge<GlobalEvent>,
 }
 
 impl Component for SharePopup {
@@ -44,7 +38,9 @@ impl Component for SharePopup {
     type Properties = ShareProps;
 
     fn create(ctx: &Context<Self>) -> Self {
-        let events = EventAgent::bridge(ctx.link().callback(Msg::GlobalEvent));
+        let events = event_context(ctx)
+            .unwrap_throw()
+            .subscribe(ctx.link().callback(Msg::GlobalEvent));
 
         Self {
             url: ctx.props().url.clone(),

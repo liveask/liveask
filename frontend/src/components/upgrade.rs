@@ -1,14 +1,10 @@
+use events::event_context;
 use shared::EventTokens;
+use wasm_bindgen::UnwrapThrowExt;
 use yew::prelude::*;
-use yew_agent::Bridge;
-use yew_agent::Bridged;
 
 use crate::tracking;
-use crate::{
-    agents::{EventAgent, GlobalEvent},
-    components::Spinner,
-    not,
-};
+use crate::{components::Spinner, not, Events, GlobalEvent};
 
 use super::payment_popup::PaymentPopup;
 
@@ -21,7 +17,7 @@ pub struct Props {
 pub struct Upgrade {
     data: Props,
     collapsed: bool,
-    events: Box<dyn Bridge<EventAgent>>,
+    events: Events<GlobalEvent>,
 }
 pub enum Msg {
     ToggleExpansion,
@@ -35,7 +31,7 @@ impl Component for Upgrade {
         Self {
             data: ctx.props().clone(),
             collapsed: false,
-            events: EventAgent::bridge(Callback::noop()),
+            events: event_context(ctx).unwrap_throw(),
         }
     }
 
@@ -50,7 +46,7 @@ impl Component for Upgrade {
             }
             Msg::UpgradeClicked => {
                 tracking::track_event(tracking::EVNT_PREMIUM_UPGRADE);
-                self.events.send(GlobalEvent::PayForUpgrade);
+                self.events.emit(GlobalEvent::PayForUpgrade);
                 false
             }
         }

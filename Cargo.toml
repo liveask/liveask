@@ -3,6 +3,7 @@ members = [
     "shared",
     "frontend",
     "frontend/worker",
+    "frontend/events",
     "backend-e2e",
     "backend",
     "async-redis-session",
