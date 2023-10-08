@@ -1,5 +1,9 @@
 use crate::{
-    components::Popup, fetch, local_cache::LocalCache, pages::BASE_API, tracking, GlobalEvent,
+    components::{Popup, TextArea},
+    fetch,
+    local_cache::LocalCache,
+    pages::BASE_API,
+    tracking, GlobalEvent,
 };
 use events::{event_context, EventBridge};
 use shared::{AddQuestionError, AddQuestionValidation};
@@ -106,7 +110,7 @@ impl Component for QuestionPopup {
             <Popup class="share-popup" {on_close}>
                 <div class="newquestion">
                 <div class="add-question">
-                    <textarea
+                    <TextArea
                         id="questiontext"
                         name="questiontext"
                         maxlength="200"
@@ -114,11 +118,9 @@ impl Component for QuestionPopup {
                         placeholder="What’s your question?"
                         required=true
                         oninput={ctx.link().callback(Msg::InputChanged)}
-                        //TODO:
-                        // [maxHeight]="390"
-                        // autosize=true
+                        autosize=true
                         >
-                    </textarea>
+                    </TextArea>
 
                     <div class="more-info">
                         <div class="chars-info">

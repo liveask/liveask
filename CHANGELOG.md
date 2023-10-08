@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 * do not use local non-worker yew agents for GlobalEvents and Websocket (prepare for yew `0.20` upgrade)
+* autosize textareas for question text and event desc
 
 ## [2.3.11] - 2023-10-03
 

@@ -1,4 +1,4 @@
-use crate::{fetch, routes::Route, tracking};
+use crate::{components::TextArea, fetch, routes::Route, tracking};
 use shared::{CreateEventError, CreateEventValidation, EventInfo};
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 use web_sys::{Element, HtmlInputElement, HtmlTextAreaElement};
@@ -144,15 +144,16 @@ impl Component for NewEvent {
                                 oninput={ctx.link().callback(|input| Msg::InputChange(Input::Email,input))}/>
                         </div>
                         <div class="input-box">
-                            <textarea
+                            <TextArea
                                 id="input-desc"
                                 name="desc"
                                 placeholder="event description"
                                 value={self.desc.clone()}
                                 maxlength="1000"
                                 required=true
+                                autosize=true
                                 oninput={ctx.link().callback(|input| Msg::InputChange(Input::Desc,input))}>
-                            </textarea>
+                            </TextArea>
                         </div>
                         <div hidden={self.errors.desc.is_none()} class="invalid">
                             {self.desc_error().unwrap_or_default()}
