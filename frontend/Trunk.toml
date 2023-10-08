@@ -38,7 +38,7 @@ cargo = false
 
 [tools]
 # Default dart-sass version to download.
-sass = "1.66.1"
+sass = "1.68.0"
 # Default wasm-bindgen version to download.
 wasm_bindgen = "0.2.87"
 # Default wasm-opt version to download.
