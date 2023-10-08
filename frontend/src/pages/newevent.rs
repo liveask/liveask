@@ -1,7 +1,7 @@
 use crate::{components::TextArea, fetch, routes::Route, tracking};
 use shared::{CreateEventError, CreateEventValidation, EventInfo};
-use wasm_bindgen::{JsCast, UnwrapThrowExt};
-use web_sys::{Element, HtmlInputElement, HtmlTextAreaElement};
+use wasm_bindgen::UnwrapThrowExt;
+use web_sys::{HtmlInputElement, HtmlTextAreaElement};
 use yew::prelude::*;
 use yew_router::prelude::*;
 
@@ -87,10 +87,8 @@ impl Component for NewEvent {
             Msg::InputChange(input, c) => {
                 match input {
                     Input::Name => {
-                        let e = self.name_ref.cast::<Element>().unwrap_throw();
-                        let e: HtmlInputElement = e.dyn_into().unwrap_throw();
-
-                        self.name = e.value();
+                        let target: HtmlInputElement = c.target_dyn_into().unwrap_throw();
+                        self.name = target.value();
 
                         self.errors.check(&self.name, &self.desc);
                     }
