@@ -12,10 +12,16 @@ Live-Ask.com provides a simple, free, and real-time service for the audience to 
 * Works on **all platforms** – use it on your phone, tablet, or laptop
 * Is **free** to use with premium features available
 
+### Socials
+[![Instagram](https://img.shields.io/badge/Instagram-%23E4405F.svg?style=for-the-badge&logo=Instagram&logoColor=white)](https://www.instagram.com/liveaskapp/?igshid=OGQ5ZDc2ODk2ZA%3D%3D&utm_source=qr)
+[![LinkedIn](https://img.shields.io/badge/linkedin-%230077B5.svg?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/company/live-ask/)
+[![Mastodon](https://img.shields.io/badge/-MASTODON-%232B90D9?style=for-the-badge&logo=mastodon&logoColor=white)](https://mastodon.social/@liveask)
+[![TikTok](https://img.shields.io/badge/TikTok-%23000000.svg?style=for-the-badge&logo=TikTok&logoColor=white)](https://www.tiktok.com/@liveaskapp)
+[![Twitter](https://img.shields.io/badge/Twitter-%231DA1F2.svg?style=for-the-badge&logo=Twitter&logoColor=white)](https://twitter.com/liveaskapp)
+
 ### Links 
 * Original Pitch Blogpost for the Project (2018): [Blog Post](https://blog.extrawurst.org/general/webdev/2018/04/02/liveask.html)
-* Follow us on [Linked.In](https://www.linkedin.com/company/live-ask/)
-* Follow us on Twitter/X [@liveaskapp](https://twitter.com/liveaskapp)
+* Our ProductHunt Page: [ProductHunt](https://www.producthunt.com/products/live-ask)
 
 ### Screenshots 
 <img src="/assets/desktop_modview.png" height="222" width="250" > <img src="/assets/desktop_partview.png" height="222" width="250" > <img src="/assets/desktop_share.png" height="222" width="250" >
@@ -49,13 +55,6 @@ Wnat to help support the project? Use the following links to help us 💪
 
 ### Contact
 (coming soon)
-
-### Socials
-[![Instagram](https://img.shields.io/badge/Instagram-%23E4405F.svg?style=for-the-badge&logo=Instagram&logoColor=white)](https://www.instagram.com/liveaskapp/?igshid=OGQ5ZDc2ODk2ZA%3D%3D&utm_source=qr)
-[![LinkedIn](https://img.shields.io/badge/linkedin-%230077B5.svg?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/company/live-ask/)
-[![Mastodon](https://img.shields.io/badge/-MASTODON-%232B90D9?style=for-the-badge&logo=mastodon&logoColor=white)](https://mastodon.social/@liveask)
-[![TikTok](https://img.shields.io/badge/TikTok-%23000000.svg?style=for-the-badge&logo=TikTok&logoColor=white)](https://www.tiktok.com/@liveaskapp)
-[![Twitter](https://img.shields.io/badge/Twitter-%231DA1F2.svg?style=for-the-badge&logo=Twitter&logoColor=white)](https://twitter.com/liveaskapp)
 
 
 ![liveask readme footer](/assets/readme_footer.png)
