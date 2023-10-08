@@ -1,7 +1,5 @@
-use crate::{
-    components::Popup, fetch, global_events::EventBridge, pages::BASE_API, routes::Route, tracking,
-    GlobalEvent, GlobalEvents,
-};
+use crate::{components::Popup, fetch, pages::BASE_API, routes::Route, tracking, GlobalEvent};
+use events::{EventBridge, Events};
 use wasm_bindgen::UnwrapThrowExt;
 use yew::prelude::*;
 use yew_router::{prelude::History, scope_ext::RouterScopeExt};
@@ -15,7 +13,7 @@ pub enum Msg {
 
 pub struct DeletePopup {
     show: bool,
-    _events: EventBridge,
+    _events: EventBridge<GlobalEvent>,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Properties)]
@@ -30,7 +28,7 @@ impl Component for DeletePopup {
     fn create(ctx: &Context<Self>) -> Self {
         let (mut events, _) = ctx
             .link()
-            .context::<GlobalEvents>(Callback::noop())
+            .context::<Events<GlobalEvent>>(Callback::noop())
             .expect_throw("context to be set");
 
         let events = events.subscribe(ctx.link().callback(Msg::GlobalEvent));

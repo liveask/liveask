@@ -1,5 +1,6 @@
 use chrono::{DateTime, Duration, NaiveDateTime, Utc};
 use const_format::formatcp;
+use events::{EventBridge, Events};
 use serde::Deserialize;
 use shared::{EventInfo, GetEventResponse, ModQuestion, QuestionItem, States};
 use std::{rc::Rc, str::FromStr};
@@ -18,9 +19,8 @@ use crate::{
     },
     environment::{la_env, LiveAskEnv},
     fetch,
-    global_events::EventBridge,
     local_cache::LocalCache,
-    tracking, GlobalEvent, GlobalEvents, State,
+    tracking, GlobalEvent, State,
 };
 
 enum Mode {
@@ -79,7 +79,7 @@ pub struct Event {
     loading_state: LoadingState,
     dispatch: Dispatch<State>,
     socket_agent: Box<dyn Bridge<WebSocketAgent>>,
-    events: EventBridge,
+    events: EventBridge<GlobalEvent>,
     wordcloud_agent: Box<dyn Bridge<WordCloudAgent>>,
 }
 pub enum Msg {
@@ -124,7 +124,7 @@ impl Component for Event {
 
         let (mut events, _) = ctx
             .link()
-            .context::<GlobalEvents>(Callback::noop())
+            .context::<Events<GlobalEvent>>(Callback::noop())
             .expect_throw("context to be set");
 
         let events = events.subscribe(ctx.link().callback(Msg::GlobalEvent));

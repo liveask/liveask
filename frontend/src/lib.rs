@@ -40,7 +40,8 @@ mod pages;
 mod routes;
 mod tracking;
 
-use global_events::{GlobalEvent, GlobalEvents};
+use events::Events;
+use global_events::GlobalEvent;
 use pages::AdminLogin;
 use routes::Route;
 use shared::GetEventResponse;
@@ -90,7 +91,7 @@ pub enum Msg {
 
 pub struct AppRoot {
     connected: bool,
-    context: GlobalEvents,
+    context: Events<GlobalEvent>,
     state: Rc<State>,
     _dispatch: Dispatch<State>,
 }
@@ -99,7 +100,7 @@ impl Component for AppRoot {
     type Properties = ();
 
     fn create(ctx: &Context<Self>) -> Self {
-        let mut context = GlobalEvents::default();
+        let mut context = Events::<GlobalEvent>::default();
 
         context.subscribe(ctx.link().callback(Msg::GlobalEvent));
 
@@ -131,7 +132,7 @@ impl Component for AppRoot {
         html! {
             <BrowserRouter>
                 <div class="app-host">
-                    <ContextProvider<GlobalEvents> context={self.context.clone()}>
+                    <ContextProvider<Events<GlobalEvent>> context={self.context.clone()}>
                     <div class={classes!("main",not(self.connected).then_some("offline"))}>
                         <IconBar/>
 
@@ -139,7 +140,7 @@ impl Component for AppRoot {
                             <Switch<Route> render={Switch::render(switch)} />
                         </div>
                     </div>
-                    </ContextProvider<GlobalEvents>>
+                    </ContextProvider<Events<GlobalEvent>>>
                 </div>
             </BrowserRouter>
         }

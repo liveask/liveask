@@ -3,7 +3,7 @@ use wasm_bindgen::UnwrapThrowExt;
 use yew::prelude::*;
 
 use crate::tracking;
-use crate::{components::Spinner, not, GlobalEvent, GlobalEvents};
+use crate::{components::Spinner, not, Events, GlobalEvent};
 
 use super::payment_popup::PaymentPopup;
 
@@ -16,7 +16,7 @@ pub struct Props {
 pub struct Upgrade {
     data: Props,
     collapsed: bool,
-    events: GlobalEvents,
+    events: Events<GlobalEvent>,
 }
 pub enum Msg {
     ToggleExpansion,
@@ -29,7 +29,7 @@ impl Component for Upgrade {
     fn create(ctx: &Context<Self>) -> Self {
         let (events, _) = ctx
             .link()
-            .context::<GlobalEvents>(Callback::noop())
+            .context::<Events<GlobalEvent>>(Callback::noop())
             .expect_throw("context to be set");
 
         Self {

@@ -1,10 +1,10 @@
 use crate::{
     components::{Popup, Spinner},
     fetch,
-    global_events::EventBridge,
     pages::BASE_API,
-    GlobalEvent, GlobalEvents,
+    GlobalEvent,
 };
+use events::{EventBridge, Events};
 use gloo::timers::callback::Timeout;
 use shared::{EventTokens, EventUpgrade};
 use wasm_bindgen::UnwrapThrowExt;
@@ -24,7 +24,7 @@ pub enum Msg {
 pub struct PaymentPopup {
     show: bool,
     timeout: Option<Timeout>,
-    _events: EventBridge,
+    _events: EventBridge<GlobalEvent>,
 }
 
 impl Component for PaymentPopup {
@@ -34,7 +34,7 @@ impl Component for PaymentPopup {
     fn create(ctx: &Context<Self>) -> Self {
         let (mut events, _) = ctx
             .link()
-            .context::<GlobalEvents>(Callback::noop())
+            .context::<Events<GlobalEvent>>(Callback::noop())
             .expect_throw("context to be set");
 
         let events = events.subscribe(ctx.link().callback(Msg::GlobalEvent));

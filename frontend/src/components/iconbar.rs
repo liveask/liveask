@@ -1,4 +1,5 @@
 use chrono::{Duration, Utc};
+use events::{EventBridge, Events};
 use gloo::timers::callback::Interval;
 use std::rc::Rc;
 use wasm_bindgen::UnwrapThrowExt;
@@ -9,10 +10,9 @@ use yewdux::prelude::*;
 
 use crate::{
     agents::{SocketInput, WebSocketAgent},
-    global_events::EventBridge,
     not,
     routes::Route,
-    GlobalEvent, GlobalEvents, State,
+    GlobalEvent, State,
 };
 
 pub enum Msg {
@@ -34,7 +34,7 @@ pub struct IconBar {
     reconnect_timeout: Option<chrono::DateTime<Utc>>,
     state: Rc<State>,
     _dispatch: Dispatch<State>,
-    events: EventBridge,
+    events: EventBridge<GlobalEvent>,
     socket_agent: Box<dyn Bridge<WebSocketAgent>>,
     _interal: Interval,
     _route_listener: HistoryHandle,
@@ -52,7 +52,7 @@ impl Component for IconBar {
 
         let (mut global_events, _) = ctx
             .link()
-            .context::<GlobalEvents>(Callback::noop())
+            .context::<Events<GlobalEvent>>(Callback::noop())
             .expect_throw("context to be set");
 
         let events = global_events.subscribe(ctx.link().callback(Msg::Event));

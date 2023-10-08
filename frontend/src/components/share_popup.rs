@@ -1,7 +1,5 @@
-use crate::{
-    components::Popup, components::Qr, global_events::EventBridge, routes::Route, tracking,
-    GlobalEvent, GlobalEvents,
-};
+use crate::{components::Popup, components::Qr, routes::Route, tracking, GlobalEvent};
+use events::{EventBridge, Events};
 use wasm_bindgen::UnwrapThrowExt;
 use yew::prelude::*;
 use yew_router::{prelude::History, scope_ext::RouterScopeExt};
@@ -32,7 +30,7 @@ pub struct SharePopup {
     show: bool,
     copied_to_clipboard: bool,
     url: String,
-    _events: EventBridge,
+    _events: EventBridge<GlobalEvent>,
 }
 
 impl Component for SharePopup {
@@ -42,7 +40,7 @@ impl Component for SharePopup {
     fn create(ctx: &Context<Self>) -> Self {
         let (mut events, _) = ctx
             .link()
-            .context::<GlobalEvents>(Callback::noop())
+            .context::<Events<GlobalEvent>>(Callback::noop())
             .expect_throw("context to be set");
 
         let events = events.subscribe(ctx.link().callback(Msg::GlobalEvent));

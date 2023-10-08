@@ -1,7 +1,7 @@
 use crate::{
-    components::Popup, fetch, global_events::EventBridge, local_cache::LocalCache, pages::BASE_API,
-    tracking, GlobalEvent, GlobalEvents,
+    components::Popup, fetch, local_cache::LocalCache, pages::BASE_API, tracking, GlobalEvent,
 };
+use events::{EventBridge, Events};
 use shared::{AddQuestionError, AddQuestionValidation};
 use wasm_bindgen::UnwrapThrowExt;
 use web_sys::HtmlTextAreaElement;
@@ -19,7 +19,7 @@ pub struct QuestionPopup {
     show: bool,
     text: String,
     errors: AddQuestionValidation,
-    events: EventBridge,
+    events: EventBridge<GlobalEvent>,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Properties)]
@@ -34,7 +34,7 @@ impl Component for QuestionPopup {
     fn create(ctx: &Context<Self>) -> Self {
         let (mut events, _) = ctx
             .link()
-            .context::<GlobalEvents>(Callback::noop())
+            .context::<Events<GlobalEvent>>(Callback::noop())
             .expect_throw("context to be set");
 
         let events = events.subscribe(ctx.link().callback(Msg::GlobalEvent));
