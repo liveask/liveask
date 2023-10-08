@@ -39,7 +39,7 @@ mod pages;
 mod routes;
 mod tracking;
 
-use events::Events;
+use events::{EventBridge, Events};
 use global_events::GlobalEvent;
 use pages::AdminLogin;
 use routes::Route;
@@ -90,7 +90,7 @@ pub enum Msg {
 
 pub struct AppRoot {
     connected: bool,
-    context: Events<GlobalEvent>,
+    events: EventBridge<GlobalEvent>,
     state: Rc<State>,
     _dispatch: Dispatch<State>,
 }
@@ -101,13 +101,13 @@ impl Component for AppRoot {
     fn create(ctx: &Context<Self>) -> Self {
         let mut context = Events::<GlobalEvent>::default();
 
-        context.subscribe(ctx.link().callback(Msg::GlobalEvent));
+        let events = context.subscribe(ctx.link().callback(Msg::GlobalEvent));
 
         Self {
             _dispatch: Dispatch::<State>::subscribe(ctx.link().callback(Msg::State)),
             state: Rc::default(),
             connected: true,
-            context,
+            events,
         }
     }
 
@@ -131,7 +131,7 @@ impl Component for AppRoot {
         html! {
             <BrowserRouter>
                 <div class="app-host">
-                    <ContextProvider<Events<GlobalEvent>> context={self.context.clone()}>
+                    <ContextProvider<Events<GlobalEvent>> context={self.events.clone()}>
                     <div class={classes!("main",not(self.connected).then_some("offline"))}>
                         <IconBar/>
 

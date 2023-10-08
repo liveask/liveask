@@ -75,7 +75,6 @@ impl Component for IconBar {
                 false
             }
             Msg::Ask => {
-                log::info!("ask clicked");
                 self.events.emit(GlobalEvent::OpenQuestionPopup);
                 false
             }

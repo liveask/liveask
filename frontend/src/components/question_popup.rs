@@ -50,7 +50,6 @@ impl Component for QuestionPopup {
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
             Msg::GlobalEvent(e) => {
-                log::info!("event received: {:?}", e);
                 if matches!(e, GlobalEvent::OpenQuestionPopup) {
                     tracking::track_event(tracking::EVNT_ASK_OPEN);
                     self.show = true;
