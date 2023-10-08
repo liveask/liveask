@@ -68,17 +68,17 @@ impl Component for EventSocket {
                 }
             }
             Msg::MessageReceived(msg) => {
-                log::info!("<EventSocket> update:msg");
+                // log::info!("<EventSocket> update:msg");
                 self.emit(SocketResponse::Message(msg));
             }
             Msg::Connected => {
-                log::info!("<EventSocket> update:connected");
+                // log::info!("<EventSocket> update:connected");
                 self.connected = true;
                 self.reconnect_interval = None;
                 self.emit(SocketResponse::Connected);
             }
             Msg::Disconnected => {
-                log::info!("<EventSocket> update:disconnected");
+                // log::info!("<EventSocket> update:disconnected");
                 let do_reconnect = self.connected;
 
                 self.disconnect();
@@ -115,7 +115,7 @@ impl Component for EventSocket {
     }
 
     fn destroy(&mut self, _ctx: &Context<Self>) {
-        log::info!("<EventSocket> destroy");
+        // log::info!("<EventSocket> destroy");
         self.disconnect();
     }
 }
@@ -123,13 +123,13 @@ impl Component for EventSocket {
 impl EventSocket {
     fn connect(&mut self) {
         if self.ws.is_some() {
-            log::warn!("<EventSocket> already started");
+            // log::warn!("<EventSocket> already started");
             return;
         }
 
         let url = self.properties.url.clone();
 
-        log::info!("<EventSocket> connect: {}", url);
+        // log::info!("<EventSocket> connect: {}", url);
 
         self.emit(SocketResponse::Connecting);
 
@@ -140,17 +140,16 @@ impl EventSocket {
         let mut client =
             wasm_sockets::EventClient::new(&url).expect_throw("error creating websocket");
 
-        client.set_on_error(Some(Box::new(move |_error| {
-            // log::info!("ws on_error: {:#?}", error);
-            log::info!("<EventSocket> on_error");
+        client.set_on_error(Some(Box::new(move |error| {
+            log::error!("<EventSocket> on_error: {:#?}", error);
         })));
         client.set_on_connection(Some(Box::new(
             move |_client: &wasm_sockets::EventClient| {
                 ws_connected_callback.emit(());
             },
         )));
-        client.set_on_close(Some(Box::new(move |event: CloseEvent| {
-            log::info!("<EventSocket> on_close: {}", event.reason());
+        client.set_on_close(Some(Box::new(move |_event: CloseEvent| {
+            // log::info!("<EventSocket> on_close: {}", event.reason());
             ws_close_callback.emit(());
         })));
         client.set_on_message(Some(Box::new(
@@ -200,7 +199,7 @@ impl EventSocket {
             )
         };
 
-        log::info!("<EventSocket> set reconnect timeout: {}", duration);
+        // log::info!("<EventSocket> set reconnect timeout: {}", duration);
 
         self.reconnect_interval = Some((duration, interval));
 

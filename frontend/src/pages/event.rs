@@ -1005,16 +1005,7 @@ impl Event {
 
     fn push_received(&mut self, msg: SocketResponse, ctx: &Context<Event>) -> bool {
         match msg {
-            SocketResponse::Connecting => {
-                self.manual_reconnect = false;
-                self.events.emit(GlobalEvent::SocketStatus {
-                    connected: true,
-                    timeout_secs: None,
-                });
-
-                false
-            }
-            SocketResponse::Connected => {
+            SocketResponse::Connecting | SocketResponse::Connected => {
                 self.manual_reconnect = false;
                 self.events.emit(GlobalEvent::SocketStatus {
                     connected: true,
