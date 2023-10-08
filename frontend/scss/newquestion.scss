@@ -2,12 +2,11 @@
 
 .newquestion {
 	max-width: 260px;
-	min-height: 260px;
+	min-height: 220px;
 
 	.add-question {
 		margin-left: 1em;
 		margin-right: 1em;
-		margin-top: 1em;
 
 		.invalid {
 			color: red;
@@ -38,7 +37,7 @@
 	}
 
 	#questiontext {
-		margin-top: 88px;
+		margin-top: 60px;
 
 		width: 100%;
 
@@ -51,6 +50,8 @@
 		letter-spacing: 0.31px;
 
 		resize: none;
+
+		max-height: 390px;
 
 		:focus {
 			border-bottom: 2px solid $pink-bg;

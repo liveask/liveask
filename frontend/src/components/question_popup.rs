@@ -1,16 +1,15 @@
 use crate::{
-    agents::{EventAgent, GlobalEvent},
-    components::Popup,
+    components::{Popup, TextArea},
     fetch,
     local_cache::LocalCache,
     pages::BASE_API,
-    tracking,
+    tracking, GlobalEvent,
 };
+use events::{event_context, EventBridge};
 use shared::{AddQuestionError, AddQuestionValidation};
 use wasm_bindgen::UnwrapThrowExt;
 use web_sys::HtmlTextAreaElement;
-use yew::prelude::*;
-use yew_agent::{Bridge, Bridged};
+use yew::{prelude::*, virtual_dom::AttrValue};
 
 pub enum Msg {
     GlobalEvent(GlobalEvent),
@@ -24,12 +23,12 @@ pub struct QuestionPopup {
     show: bool,
     text: String,
     errors: AddQuestionValidation,
-    events: Box<dyn Bridge<EventAgent>>,
+    events: EventBridge<GlobalEvent>,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Properties)]
 pub struct AddQuestionProps {
-    pub event: String,
+    pub event: AttrValue,
 }
 
 impl Component for QuestionPopup {
@@ -37,7 +36,9 @@ impl Component for QuestionPopup {
     type Properties = AddQuestionProps;
 
     fn create(ctx: &Context<Self>) -> Self {
-        let events = EventAgent::bridge(ctx.link().callback(Msg::GlobalEvent));
+        let events = event_context(ctx)
+            .unwrap_throw()
+            .subscribe(ctx.link().callback(Msg::GlobalEvent));
 
         Self {
             show: false,
@@ -62,7 +63,7 @@ impl Component for QuestionPopup {
                 true
             }
             Msg::Send => {
-                let event_id = ctx.props().event.clone();
+                let event_id: String = ctx.props().event.to_string();
                 let text = self.text.clone();
 
                 tracking::track_event(tracking::EVNT_ASK_SENT);
@@ -86,7 +87,7 @@ impl Component for QuestionPopup {
             }
             Msg::QuestionCreated(id) => {
                 if let Some(id) = id {
-                    self.events.send(GlobalEvent::QuestionCreated(id));
+                    self.events.emit(GlobalEvent::QuestionCreated(id));
                 }
                 true
             }
@@ -109,7 +110,7 @@ impl Component for QuestionPopup {
             <Popup class="share-popup" {on_close}>
                 <div class="newquestion">
                 <div class="add-question">
-                    <textarea
+                    <TextArea
                         id="questiontext"
                         name="questiontext"
                         maxlength="200"
@@ -117,11 +118,9 @@ impl Component for QuestionPopup {
                         placeholder="What’s your question?"
                         required=true
                         oninput={ctx.link().callback(Msg::InputChanged)}
-                        //TODO:
-                        // [maxHeight]="390"
-                        // autosize=true
+                        autosize=true
                         >
-                    </textarea>
+                    </TextArea>
 
                     <div class="more-info">
                         <div class="chars-info">

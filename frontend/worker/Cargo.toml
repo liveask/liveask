@@ -1,6 +1,6 @@
 [package]
 name = "worker2"
-version = "0.1.2"
+version = "0.2.0"
 edition = "2021"
 
 [dependencies]
@@ -10,6 +10,7 @@ chrono = "0.4"
 console_error_panic_hook = "0.1"
 image = "0.24"
 lazy_static = "1.4"
+gloo-worker = "0.1"
 log = "0.4"
 regex = "1.7"
 serde = "1"
@@ -17,7 +18,7 @@ sha2 = "0.10"
 wasm-logger = "0.2"
 # see https://github.com/liveask/liveask/issues/31
 wordcloud-rs = "=0.1.11"
-yew-agent = "0.1"
+yew-agent = "0.2"
 
 [build-dependencies]
 anyhow = "1"

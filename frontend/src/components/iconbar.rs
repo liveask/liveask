@@ -1,18 +1,13 @@
 use chrono::{Duration, Utc};
-use gloo::timers::callback::Interval;
+use events::{event_context, EventBridge};
+use gloo_timers::callback::Interval;
 use std::rc::Rc;
 use wasm_bindgen::UnwrapThrowExt;
 use yew::prelude::*;
-use yew_agent::{Bridge, Bridged};
-use yew_router::{prelude::*, scope_ext::HistoryHandle};
+use yew_router::prelude::*;
 use yewdux::prelude::*;
 
-use crate::{
-    agents::{EventAgent, GlobalEvent, SocketInput, WebSocketAgent},
-    not,
-    routes::Route,
-    State,
-};
+use crate::{not, routes::Route, GlobalEvent, State};
 
 pub enum Msg {
     State(Rc<State>),
@@ -33,10 +28,9 @@ pub struct IconBar {
     reconnect_timeout: Option<chrono::DateTime<Utc>>,
     state: Rc<State>,
     _dispatch: Dispatch<State>,
-    events: Box<dyn Bridge<EventAgent>>,
-    socket_agent: Box<dyn Bridge<WebSocketAgent>>,
+    events: EventBridge<GlobalEvent>,
     _interal: Interval,
-    _route_listener: HistoryHandle,
+    _route_listener: LocationHandle,
 }
 impl Component for IconBar {
     type Message = Msg;
@@ -49,19 +43,20 @@ impl Component for IconBar {
             Interval::new(500, move || link.send_message(Msg::ReconnectTimer))
         };
 
-        let events = EventAgent::bridge(ctx.link().callback(Msg::Event));
+        let events = event_context(ctx)
+            .unwrap_throw()
+            .subscribe(ctx.link().callback(Msg::Event));
 
         Self {
             _dispatch: Dispatch::<State>::subscribe(ctx.link().callback(Msg::State)),
-            events,
             state: Rc::default(),
             connected: true,
-            socket_agent: WebSocketAgent::bridge(Callback::noop()),
+            events,
             reconnect_timeout: None,
             _interal: timer_interval,
             _route_listener: ctx
                 .link()
-                .add_history_listener(ctx.link().callback(|_history| Msg::RouteChange))
+                .add_location_listener(ctx.link().callback(|_history| Msg::RouteChange))
                 .unwrap_throw(),
         }
     }
@@ -73,19 +68,19 @@ impl Component for IconBar {
                 true
             }
             Msg::Share => {
-                self.events.send(GlobalEvent::OpenSharePopup);
+                self.events.emit(GlobalEvent::OpenSharePopup);
                 false
             }
             Msg::Ask => {
-                self.events.send(GlobalEvent::OpenQuestionPopup);
+                self.events.emit(GlobalEvent::OpenQuestionPopup);
                 false
             }
             Msg::Home => {
-                ctx.link().history().unwrap_throw().push(Route::Home);
+                ctx.link().navigator().unwrap_throw().push(&Route::Home);
                 false
             }
             Msg::Reconnect => {
-                self.socket_agent.send(SocketInput::Reconnect);
+                self.events.emit(GlobalEvent::SocketManualReconnect);
                 false
             }
             //ignore global events

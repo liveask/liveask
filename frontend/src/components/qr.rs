@@ -1,9 +1,9 @@
 use wasm_bindgen::UnwrapThrowExt;
-use yew::prelude::*;
+use yew::{prelude::*, virtual_dom::AttrValue};
 
 #[derive(Clone, Debug, Eq, PartialEq, Properties)]
 pub struct QrProps {
-    pub url: String,
+    pub url: AttrValue,
     pub dimensions: u32,
 }
 
@@ -20,8 +20,9 @@ impl Component for Qr {
 
         let dim = ctx.props().dimensions;
 
-        let code = QrCode::with_version(ctx.props().url.clone(), Version::Normal(6), EcLevel::M)
-            .unwrap_throw();
+        let code =
+            QrCode::with_version(ctx.props().url.to_string(), Version::Normal(6), EcLevel::M)
+                .unwrap_throw();
 
         let qr_image = code
             .render()

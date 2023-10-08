@@ -1,7 +1,11 @@
+//bitflags issue
+#![allow(unknown_lints)]
+#![allow(clippy::iter_without_into_iter)]
+
 use bitflags::bitflags;
 use chrono::Utc;
-use gloo::timers::callback::Interval;
-use gloo::timers::callback::Timeout;
+use gloo_timers::callback::Interval;
+use gloo_timers::callback::Timeout;
 use shared::QuestionItem;
 use std::rc::Rc;
 use wasm_bindgen::JsCast;
@@ -182,7 +186,7 @@ impl Component for Question {
         }
     }
 
-    fn changed(&mut self, ctx: &Context<Self>) -> bool {
+    fn changed(&mut self, ctx: &Context<Self>, _old_props: &Self::Properties) -> bool {
         let props = ctx.props().clone();
         if self.data == props {
             false

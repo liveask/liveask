@@ -1,7 +1,7 @@
-use crate::{fetch, routes::Route, tracking};
+use crate::{components::TextArea, fetch, routes::Route, tracking};
 use shared::{CreateEventError, CreateEventValidation, EventInfo};
-use wasm_bindgen::{JsCast, UnwrapThrowExt};
-use web_sys::{Element, HtmlInputElement, HtmlTextAreaElement};
+use wasm_bindgen::UnwrapThrowExt;
+use web_sys::{HtmlInputElement, HtmlTextAreaElement};
 use yew::prelude::*;
 use yew_router::prelude::*;
 
@@ -73,10 +73,13 @@ impl Component for NewEvent {
 
             Msg::CreatedResult(event) => {
                 if let Some(event) = event {
-                    ctx.link().history().unwrap_throw().push(Route::EventMod {
-                        id: event.tokens.public_token,
-                        secret: event.tokens.moderator_token.unwrap_throw(),
-                    });
+                    ctx.link()
+                        .navigator()
+                        .unwrap_throw()
+                        .push(&Route::EventMod {
+                            id: event.tokens.public_token,
+                            secret: event.tokens.moderator_token.unwrap_throw(),
+                        });
                     false
                 } else {
                     log::error!("no event created");
@@ -87,10 +90,8 @@ impl Component for NewEvent {
             Msg::InputChange(input, c) => {
                 match input {
                     Input::Name => {
-                        let e = self.name_ref.cast::<Element>().unwrap_throw();
-                        let e: HtmlInputElement = e.dyn_into().unwrap_throw();
-
-                        self.name = e.value();
+                        let target: HtmlInputElement = c.target_dyn_into().unwrap_throw();
+                        self.name = target.value();
 
                         self.errors.check(&self.name, &self.desc);
                     }
@@ -144,15 +145,16 @@ impl Component for NewEvent {
                                 oninput={ctx.link().callback(|input| Msg::InputChange(Input::Email,input))}/>
                         </div>
                         <div class="input-box">
-                            <textarea
+                            <TextArea
                                 id="input-desc"
                                 name="desc"
                                 placeholder="event description"
                                 value={self.desc.clone()}
                                 maxlength="1000"
                                 required=true
+                                autosize=true
                                 oninput={ctx.link().callback(|input| Msg::InputChange(Input::Desc,input))}>
-                            </textarea>
+                            </TextArea>
                         </div>
                         <div hidden={self.errors.desc.is_none()} class="invalid">
                             {self.desc_error().unwrap_or_default()}

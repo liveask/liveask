@@ -1,19 +1,14 @@
-use crate::{
-    agents::{EventAgent, GlobalEvent},
-    components::Popup,
-    components::Qr,
-    routes::Route,
-    tracking,
-};
+use crate::{components::Popup, components::Qr, routes::Route, tracking, GlobalEvent};
+use events::{event_context, EventBridge};
 use wasm_bindgen::UnwrapThrowExt;
+
 use yew::prelude::*;
-use yew_agent::{Bridge, Bridged};
-use yew_router::{prelude::History, scope_ext::RouterScopeExt};
+use yew_router::scope_ext::RouterScopeExt;
 
 #[derive(Clone, Debug, Eq, PartialEq, Properties)]
 pub struct ShareProps {
-    pub url: String,
-    pub event_id: String,
+    pub url: AttrValue,
+    pub event_id: AttrValue,
 }
 
 #[derive(Debug)]
@@ -36,7 +31,7 @@ pub struct SharePopup {
     show: bool,
     copied_to_clipboard: bool,
     url: String,
-    _events: Box<dyn Bridge<EventAgent>>,
+    _events: EventBridge<GlobalEvent>,
 }
 
 impl Component for SharePopup {
@@ -44,10 +39,12 @@ impl Component for SharePopup {
     type Properties = ShareProps;
 
     fn create(ctx: &Context<Self>) -> Self {
-        let events = EventAgent::bridge(ctx.link().callback(Msg::GlobalEvent));
+        let events = event_context(ctx)
+            .unwrap_throw()
+            .subscribe(ctx.link().callback(Msg::GlobalEvent));
 
         Self {
-            url: ctx.props().url.clone(),
+            url: ctx.props().url.to_string(),
             show: false,
             copied_to_clipboard: false,
             _events: events,
@@ -70,8 +67,9 @@ impl Component for SharePopup {
             }
             Msg::OpenPrint => {
                 self.show = false;
-                ctx.link().history().unwrap_throw().push(Route::Print {
-                    id: ctx.props().event_id.clone(),
+
+                ctx.link().navigator().unwrap_throw().push(&Route::Print {
+                    id: ctx.props().event_id.to_string(),
                 });
                 true
             }
@@ -93,7 +91,7 @@ impl Component for SharePopup {
                         gloo_utils::window()
                             .open_with_url(
                                 format!(
-                                    "https://twitter.com/intent/tweet?via=liveask1&text={}",
+                                    "https://twitter.com/intent/tweet?via=liveaskapp&text={}",
                                     urlencoding::encode(&format!(
                                         "{}?utm_source=share-twitter",
                                         self.url

@@ -1,14 +1,14 @@
 use crate::{
-    agents::{EventAgent, GlobalEvent},
     components::{Popup, Spinner},
     fetch,
     pages::BASE_API,
+    GlobalEvent,
 };
-use gloo::timers::callback::Timeout;
+use events::{event_context, EventBridge};
+use gloo_timers::callback::Timeout;
 use shared::{EventTokens, EventUpgrade};
 use wasm_bindgen::UnwrapThrowExt;
 use yew::prelude::*;
-use yew_agent::{Bridge, Bridged};
 
 #[derive(Clone, Debug, Eq, PartialEq, Properties)]
 pub struct PaymentProps {
@@ -24,7 +24,7 @@ pub enum Msg {
 pub struct PaymentPopup {
     show: bool,
     timeout: Option<Timeout>,
-    _events: Box<dyn Bridge<EventAgent>>,
+    _events: EventBridge<GlobalEvent>,
 }
 
 impl Component for PaymentPopup {
@@ -32,7 +32,9 @@ impl Component for PaymentPopup {
     type Properties = PaymentProps;
 
     fn create(ctx: &Context<Self>) -> Self {
-        let events = EventAgent::bridge(ctx.link().callback(Msg::GlobalEvent));
+        let events = event_context(ctx)
+            .unwrap_throw()
+            .subscribe(ctx.link().callback(Msg::GlobalEvent));
 
         Self {
             show: false,
@@ -60,7 +62,7 @@ impl Component for PaymentPopup {
             }
             Msg::TimerDone(url) => {
                 log::info!("redirect to: {}", url);
-                gloo::utils::window().location().assign(&url).unwrap_throw();
+                gloo_utils::window().location().assign(&url).unwrap_throw();
                 false
             }
             Msg::UpgradeRequested(u) => {
