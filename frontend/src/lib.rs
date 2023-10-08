@@ -136,7 +136,7 @@ impl Component for AppRoot {
                         <IconBar/>
 
                         <div class="router">
-                            <Switch<Route> render={Switch::render(switch)} />
+                            <Switch<Route> render={switch} />
                         </div>
                     </div>
                     </ContextProvider<Events<GlobalEvent>>>
@@ -151,16 +151,16 @@ pub const fn not(b: bool) -> bool {
     !b
 }
 
-fn switch(switch: &Route) -> Html {
+fn switch(switch: Route) -> Html {
     match switch {
         Route::Event { id } => {
-            html! { <Event id={id.clone()} /> }
+            html! { <Event {id} /> }
         }
         Route::Print { id } => {
-            html! { <Print id={id.clone()} /> }
+            html! { <Print {id} /> }
         }
         Route::EventMod { id, secret } => {
-            html! { <Event id={id.clone()} secret={secret.clone()} /> }
+            html! { <Event {id} {secret} /> }
         }
         Route::NewEvent => {
             html! { <NewEvent /> }

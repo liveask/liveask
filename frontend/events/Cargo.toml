@@ -4,4 +4,4 @@ version = "0.1.2"
 edition = "2021"
 
 [dependencies]
-yew = "0.19"
+yew = "0.20"

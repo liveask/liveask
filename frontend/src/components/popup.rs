@@ -53,9 +53,7 @@ impl Component for Popup {
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
-        let click_outside = ctx
-            .link()
-            .callback_with_passive(Some(true), |_| Msg::ClickOutside);
+        let click_outside = ctx.link().callback(|_| Msg::ClickOutside);
         let click_inside = ctx.link().callback(|e: MouseEvent| {
             e.prevent_default();
             e.stop_immediate_propagation();

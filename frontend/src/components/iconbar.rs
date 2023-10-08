@@ -1,10 +1,10 @@
 use chrono::{Duration, Utc};
 use events::{event_context, EventBridge};
-use gloo::timers::callback::Interval;
+use gloo_timers::callback::Interval;
 use std::rc::Rc;
 use wasm_bindgen::UnwrapThrowExt;
 use yew::prelude::*;
-use yew_router::{prelude::*, scope_ext::HistoryHandle};
+use yew_router::prelude::*;
 use yewdux::prelude::*;
 
 use crate::{not, routes::Route, GlobalEvent, State};
@@ -30,7 +30,7 @@ pub struct IconBar {
     _dispatch: Dispatch<State>,
     events: EventBridge<GlobalEvent>,
     _interal: Interval,
-    _route_listener: HistoryHandle,
+    _route_listener: LocationHandle,
 }
 impl Component for IconBar {
     type Message = Msg;
@@ -56,7 +56,7 @@ impl Component for IconBar {
             _interal: timer_interval,
             _route_listener: ctx
                 .link()
-                .add_history_listener(ctx.link().callback(|_history| Msg::RouteChange))
+                .add_location_listener(ctx.link().callback(|_history| Msg::RouteChange))
                 .unwrap_throw(),
         }
     }
@@ -76,7 +76,7 @@ impl Component for IconBar {
                 false
             }
             Msg::Home => {
-                ctx.link().history().unwrap_throw().push(Route::Home);
+                ctx.link().navigator().unwrap_throw().push(&Route::Home);
                 false
             }
             Msg::Reconnect => {

@@ -1,5 +1,5 @@
+use gloo_worker::PublicWorker;
 use worker2::WordCloudAgent;
-use yew_agent::Threaded;
 
 fn main() {
     console_error_panic_hook::set_once();

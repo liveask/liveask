@@ -1,7 +1,7 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
-use yew_agent::{Agent, AgentLink, HandlerId};
+use yew_agent::{Worker, WorkerLink, HandlerId};
 
 use crate::{cloud::create_cloud, pwd::pwd_hash};
 
@@ -16,18 +16,18 @@ pub struct WordCloudOutput(pub String);
 
 #[allow(dead_code)]
 pub struct WordCloudAgent {
-    link: AgentLink<Self>,
+    link: WorkerLink<Self>,
     subscribers: HashSet<HandlerId>,
     cache: Option<(String, String)>,
 }
 
-impl Agent for WordCloudAgent {
+impl Worker for WordCloudAgent {
     type Reach = yew_agent::Public<Self>;
     type Message = ();
     type Input = WordCloudInput;
     type Output = WordCloudOutput;
 
-    fn create(link: AgentLink<Self>) -> Self {
+    fn create(link: WorkerLink<Self>) -> Self {
         let v = format!("{PACKAGE_VERSION} ({BUILD_TIME})",);
 
         log::info!(target: "worker", "[wc] worker created: {v}");
