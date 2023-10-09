@@ -240,13 +240,13 @@ impl Home {
 
                 {Self::view_social()}
 
-                <div class="link about" onclick={ctx.link().callback(|_| Msg::Privacy)}>
-                    {"Privacy Policy"}
-                </div>
-
                 <a class="about" href="https://github.com/liveask/liveask" target="_blank">
                     {"About"}
                 </a>
+
+                <div class="link about" onclick={ctx.link().callback(|_| Msg::Privacy)}>
+                    {"Privacy Policy"}
+                </div>
 
                 <a class="version" href="https://github.com/liveask/liveask/blob/main/CHANGELOG.md" target="_blank">
                     { format!("v{VERSION_STR}-{git_sha} {branch} {api_version}") }

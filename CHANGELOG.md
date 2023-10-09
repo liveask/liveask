@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## [2.4.1] - 2023-10-09
+
+### Changed
+* improved SEO via meta tag
+* better readability of social icons
+* less standard warnings to lower pressure on sentry
+
 ## [2.4.0] - 2023-10-08
 
 ### Changed

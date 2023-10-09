@@ -41,13 +41,17 @@
   }
 
   .social {
+    top: 2px;
+    width: 32px;
     margin-top: 20px;
-    margin-left: 5px;
-    margin-right: 5px;
-    width: 1em;
+    margin-left: 10px;
+    margin-right: 10px;
     display: inline-block;
     position: relative;
-    top: 2px;
+    filter: invert(1);
+  }
+
+  #admin {
     filter: invert(1);
   }
 }
