@@ -870,7 +870,7 @@ impl PubSubReceiver for App {
                     if let Err(inner_err) = &e.0 {
                         tracing::error!("pubsub send err: {} ({})", e, inner_err);
                     } else {
-                        tracing::warn!("pubsub send err: {}", e);
+                        tracing::info!("pubsub not sent: {}", e);
                     }
                 }
             }
