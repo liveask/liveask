@@ -16,19 +16,26 @@ runs:
       uses: Swatinem/rust-cache@v2
       with:
         shared-key: ${{ input.os }}-${{ input.rust }}
+
     - name: Install Rust
       uses: dtolnay/rust-toolchain@master
       with:
         toolchain: ${{ input.rust }}
         components: clippy
+
     - name: Install cargo-make
+      shell: bash
       run: |
         which cargo-make || cargo install cargo-make
+
     - name: Check BE
+      shell: bash
       run: |
         cd backend
         cargo make checks_ci
+
     - name: Test BE
+      shell: bash
       run: |
         cd backend
         cargo t

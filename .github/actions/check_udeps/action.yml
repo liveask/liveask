@@ -5,18 +5,25 @@ runs:
   steps:
     - name: Restore cargo cache
       uses: Swatinem/rust-cache@v2
+
     - name: Install Rust
       uses: dtolnay/rust-toolchain@nightly
       with:
         target: wasm32-unknown-unknown
+
     - name: Install cargo-make
+      shell: bash
       run: |
         which cargo-make || cargo install cargo-make
+
     - name: Check FE
+      shell: bash
       run: |
         cd frontend
         cargo make udeps
+
     - name: Check BE
+      shell: bash
       run: |
         cd backend
         cargo make udeps
