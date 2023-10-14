@@ -1,15 +1,23 @@
 name: nightly
 
 on:
-  workflow_dispatch:
   schedule:
     - cron: '0 2 * * *' # run at 2 AM UTC
+  push:
+    branches: [ '*' ]
+  workflow_dispatch:
 
 env:
   CARGO_TERM_COLOR: always
   TRUNK_VERSION: v0.17.5
 
 jobs:
+
+  check_udeps:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/check_udeps
 
   check_backend:
     needs: ["changes"]
