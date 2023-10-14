@@ -15,12 +15,12 @@ runs:
     - name: Restore cargo cache
       uses: Swatinem/rust-cache@v2
       with:
-        shared-key: ${{ input.os }}-${{ input.rust }}
+        shared-key: ${{ inputs.os }}-${{ inputs.rust }}
 
     - name: Install Rust
       uses: dtolnay/rust-toolchain@master
       with:
-        toolchain: ${{ input.rust }}
+        toolchain: ${{ inputs.rust }}
         components: clippy
 
     - name: Install cargo-make
