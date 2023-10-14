@@ -1,24 +1,25 @@
 name: check_be
 description: check and test backend
+inputs:
+  rust:
+    description: 'rust version'
+    required: true
+    default: 'stable'
+  os:
+    description: 'os type'
+    required: true
+    default: 'ubuntu-latest'
 runs:
   using: "composite"
-  strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest]
-        rust: [nightly, stable]
-    runs-on: ${{ matrix.os }}
-    continue-on-error: ${{ matrix.rust == 'nightly' }} # nightly is ok to fail
-    steps:
-    - uses: actions/checkout@v4
+  steps:
     - name: Restore cargo cache
       uses: Swatinem/rust-cache@v2
       with:
-        shared-key: ${{ matrix.os }}-${{ matrix.rust }}
+        shared-key: ${{ input.os }}-${{ input.rust }}
     - name: Install Rust
       uses: dtolnay/rust-toolchain@master
       with:
-        toolchain: ${{ matrix.rust }}
+        toolchain: ${{ input.rust }}
         components: clippy
     - name: Install cargo-make
       run: |
