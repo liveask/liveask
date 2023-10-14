@@ -23,16 +23,9 @@ jobs:
         docker pull liveask/server:beta
         docker tag liveask/server:beta liveask/server:prod
         docker push liveask/server:prod
-    - name: Deploy
-      env:
-        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_KEY_ID }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_KEY_SECRET }}
-        AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
-        ECS_CLUSTER: la-ecs-cluster-prod
-      run: |
-        aws sts get-caller-identity
-        ECS_SERVICE_ARN=$(aws ecs list-services --region=${AWS_DEFAULT_REGION} --cluster=${ECS_CLUSTER} --output=text | head -1 | awk '{print $2}')
-        aws ecs update-service --region=${AWS_DEFAULT_REGION} --service=${ECS_SERVICE_ARN} --cluster=${ECS_CLUSTER} --force-new-deployment
+    - uses: ./.github/actions/deploy_ecs
+      with:
+        cluster: la-ecs-cluster-prod
 
   deploy_frontend_prod:
     runs-on: ubuntu-latest
@@ -68,9 +61,10 @@ jobs:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_KEY_SECRET }}
         AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
+        AWS_CLOUDFRONT_DISTRO: 'E3VSL6KHSMRDI2'
       run: |
         cd frontend/dist
         aws s3 sync . s3://www.live-ask.com --no-progress --delete --cache-control "public, max-age=86400" --exclude "index.html" --exclude "worker2_bg.wasm"
         aws s3 cp ./index.html s3://www.live-ask.com --no-progress --cache-control "public, max-age=300"
         aws s3 cp ./worker2_bg.wasm s3://www.live-ask.com --no-progress --cache-control "public, max-age=300"
-        aws cloudfront create-invalidation --distribution-id E3VSL6KHSMRDI2 --paths "/index.html" "/worker*"
+        aws cloudfront create-invalidation --distribution-id ${AWS_CLOUDFRONT_DISTRO} --paths "/index.html" "/worker*"
