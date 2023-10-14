@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Changed
+* add tracking event for survey open button
+
 ## [2.4.1] - 2023-10-09
 
 ### Changed

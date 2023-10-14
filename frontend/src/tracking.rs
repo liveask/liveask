@@ -24,14 +24,15 @@ pub const EVNT_QUESTION_UNLIKE: usize = 6;
 pub const EVNT_PREMIUM_EXPAND: usize = 7;
 pub const EVNT_PREMIUM_UPGRADE: usize = 8;
 pub const EVNT_EXPORT: usize = 9;
+pub const EVNT_SURVEY_OPENED: usize = 10;
 
 const EVNT_FATHOM_IDS_BETA: &[&str] = &[
     "FGTHLILK", "PTYICP9D", "2QLZ08FA", "RPUPYLYB", "MNJ3ZBU9", "1O6TRFHR", "D56OBEJZ", "PZMXZBMP",
-    "KW4PIK1U", "XMK8M2CD",
+    "KW4PIK1U", "XMK8M2CD", "BQOVFVM5",
 ];
 const EVNT_FATHOM_IDS_PROD: &[&str] = &[
     "CE3E5DQE", "YJOUOV25", "Z6JYJXLR", "IWTNGV5P", "KPLTI4YY", "BUFQIMQI", "VNYQXL7D", "ZHOUYH0B",
-    "LYLSJMGT", "OAZVXYRC",
+    "LYLSJMGT", "OAZVXYRC", "KH51IDSN",
 ];
 
 const EVNT_FATHOM_IDS: &[&str] = fathom_ids();

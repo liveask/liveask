@@ -84,6 +84,7 @@ pub struct Event {
     manual_reconnect: bool,
 }
 pub enum Msg {
+    FeedbackClick,
     ShareEventClick,
     AskQuestionClick,
     Fetched(Option<GetEventResponse>),
@@ -177,7 +178,7 @@ impl Component for Event {
                     .map(|c| c.write_text(&self.moderator_url()));
                 true
             }
-            Msg::SocketMsg(msg) => self.push_received(msg, ctx),
+            Msg::SocketMsg(msg) => self.handle_socket(msg, ctx),
             Msg::StateChanged => false, // nothing needs to happen here
             Msg::ModStateChange(ev) => {
                 let e: web_sys::HtmlSelectElement =
@@ -207,7 +208,6 @@ impl Component for Event {
 
                 false
             }
-
             Msg::WordCloud(w) => {
                 self.wordcloud = Some(w.0);
                 true
@@ -224,42 +224,18 @@ impl Component for Event {
                 self.events.emit(GlobalEvent::OpenQuestionPopup);
                 false
             }
-            Msg::Fetched(res) => {
-                self.on_fetched(&res);
-
-                if let Some(e) = res {
-                    if !e.info.premium && self.query_params.paypal_token.is_some() {
-                        request_capture(
-                            e.info.tokens.public_token,
-                            self.query_params
-                                .paypal_token
-                                .as_ref()
-                                .cloned()
-                                .unwrap_throw(),
-                            ctx.link(),
-                        );
-                    }
-                }
-
-                true
+            Msg::FeedbackClick => {
+                //
+                log::info!("FeedbackClick");
+                tracking::track_event(tracking::EVNT_SURVEY_OPENED);
+                false
             }
+            Msg::Fetched(res) => self.handle_fetched(res, ctx),
             Msg::ModExport => {
                 self.export_event();
                 false
             }
-            Msg::GlobalEvent(ev) => match ev {
-                GlobalEvent::QuestionCreated(id) => {
-                    self.dispatch
-                        .reduce(|old| (*old).clone().set_new_question(Some(id)).into());
-                    self.state = self.dispatch.get();
-                    true
-                }
-                GlobalEvent::SocketManualReconnect => {
-                    self.manual_reconnect = true;
-                    true
-                }
-                _ => false,
-            },
+            Msg::GlobalEvent(ev) => self.handle_global_event(ev),
         }
     }
 
@@ -853,7 +829,10 @@ impl Event {
                             {"Share my event"}
                         </button>
                         <button class="button-blue">
-                            <a class="feedback-anchor" href="https://forms.gle/DsD9ZEX5uv1QqDjV7" target="_blank">
+                            <a class="feedback-anchor"
+                                href="https://forms.gle/DsD9ZEX5uv1QqDjV7"
+                                target="_blank"
+                                onclick={ctx.link().callback(|_| Msg::FeedbackClick)}>
                                 <div class="feedback-text">{"Give us feedback"}</div>
                             </a>
                         </button>
@@ -1008,7 +987,7 @@ impl Event {
         }
     }
 
-    fn push_received(&mut self, msg: SocketResponse, ctx: &Context<Event>) -> bool {
+    fn handle_socket(&mut self, msg: SocketResponse, ctx: &Context<Event>) -> bool {
         match msg {
             SocketResponse::Connecting | SocketResponse::Connected => {
                 self.manual_reconnect = false;
@@ -1100,6 +1079,40 @@ impl Event {
                 !fetch_event
             }
         }
+    }
+
+    fn handle_global_event(&mut self, ev: GlobalEvent) -> bool {
+        match ev {
+            GlobalEvent::QuestionCreated(id) => {
+                self.dispatch
+                    .reduce(|old| (*old).clone().set_new_question(Some(id)).into());
+                self.state = self.dispatch.get();
+                true
+            }
+            GlobalEvent::SocketManualReconnect => {
+                self.manual_reconnect = true;
+                true
+            }
+            _ => false,
+        }
+    }
+
+    fn handle_fetched(&mut self, res: Option<GetEventResponse>, ctx: &Context<Event>) -> bool {
+        self.on_fetched(&res);
+        if let Some(e) = res {
+            if !e.info.premium && self.query_params.paypal_token.is_some() {
+                request_capture(
+                    e.info.tokens.public_token,
+                    self.query_params
+                        .paypal_token
+                        .as_ref()
+                        .cloned()
+                        .unwrap_throw(),
+                    ctx.link(),
+                );
+            }
+        }
+        true
     }
 }
 
