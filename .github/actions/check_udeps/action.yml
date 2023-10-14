@@ -17,6 +17,7 @@ runs:
         which cargo-make || cargo install cargo-make
 
     - name: Install Trunk
+      shell: bash
       run: |
         wget -qO- https://github.com/est31/cargo-udeps/releases/download/v0.1.42/cargo-udeps-v0.1.42-x86_64-unknown-linux-gnu.tar.gz | tar -xzf-
         cd cargo-udeps-v0.1.42-x86_64-unknown-linux-gnu
