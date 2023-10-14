@@ -4,6 +4,9 @@ inputs:
   cluster:
     description: 'cluster name'
     required: true
+  secrets:
+    description: 'secrets'
+    required: true
 runs:
   using: "composite"
   steps:

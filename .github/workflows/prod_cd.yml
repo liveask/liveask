@@ -26,6 +26,7 @@ jobs:
     - uses: ./.github/actions/deploy_ecs
       with:
         cluster: la-ecs-cluster-prod
+        secrets: inherit
 
   deploy_frontend_prod:
     runs-on: ubuntu-latest

@@ -116,6 +116,7 @@ jobs:
     - uses: ./.github/actions/deploy_ecs
       with:
         cluster: la-ecs-cluster-beta
+        secrets: inherit
 
     - name: Set short git SHA
       id: vars
