@@ -41,6 +41,8 @@ jobs:
 # CHECK / TEST
 
   check_udeps:
+    needs: ["changes"]
+    if: ${{ needs.changes.outputs.be == 'true' || needs.changes.outputs.fe == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
