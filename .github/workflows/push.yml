@@ -46,34 +46,18 @@ jobs:
   check_and_test_backend:
     needs: changes
     if: ${{ needs.changes.outputs.be == 'true' }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest]
-        rust: [nightly, stable]
-    runs-on: ${{ matrix.os }}
-    continue-on-error: ${{ matrix.rust == 'nightly' }} # nightly is ok to fail
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/check_be
-        with:
-          os: ${{ matrix.os }}
-          rust: ${{ matrix.rust }}
 
   check_and_test_frontend:
     needs: ["changes"]
     if: ${{ needs.changes.outputs.fe == 'true' }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest]
-        rust: [nightly, stable]
-    runs-on: ${{ matrix.os }}
-    continue-on-error: ${{ matrix.rust == 'nightly' }} # nightly is ok to fail
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/check_fe
-        with:
-          os: ${{ matrix.os }}
-          rust: ${{ matrix.rust }}
 
 # DEPLOY
 
