@@ -1,3 +1,4 @@
+# makefile frontend
 
 clean:
 	rm -rf dist
@@ -15,4 +16,3 @@ check:
 
 release:
 	LA_ENV="prod" cargo make build-and-check
-	
