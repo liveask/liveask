@@ -4,8 +4,6 @@ on:
   workflow_dispatch:
   schedule:
     - cron: '0 2 * * *' # run at 2 AM UTC
-  pull_request:
-    branches: [ main ]
 
 env:
   CARGO_TERM_COLOR: always
