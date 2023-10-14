@@ -20,8 +20,6 @@ jobs:
       - uses: ./.github/actions/check_udeps
 
   check_backend:
-    needs: ["changes"]
-    if: ${{ needs.changes.outputs.be == 'true' }}
     strategy:
       matrix:
         os: [ubuntu-latest]
