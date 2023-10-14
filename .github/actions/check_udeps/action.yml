@@ -1,0 +1,38 @@
+name: check_udeps
+description: checks for unused dependencies
+runs:
+  using: "composite"
+  steps:
+    - name: Restore cargo cache
+      uses: Swatinem/rust-cache@v2
+
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@nightly
+      with:
+        target: wasm32-unknown-unknown
+
+    - name: Install cargo-make
+      shell: bash
+      run: |
+        which cargo-make || cargo install cargo-make
+
+    - name: Install cargo-udeps
+      shell: bash
+      run: |
+        wget -qO- https://github.com/est31/cargo-udeps/releases/download/${UDEPS_VERSION}/cargo-udeps-${UDEPS_VERSION}-x86_64-unknown-linux-gnu.tar.gz | tar -xzf-
+        cd cargo-udeps-${UDEPS_VERSION}-x86_64-unknown-linux-gnu
+        mv cargo-udeps ~/.cargo/bin/
+        cargo-udeps help
+        cargo udeps -V
+
+    - name: Check FE
+      shell: bash
+      run: |
+        cd frontend
+        cargo make udeps
+
+    - name: Check BE
+      shell: bash
+      run: |
+        cd backend
+        cargo make udeps

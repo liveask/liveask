@@ -1,0 +1,47 @@
+name: check_fe
+description: check and test frontend
+inputs:
+  rust:
+    description: 'rust version'
+    required: true
+    default: 'stable'
+  os:
+    description: 'os type'
+    required: true
+    default: 'ubuntu-latest'
+runs:
+  using: "composite"
+  steps:
+    - name: Restore cargo cache
+      uses: Swatinem/rust-cache@v2
+      with:
+        shared-key: ${{ inputs.os }}-${{ inputs.rust }}
+
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@master
+      with:
+        toolchain: ${{ inputs.rust }}
+        target: wasm32-unknown-unknown
+        components: clippy
+
+    - name: Install cargo-make
+      shell: bash
+      run: |
+        which cargo-make || cargo install cargo-make
+
+    - name: Install Test Runner
+      shell: bash
+      run: |
+        which wasm-bindgen-test-runner || cargo install wasm-bindgen-cli
+
+    - name: Check FE
+      shell: bash
+      run: |
+        cd frontend
+        cargo make checks_ci
+
+    - name: Test FE
+      shell: bash
+      run: |
+        cd frontend
+        cargo make test

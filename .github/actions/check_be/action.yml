@@ -1,0 +1,41 @@
+name: check_be
+description: check and test backend
+inputs:
+  rust:
+    description: 'rust version'
+    required: true
+    default: 'stable'
+  os:
+    description: 'os type'
+    required: true
+    default: 'ubuntu-latest'
+runs:
+  using: "composite"
+  steps:
+    - name: Restore cargo cache
+      uses: Swatinem/rust-cache@v2
+      with:
+        shared-key: ${{ inputs.os }}-${{ inputs.rust }}
+
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@master
+      with:
+        toolchain: ${{ inputs.rust }}
+        components: clippy
+
+    - name: Install cargo-make
+      shell: bash
+      run: |
+        which cargo-make || cargo install cargo-make
+
+    - name: Check BE
+      shell: bash
+      run: |
+        cd backend
+        cargo make checks_ci
+
+    - name: Test BE
+      shell: bash
+      run: |
+        cd backend
+        cargo t
