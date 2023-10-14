@@ -20,6 +20,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     continue-on-error: ${{ matrix.rust == 'nightly' }} # nightly is ok to fail
     steps:
+      - uses: actions/checkout@v4
       - uses: ./.github/actions/check_be
         with:
           os: ${{ matrix.os }}
@@ -33,6 +34,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     continue-on-error: ${{ matrix.rust == 'nightly' }} # nightly is ok to fail
     steps:
+      - uses: actions/checkout@v4
       - uses: ./.github/actions/check_fe
         with:
           os: ${{ matrix.os }}
