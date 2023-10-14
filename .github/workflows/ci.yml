@@ -16,6 +16,8 @@ jobs:
 
   changes:
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
     outputs:
       rust: ${{ steps.filter.outputs.be }}
       node: ${{ steps.filter.outputs.fe }}
@@ -41,7 +43,7 @@ jobs:
 # CHECK / TEST
 
   check_udeps:
-    needs: ["changes"]
+    needs: changes
     if: ${{ needs.changes.outputs.be == 'true' || needs.changes.outputs.fe == 'true' }}
     runs-on: ubuntu-latest
     steps:
@@ -49,7 +51,7 @@ jobs:
       - uses: ./.github/actions/check_udeps
 
   check_and_test_backend:
-    needs: ["changes"]
+    needs: changes
     if: ${{ needs.changes.outputs.be == 'true' }}
     strategy:
       matrix:
