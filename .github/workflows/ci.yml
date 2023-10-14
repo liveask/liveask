@@ -52,8 +52,8 @@ jobs:
       matrix:
         os: [ubuntu-latest]
         rust: [nightly, stable]
-      runs-on: ${{ matrix.os }}
-      continue-on-error: ${{ matrix.rust == 'nightly' }} # nightly is ok to fail
+    runs-on: ${{ matrix.os }}
+    continue-on-error: ${{ matrix.rust == 'nightly' }} # nightly is ok to fail
     steps:
       - uses: ./.github/actions/check_be
         with:
@@ -67,8 +67,8 @@ jobs:
       matrix:
         os: [ubuntu-latest]
         rust: [nightly, stable]
-      runs-on: ${{ matrix.os }}
-      continue-on-error: ${{ matrix.rust == 'nightly' }} # nightly is ok to fail
+    runs-on: ${{ matrix.os }}
+    continue-on-error: ${{ matrix.rust == 'nightly' }} # nightly is ok to fail
     steps:
       - uses: ./.github/actions/check_fe
         with:
