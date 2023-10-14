@@ -19,8 +19,8 @@ jobs:
     permissions:
       pull-requests: read
     outputs:
-      rust: ${{ steps.filter.outputs.be }}
-      node: ${{ steps.filter.outputs.fe }}
+      be: ${{ steps.filter.outputs.be }}
+      fe: ${{ steps.filter.outputs.fe }}
     steps:
       - uses: actions/checkout@v4
       - uses: dorny/paths-filter@v2
