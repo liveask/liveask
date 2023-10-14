@@ -1,8 +1,6 @@
 name: ci
 
 on:
-  schedule:
-    - cron: '0 2 * * *' # run at 2 AM UTC
   push:
     branches: [ '*' ]
   pull_request:
@@ -14,80 +12,68 @@ env:
 
 jobs:
 
+# CHANGE DETECTION FOR CONDITIONAL NEXT STEPS
+
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      rust: ${{ steps.filter.outputs.be }}
+      node: ${{ steps.filter.outputs.fe }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v2
+        id: filter
+        with:
+          filters: |
+            be:
+              - 'backend/**'
+              - 'async-redis-session/**'
+              - 'backend-e2e/**'
+              - 'shared/**'
+              - 'Cargo.lock'
+              - 'Cargo.toml'
+            fe:
+              - 'frontend/**'
+              - 'shared/**'
+              - 'Cargo.lock'
+              - 'Cargo.toml'
+
 # CHECK / TEST
 
-  check_and_test:
+  check_udeps:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: ./.github/actions/check_udeps
+
+  check_and_test_backend:
+    needs: ["changes"]
+    if: ${{ needs.changes.outputs.be == 'true' }}
     strategy:
-      fail-fast: false
       matrix:
         os: [ubuntu-latest]
         rust: [nightly, stable]
-    runs-on: ${{ matrix.os }}
-    continue-on-error: ${{ matrix.rust == 'nightly' }} # nightly is ok to fail
+      runs-on: ${{ matrix.os }}
+      continue-on-error: ${{ matrix.rust == 'nightly' }} # nightly is ok to fail
     steps:
-    - uses: actions/checkout@v3
-    - name: Restore cargo cache
-      uses: Swatinem/rust-cache@v2
-      with:
-        shared-key: ${{ matrix.os }}-${{ matrix.rust }}
-    - name: Install Rust
-      uses: dtolnay/rust-toolchain@master
-      with:
-        toolchain: ${{ matrix.rust }}
-        target: wasm32-unknown-unknown
-        components: clippy
-    - name: Install cargo-make
-      run: |
-        which cargo-make || cargo install cargo-make
-    - name: Install Test Runner
-      run: |
-        which wasm-bindgen-test-runner || cargo install wasm-bindgen-cli
-    - name: Check FE
-      run: |
-        cd frontend
-        cargo make checks_ci
-    - name: Check BE
-      run: |
-        cd backend
-        cargo make checks_ci
-    - name: Test FE
-      run: |
-        cd frontend
-        cargo make test
-    - name: Test BE
-      run: |
-        cd backend
-        cargo t
+      - uses: ./.github/actions/check_be
+        with:
+          os: ${{ matrix.os }}
+          rust: ${{ matrix.rust }}
 
-  check_udeps:
+  check_and_test_frontend:
+    needs: ["changes"]
+    if: ${{ needs.changes.outputs.fe == 'true' }}
     strategy:
-      fail-fast: false
       matrix:
         os: [ubuntu-latest]
-        rust: [nightly]
-    runs-on: ${{ matrix.os }}
+        rust: [nightly, stable]
+      runs-on: ${{ matrix.os }}
+      continue-on-error: ${{ matrix.rust == 'nightly' }} # nightly is ok to fail
     steps:
-    - uses: actions/checkout@v3
-    - name: Restore cargo cache
-      uses: Swatinem/rust-cache@v2
-      with:
-        shared-key: ${{ matrix.os }}-${{ matrix.rust }}
-    - name: Install Rust
-      uses: dtolnay/rust-toolchain@master
-      with:
-        toolchain: ${{ matrix.rust }}
-        target: wasm32-unknown-unknown
-    - name: Install cargo-make
-      run: |
-        which cargo-make || cargo install cargo-make
-    - name: Check FE
-      run: |
-        cd frontend
-        cargo make udeps
-    - name: Check BE
-      run: |
-        cd backend
-        cargo make udeps
+      - uses: ./.github/actions/check_fe
+        with:
+          os: ${{ matrix.os }}
+          rust: ${{ matrix.rust }}
 
 # DEPLOY
 
@@ -96,9 +82,9 @@ jobs:
   be_deploy_beta:
     runs-on: ubuntu-latest
     environment: beta
-    needs: ["check_and_test"]
+    needs: ["check_and_test_backend"]
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Restore cargo cache
       uses: Swatinem/rust-cache@v2
       with:
@@ -156,7 +142,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: ["be_deploy_beta"]
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Restore cargo cache
       uses: Swatinem/rust-cache@v2
       with:
@@ -179,9 +165,9 @@ jobs:
   fe_deploy_beta:
     runs-on: ubuntu-latest
     environment: beta
-    needs: ["check_and_test"]
+    needs: ["check_and_test_frontend"]
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Restore cargo cache
       uses: Swatinem/rust-cache@v2
       with:

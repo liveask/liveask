@@ -1,0 +1,23 @@
+name: check_udeps
+description: checks for unused dependencies
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/checkout@v4
+    - name: Restore cargo cache
+      uses: Swatinem/rust-cache@v2
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@nightly
+      with:
+        target: wasm32-unknown-unknown
+    - name: Install cargo-make
+      run: |
+        which cargo-make || cargo install cargo-make
+    - name: Check FE
+      run: |
+        cd frontend
+        cargo make udeps
+    - name: Check BE
+      run: |
+        cd backend
+        cargo make udeps

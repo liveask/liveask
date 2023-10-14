@@ -1,0 +1,39 @@
+name: nightly
+
+on:
+  schedule:
+    - cron: '0 2 * * *' # run at 2 AM UTC
+
+env:
+  CARGO_TERM_COLOR: always
+  TRUNK_VERSION: v0.17.5
+
+jobs:
+
+  check_backend:
+    needs: ["changes"]
+    if: ${{ needs.changes.outputs.be == 'true' }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        rust: [nightly, stable]
+      runs-on: ${{ matrix.os }}
+      continue-on-error: ${{ matrix.rust == 'nightly' }} # nightly is ok to fail
+    steps:
+      - uses: ./.github/actions/check_be
+        with:
+          os: ${{ matrix.os }}
+          rust: ${{ matrix.rust }}
+  
+  check_frontend:
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        rust: [nightly, stable]
+      runs-on: ${{ matrix.os }}
+      continue-on-error: ${{ matrix.rust == 'nightly' }} # nightly is ok to fail
+    steps:
+      - uses: ./.github/actions/check_fe
+        with:
+          os: ${{ matrix.os }}
+          rust: ${{ matrix.rust }}

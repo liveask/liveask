@@ -1,0 +1,33 @@
+name: check_be
+description: check and test backend
+runs:
+  using: "composite"
+  strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        rust: [nightly, stable]
+    runs-on: ${{ matrix.os }}
+    continue-on-error: ${{ matrix.rust == 'nightly' }} # nightly is ok to fail
+    steps:
+    - uses: actions/checkout@v4
+    - name: Restore cargo cache
+      uses: Swatinem/rust-cache@v2
+      with:
+        shared-key: ${{ matrix.os }}-${{ matrix.rust }}
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@master
+      with:
+        toolchain: ${{ matrix.rust }}
+        components: clippy
+    - name: Install cargo-make
+      run: |
+        which cargo-make || cargo install cargo-make
+    - name: Check BE
+      run: |
+        cd backend
+        cargo make checks_ci
+    - name: Test BE
+      run: |
+        cd backend
+        cargo t
