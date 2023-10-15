@@ -4,14 +4,17 @@ inputs:
   cluster:
     description: 'cluster name'
     required: true
+  secrets:
+    description: 'secrets'
+    required: true
 runs:
   using: "composite"
   steps:
     - name: Deploy
       env:
-        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_KEY_ID }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_KEY_SECRET }}
-        AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
+        AWS_ACCESS_KEY_ID: ${{ inputs.secrets.AWS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ inputs.secrets.AWS_KEY_SECRET }}
+        AWS_DEFAULT_REGION: ${{ inputs.secrets.AWS_DEFAULT_REGION }}
       run: |
         aws sts get-caller-identity
         ECS_SERVICE_ARN=$(aws ecs list-services --region=${AWS_DEFAULT_REGION} --cluster=${{ inputs.cluster }} --output=text | head -1 | awk '{print $2}')
