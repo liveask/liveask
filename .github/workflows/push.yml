@@ -116,8 +116,9 @@ jobs:
     - uses: ./.github/actions/deploy_ecs
       with:
         cluster: la-ecs-cluster-beta
-        with: 
-          secrets: ${{ secrets }}
+        aws_key_id: ${{ secrets.AWS_KEY_ID }}
+        aws_key_secret: ${{ secrets.AWS_KEY_SECRET }}
+        aws_region: ${{ secrets.AWS_DEFAULT_REGION }}
 
     - name: Set short git SHA
       id: vars

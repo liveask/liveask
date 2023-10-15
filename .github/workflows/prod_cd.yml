@@ -26,7 +26,9 @@ jobs:
     - uses: ./.github/actions/deploy_ecs
       with:
         cluster: la-ecs-cluster-prod
-        secrets: inherit
+        aws_key_id: ${{ secrets.AWS_KEY_ID }}
+        aws_key_secret: ${{ secrets.AWS_KEY_SECRET }}
+        aws_region: ${{ secrets.AWS_DEFAULT_REGION }}
 
   deploy_frontend_prod:
     runs-on: ubuntu-latest
