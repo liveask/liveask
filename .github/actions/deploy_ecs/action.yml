@@ -7,7 +7,7 @@ inputs:
   aws_key_id: 
     description: 'aws key id'
     required: true
-  aws_key_secret: ${{ secrets.AWS_KEY_SECRET }}
+  aws_key_secret:
     description: 'aws key secret'
     required: true
   aws_region:
