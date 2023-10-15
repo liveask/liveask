@@ -117,7 +117,7 @@ jobs:
       with:
         cluster: la-ecs-cluster-beta
         with: 
-          secrets: secrets
+          secrets: ${{ secrets }}
 
     - name: Set short git SHA
       id: vars
