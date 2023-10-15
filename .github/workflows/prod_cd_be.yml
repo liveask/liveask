@@ -20,13 +20,9 @@ jobs:
         docker pull liveask/server:beta
         docker tag liveask/server:beta liveask/server:prod
         docker push liveask/server:prod
-    - name: Deploy
-      env:
-        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_KEY_ID }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_KEY_SECRET }}
-        AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
-        ECS_CLUSTER: la-ecs-cluster-prod
-      run: |
-        aws sts get-caller-identity
-        ECS_SERVICE_ARN=$(aws ecs list-services --region=${AWS_DEFAULT_REGION} --cluster=${ECS_CLUSTER} --output=text | head -1 | awk '{print $2}')
-        aws ecs update-service --region=${AWS_DEFAULT_REGION} --service=${ECS_SERVICE_ARN} --cluster=${ECS_CLUSTER} --force-new-deployment
+    - uses: ./.github/actions/deploy_ecs
+      with:
+        cluster: la-ecs-cluster-prod
+        aws_key_id: ${{ secrets.AWS_KEY_ID }}
+        aws_key_secret: ${{ secrets.AWS_KEY_SECRET }}
+        aws_region: ${{ secrets.AWS_DEFAULT_REGION }}
