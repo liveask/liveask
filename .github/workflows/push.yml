@@ -149,7 +149,6 @@ jobs:
       run: |
         cd backend-e2e
         make e2e-test-remote
-
     # comment when disabling beta (2/3)
     - name: Test Beta
       run: |
@@ -196,13 +195,13 @@ jobs:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_KEY_SECRET }}
         AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
+        AWS_CLOUDFRONT_DISTRO: 'EJFNBPSNYQSP9'
       run: |
         cd frontend/dist
-        aws sts get-caller-identity
         aws s3 sync . s3://beta.live-ask.com --acl public-read --no-progress --delete --cache-control "public, max-age=86400" --exclude "index.html" --exclude "worker2_bg.wasm"
         aws s3 cp ./index.html s3://beta.live-ask.com --acl public-read --no-progress --cache-control "public, max-age=120"
         aws s3 cp ./worker2_bg.wasm s3://beta.live-ask.com --acl public-read --no-progress --cache-control "public, max-age=120"
-        aws cloudfront create-invalidation --distribution-id EJFNBPSNYQSP9 --paths "/*"
+        aws cloudfront create-invalidation --distribution-id ${AWS_CLOUDFRONT_DISTRO} --paths "/*"
 
     - name: Set short SHA
       id: vars
