@@ -28,9 +28,5 @@ pub fn session_secret() -> Option<Vec<u8>> {
         .as_bytes()
         .into();
 
-    if vec.len() >= 64 {
-        Some(vec)
-    } else {
-        None
-    }
+    (vec.len() >= 64).then_some(vec)
 }

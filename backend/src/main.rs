@@ -1,3 +1,4 @@
+#![forbid(unsafe_code)]
 #![deny(
     warnings,
     unused_imports,
@@ -8,25 +9,75 @@
 )]
 #![deny(
     clippy::all,
-    clippy::pedantic,
+    clippy::perf,
+    clippy::correctness,
+    clippy::complexity,
+    clippy::style,
     clippy::nursery,
+    clippy::pedantic
+)]
+// clippy::restriction (see https://rust-lang.github.io/rust-clippy/master/index.html#/?groups=restriction)
+// it is recommended to enable individually based on style and requirements
+#![deny(
+    clippy::as_underscore,
+    clippy::assertions_on_result_states,
+    clippy::clone_on_ref_ptr,
+    clippy::create_dir,
     clippy::dbg_macro,
-    clippy::unwrap_used,
-    clippy::expect_used,
+    clippy::decimal_literal_representation,
+    clippy::default_numeric_fallback,
+    clippy::empty_drop,
+    clippy::empty_structs_with_brackets,
+    clippy::exit,
+    clippy::filetype_is_file,
+    clippy::float_cmp_const,
+    clippy::fn_to_numeric_cast_any,
+    clippy::format_push_string,
+    clippy::get_unwrap,
+    clippy::integer_division,
+    clippy::lossy_float_literal,
+    clippy::mem_forget,
+    clippy::mixed_read_write_in_expression,
+    clippy::mutex_atomic,
+    clippy::needless_raw_strings,
+    clippy::non_ascii_literal,
     clippy::panic,
+    clippy::print_stderr,
+    clippy::pub_without_shorthand,
+    clippy::rc_buffer,
+    clippy::rc_mutex,
+    clippy::redundant_type_annotations,
+    clippy::ref_patterns,
+    clippy::rest_pat_in_fully_bound_structs,
+    clippy::same_name_method,
+    clippy::string_add,
+    clippy::string_lit_chars_any,
+    clippy::string_slice,
+    clippy::string_to_string,
+    clippy::suspicious_xor_used_as_pow,
+    clippy::todo,
+    clippy::try_err,
+    clippy::unimplemented,
+    clippy::unnecessary_self_imports,
+    clippy::unneeded_field_pattern,
+    clippy::unseparated_literal_suffix,
+    clippy::if_then_some_else_none,
+    clippy::partial_pub_fields,
+    clippy::print_stdout,
+    clippy::unwrap_in_result,
+    clippy::unwrap_used,
+    clippy::use_debug
+)]
+#![deny(
+    clippy::expect_used,
     clippy::needless_update,
     clippy::match_like_matches_macro,
     clippy::from_over_into,
     clippy::useless_conversion,
-    clippy::float_cmp_const,
-    clippy::lossy_float_literal,
-    clippy::string_to_string,
-    clippy::unneeded_field_pattern,
     clippy::verbose_file_reads
 )]
 #![allow(clippy::module_name_repetitions)]
-//TODO: get rid of having to allow this
-#![allow(clippy::result_large_err)]
+
 mod app;
 mod auth;
 mod ecs_task_id;
@@ -180,7 +231,7 @@ async fn payment() -> Result<Arc<Payment>> {
     if let Err(e) = payment.authenticate().await {
         tracing::error!(
             "payment auth error: [id: {paypal_id}, secret: {} ({}), sandbox: {sandbox}] {}",
-            &paypal_secret[..6],
+            paypal_secret.get(0..6).unwrap_or("utf8 error in secret"),
             paypal_secret.len(),
             e
         );
@@ -260,14 +311,14 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let eventsdb = Arc::new(DynamoEventsDB::new(dynamo_client().await?, use_local_db()).await?);
     let app = Arc::new(App::new(
         eventsdb,
-        pubsub.clone(),
+        Arc::<PubSubRedis>::clone(&pubsub),
         viewers,
         payment,
         tracking,
         base_url,
     ));
 
-    pubsub.set_receiver(app.clone()).await;
+    pubsub.set_receiver(Arc::<App>::clone(&app)).await;
 
     let secret = session_secret()
         .ok_or_else(|| error::InternalError::General(String::from("invalid session secret")))?;

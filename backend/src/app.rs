@@ -666,7 +666,7 @@ impl App {
 
         if let Some(f) = e.questions.iter_mut().find(|e| e.id == edit.question_id) {
             f.likes = if edit.like {
-                f.likes + 1
+                f.likes.saturating_add(1)
             } else {
                 f.likes.saturating_sub(1)
             };
@@ -863,7 +863,7 @@ impl PubSubReceiver for App {
         let topic = topic.to_string();
         let msg = Message::Text(payload.to_string());
 
-        let channels = self.channels.clone();
+        let channels = Arc::clone(&self.channels);
 
         if let Err(e) = tokio::spawn(async move {
             //TODO: lookup subscriber based on topic name

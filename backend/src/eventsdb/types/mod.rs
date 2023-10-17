@@ -31,6 +31,8 @@ pub struct ApiEventInfo {
     pub mod_email: Option<String>,
 }
 
+const LOREM_IPSUM:&str = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam diam eros, tincidunt ac placerat in, sodales sit amet nibh.";
+
 impl ApiEventInfo {
     fn is_timed_out(&self) -> bool {
         Self::timestamp_to_datetime(self.create_time_unix).map_or_else(
@@ -49,11 +51,13 @@ impl ApiEventInfo {
         self.premium_order.is_none() && self.is_timed_out()
     }
 
+    #[allow(clippy::string_slice)]
     pub fn adapt_if_timedout(&mut self) {
         if self.is_timed_out_and_free() {
             for q in &mut self.questions {
-                let sentence = LOREM_IPSUM;
-                q.text = sentence[0..q.text.len().min(sentence.len())].to_string();
+                //Note: as soon as `LOREM_IPSUM` contains utf8 this risks to panic inside utf8 codes
+                let text_length = q.text.len().min(LOREM_IPSUM.len());
+                q.text = LOREM_IPSUM[..text_length].to_string();
             }
         }
     }
@@ -62,8 +66,6 @@ impl ApiEventInfo {
         Utc.timestamp_opt(timestamp, 0).latest()
     }
 }
-
-const LOREM_IPSUM:&str = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam diam eros, tincidunt ac placerat in, sodales sit amet nibh.";
 
 impl From<ApiEventInfo> for EventInfo {
     fn from(val: ApiEventInfo) -> Self {

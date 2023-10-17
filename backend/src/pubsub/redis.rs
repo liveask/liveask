@@ -73,7 +73,7 @@ impl PubSubRedis {
     }
 
     fn forward_to_receiver(&self, topic: String, payload: String) {
-        let receiver = self.receiver.clone();
+        let receiver = Arc::clone(&self.receiver);
 
         tokio::spawn(async move {
             let topic = topic.clone();

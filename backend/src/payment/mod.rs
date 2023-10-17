@@ -5,13 +5,14 @@ use std::sync::{
     Arc,
 };
 
-pub use self::error::PaymentError;
-use self::error::PaymentResult;
 use paypal_rust::{
     client::AppInfo, AmountWithBreakdown, Client, CreateOrderDto, Environment, Order,
     OrderApplicationContext, OrderIntent, OrderStatus, PurchaseUnitRequest,
 };
 use serde::Deserialize;
+
+pub use self::error::PaymentError;
+use self::error::PaymentResult;
 
 #[derive(Deserialize, Debug)]
 pub struct PaymentCheckoutApprovedResource {
