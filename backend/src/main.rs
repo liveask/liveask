@@ -242,7 +242,53 @@ async fn payment() -> Result<Arc<Payment>> {
     Ok(payment)
 }
 
-#[allow(clippy::too_many_lines)]
+async fn setup_app(
+    redis_url: &str,
+    prod_env: &str,
+    log_level: &str,
+) -> std::result::Result<Arc<App>, Box<dyn std::error::Error>> {
+    let base_url = base_url();
+
+    let server_id = server_id().await.unwrap_or_else(|| "server".to_string());
+
+    tracing::info!(
+        git= %GIT_HASH,
+        env= prod_env,
+        is_prod= is_prod(),
+        log_level,
+        redis_url,
+        base_url,
+        server_id,
+        "server-starting",
+    );
+
+    let tracking = Tracking::new(Some(posthog_key()), server_id.clone(), prod_env.to_string());
+
+    tracking.track_server_start();
+
+    let redis_pool = create_pool(redis_url)?;
+    ping_test_redis(&redis_pool).await?;
+
+    let payment = payment().await?;
+
+    let pubsub = Arc::new(PubSubRedis::new(redis_pool.clone(), redis_url.to_string()));
+    let viewers = Arc::new(RedisViewers::new(redis_pool));
+
+    let eventsdb = Arc::new(DynamoEventsDB::new(dynamo_client().await?, use_local_db()).await?);
+    let app = Arc::new(App::new(
+        eventsdb,
+        Arc::<PubSubRedis>::clone(&pubsub),
+        viewers,
+        payment,
+        tracking,
+        base_url,
+    ));
+
+    pubsub.set_receiver(Arc::<App>::clone(&app)).await;
+
+    Ok(app)
+}
+
 #[tokio::main]
 async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let log_level = std::env::var("RUST_LOG")
@@ -281,44 +327,7 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
 
     let redis_url = get_redis_url();
 
-    let base_url = base_url();
-
-    let server_id = server_id().await.unwrap_or_else(|| "server".to_string());
-
-    tracing::info!(
-        git= %GIT_HASH,
-        env= prod_env,
-        is_prod= is_prod(),
-        log_level,
-        redis_url,
-        base_url,
-        server_id,
-        "server-starting",
-    );
-
-    let tracking = Tracking::new(Some(posthog_key()), server_id.clone(), prod_env.clone());
-
-    tracking.track_server_start();
-
-    let redis_pool = create_pool(&redis_url)?;
-    ping_test_redis(&redis_pool).await?;
-
-    let payment = payment().await?;
-
-    let pubsub = Arc::new(PubSubRedis::new(redis_pool.clone(), redis_url.clone()));
-    let viewers = Arc::new(RedisViewers::new(redis_pool));
-
-    let eventsdb = Arc::new(DynamoEventsDB::new(dynamo_client().await?, use_local_db()).await?);
-    let app = Arc::new(App::new(
-        eventsdb,
-        Arc::<PubSubRedis>::clone(&pubsub),
-        viewers,
-        payment,
-        tracking,
-        base_url,
-    ));
-
-    pubsub.set_receiver(Arc::<App>::clone(&app)).await;
+    let app = setup_app(&redis_url, &prod_env, &log_level).await?;
 
     let secret = session_secret()
         .ok_or_else(|| error::InternalError::General(String::from("invalid session secret")))?;
