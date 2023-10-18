@@ -14,8 +14,6 @@ runs:
   steps:
     - name: Restore cargo cache
       uses: Swatinem/rust-cache@v2
-      with:
-        shared-key: ${{ inputs.os }}-${{ inputs.rust }}
 
     - name: Install Rust
       uses: dtolnay/rust-toolchain@master

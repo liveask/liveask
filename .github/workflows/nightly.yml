@@ -31,7 +31,7 @@ jobs:
         with:
           os: ${{ matrix.os }}
           rust: ${{ matrix.rust }}
-  
+
   check_frontend:
     strategy:
       matrix:
