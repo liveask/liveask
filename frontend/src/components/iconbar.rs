@@ -20,6 +20,7 @@ pub enum Msg {
     RouteChange,
 }
 
+#[allow(clippy::empty_structs_with_brackets)]
 #[derive(Properties, PartialEq, Eq)]
 pub struct IconBarProps;
 

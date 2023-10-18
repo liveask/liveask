@@ -23,13 +23,15 @@ command = "cargo"
 args = ["t"]
 
 [tasks.clippy]
+install_crate = "cargo-cranky"
 command = "cargo"
-args = ["clippy"]
+args = ["cranky"]
 
 [tasks.clippy-nightly]
+install_crate = "cargo-cranky"
 command = "cargo"
 toolchain="nightly"
-args = ["clippy"]
+args = ["cranky"]
 
 [tasks.udeps]
 command = "cargo"

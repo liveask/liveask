@@ -26,6 +26,7 @@ pub enum Input {
     Pwd,
 }
 
+#[allow(clippy::empty_structs_with_brackets)]
 #[derive(Clone, Debug, Eq, PartialEq, Properties)]
 pub struct AdminLoginProps;
 
@@ -176,7 +177,7 @@ impl AdminLogin {
 
                 <div class="form">
                     <p>{format!("Logged in as: '{}'",user.name)}</p>
-                    <p>{format!("expires: {} min",user.expires.as_secs()/60)}</p>
+                    <p>{format!("expires: {} min",user.expires.as_secs().saturating_div(60))}</p>
 
                     <button
                         class="button-finish"

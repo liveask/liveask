@@ -942,7 +942,7 @@ impl Event {
         }
     }
 
-    fn on_question_click(&mut self, kind: &QuestionClickType, id: i64, ctx: &Context<Event>) {
+    fn on_question_click(&mut self, kind: &QuestionClickType, id: i64, ctx: &Context<Self>) {
         match kind {
             QuestionClickType::Like => {
                 let liked = LocalCache::is_liked(&self.event_id, id);
@@ -987,7 +987,7 @@ impl Event {
         }
     }
 
-    fn handle_socket(&mut self, msg: SocketResponse, ctx: &Context<Event>) -> bool {
+    fn handle_socket(&mut self, msg: SocketResponse, ctx: &Context<Self>) -> bool {
         match msg {
             SocketResponse::Connecting | SocketResponse::Connected => {
                 self.manual_reconnect = false;
@@ -1097,7 +1097,7 @@ impl Event {
         }
     }
 
-    fn handle_fetched(&mut self, res: Option<GetEventResponse>, ctx: &Context<Event>) -> bool {
+    fn handle_fetched(&mut self, res: Option<GetEventResponse>, ctx: &Context<Self>) -> bool {
         self.on_fetched(&res);
         if let Some(e) = res {
             if !e.info.premium && self.query_params.paypal_token.is_some() {

@@ -22,7 +22,7 @@ pub enum Msg {
     Input(InputEvent),
 }
 
-pub struct TextArea {}
+pub struct TextArea;
 impl Component for TextArea {
     type Message = Msg;
     type Properties = TextAreaProps;
