@@ -35,11 +35,13 @@ jobs:
               - 'shared/**'
               - 'Cargo.lock'
               - 'Cargo.toml'
+              - 'Cranky.toml'
             fe:
               - 'frontend/**'
               - 'shared/**'
               - 'Cargo.lock'
               - 'Cargo.toml'
+              - 'Cranky.toml'
 
 # CHECK / TEST
 
