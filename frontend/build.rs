@@ -89,6 +89,7 @@ fn file_content_changed(path: &str, content: &str) -> bool {
         .unwrap_or_default()
 }
 
+// build.rs main func
 fn main() -> anyhow::Result<()> {
     let git = get_git_hash();
     process_html_template(&git);
