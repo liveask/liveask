@@ -1,35 +1,5 @@
-#![deny(
-    warnings,
-    unused_imports,
-    unused_must_use,
-    unused_variables,
-    unused_mut,
-    dead_code,
-    clippy::expect_used
-)]
-#![deny(
-    clippy::all,
-    clippy::pedantic,
-    clippy::nursery,
-    clippy::dbg_macro,
-    clippy::unwrap_used,
-    clippy::panic,
-    clippy::needless_update,
-    clippy::match_like_matches_macro,
-    clippy::from_over_into,
-    clippy::useless_conversion,
-    clippy::float_cmp_const,
-    clippy::lossy_float_literal,
-    clippy::string_to_string,
-    clippy::unneeded_field_pattern,
-    clippy::verbose_file_reads
-)]
-#![allow(
-    clippy::use_self,
-    clippy::module_name_repetitions,
-    clippy::let_unit_value,
-    clippy::let_underscore_untyped
-)]
+#![allow(clippy::non_ascii_literal)]
+
 mod components;
 mod environment;
 mod fetch;

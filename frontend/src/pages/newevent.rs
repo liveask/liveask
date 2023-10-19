@@ -22,6 +22,7 @@ pub enum Input {
     Desc,
 }
 
+#[allow(clippy::empty_structs_with_brackets)]
 #[derive(Clone, Debug, Eq, PartialEq, Properties)]
 pub struct NewEventProps;
 

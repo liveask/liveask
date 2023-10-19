@@ -24,6 +24,7 @@
     missing_copy_implementations,
     unused_qualifications
 )]
+#![allow(clippy::pedantic, clippy::nursery, clippy::ref_patterns)]
 
 use async_session::{async_trait, serde_json, Result, Session, SessionStore};
 use redis::{aio::Connection, AsyncCommands, Client, IntoConnectionInfo, RedisResult};

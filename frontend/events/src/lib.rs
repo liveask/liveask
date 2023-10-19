@@ -61,6 +61,7 @@ impl<T: PartialEq + Clone> Default for Events<T> {
 }
 
 ///
+#[must_use]
 pub fn event_context<T: PartialEq + Clone + 'static, C: Component>(
     ctx: &Context<C>,
 ) -> Option<Events<T>> {

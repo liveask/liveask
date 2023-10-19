@@ -6,6 +6,7 @@ use crate::{fetch, routes::Route, GIT_BRANCH, VERSION_STR};
 
 use super::BASE_API;
 
+#[allow(clippy::empty_structs_with_brackets)]
 #[derive(Clone, Debug, Eq, PartialEq, Properties)]
 pub struct HomeProps;
 

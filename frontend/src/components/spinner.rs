@@ -1,6 +1,6 @@
 use yew::prelude::*;
 
-pub struct Spinner {}
+pub struct Spinner;
 impl Component for Spinner {
     type Message = ();
     type Properties = ();

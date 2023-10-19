@@ -1,10 +1,11 @@
 use wasm_bindgen::UnwrapThrowExt;
 use yew::prelude::*;
 
+#[allow(clippy::empty_structs_with_brackets)]
 #[derive(Clone, Debug, Eq, PartialEq, Properties)]
 pub struct PrivacyProps;
 
-pub struct Privacy {}
+pub struct Privacy;
 impl Component for Privacy {
     type Message = ();
     type Properties = PrivacyProps;

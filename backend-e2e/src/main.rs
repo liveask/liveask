@@ -1,4 +1,9 @@
-#![allow(dead_code)]
+#![allow(
+    dead_code,
+    clippy::unwrap_used,
+    clippy::if_then_some_else_none,
+    clippy::option_if_let_else
+)]
 
 use reqwest::{header::CONTENT_TYPE, StatusCode};
 use serde_json::json;
@@ -49,7 +54,7 @@ async fn add_event(name: String) -> EventInfo {
         .post(format!("{}/api/event/add", server_rest()))
         .json(&json!({
             "eventData":{
-                "maxLikes":0,
+                "maxLikes":0_i32,
                 "name":name,
                 "description":MIN_DESC,
                 "shortUrl":"",

@@ -72,6 +72,7 @@ pub struct EventInfo {
 }
 
 impl EventInfo {
+    #[must_use]
     pub fn deleted(id: String) -> Self {
         Self {
             deleted: true,
@@ -116,6 +117,7 @@ impl GetEventResponse {
         self.info.deleted
     }
 
+    #[must_use]
     pub fn deleted(id: String) -> Self {
         Self {
             info: EventInfo::deleted(id),
@@ -206,7 +208,8 @@ impl EventState {
         matches!(self.state, States::Closed)
     }
 
-    pub fn to_value(&self) -> u8 {
+    #[must_use]
+    pub const fn to_value(&self) -> u8 {
         match self.state {
             States::Open => 0,
             States::VotingOnly => 1,
@@ -214,6 +217,7 @@ impl EventState {
         }
     }
 
+    #[must_use]
     pub fn from_value(value: u8) -> Option<Self> {
         Some(match value {
             0 => Self {
