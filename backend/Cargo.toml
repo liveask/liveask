@@ -3,7 +3,6 @@ name = "liveask-server"
 version = "0.1.0"
 edition = "2021"
 build = "build.rs"
-
 # ############################
 
 [dependencies]
@@ -48,7 +47,6 @@ features = ["tokio-comp", "connection-manager"]
 [dependencies.tower-http]
 version = "0.4"
 features = ["cors", "trace", "auth", "sensitive-headers"]
-
 # ############################
 
 [dev-dependencies]
@@ -56,7 +54,6 @@ env_logger = "0.10"
 mime = "0.3"
 mockall = "0.11"
 pretty_assertions = "1"
-
 # ############################
 
 [build-dependencies]
