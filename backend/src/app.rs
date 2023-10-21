@@ -52,7 +52,7 @@ pub struct App {
     tracking: Tracking,
     base_url: String,
     tiny_url_token: Option<String>,
-    mailjet_config: MailConfig,
+    mail_config: MailConfig,
 }
 
 static NEXT_USER_ID: AtomicUsize = AtomicUsize::new(1);
@@ -79,7 +79,7 @@ impl App {
             channels: Arc::default(),
             base_url,
             tiny_url_token,
-            mailjet_config,
+            mail_config: mailjet_config,
             payment,
             viewers,
             tracking,
@@ -832,7 +832,7 @@ impl App {
             return;
         }
 
-        let mail = self.mailjet_config.clone();
+        let mail = self.mail_config.clone();
 
         tokio::spawn(async move {
             if let Err(e) = mail

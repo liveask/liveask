@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Changed
+* use aws ses for mail sending instead of mailjet
+
 ## [2.4.2] - 2023-10-15
 
 ### Changed
@@ -76,8 +79,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * simplify going to the right event from paypal purchase receipt
 
 ### Changed
-* backend: remove panic testing route 
-* backend: cleanup some todos around event validation 
+* backend: remove panic testing route
+* backend: cleanup some todos around event validation
 * backend: update, simplify and auto-format dependencies
 * frontend: merge multiple bool flags into bitflag (optimization and clippy cleanup)
 * frontend: clicking version leads to changelog
@@ -124,4 +127,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 * add duplicate route `/api/event/add` for `/api/addevent` (to deprecate)
-
