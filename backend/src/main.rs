@@ -174,13 +174,6 @@ async fn payment() -> Result<Arc<Payment>> {
     Ok(payment)
 }
 
-async fn test_email() -> std::result::Result<(), Box<dyn std::error::Error>> {
-    let client = aws_ses_client().await?;
-    ses::send_message(&client, "mail@rusticorn.com", "test subj", "test msg").await?;
-
-    Ok(())
-}
-
 async fn setup_app(
     redis_url: &str,
     prod_env: &str,
@@ -204,8 +197,6 @@ async fn setup_app(
     let tracking = Tracking::new(Some(posthog_key()), server_id.clone(), prod_env.to_string());
 
     tracking.track_server_start();
-
-    test_email().await?;
 
     let redis_pool = create_pool(redis_url)?;
     ping_test_redis(&redis_pool).await?;
