@@ -27,8 +27,6 @@ pub struct ApiEventInfo {
     pub do_screening: bool,
     pub state: EventState,
     pub premium_order: Option<String>,
-    #[serde(default)]
-    pub mod_email: Option<String>,
 }
 
 const LOREM_IPSUM:&str = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam diam eros, tincidunt ac placerat in, sodales sit amet nibh.";
@@ -188,7 +186,6 @@ mod test_serialization {
                 deleted: false,
                 premium_order: Some(String::from("order")),
                 last_edit_unix: 2,
-                mod_email: None,
                 questions: vec![QuestionItem {
                     id: 0,
                     likes: 2,
@@ -235,7 +232,6 @@ mod test_serialization {
                 deleted: false,
                 premium_order: Some(String::from("order")),
                 last_edit_unix: 2,
-                mod_email: Some(String::from("mail")),
                 questions: vec![QuestionItem {
                     id: 0,
                     likes: 2,

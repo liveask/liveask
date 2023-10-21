@@ -168,6 +168,8 @@ impl App {
 
         let now = timestamp_now();
 
+        let request_mod_mail = request.moderator_email.clone();
+
         let mod_token = Ulid::new().to_string();
 
         let mut e = ApiEventInfo {
@@ -182,7 +184,6 @@ impl App {
                 state: States::Open,
             },
             data: request.data,
-            mod_email: request.moderator_email,
             tokens: EventTokens {
                 public_token: Ulid::new().to_string(),
                 moderator_token: Some(mod_token.clone()),
@@ -203,7 +204,7 @@ impl App {
             .put(EventEntry::new(e, request.test.then_some(now + 60)))
             .await?;
 
-        if let Some(mail) = result.mod_email.as_ref() {
+        if let Some(mail) = request_mod_mail.as_ref() {
             self.send_mail(
                 mail.clone(),
                 result.data.name.clone(),

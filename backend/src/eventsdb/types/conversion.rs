@@ -13,7 +13,6 @@ const ATTR_EVENT_INFO_TOKENS: &str = "tokens";
 const ATTR_EVENT_INFO_ITEMS: &str = "items";
 const ATTR_EVENT_INFO_DATA: &str = "data";
 const ATTR_EVENT_INFO_PREMIUM: &str = "premium";
-const ATTR_EVENT_INFO_MODMAIL: &str = "mod_email";
 
 pub fn event_to_attributes(value: ApiEventInfo) -> AttributeMap {
     let mut map: AttributeMap = vec![
@@ -62,10 +61,6 @@ pub fn event_to_attributes(value: ApiEventInfo) -> AttributeMap {
             ATTR_EVENT_INFO_PREMIUM.into(),
             AttributeValue::S(premium_order),
         );
-    }
-
-    if let Some(mod_email) = value.mod_email {
-        map.insert(ATTR_EVENT_INFO_MODMAIL.into(), AttributeValue::S(mod_email));
     }
 
     map
@@ -120,10 +115,6 @@ pub fn attributes_to_event(value: &AttributeMap) -> Result<ApiEventInfo, super::
         .get(ATTR_EVENT_INFO_PREMIUM)
         .and_then(|value| value.as_s().ok().cloned());
 
-    let mod_email = value
-        .get(ATTR_EVENT_INFO_MODMAIL)
-        .and_then(|value| value.as_s().ok().cloned());
-
     let state = EventState::from_value(
         value[ATTR_EVENT_INFO_STATE]
             .as_n()
@@ -145,7 +136,6 @@ pub fn attributes_to_event(value: &AttributeMap) -> Result<ApiEventInfo, super::
         do_screening,
         state,
         premium_order,
-        mod_email,
     })
 }
 
