@@ -426,6 +426,31 @@ dependencies = [
 ]
 
 [[package]]
+name = "aws-sdk-ses"
+version = "0.33.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "72baee1295327438fbdfa4bc223e436b5d1fd7705e67b4fba776d9826812918f"
+dependencies = [
+ "aws-credential-types",
+ "aws-http",
+ "aws-runtime",
+ "aws-smithy-async",
+ "aws-smithy-client",
+ "aws-smithy-http",
+ "aws-smithy-json",
+ "aws-smithy-query",
+ "aws-smithy-runtime",
+ "aws-smithy-runtime-api",
+ "aws-smithy-types",
+ "aws-smithy-xml",
+ "aws-types",
+ "http",
+ "regex",
+ "tokio-stream",
+ "tracing",
+]
+
+[[package]]
 name = "aws-sdk-sso"
 version = "0.30.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2206,15 +2231,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "http-auth-basic"
-version = "0.3.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dd2e17aacf7f4a2428def798e2ff4f4f883c0987bdaf47dd5c8bc027bc9f1ebc"
-dependencies = [
- "base64 0.13.1",
-]
-
-[[package]]
 name = "http-body"
 version = "0.4.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2587,6 +2603,7 @@ dependencies = [
  "async-trait",
  "aws-config",
  "aws-sdk-dynamodb",
+ "aws-sdk-ses",
  "aws-smithy-http",
  "axum",
  "axum-login",
@@ -2595,7 +2612,7 @@ dependencies = [
  "deadpool-redis",
  "env_logger",
  "futures-util",
- "mailjet-rs",
+ "handlebars",
  "mime",
  "mockall",
  "paypal-rust",
@@ -2637,20 +2654,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b5e6163cb8c49088c2c36f57875e58ccd8c87c7427f7fbd50ea6710b2f3f2e8f"
 dependencies = [
  "value-bag",
-]
-
-[[package]]
-name = "mailjet-rs"
-version = "0.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "86e6fb560b2147db712a82b7abe88288da99448cfafc093fcccce9b4761b0958"
-dependencies = [
- "base64 0.13.1",
- "http-auth-basic",
- "hyper",
- "hyper-tls",
- "serde",
- "serde_json",
 ]
 
 [[package]]

@@ -24,7 +24,7 @@ use crate::{
     bail, env,
     error::{InternalError, Result},
     eventsdb::{ApiEventInfo, EventEntry, EventsDB},
-    mail::MailjetConfig,
+    mail::MailConfig,
     payment::Payment,
     pubsub::{PubSubPublish, PubSubReceiver},
     tracking::Tracking,
@@ -52,7 +52,7 @@ pub struct App {
     tracking: Tracking,
     base_url: String,
     tiny_url_token: Option<String>,
-    mailjet_config: Option<MailjetConfig>,
+    mail_config: MailConfig,
 }
 
 static NEXT_USER_ID: AtomicUsize = AtomicUsize::new(1);
@@ -71,13 +71,7 @@ impl App {
     ) -> Self {
         let tiny_url_token = Self::tinyurl_token();
 
-        let mailjet_config = MailjetConfig::new();
-
-        if mailjet_config.is_some() {
-            tracing::info!("mail configured");
-        } else {
-            tracing::warn!("mail not configured");
-        }
+        let mailjet_config = MailConfig::new();
 
         Self {
             eventsdb,
@@ -85,7 +79,7 @@ impl App {
             channels: Arc::default(),
             base_url,
             tiny_url_token,
-            mailjet_config,
+            mail_config: mailjet_config,
             payment,
             viewers,
             tracking,
@@ -834,26 +828,20 @@ impl App {
         mod_link: String,
     ) {
         if receiver.trim().is_empty() {
+            tracing::debug!("mail not sent, no receiver specified");
             return;
         }
 
-        self.mailjet_config.clone().map_or_else(
-            || {
-                tracing::warn!("mail not send: not configured");
-            },
-            |mail| {
-                tracing::debug!("mail sending to: {receiver}");
+        let mail = self.mail_config.clone();
 
-                tokio::spawn(async move {
-                    if let Err(e) = mail
-                        .send_mail(receiver.clone(), event_name, public_link, mod_link)
-                        .await
-                    {
-                        tracing::error!("mail send error: {e}");
-                    }
-                });
-            },
-        );
+        tokio::spawn(async move {
+            if let Err(e) = mail
+                .send_mail(receiver.clone(), event_name, public_link, mod_link)
+                .await
+            {
+                tracing::error!("mail send error: {e}");
+            }
+        });
     }
 }
 

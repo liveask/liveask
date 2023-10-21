@@ -11,6 +11,7 @@ mod mail;
 mod payment;
 mod pubsub;
 mod redis_pool;
+mod ses;
 mod signals;
 mod tracking;
 mod utils;
@@ -111,10 +112,19 @@ fn posthog_key() -> String {
     std::env::var(env::ENV_POSTHOG_KEY).map_or_else(|_| String::new(), |env| env)
 }
 
+async fn aws_ses_client() -> Result<aws_sdk_ses::Client> {
+    let region_provider = RegionProviderChain::default_provider();
+    let config = aws_config::from_env().region(region_provider);
+
+    let config = config.load().await;
+
+    Ok(aws_sdk_ses::Client::new(&config))
+}
+
 async fn dynamo_client() -> Result<aws_sdk_dynamodb::Client> {
     use aws_sdk_dynamodb::Client;
 
-    let region_provider = RegionProviderChain::default_provider().or_else("us-west-1");
+    let region_provider = RegionProviderChain::default_provider();
     let config = aws_config::from_env().region(region_provider);
 
     let config = if use_local_db() {
