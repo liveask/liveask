@@ -548,7 +548,7 @@ impl App {
         let event_id = self.payment.event_of_order(id.clone()).await?;
 
         if !self.capture_payment_and_upgrade(event_id, id).await? {
-            tracing::warn!("capture failed");
+            tracing::warn!("webhook failed");
         }
 
         Ok(())
@@ -558,7 +558,8 @@ impl App {
         let mut entry = self.eventsdb.get(&event).await?;
 
         if entry.event.premium_order.is_some() {
-            return Err(InternalError::General("event already premium".into()));
+            tracing::info!("event already premium");
+            return Ok(false);
         }
 
         if self.payment.capture_payment(order.clone()).await? {
