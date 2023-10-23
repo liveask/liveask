@@ -801,9 +801,9 @@ impl App {
         tokio::task::spawn(rx.forward(ws_sender).map(|result| {
             if let Err(e) = result {
                 let error_string_lowcase = e.to_string().to_lowercase();
-                if error_string_lowcase != "connection closed normally"
-                    || error_string_lowcase != "trying to work with closed connection"
-                {
+                let well_known = error_string_lowcase == "connection closed normally"
+                    || error_string_lowcase == "trying to work with closed connection";
+                if !well_known {
                     tracing::warn!("websocket send error: {}", e);
                 }
             }
