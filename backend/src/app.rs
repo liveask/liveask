@@ -71,7 +71,7 @@ impl App {
     ) -> Self {
         let tiny_url_token = Self::tinyurl_token();
 
-        let mailjet_config = MailConfig::new();
+        let mail_config = MailConfig::new();
 
         Self {
             eventsdb,
@@ -79,7 +79,7 @@ impl App {
             channels: Arc::default(),
             base_url,
             tiny_url_token,
-            mail_config: mailjet_config,
+            mail_config,
             payment,
             viewers,
             tracking,
