@@ -1,10 +1,6 @@
 URL=http://localhost:8090
 EVENT=001SMTRGHBZZB733CR1XTQ9G9D
 
-e2e-test:
-	docker compose build
-	docker compose up --exit-code-from test
-
 test-create-question:
 	echo '{"text": "test"}' | xh POST "${URL}/api/event/addquestion/${EVENT}" content-type:application/json
 
