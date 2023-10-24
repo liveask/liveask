@@ -66,7 +66,7 @@ struct QueryParams {
 }
 
 pub struct Event {
-    event_id: String,
+    current_event_id: String,
     copied_to_clipboard: bool,
     wordcloud: Option<String>,
     query_params: QueryParams,
@@ -133,7 +133,7 @@ impl Component for Event {
         let dispatch = Dispatch::<State>::subscribe(Callback::noop());
 
         Self {
-            event_id,
+            current_event_id: event_id,
             query_params,
             wordcloud: None,
             copied_to_clipboard: false,
@@ -186,7 +186,7 @@ impl Component for Event {
                 let new_state = States::from_str(e.value().as_str()).unwrap_throw();
 
                 request_state_change(
-                    self.event_id.clone(),
+                    self.current_event_id.clone(),
                     ctx.props().secret.clone(),
                     new_state,
                     ctx.link(),
@@ -196,7 +196,7 @@ impl Component for Event {
             }
             Msg::ModEditScreening => {
                 request_screening_change(
-                    self.event_id.clone(),
+                    self.current_event_id.clone(),
                     ctx.props().secret.clone(),
                     self.state
                         .event
@@ -660,7 +660,7 @@ impl Event {
         index: usize,
         item: &Rc<QuestionItem>,
     ) -> Html {
-        let local_like = LocalCache::is_liked(&self.event_id, item.id);
+        let local_like = LocalCache::is_liked(&self.current_event_id, item.id);
         let mod_view = matches!(self.mode, Mode::Moderator);
         let is_new = self
             .state
@@ -945,19 +945,19 @@ impl Event {
     fn on_question_click(&mut self, kind: &QuestionClickType, id: i64, ctx: &Context<Self>) {
         match kind {
             QuestionClickType::Like => {
-                let liked = LocalCache::is_liked(&self.event_id, id);
+                let liked = LocalCache::is_liked(&self.current_event_id, id);
                 if liked {
                     tracking::track_event(tracking::EVNT_QUESTION_UNLIKE);
                 } else {
                     tracking::track_event(tracking::EVNT_QUESTION_LIKE);
                 }
-                LocalCache::set_like_state(&self.event_id, id, !liked);
-                request_like(self.event_id.clone(), id, !liked, ctx.link());
+                LocalCache::set_like_state(&self.current_event_id, id, !liked);
+                request_like(self.current_event_id.clone(), id, !liked, ctx.link());
             }
             QuestionClickType::Hide => {
                 if let Some(q) = self.state.event.as_ref().unwrap_throw().get_question(id) {
                     request_toggle_hide(
-                        self.event_id.clone(),
+                        self.current_event_id.clone(),
                         ctx.props().secret.clone().unwrap_throw(),
                         q,
                         ctx.link(),
@@ -967,7 +967,7 @@ impl Event {
             QuestionClickType::Answer => {
                 if let Some(q) = self.state.event.as_ref().unwrap_throw().get_question(id) {
                     request_toggle_answered(
-                        self.event_id.clone(),
+                        self.current_event_id.clone(),
                         ctx.props().secret.clone().unwrap_throw(),
                         q,
                         ctx.link(),
@@ -977,7 +977,7 @@ impl Event {
             QuestionClickType::Approve => {
                 if let Some(q) = self.state.event.as_ref().unwrap_throw().get_question(id) {
                     request_approve_question(
-                        self.event_id.clone(),
+                        self.current_event_id.clone(),
                         ctx.props().secret.clone().unwrap_throw(),
                         q,
                         ctx.link(),
@@ -1070,7 +1070,7 @@ impl Event {
 
                 if fetch_event {
                     request_fetch(
-                        self.event_id.clone(),
+                        self.current_event_id.clone(),
                         ctx.props().secret.clone(),
                         ctx.link(),
                     );
