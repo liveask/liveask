@@ -908,7 +908,7 @@ impl Event {
     }
 
     fn on_fetched(&mut self, res: &Option<GetEventResponse>) {
-        //TODO: in subsequent fetches only update data if succesfully fetched
+        //TODO: in subsequent fetches only update data if successfully fetched
 
         if matches!(
             self.loading_state,
