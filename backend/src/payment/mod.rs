@@ -176,7 +176,7 @@ impl Payment {
             .unwrap_or_default();
 
         if !completed {
-            tracing::warn!("paypment capture failed: {:?}", captured_ordered);
+            tracing::warn!("payment capture failed: {:?}", captured_ordered);
         }
 
         Ok(completed)

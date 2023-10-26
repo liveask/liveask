@@ -52,7 +52,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * premium upgrade window improvements
 * show if an event was deleted vs. never existed
 * BE: fix event upgrade tracking
-* FE: better free event timeout explenation and CTA
+* FE: better free event timeout explanation and CTA
 
 ## [2.3.8] - 2023-09-28
 
@@ -118,7 +118,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * admin view exposes mod link in event view
 
 ### Fixes
-* continous re-renders due to data change detection in `question-age-timer`
+* continuous re-renders due to data change detection in `question-age-timer`
 * scrolling to newly added question was broken
 * remove `/api/addevent` (see `2.2.1`)
 

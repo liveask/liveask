@@ -88,7 +88,7 @@ impl Component for DeletePopup {
                 </div>
 
                 <div class="text">
-                    {"This action is irreversable. Only you as the moderator can delete an event. Users you shared this event with will not be
+                    {"This action is irreversible. Only you as the moderator can delete an event. Users you shared this event with will not be
                       able to see it anymore."}
                 </div>
 

@@ -597,7 +597,7 @@ impl App {
         validation.check(&trimmed_question);
 
         if validation.has_any() {
-            return Err(InternalError::AddQuestionValdiation(validation));
+            return Err(InternalError::AddQuestionValidation(validation));
         }
 
         let mut entry = self.eventsdb.get(&id).await?;

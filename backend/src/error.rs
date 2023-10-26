@@ -15,7 +15,7 @@ pub enum InternalError {
     #[error("Invalid Login Error")]
     InvalidLogin,
 
-    #[error("Acceesssing Deleted Event: {0}")]
+    #[error("Accessing Deleted Event: {0}")]
     AccessingDeletedEvent(String),
 
     #[error("Trying to modify timed out Event: {0}")]
@@ -24,8 +24,8 @@ pub enum InternalError {
     #[error("Duplicate Question Error")]
     DuplicateQuestion,
 
-    #[error("Add Question Valdiation")]
-    AddQuestionValdiation(AddQuestionValidation),
+    #[error("Add Question Validation")]
+    AddQuestionValidation(AddQuestionValidation),
 
     #[error("Events DB Error: {0}")]
     EventsDB(#[from] eventsdb::Error),
@@ -85,7 +85,7 @@ impl IntoResponse for InternalError {
                 (StatusCode::BAD_REQUEST, "").into_response()
             }
 
-            Self::AddQuestionValdiation(e) => {
+            Self::AddQuestionValidation(e) => {
                 tracing::warn!("add question validation: {:?}", e);
                 (StatusCode::BAD_REQUEST, "").into_response()
             }
