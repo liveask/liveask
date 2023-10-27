@@ -135,6 +135,7 @@ async fn dynamo_client() -> Result<aws_sdk_dynamodb::Client> {
 
         config
             .credentials_provider(Credentials::new("aid", "sid", None, None, "local"))
+            .region(aws_sdk_dynamodb::config::Region::new(""))
             .endpoint_url(&url)
     } else {
         config
