@@ -26,6 +26,7 @@ pub struct ApiEventInfo {
     #[serde(default)]
     pub do_screening: bool,
     pub state: EventState,
+    pub password: Option<String>,
     pub premium_order: Option<String>,
 }
 
@@ -184,6 +185,7 @@ mod test_serialization {
                 create_time_unix: 1,
                 delete_time_unix: 0,
                 deleted: false,
+                password: None,
                 premium_order: Some(String::from("order")),
                 last_edit_unix: 2,
                 questions: vec![QuestionItem {
@@ -230,6 +232,7 @@ mod test_serialization {
                 create_time_unix: 1,
                 delete_time_unix: 0,
                 deleted: false,
+                password: Some(String::from("pwd")),
                 premium_order: Some(String::from("order")),
                 last_edit_unix: 2,
                 questions: vec![QuestionItem {

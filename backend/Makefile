@@ -17,3 +17,6 @@ check:
 
 test-payment:
 	xh "${URL}/api/mod/event/upgrade/eventexample/eventexamplemod"
+
+test-password:
+	xh "${URL}/api/event/eventexample" la-password:foobar

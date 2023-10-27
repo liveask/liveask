@@ -1,8 +1,8 @@
 use async_trait::async_trait;
 use axum::extract::ws::{close_code::RESTART, CloseFrame, Message, WebSocket};
 use shared::{
-    AddEvent, EventInfo, EventState, EventTokens, EventUpgrade, GetEventResponse, ModQuestion,
-    PaymentCapture, QuestionItem, States,
+    AddEvent, EventInfo, EventState, EventTokens, EventUpgrade, GetEventResponse, ModEvent,
+    ModQuestion, PaymentCapture, QuestionItem, States,
 };
 use std::{
     collections::HashMap,
@@ -179,6 +179,7 @@ impl App {
             last_edit_unix: now,
             deleted: false,
             premium_order: None,
+            password: None,
             questions: Vec::new(),
             do_screening: false,
             state: EventState {
@@ -244,6 +245,7 @@ impl App {
         id: String,
         secret: Option<String>,
         admin: bool,
+        password: Option<String>,
     ) -> Result<GetEventResponse> {
         tracing::info!("get_event");
 
@@ -278,6 +280,8 @@ impl App {
         if !admin {
             e.adapt_if_timedout();
         }
+
+        //TODO: pwd check
 
         let timed_out = e.is_timed_out_and_free();
         let viewers = if admin || e.premium_order.is_some() {
@@ -388,11 +392,11 @@ impl App {
         Ok(e.into())
     }
 
-    pub async fn edit_event_state(
+    pub async fn mod_edit_event(
         &self,
         id: String,
         secret: String,
-        state: EventState,
+        changes: ModEvent,
     ) -> Result<EventInfo> {
         let mut entry = self.eventsdb.get(&id).await?.clone();
 
@@ -415,47 +419,19 @@ impl App {
             bail!("wrong mod token");
         }
 
-        e.state = state;
-
-        let result = e.clone();
-
-        entry.bump();
-
-        self.eventsdb.put(entry).await?;
-
-        self.notify_subscribers(&id, Notification::Event).await;
-
-        Ok(result.into())
-    }
-
-    pub async fn edit_event_screening(
-        &self,
-        id: String,
-        secret: String,
-        screening: bool,
-    ) -> Result<EventInfo> {
-        let mut entry = self.eventsdb.get(&id).await?.clone();
-
-        let e = &mut entry.event;
-
-        if e.deleted {
-            bail!("event not found");
+        if let Some(state) = changes.state {
+            e.state = state;
         }
-
-        if e.premium_order.is_none() {
-            bail!("event not premium");
+        if let Some(screening) = changes.screening {
+            e.do_screening = screening;
         }
-
-        if e.tokens
-            .moderator_token
-            .as_ref()
-            .map(|mod_token| mod_token != &secret)
-            .unwrap_or_default()
-        {
-            bail!("wrong mod token");
+        if let Some(password) = changes.password {
+            e.password = password;
         }
-
-        e.do_screening = screening;
+        if let Some(description) = changes.description {
+            //TODO: desc
+            tracing::warn!(desc=%description,"TBD");
+        }
 
         let result = e.clone();
 
@@ -1066,7 +1042,7 @@ mod test {
         assert_eq!(q.screening, true);
 
         let e = app
-            .get_event(res.tokens.public_token.clone(), None, false)
+            .get_event(res.tokens.public_token.clone(), None, false, None)
             .await
             .unwrap();
 
@@ -1077,6 +1053,7 @@ mod test {
                 res.tokens.public_token.clone(),
                 Some(res.tokens.moderator_token.clone().unwrap()),
                 false,
+                None,
             )
             .await
             .unwrap();
@@ -1097,7 +1074,7 @@ mod test {
         .unwrap();
 
         let e = app
-            .get_event(res.tokens.public_token.clone(), None, false)
+            .get_event(res.tokens.public_token.clone(), None, false, None)
             .await
             .unwrap();
 
@@ -1157,7 +1134,7 @@ mod test {
         assert_eq!(q.screening, true);
 
         let e = app
-            .get_event(res.tokens.public_token.clone(), None, false)
+            .get_event(res.tokens.public_token.clone(), None, false, None)
             .await
             .unwrap();
 
@@ -1221,10 +1198,13 @@ mod test {
             .premium_order = Some(String::from("foo"));
 
         let e = app
-            .edit_event_screening(
+            .mod_edit_event(
                 res.tokens.public_token.clone(),
                 res.tokens.moderator_token.clone().unwrap(),
-                true,
+                ModEvent {
+                    screening: Some(true),
+                    ..Default::default()
+                },
             )
             .await
             .unwrap();

@@ -9,6 +9,7 @@ use crate::{
     app::SharedApp,
     auth::OptionalUser,
     error::InternalError,
+    password_header::ExtractPassword,
     payment::{
         PaymentCaptureDeclinedResource, PaymentCaptureRefundedResource,
         PaymentCheckoutApprovedResource, PaymentWebhookBase,
@@ -67,11 +68,14 @@ pub async fn addquestion_handler(
 pub async fn getevent_handler(
     Path(id): Path<String>,
     OptionalUser(user): OptionalUser,
+    ExtractPassword(password): ExtractPassword,
     State(app): State<SharedApp>,
 ) -> std::result::Result<impl IntoResponse, InternalError> {
     tracing::info!("getevent_handler");
 
-    Ok(Json(app.get_event(id, None, user.is_some()).await?))
+    Ok(Json(
+        app.get_event(id, None, user.is_some(), password).await?,
+    ))
 }
 
 #[instrument(skip(app))]
@@ -82,7 +86,10 @@ pub async fn mod_get_event(
 ) -> std::result::Result<impl IntoResponse, InternalError> {
     tracing::info!("mod_get_event");
 
-    Ok(Json(app.get_event(id, Some(secret), user.is_some()).await?))
+    Ok(Json(
+        app.get_event(id, Some(secret), user.is_some(), None)
+            .await?,
+    ))
 }
 
 #[instrument(skip(app))]
@@ -187,7 +194,28 @@ pub async fn mod_edit_state(
 ) -> std::result::Result<impl IntoResponse, InternalError> {
     tracing::info!("mod_edit_state");
 
-    Ok(Json(app.edit_event_state(id, secret, payload.state).await?))
+    Ok(Json(
+        app.mod_edit_event(
+            id,
+            secret,
+            shared::ModEvent {
+                state: Some(payload.state),
+                ..Default::default()
+            },
+        )
+        .await?,
+    ))
+}
+
+#[instrument(skip(app))]
+pub async fn mod_edit_event(
+    Path((id, secret)): Path<(String, String)>,
+    State(app): State<SharedApp>,
+    Json(payload): Json<shared::ModEvent>,
+) -> std::result::Result<impl IntoResponse, InternalError> {
+    tracing::info!("mod_edit_state");
+
+    Ok(Json(app.mod_edit_event(id, secret, payload).await?))
 }
 
 #[instrument(skip(app))]
@@ -199,8 +227,15 @@ pub async fn mod_edit_screening(
     tracing::info!("mod_edit_screening");
 
     Ok(Json(
-        app.edit_event_screening(id, secret, payload.screening)
-            .await?,
+        app.mod_edit_event(
+            id,
+            secret,
+            shared::ModEvent {
+                screening: Some(payload.screening),
+                ..Default::default()
+            },
+        )
+        .await?,
     ))
 }
 

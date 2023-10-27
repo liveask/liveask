@@ -177,14 +177,24 @@ impl FromStr for States {
     }
 }
 
+//TOOD: migrate to `ModEvent`
 #[derive(Serialize, Deserialize, Debug, Copy, Clone, Eq, PartialEq)]
 pub struct ModEventState {
     pub state: EventState,
 }
 
+//TOOD: migrate to `ModEvent`
 #[derive(Serialize, Deserialize, Debug, Copy, Clone, Eq, PartialEq)]
 pub struct ModEditScreening {
     pub screening: bool,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Default)]
+pub struct ModEvent {
+    pub password: Option<Option<String>>,
+    pub state: Option<EventState>,
+    pub description: Option<String>,
+    pub screening: Option<bool>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Copy, Clone, Eq, PartialEq, Default)]
