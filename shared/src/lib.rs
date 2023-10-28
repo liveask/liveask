@@ -102,15 +102,27 @@ impl EventInfo {
     }
 }
 
+bitflags! {
+    #[derive(Serialize, Deserialize, Clone, Debug, Copy, Eq, PartialEq, Default)]
+    pub struct EventResponseFlags: u32 {
+        const TIMED_OUT = 1 << 0;
+        const WRONG_PASSWORD = 1 << 1;
+    }
+}
+
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, Default)]
 pub struct GetEventResponse {
     pub info: EventInfo,
+    //TODO: remove and use `flags`
     #[serde(default)]
     pub timed_out: bool,
     pub viewers: i64,
-    //TODO: not needed if client becomes aware of its user role
+    //TODO: not needed if client becomes aware of its user role via header
     #[serde(default)]
     pub admin: bool,
+    #[serde(default)]
+    pub masked: bool,
+    pub flags: EventResponseFlags,
 }
 
 impl GetEventResponse {

@@ -1,8 +1,8 @@
 use async_trait::async_trait;
 use axum::extract::ws::{close_code::RESTART, CloseFrame, Message, WebSocket};
 use shared::{
-    AddEvent, EventInfo, EventState, EventTokens, EventUpgrade, GetEventResponse, ModEvent,
-    ModQuestion, PaymentCapture, QuestionItem, States,
+    AddEvent, EventInfo, EventResponseFlags, EventState, EventTokens, EventUpgrade,
+    GetEventResponse, ModEvent, ModQuestion, PaymentCapture, QuestionItem, States,
 };
 use std::{
     collections::HashMap,
@@ -277,9 +277,7 @@ impl App {
                 .collect::<Vec<_>>();
         }
 
-        if !admin {
-            e.adapt_if_timedout();
-        }
+        let time_out_masked = if admin { false } else { e.adapt_if_timedout() };
 
         let password_matches = !e
             .password
@@ -288,9 +286,12 @@ impl App {
             .map(|(a, b)| a == b)
             .unwrap_or_default();
 
-        if e.password.is_some() && !password_matches {
+        let pwd_masked = if e.password.is_some() && !password_matches {
             e.mask_questions();
-        }
+            true
+        } else {
+            false
+        };
 
         let timed_out = e.is_timed_out_and_free();
         let viewers = if admin || e.premium_order.is_some() {
@@ -299,11 +300,20 @@ impl App {
             0
         };
 
+        let masked = time_out_masked || pwd_masked;
+
+        let mut flags = EventResponseFlags::empty();
+
+        flags.set(EventResponseFlags::TIMED_OUT, timed_out);
+        flags.set(EventResponseFlags::WRONG_PASSWORD, pwd_masked);
+
         Ok(GetEventResponse {
             info: e.into(),
             timed_out,
             admin,
             viewers,
+            flags,
+            masked,
         })
     }
 

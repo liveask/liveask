@@ -277,11 +277,11 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
         .route("/logout", get(logout_handler));
 
     let event_routes = Router::new()
+        .route("/:id", get(handle::getevent_handler))
         .route("/add", post(handle::addevent_handler))
         .route("/editlike/:id", post(handle::editlike_handler))
         .route("/addquestion/:id", post(handle::addquestion_handler))
-        .route("/question/:id/:question_id", get(handle::get_question))
-        .route("/:id", get(handle::getevent_handler));
+        .route("/question/:id/:question_id", get(handle::get_question));
 
     #[rustfmt::skip]
     let mod_routes = Router::new()

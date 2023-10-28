@@ -50,10 +50,13 @@ impl ApiEventInfo {
         self.premium_order.is_none() && self.is_timed_out()
     }
 
-    pub fn adapt_if_timedout(&mut self) {
+    pub fn adapt_if_timedout(&mut self) -> bool {
         if self.is_timed_out_and_free() {
             self.mask_questions();
+            return true;
         }
+
+        false
     }
 
     #[allow(clippy::string_slice)]
