@@ -238,11 +238,12 @@ mod test {
     }
 
     #[tokio::test]
+    #[allow(deprecated)]
     async fn test_delete_event() {
         // env_logger::init();
 
         let e = add_event(MIN_NAME.to_string()).await;
-        assert!(!e.is_deleted());
+        assert!(!e.deleted);
 
         delete_event(
             e.tokens.public_token.clone(),
@@ -252,7 +253,7 @@ mod test {
 
         let e = get_event(e.tokens.public_token.clone(), e.tokens.moderator_token).await;
 
-        assert!(e.unwrap().info.is_deleted());
+        assert!(e.unwrap().info.deleted);
     }
 
     #[tokio::test]
