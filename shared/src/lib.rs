@@ -1,11 +1,12 @@
+mod flags;
 mod validation;
 
 use std::{str::FromStr, time::Duration};
 
-use bitflags::bitflags;
 use serde::{Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
 
+pub use flags::{EventFlags, EventResponseFlags};
 pub use validation::{
     add_question::{AddQuestionError, AddQuestionValidation},
     create_event::{CreateEventError, CreateEventValidation},
@@ -54,16 +55,6 @@ pub struct PaymentCapture {
     pub order_captured: bool,
 }
 
-bitflags! {
-    #[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, Default)]
-    pub struct EventFlags: u32 {
-        const DELETED = 1 << 0;
-        const PREMIUM = 1 << 1;
-        const SCREENING = 1 << 2;
-        const PASSWORD = 1 << 3;
-    }
-}
-
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, Default)]
 pub struct EventInfo {
     pub tokens: EventTokens,
@@ -99,14 +90,6 @@ impl EventInfo {
             },
             ..Default::default()
         }
-    }
-}
-
-bitflags! {
-    #[derive(Serialize, Deserialize, Clone, Debug, Copy, Eq, PartialEq, Default)]
-    pub struct EventResponseFlags: u32 {
-        const TIMED_OUT = 1 << 0;
-        const WRONG_PASSWORD = 1 << 1;
     }
 }
 
