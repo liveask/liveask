@@ -279,7 +279,7 @@ impl App {
 
         let time_out_masked = if admin { false } else { e.adapt_if_timedout() };
 
-        let password_matches = !e
+        let password_matches = e
             .password
             .as_ref()
             .zip(password.as_ref())
@@ -887,7 +887,7 @@ mod test {
         pubsub::{PubSubInMemory, PubSubReceiverInMemory},
         viewers::MockViewers,
     };
-    use pretty_assertions::assert_eq;
+    use pretty_assertions::{assert_eq, assert_ne};
     use shared::{AddQuestion, EventData, TEST_VALID_QUESTION};
     use std::sync::Arc;
 
@@ -1284,5 +1284,77 @@ mod test {
             request.unwrap_err(),
             InternalError::DuplicateQuestion
         ))
+    }
+
+    #[tokio::test]
+    async fn test_password_protection() {
+        env_logger::init();
+
+        let pubsubreceiver = Arc::new(PubSubReceiverInMemory::default());
+        let pubsub = PubSubInMemory::default();
+        pubsub.set_receiver(pubsubreceiver.clone()).await;
+        let events = Arc::new(InMemoryEventsDB::default());
+        let app = App::new(
+            events.clone(),
+            Arc::new(pubsub),
+            Arc::new(MockViewers::new()),
+            Arc::new(Payment::default()),
+            Tracking::default(),
+            String::new(),
+        );
+
+        let res = app
+            .create_event(AddEvent {
+                data: EventData {
+                    name: String::from("123456789"),
+                    description: String::from("123456789 123456789 123456789 !"),
+                    short_url: String::new(),
+                    long_url: None,
+                },
+                moderator_email: None,
+                test: false,
+            })
+            .await
+            .unwrap();
+
+        let event_id = res.tokens.public_token.clone();
+        let mod_token = res.tokens.moderator_token.clone().unwrap();
+
+        let question_text = "very long, sophisticated question you can ask!";
+        app.add_question(
+            event_id.clone(),
+            AddQuestion {
+                text: String::from(question_text),
+            },
+        )
+        .await
+        .unwrap();
+
+        app.mod_edit_event(
+            event_id.clone(),
+            mod_token.clone(),
+            ModEvent {
+                password: Some(Some(String::from("pwd"))),
+                ..Default::default()
+            },
+        )
+        .await
+        .unwrap();
+
+        let e = app
+            .get_event(event_id.clone(), None, false, None)
+            .await
+            .unwrap();
+
+        assert_ne!(&e.info.questions[0].text, question_text);
+        assert!(e.flags.contains(EventResponseFlags::WRONG_PASSWORD));
+
+        let e = app
+            .get_event(event_id.clone(), None, false, Some(String::from("pwd")))
+            .await
+            .unwrap();
+
+        assert_eq!(&e.info.questions[0].text, question_text);
+        assert!(!e.flags.contains(EventResponseFlags::WRONG_PASSWORD));
     }
 }
