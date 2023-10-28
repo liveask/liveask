@@ -125,6 +125,7 @@ pub struct GetEventResponse {
     pub admin: bool,
     #[serde(default)]
     pub masked: bool,
+    #[serde(default)]
     pub flags: EventResponseFlags,
 }
 
