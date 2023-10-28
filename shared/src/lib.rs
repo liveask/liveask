@@ -1,8 +1,10 @@
 mod validation;
 
+use std::{str::FromStr, time::Duration};
+
+use bitflags::bitflags;
 use serde::{Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
-use std::{str::FromStr, time::Duration};
 
 pub use validation::{
     add_question::{AddQuestionError, AddQuestionValidation},
@@ -52,6 +54,16 @@ pub struct PaymentCapture {
     pub order_captured: bool,
 }
 
+bitflags! {
+    #[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, Default)]
+    pub struct EventFlags: u32 {
+        const DELETED = 1 << 0;
+        const PREMIUM = 1 << 1;
+        const SCREENING = 1 << 2;
+        const PASSWORD = 1 << 3;
+    }
+}
+
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, Default)]
 pub struct EventInfo {
     pub tokens: EventTokens,
@@ -60,15 +72,20 @@ pub struct EventInfo {
     pub create_time_unix: i64,
     #[serde(rename = "deleteTimeUnix")]
     pub delete_time_unix: i64,
+    //TODO: remove once everyone uses `flags`
     pub deleted: bool,
     #[serde(rename = "lastEditUnix")]
     pub last_edit_unix: i64,
     pub questions: Vec<QuestionItem>,
     pub state: EventState,
     #[serde(default)]
+    //TODO: remove once everyone uses `flags`
     pub premium: bool,
     #[serde(default)]
+    //TODO: remove once everyone uses `flags`
     pub screening: bool,
+    #[serde(default)]
+    pub flags: EventFlags,
 }
 
 impl EventInfo {

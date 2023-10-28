@@ -4,7 +4,7 @@ use crate::utils::timestamp_now;
 use aws_sdk_dynamodb::types::AttributeValue;
 use chrono::{DateTime, Duration, TimeZone, Utc};
 use serde::{Deserialize, Serialize};
-use shared::{EventData, EventInfo, EventState, EventTokens, QuestionItem};
+use shared::{EventData, EventFlags, EventInfo, EventState, EventTokens, QuestionItem};
 use std::collections::HashMap;
 
 use self::conversion::{attributes_to_event, event_to_attributes};
@@ -50,14 +50,18 @@ impl ApiEventInfo {
         self.premium_order.is_none() && self.is_timed_out()
     }
 
-    #[allow(clippy::string_slice)]
     pub fn adapt_if_timedout(&mut self) {
         if self.is_timed_out_and_free() {
-            for q in &mut self.questions {
-                //Note: as soon as `LOREM_IPSUM` contains utf8 this risks to panic inside utf8 codes
-                let text_length = q.text.len().min(LOREM_IPSUM.len());
-                q.text = LOREM_IPSUM[..text_length].to_string();
-            }
+            self.mask_questions();
+        }
+    }
+
+    #[allow(clippy::string_slice)]
+    pub fn mask_questions(&mut self) {
+        for q in &mut self.questions {
+            //Note: as soon as `LOREM_IPSUM` contains utf8 this risks to panic inside utf8 codes
+            let text_length = q.text.len().min(LOREM_IPSUM.len());
+            q.text = LOREM_IPSUM[..text_length].to_string();
         }
     }
 
@@ -68,6 +72,13 @@ impl ApiEventInfo {
 
 impl From<ApiEventInfo> for EventInfo {
     fn from(val: ApiEventInfo) -> Self {
+        let mut flags = EventFlags::empty();
+
+        flags.set(EventFlags::DELETED, val.deleted);
+        flags.set(EventFlags::PREMIUM, val.premium_order.is_some());
+        flags.set(EventFlags::SCREENING, val.do_screening);
+        flags.set(EventFlags::PASSWORD, val.password.is_some());
+
         Self {
             tokens: val.tokens,
             data: val.data,
@@ -79,6 +90,7 @@ impl From<ApiEventInfo> for EventInfo {
             state: val.state,
             screening: val.do_screening,
             premium: val.premium_order.is_some(),
+            flags,
         }
     }
 }

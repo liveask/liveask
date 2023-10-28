@@ -281,7 +281,16 @@ impl App {
             e.adapt_if_timedout();
         }
 
-        //TODO: pwd check
+        let password_matches = !e
+            .password
+            .as_ref()
+            .zip(password.as_ref())
+            .map(|(a, b)| a == b)
+            .unwrap_or_default();
+
+        if e.password.is_some() && !password_matches {
+            e.mask_questions();
+        }
 
         let timed_out = e.is_timed_out_and_free();
         let viewers = if admin || e.premium_order.is_some() {
