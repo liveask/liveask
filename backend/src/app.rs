@@ -1290,7 +1290,7 @@ mod test {
 
     #[tokio::test]
     async fn test_password_protection() {
-        env_logger::init();
+        // env_logger::init();
 
         let pubsubreceiver = Arc::new(PubSubReceiverInMemory::default());
         let pubsub = PubSubInMemory::default();
