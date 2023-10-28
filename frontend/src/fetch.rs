@@ -3,8 +3,8 @@
 use gloo_utils::format::JsValueSerdeExt;
 use shared::{
     AddEvent, AddQuestion, EditLike, EventData, EventInfo, EventState, EventUpgrade,
-    GetEventResponse, GetUserInfo, ModEditScreening, ModEventState, ModQuestion, PaymentCapture,
-    QuestionItem, States, UserLogin,
+    GetEventResponse, GetUserInfo, ModEvent, ModQuestion, PaymentCapture, QuestionItem, States,
+    UserLogin,
 };
 use std::{
     error::Error,
@@ -65,6 +65,7 @@ pub async fn fetch_event(
     base_api: &str,
     id: String,
     secret: Option<String>,
+    password: Option<String>,
 ) -> Result<GetEventResponse, FetchError> {
     let url = secret.map_or_else(
         || format!("{base_api}/api/event/{id}"),
@@ -77,6 +78,9 @@ pub async fn fetch_event(
     opts.credentials(RequestCredentials::Include);
 
     let request = Request::new_with_str_and_init(&url, &opts)?;
+    if let Some(pwd) = password {
+        request.headers().set("la-password", &pwd)?;
+    }
 
     let window = gloo_utils::window();
     let resp_value = JsFuture::from(window.fetch_with_request(&request)).await?;
@@ -94,13 +98,30 @@ pub async fn mod_state_change(
     secret: String,
     state: States,
 ) -> Result<EventInfo, FetchError> {
-    let body = ModEventState {
-        state: EventState { state },
-    };
-    let body = serde_json::to_string(&body)?;
+    let res = mod_edit_event(
+        base_api,
+        id,
+        secret,
+        ModEvent {
+            state: Some(EventState { state }),
+            ..Default::default()
+        },
+    )
+    .await?;
+
+    Ok(res)
+}
+
+pub async fn mod_edit_event(
+    base_api: &str,
+    id: String,
+    secret: String,
+    change: ModEvent,
+) -> Result<EventInfo, FetchError> {
+    let body = serde_json::to_string(&change)?;
     let body = JsValue::from_str(&body);
 
-    let url = format!("{base_api}/api/mod/event/state/{id}/{secret}");
+    let url = format!("{base_api}/api/mod/event/{id}/{secret}");
 
     let mut opts = RequestInit::new();
     opts.method("POST");
@@ -125,25 +146,16 @@ pub async fn mod_edit_screening(
     secret: String,
     screening: bool,
 ) -> Result<EventInfo, FetchError> {
-    let body = ModEditScreening { screening };
-    let body = serde_json::to_string(&body)?;
-    let body = JsValue::from_str(&body);
-
-    let url = format!("{base_api}/api/mod/event/screening/{id}/{secret}");
-
-    let mut opts = RequestInit::new();
-    opts.method("POST");
-    opts.body(Some(&body));
-
-    let request = Request::new_with_str_and_init(&url, &opts)?;
-    request.headers().set("content-type", "application/json")?;
-
-    let window = gloo_utils::window();
-    let resp_value = JsFuture::from(window.fetch_with_request(&request)).await?;
-    let resp: Response = resp_value.dyn_into()?;
-
-    let json = JsFuture::from(resp.json()?).await?;
-    let res = JsValueSerdeExt::into_serde::<EventInfo>(&json)?;
+    let res = mod_edit_event(
+        base_api,
+        id,
+        secret,
+        ModEvent {
+            screening: Some(screening),
+            ..Default::default()
+        },
+    )
+    .await?;
 
     Ok(res)
 }

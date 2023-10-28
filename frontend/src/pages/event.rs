@@ -107,7 +107,13 @@ impl Component for Event {
 
     fn create(ctx: &Context<Self>) -> Self {
         let event_id = ctx.props().id.to_string();
-        request_fetch(event_id.clone(), ctx.props().secret.clone(), ctx.link());
+        //TODO:
+        request_fetch(
+            event_id.clone(),
+            ctx.props().secret.clone(),
+            None,
+            ctx.link(),
+        );
 
         let socket_url = format!("{BASE_SOCKET}/push/{event_id}",);
 
@@ -330,9 +336,14 @@ fn request_like(event: String, id: i64, like: bool, link: &html::Scope<Event>) {
 }
 
 //TODO: dedup
-fn request_fetch(id: String, secret: Option<String>, link: &html::Scope<Event>) {
+fn request_fetch(
+    id: String,
+    secret: Option<String>,
+    password: Option<String>,
+    link: &html::Scope<Event>,
+) {
     link.send_future(async move {
-        let res = fetch::fetch_event(BASE_API, id, secret).await;
+        let res = fetch::fetch_event(BASE_API, id, secret, password).await;
 
         res.map_or(Msg::Fetched(None), |val| Msg::Fetched(Some(val)))
     });
@@ -1055,6 +1066,7 @@ impl Event {
                     request_fetch(
                         self.current_event_id.clone(),
                         ctx.props().secret.clone(),
+                        None,
                         ctx.link(),
                     );
                 }
