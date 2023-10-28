@@ -170,6 +170,7 @@ impl App {
 
         let request_mod_mail = request.moderator_email.clone();
 
+        let public_token = Ulid::new().to_string();
         let mod_token = Ulid::new().to_string();
 
         let mut e = ApiEventInfo {
@@ -185,7 +186,7 @@ impl App {
             },
             data: request.data,
             tokens: EventTokens {
-                public_token: Ulid::new().to_string(),
+                public_token: public_token.clone(),
                 moderator_token: Some(mod_token.clone()),
             },
         };
@@ -206,6 +207,7 @@ impl App {
 
         if let Some(mail) = request_mod_mail.as_ref() {
             self.send_mail(
+                public_token,
                 mail.clone(),
                 result.data.name.clone(),
                 result.data.short_url.clone(),
@@ -824,6 +826,7 @@ impl App {
 
     fn send_mail(
         &self,
+        event_id: String,
         receiver: String,
         event_name: String,
         public_link: String,
@@ -838,7 +841,13 @@ impl App {
 
         tokio::spawn(async move {
             if let Err(e) = mail
-                .send_mail(receiver.clone(), event_name, public_link, mod_link)
+                .send_mail(
+                    event_id,
+                    receiver.clone(),
+                    event_name,
+                    public_link,
+                    mod_link,
+                )
                 .await
             {
                 tracing::error!("mail send error: {e}");

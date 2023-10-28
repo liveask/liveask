@@ -32,15 +32,16 @@ impl MailConfig {
         Ok(content)
     }
 
-    #[instrument(skip(self, mod_link))]
+    #[instrument(err, skip(self, mod_link))]
     pub async fn send_mail(
         &self,
+        event_id: String,
         receiver: String,
         event_name: String,
         public_link: String,
         mod_link: String,
     ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        tracing::info!("mail::send_mail");
+        tracing::info!("mail::send_mail: {event_id}");
 
         let content = Self::create_mail(&event_name, &public_link, &mod_link)?;
 
@@ -54,7 +55,7 @@ impl MailConfig {
         )
         .await?;
 
-        tracing::debug!("mail sent response: {:?}", response);
+        tracing::info!("mail sent response: {:?}", response);
 
         Ok(())
     }
