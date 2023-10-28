@@ -14,8 +14,8 @@ use yewdux::prelude::*;
 
 use crate::{
     components::{
-        DeletePopup, EventSocket, Question, QuestionClickType, QuestionFlags, QuestionPopup,
-        SharePopup, SocketResponse, Upgrade,
+        DeletePopup, EventSocket, ModPassword, Question, QuestionClickType, QuestionFlags,
+        QuestionPopup, SharePopup, SocketResponse, Upgrade,
     },
     environment::{la_env, LiveAskEnv},
     fetch,
@@ -725,6 +725,8 @@ impl Event {
                 <button class="button-white" onclick={ctx.link().callback(|_|Msg::ModDelete)} >
                     {"Delete Event"}
                 </button>
+
+                <ModPassword />
 
                 {
                     if self.is_premium() {
