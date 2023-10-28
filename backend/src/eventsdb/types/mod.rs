@@ -82,6 +82,8 @@ impl From<ApiEventInfo> for EventInfo {
         flags.set(EventFlags::SCREENING, val.do_screening);
         flags.set(EventFlags::PASSWORD, val.password.is_some());
 
+        //TODO:
+        #[allow(deprecated)]
         Self {
             tokens: val.tokens,
             data: val.data,

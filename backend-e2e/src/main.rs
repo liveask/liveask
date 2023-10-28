@@ -242,7 +242,7 @@ mod test {
         // env_logger::init();
 
         let e = add_event(MIN_NAME.to_string()).await;
-        assert_eq!(e.deleted, false);
+        assert!(!e.is_deleted());
 
         delete_event(
             e.tokens.public_token.clone(),
@@ -252,7 +252,7 @@ mod test {
 
         let e = get_event(e.tokens.public_token.clone(), e.tokens.moderator_token).await;
 
-        assert!(e.unwrap().info.deleted);
+        assert!(e.unwrap().info.is_deleted());
     }
 
     #[tokio::test]

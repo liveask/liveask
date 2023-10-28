@@ -64,16 +64,19 @@ pub struct EventInfo {
     #[serde(rename = "deleteTimeUnix")]
     pub delete_time_unix: i64,
     //TODO: remove once everyone uses `flags`
+    #[deprecated]
     pub deleted: bool,
     #[serde(rename = "lastEditUnix")]
     pub last_edit_unix: i64,
     pub questions: Vec<QuestionItem>,
     pub state: EventState,
-    #[serde(default)]
     //TODO: remove once everyone uses `flags`
+    #[serde(default)]
+    #[deprecated]
     pub premium: bool,
-    #[serde(default)]
     //TODO: remove once everyone uses `flags`
+    #[serde(default)]
+    #[deprecated]
     pub screening: bool,
     #[serde(default)]
     pub flags: EventFlags,
@@ -81,6 +84,8 @@ pub struct EventInfo {
 
 impl EventInfo {
     #[must_use]
+    //TODO:
+    #[allow(deprecated)]
     pub fn deleted(id: String) -> Self {
         Self {
             deleted: true,
@@ -88,8 +93,22 @@ impl EventInfo {
                 public_token: id,
                 ..Default::default()
             },
+            flags: EventFlags::DELETED,
             ..Default::default()
         }
+    }
+
+    #[must_use]
+    pub const fn is_premium(&self) -> bool {
+        self.flags.contains(EventFlags::PREMIUM)
+    }
+    #[must_use]
+    pub const fn is_deleted(&self) -> bool {
+        self.flags.contains(EventFlags::DELETED)
+    }
+    #[must_use]
+    pub const fn is_screening(&self) -> bool {
+        self.flags.contains(EventFlags::SCREENING)
     }
 }
 
@@ -98,6 +117,7 @@ pub struct GetEventResponse {
     pub info: EventInfo,
     //TODO: remove and use `flags`
     #[serde(default)]
+    #[deprecated]
     pub timed_out: bool,
     pub viewers: i64,
     //TODO: not needed if client becomes aware of its user role via header
@@ -121,12 +141,17 @@ impl GetEventResponse {
 
     #[must_use]
     pub const fn is_closed(&self) -> bool {
-        matches!(self.info.state.state, States::Closed) || self.timed_out
+        matches!(self.info.state.state, States::Closed) || self.is_timed_out()
     }
 
     #[must_use]
     pub const fn is_deleted(&self) -> bool {
-        self.info.deleted
+        self.info.is_deleted()
+    }
+
+    #[must_use]
+    pub const fn is_timed_out(&self) -> bool {
+        self.flags.contains(EventResponseFlags::TIMED_OUT)
     }
 
     #[must_use]

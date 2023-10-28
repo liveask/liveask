@@ -307,6 +307,8 @@ impl App {
         flags.set(EventResponseFlags::TIMED_OUT, timed_out);
         flags.set(EventResponseFlags::WRONG_PASSWORD, pwd_masked);
 
+        //TODO:
+        #[allow(deprecated)]
         Ok(GetEventResponse {
             info: e.into(),
             timed_out,
@@ -1228,7 +1230,7 @@ mod test {
             .await
             .unwrap();
 
-        assert!(e.screening);
+        assert!(e.is_screening());
     }
 
     #[tokio::test]

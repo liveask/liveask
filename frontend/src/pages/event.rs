@@ -201,7 +201,7 @@ impl Component for Event {
                     self.state
                         .event
                         .as_ref()
-                        .map(|e| !e.info.screening)
+                        .map(|e| !e.info.is_screening())
                         .unwrap_or_default(),
                     ctx.link(),
                 );
@@ -395,7 +395,7 @@ impl Event {
         self.state
             .event
             .as_ref()
-            .map(|e| e.info.premium)
+            .map(|e| e.info.is_premium())
             .unwrap_or_default()
     }
 
@@ -529,7 +529,7 @@ impl Event {
                         <div class="not-open" hidden={!e.info.state.is_vote_only()}>
                             {"This event is set to vote-only by the moderator. You cannot add new questions. You can still vote though."}
                         </div>
-                        <div class="not-open" hidden={!e.timed_out}>
+                        <div class="not-open" hidden={!e.is_timed_out()}>
                             {"This free event timed out. Only the moderator can upgrade it to be accessible again."}
                         </div>
                     </div>
@@ -632,7 +632,7 @@ impl Event {
                 .state
                 .event
                 .as_ref()
-                .map(|e| e.timed_out && !e.admin)
+                .map(|e| e.is_timed_out() && !e.admin)
                 .unwrap_or_default();
 
             return html! {
@@ -688,11 +688,11 @@ impl Event {
     }
 
     fn mod_view(&self, ctx: &Context<Self>, e: &GetEventResponse) -> Html {
-        let payment_allowed = !e.info.premium;
-        let pending_payment = self.query_params.paypal_token.is_some() && !e.info.premium;
+        let payment_allowed = !e.info.is_premium();
+        let pending_payment = self.query_params.paypal_token.is_some() && payment_allowed;
 
         if matches!(self.mode, Mode::Moderator) {
-            let timed_out = e.timed_out;
+            let timed_out = e.is_timed_out();
 
             html! {
             <>
@@ -746,7 +746,7 @@ impl Event {
                     {"This is a premium event"}
                 </div>
                 <div class="screening-option" onclick={ctx.link().callback(|_| Msg::ModEditScreening)}>
-                    <input type="checkbox" id="vehicle1" name="vehicle1" checked={e.info.screening} />
+                    <input type="checkbox" id="vehicle1" name="vehicle1" checked={e.info.is_screening()} />
                     {"Screening"}
                 </div>
                 <button class="button-white" onclick={ctx.link().callback(|_|Msg::ModExport)} >
@@ -793,7 +793,7 @@ impl Event {
     }
 
     fn mod_view_deadline(e: &GetEventResponse) -> Html {
-        if e.info.premium {
+        if e.info.is_premium() {
             html! {
                 <div class="deadline">
                 {"This is a premium event and will not time out!"}
@@ -895,7 +895,7 @@ impl Event {
             self.unanswered = unanswered.collect();
             self.hidden = hidden.collect();
 
-            if e.info.premium {
+            if e.info.is_premium() {
                 self.wordcloud_agent.send(WordCloudInput(
                     e.info
                         .questions
@@ -1083,7 +1083,7 @@ impl Event {
     fn handle_fetched(&mut self, res: Option<GetEventResponse>, ctx: &Context<Self>) -> bool {
         self.on_fetched(&res);
         if let Some(e) = res {
-            if !e.info.premium && self.query_params.paypal_token.is_some() {
+            if !e.info.is_premium() && self.query_params.paypal_token.is_some() {
                 request_capture(
                     e.info.tokens.public_token,
                     self.query_params
