@@ -1041,25 +1041,8 @@ impl Event {
                         .and_then(|text| text.parse::<i64>().ok())
                         .unwrap_or_default();
 
-                    self.dispatch.reduce(|old| {
-                        (*old)
-                            .clone()
-                            .set_event(Some(GetEventResponse {
-                                info: old
-                                    .event
-                                    .as_ref()
-                                    .map(|e| e.info.clone())
-                                    .unwrap_or_default(),
-                                timed_out: old
-                                    .event
-                                    .as_ref()
-                                    .map(|e| e.timed_out)
-                                    .unwrap_or_default(),
-                                admin: old.event.as_ref().map(|e| e.admin).unwrap_or_default(),
-                                viewers,
-                            }))
-                            .into()
-                    });
+                    self.dispatch
+                        .reduce(|old| (*old).clone().set_event_viewers(viewers).into());
                     self.state = self.dispatch.get();
 
                     false

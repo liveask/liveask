@@ -46,6 +46,15 @@ impl State {
         self.event = v;
         self
     }
+
+    #[must_use]
+    pub fn set_event_viewers(mut self, viewers: i64) -> Self {
+        if let Some(e) = &mut self.event {
+            e.viewers = viewers;
+        }
+        self
+    }
+
     #[must_use]
     pub const fn set_admin(mut self, v: bool) -> Self {
         self.admin = v;
