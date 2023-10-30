@@ -95,14 +95,14 @@ impl ModPassword {
         let value = current.to_string();
         html! {
             <>
-                <img id="edit" src="/assets/pwd/pwd-edit.svg"/>
                 <input
                     ref={self.input.clone()}
                     type="text"
                     placeholder="password"
                     {value}
                     oninput={ctx.link().callback(Msg::InputChange)}
-                    onfocusout={ctx.link().callback(|_| Msg::InputExit)} />
+                    onblur={ctx.link().callback(|_|Msg::InputExit)} />
+                <img id="edit" src="/assets/pwd/pwd-edit.svg"/>
             </>
         }
     }
@@ -113,7 +113,7 @@ impl ModPassword {
                 <div class="confirmed" onclick={ctx.link().callback(|_|Msg::EditPassword)}>
                     {"*****"}
                 </div>
-                <img id="delete" src="/assets/pwd/pwd-remove.svg" onclick={ctx.link().callback(|_|Msg::DisablePassword)} />
+                <img id="delete" src="/assets/pwd/pwd-remove.svg" onmousedown={ctx.link().callback(|_|Msg::DisablePassword)} />
             </>
         }
     }
