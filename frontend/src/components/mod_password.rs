@@ -1,6 +1,12 @@
+use shared::EventTokens;
 use wasm_bindgen::UnwrapThrowExt;
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
+
+#[derive(Clone, Debug, Eq, PartialEq, Properties)]
+pub struct PasswordProps {
+    pub tokens: EventTokens,
+}
 
 pub enum Msg {
     EnablePasswordInput,
@@ -12,7 +18,7 @@ pub enum Msg {
 
 enum State {
     Disabled,
-    InputUnconfirmed(String),
+    PasswordEditing(String),
     Confirmed(String),
 }
 
@@ -22,7 +28,7 @@ pub struct ModPassword {
 }
 impl Component for ModPassword {
     type Message = Msg;
-    type Properties = ();
+    type Properties = PasswordProps;
 
     fn create(_ctx: &Context<Self>) -> Self {
         Self {
@@ -34,11 +40,11 @@ impl Component for ModPassword {
     fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
             Msg::EnablePasswordInput => {
-                self.state = State::InputUnconfirmed(String::new());
+                self.state = State::PasswordEditing(String::new());
                 true
             }
             Msg::EditPassword => {
-                self.state = State::InputUnconfirmed(self.current_value().to_string());
+                self.state = State::PasswordEditing(self.current_value().to_string());
                 true
             }
             Msg::DisablePassword => {
@@ -47,18 +53,25 @@ impl Component for ModPassword {
             }
             Msg::InputChange(e) => {
                 let target: HtmlInputElement = e.target_dyn_into().unwrap_throw();
-                self.state = State::InputUnconfirmed(target.value());
+                self.state = State::PasswordEditing(target.value());
                 true
             }
             Msg::InputExit => {
-                self.state = State::Confirmed(self.current_value().to_string());
+                let current = self.current_value().to_string();
+
+                if current.trim().is_empty() {
+                    self.state = State::Disabled;
+                } else {
+                    self.state = State::Confirmed(current);
+                }
+
                 true
             }
         }
     }
 
     fn rendered(&mut self, _ctx: &Context<Self>, _first_render: bool) {
-        if let State::InputUnconfirmed(_) = self.state {
+        if let State::PasswordEditing(_) = self.state {
             self.input
                 .cast::<HtmlInputElement>()
                 .unwrap_throw()
@@ -70,7 +83,7 @@ impl Component for ModPassword {
     fn view(&self, ctx: &Context<Self>) -> Html {
         let content = match &self.state {
             State::Disabled => Self::view_disabled(ctx),
-            State::InputUnconfirmed(value) => self.view_input_unconfirmed(value, ctx),
+            State::PasswordEditing(value) => self.view_input_unconfirmed(value, ctx),
             State::Confirmed(_) => Self::view_confirmed(ctx),
         };
 
@@ -120,7 +133,7 @@ impl ModPassword {
 
     fn current_value(&self) -> &str {
         match &self.state {
-            State::InputUnconfirmed(value) | State::Confirmed(value) => value,
+            State::PasswordEditing(value) | State::Confirmed(value) => value,
             State::Disabled => "",
         }
     }

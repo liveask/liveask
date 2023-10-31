@@ -726,7 +726,7 @@ impl Event {
                     {"Delete Event"}
                 </button>
 
-                <ModPassword />
+                <ModPassword tokens={e.info.tokens.clone()} />
 
                 {
                     if self.is_premium() {
