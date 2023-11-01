@@ -10,7 +10,8 @@ use crate::{
     auth::OptionalUser,
     error::InternalError,
     payment::{
-        PaymentCaptureRefundedResource, PaymentCheckoutApprovedResource, PaymentWebhookBase,
+        PaymentCaptureDeclinedResource, PaymentCaptureRefundedResource,
+        PaymentCheckoutApprovedResource, PaymentWebhookBase,
     },
     GIT_HASH,
 };
@@ -129,6 +130,9 @@ pub async fn payment_webhook(
         app.payment_webhook(resource.id).await?;
     } else if base.event_type == "PAYMENT.CAPTURE.COMPLETED" {
         tracing::info!(base.id, "payment capture completed: {}", body);
+    } else if base.event_type == "PAYMENT.CAPTURE.DECLINED" {
+        let resource: PaymentCaptureDeclinedResource = serde_json::from_value(base.resource)?;
+        tracing::warn!("payment declined: {:?}", resource);
     } else if base.event_type == "PAYMENT.CAPTURE.REFUNDED" {
         let resource: PaymentCaptureRefundedResource = serde_json::from_value(base.resource)?;
 

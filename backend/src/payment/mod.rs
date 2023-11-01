@@ -31,6 +31,24 @@ pub struct PaymentCaptureRefundedResource {
 }
 
 #[derive(Deserialize, Debug)]
+pub struct PaymentRelatedIds {
+    pub order_id: Option<String>,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct PaymentSupplementaryData {
+    pub related_ids: Option<PaymentRelatedIds>,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct PaymentCaptureDeclinedResource {
+    pub id: String,
+    pub status: String,
+    pub custom_id: Option<String>,
+    pub supplementary_data: Option<PaymentSupplementaryData>,
+}
+
+#[derive(Deserialize, Debug)]
 pub struct PaymentWebhookBase {
     pub id: String,
     pub create_time: String,
