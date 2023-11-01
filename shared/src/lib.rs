@@ -110,10 +110,21 @@ impl EventInfo {
     pub const fn is_screening(&self) -> bool {
         self.flags.contains(EventFlags::SCREENING)
     }
+    #[must_use]
+    pub const fn has_password(&self) -> bool {
+        self.flags.contains(EventFlags::PASSWORD)
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, Default)]
+pub struct ModInfo {
+    pub pwd: EventPassword,
+    pub private_token: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, Default)]
 pub struct GetEventResponse {
+    //TODO: remove mod token from inside here
     pub info: EventInfo,
     //TODO: remove and use `flags`
     #[serde(default)]
@@ -127,6 +138,7 @@ pub struct GetEventResponse {
     pub masked: bool,
     #[serde(default)]
     pub flags: EventResponseFlags,
+    pub mod_info: Option<ModInfo>,
 }
 
 impl GetEventResponse {
@@ -227,9 +239,49 @@ pub struct ModEditScreening {
     pub screening: bool,
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq)]
+pub enum EventPassword {
+    Disabled,
+    Enabled(String),
+}
+
+impl Default for EventPassword {
+    fn default() -> Self {
+        Self::Disabled
+    }
+}
+
+impl From<Option<String>> for EventPassword {
+    fn from(value: Option<String>) -> Self {
+        value
+            .as_ref()
+            .map_or(Self::Disabled, |v| Self::Enabled(v.clone()))
+    }
+}
+
+impl EventPassword {
+    #[must_use]
+    pub const fn is_enabled(&self) -> bool {
+        matches!(self, Self::Enabled(_))
+    }
+
+    #[must_use]
+    pub fn matches(&self, v: &Option<String>) -> bool {
+        if v.is_none() && !self.is_enabled() {
+            return true;
+        } else if let Some(v) = v {
+            if let Self::Enabled(pwd) = self {
+                return pwd == v;
+            }
+        }
+
+        false
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Default)]
 pub struct ModEvent {
-    pub password: Option<Option<String>>,
+    pub password: Option<EventPassword>,
     pub state: Option<EventState>,
     pub description: Option<String>,
     pub screening: Option<bool>,

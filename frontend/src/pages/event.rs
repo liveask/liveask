@@ -200,6 +200,7 @@ impl Component for Event {
 
                 false
             }
+
             Msg::ModEditScreening => {
                 request_screening_change(
                     self.current_event_id.clone(),
@@ -551,7 +552,7 @@ impl Event {
 
                     {self.view_questions(ctx,e)}
 
-                    {self.view_cloud()}
+                    {self.view_cloud(e)}
 
                     {Self::view_ask_question(mod_view,ctx,e)}
                 </div>
@@ -559,22 +560,23 @@ impl Event {
         })
     }
 
-    fn view_cloud(&self) -> Html {
+    fn view_cloud(&self, e: &GetEventResponse) -> Html {
         let title_classes = self.question_separator_classes();
 
-        self.wordcloud.as_ref().map_or_else(
-            || html!(),
-            |cloud| {
-                html! {
+        if let Some(wc) = &self.wordcloud {
+            if !e.masked {
+                return html! {
                     <div>
                     <div class={title_classes}>
                         {"Word Cloud"}
                     </div>
-                    {cloud_as_yew_img(cloud)}
+                    {cloud_as_yew_img(wc)}
                     </div>
-                }
-            },
-        )
+                };
+            }
+        }
+
+        html!()
     }
 
     #[allow(clippy::if_not_else)]
@@ -639,11 +641,11 @@ impl Event {
         if !items.is_empty() {
             let title_classes = self.question_separator_classes();
 
-            let blurr = self
+            let masked = self
                 .state
                 .event
                 .as_ref()
-                .map(|e| e.is_timed_out() && !e.admin)
+                .map(|e| e.masked)
                 .unwrap_or_default();
 
             return html! {
@@ -653,7 +655,7 @@ impl Event {
                     </div>
                     <div class="questions">
                         {
-                            for items.iter().enumerate().map(|(e,i)|self.view_item(ctx,can_vote,blurr,e,i))
+                            for items.iter().enumerate().map(|(e,i)|self.view_item(ctx,can_vote,masked,e,i))
                         }
                     </div>
                 </div>
@@ -704,6 +706,11 @@ impl Event {
 
         if matches!(self.mode, Mode::Moderator) {
             let timed_out = e.is_timed_out();
+            let pwd = e
+                .mod_info
+                .as_ref()
+                .map(|info| info.pwd.clone())
+                .unwrap_or_default();
 
             html! {
             <>
@@ -726,7 +733,7 @@ impl Event {
                     {"Delete Event"}
                 </button>
 
-                <ModPassword tokens={e.info.tokens.clone()} />
+                <ModPassword tokens={e.info.tokens.clone()} {pwd} />
 
                 {
                     if self.is_premium() {
@@ -908,7 +915,7 @@ impl Event {
             self.unanswered = unanswered.collect();
             self.hidden = hidden.collect();
 
-            if e.info.is_premium() {
+            if e.info.is_premium() && !e.masked {
                 self.wordcloud_agent.send(WordCloudInput(
                     e.info
                         .questions

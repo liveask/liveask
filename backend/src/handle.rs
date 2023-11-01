@@ -86,6 +86,7 @@ pub async fn mod_get_event(
 ) -> std::result::Result<impl IntoResponse, InternalError> {
     tracing::info!("mod_get_event");
 
+    //TODO: special response type for mods to add more info
     Ok(Json(
         app.get_event(id, Some(secret), user.is_some(), None)
             .await?,

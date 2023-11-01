@@ -1,11 +1,14 @@
-use shared::EventTokens;
+use shared::{EventPassword, EventTokens, ModEvent};
 use wasm_bindgen::UnwrapThrowExt;
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
 
-#[derive(Clone, Debug, Eq, PartialEq, Properties)]
+use crate::{fetch, pages::BASE_API};
+
+#[derive(Eq, PartialEq, Properties)]
 pub struct PasswordProps {
     pub tokens: EventTokens,
+    pub pwd: EventPassword,
 }
 
 pub enum Msg {
@@ -14,6 +17,7 @@ pub enum Msg {
     DisablePassword,
     InputChange(InputEvent),
     InputExit,
+    Edited(bool),
 }
 
 enum State {
@@ -30,14 +34,14 @@ impl Component for ModPassword {
     type Message = Msg;
     type Properties = PasswordProps;
 
-    fn create(_ctx: &Context<Self>) -> Self {
+    fn create(ctx: &Context<Self>) -> Self {
         Self {
-            state: State::Disabled,
+            state: Self::derive_state(&ctx.props().pwd),
             input: NodeRef::default(),
         }
     }
 
-    fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
+    fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
             Msg::EnablePasswordInput => {
                 self.state = State::PasswordEditing(String::new());
@@ -48,7 +52,7 @@ impl Component for ModPassword {
                 true
             }
             Msg::DisablePassword => {
-                self.state = State::Disabled;
+                self.disable_password(ctx);
                 true
             }
             Msg::InputChange(e) => {
@@ -60,14 +64,27 @@ impl Component for ModPassword {
                 let current = self.current_value().to_string();
 
                 if current.trim().is_empty() {
-                    self.state = State::Disabled;
+                    self.disable_password(ctx);
                 } else {
+                    let props = ctx.props();
+                    Self::request_edit(
+                        props.tokens.public_token.clone(),
+                        props.tokens.moderator_token.clone().unwrap_or_default(),
+                        ctx.link(),
+                        EventPassword::Enabled(current.clone()),
+                    );
                     self.state = State::Confirmed(current);
                 }
 
                 true
             }
+            Msg::Edited(_) => true,
         }
+    }
+
+    fn changed(&mut self, ctx: &Context<Self>, _old_props: &Self::Properties) -> bool {
+        self.state = Self::derive_state(&ctx.props().pwd);
+        true
     }
 
     fn rendered(&mut self, _ctx: &Context<Self>, _first_render: bool) {
@@ -135,6 +152,46 @@ impl ModPassword {
         match &self.state {
             State::PasswordEditing(value) | State::Confirmed(value) => value,
             State::Disabled => "",
+        }
+    }
+
+    fn request_edit(id: String, secret: String, link: &html::Scope<Self>, pwd: EventPassword) {
+        link.send_future(async move {
+            match fetch::mod_edit_event(
+                BASE_API,
+                id,
+                secret,
+                ModEvent {
+                    password: Some(pwd),
+                    ..Default::default()
+                },
+            )
+            .await
+            {
+                Err(e) => {
+                    log::error!("mod_edit_event error: {e}");
+                    Msg::Edited(false)
+                }
+                Ok(_) => Msg::Edited(true),
+            }
+        });
+    }
+
+    fn disable_password(&mut self, ctx: &Context<Self>) {
+        let props = ctx.props();
+        Self::request_edit(
+            props.tokens.public_token.clone(),
+            props.tokens.moderator_token.clone().unwrap_throw(),
+            ctx.link(),
+            EventPassword::Disabled,
+        );
+        self.state = State::Disabled;
+    }
+
+    fn derive_state(pwd: &EventPassword) -> State {
+        match pwd {
+            EventPassword::Disabled => State::Disabled,
+            EventPassword::Enabled(pwd) => State::Confirmed(pwd.clone()),
         }
     }
 }

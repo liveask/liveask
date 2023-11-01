@@ -1,7 +1,7 @@
 use super::{ApiEventInfo, AttributeMap};
 use crate::eventsdb::Error;
 use aws_sdk_dynamodb::types::AttributeValue;
-use shared::{EventData, EventState, EventTokens, QuestionItem, States};
+use shared::{EventData, EventPassword, EventState, EventTokens, QuestionItem, States};
 
 const ATTR_EVENT_INFO_LAST_EDIT: &str = "last_edit";
 const ATTR_EVENT_INFO_DELETE_TIME: &str = "delete_time";
@@ -64,7 +64,7 @@ pub fn event_to_attributes(value: ApiEventInfo) -> AttributeMap {
         );
     }
 
-    if let Some(password) = value.password {
+    if let EventPassword::Enabled(password) = value.password {
         map.insert(ATTR_EVENT_INFO_PASSWORD.into(), AttributeValue::S(password));
     }
 
@@ -122,7 +122,8 @@ pub fn attributes_to_event(value: &AttributeMap) -> Result<ApiEventInfo, super::
 
     let password = value
         .get(ATTR_EVENT_INFO_PASSWORD)
-        .and_then(|value| value.as_s().ok().cloned());
+        .and_then(|value| value.as_s().ok().cloned())
+        .into();
 
     let state = EventState::from_value(
         value[ATTR_EVENT_INFO_STATE]

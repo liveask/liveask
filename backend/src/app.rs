@@ -2,7 +2,7 @@ use async_trait::async_trait;
 use axum::extract::ws::{close_code::RESTART, CloseFrame, Message, WebSocket};
 use shared::{
     AddEvent, EventInfo, EventResponseFlags, EventState, EventTokens, EventUpgrade,
-    GetEventResponse, ModEvent, ModQuestion, PaymentCapture, QuestionItem, States,
+    GetEventResponse, ModEvent, ModInfo, ModQuestion, PaymentCapture, QuestionItem, States,
 };
 use std::{
     collections::HashMap,
@@ -179,7 +179,7 @@ impl App {
             last_edit_unix: now,
             deleted: false,
             premium_order: None,
-            password: None,
+            password: shared::EventPassword::Disabled,
             questions: Vec::new(),
             do_screening: false,
             state: EventState {
@@ -262,11 +262,18 @@ impl App {
             }
         }
 
+        let is_mod = secret.is_some();
+
         if e.deleted && !admin {
             return Ok(GetEventResponse::deleted(id));
         }
 
-        if secret.is_none() && !admin {
+        let mod_info = is_mod.then(|| ModInfo {
+            pwd: e.password.clone(),
+            private_token: e.tokens.moderator_token.clone().unwrap_or_default(),
+        });
+
+        if !is_mod && !admin {
             //TODO: can be NONE?
             e.tokens.moderator_token = Some(String::new());
 
@@ -279,14 +286,9 @@ impl App {
 
         let time_out_masked = if admin { false } else { e.adapt_if_timedout() };
 
-        let password_matches = e
-            .password
-            .as_ref()
-            .zip(password.as_ref())
-            .map(|(a, b)| a == b)
-            .unwrap_or_default();
+        let password_matches = e.password.matches(&password);
 
-        let pwd_masked = if e.password.is_some() && !password_matches {
+        let pwd_masked = if (e.password.is_enabled() && !password_matches) && !admin && !is_mod {
             e.mask_questions();
             true
         } else {
@@ -307,7 +309,7 @@ impl App {
         flags.set(EventResponseFlags::TIMED_OUT, timed_out);
         flags.set(EventResponseFlags::WRONG_PASSWORD, pwd_masked);
 
-        //TODO:
+        //TODO: fix deprecation
         #[allow(deprecated)]
         Ok(GetEventResponse {
             info: e.into(),
@@ -316,6 +318,7 @@ impl App {
             viewers,
             flags,
             masked,
+            mod_info,
         })
     }
 
@@ -1336,7 +1339,7 @@ mod test {
             event_id.clone(),
             mod_token.clone(),
             ModEvent {
-                password: Some(Some(String::from("pwd"))),
+                password: Some(shared::EventPassword::Enabled(String::from("pwd"))),
                 ..Default::default()
             },
         )

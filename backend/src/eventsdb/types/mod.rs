@@ -4,7 +4,9 @@ use crate::utils::timestamp_now;
 use aws_sdk_dynamodb::types::AttributeValue;
 use chrono::{DateTime, Duration, TimeZone, Utc};
 use serde::{Deserialize, Serialize};
-use shared::{EventData, EventFlags, EventInfo, EventState, EventTokens, QuestionItem};
+use shared::{
+    EventData, EventFlags, EventInfo, EventPassword, EventState, EventTokens, QuestionItem,
+};
 use std::collections::HashMap;
 
 use self::conversion::{attributes_to_event, event_to_attributes};
@@ -26,7 +28,8 @@ pub struct ApiEventInfo {
     #[serde(default)]
     pub do_screening: bool,
     pub state: EventState,
-    pub password: Option<String>,
+    #[serde(default)]
+    pub password: EventPassword,
     pub premium_order: Option<String>,
 }
 
@@ -80,7 +83,7 @@ impl From<ApiEventInfo> for EventInfo {
         flags.set(EventFlags::DELETED, val.deleted);
         flags.set(EventFlags::PREMIUM, val.premium_order.is_some());
         flags.set(EventFlags::SCREENING, val.do_screening);
-        flags.set(EventFlags::PASSWORD, val.password.is_some());
+        flags.set(EventFlags::PASSWORD, val.password.is_enabled());
 
         //TODO:
         #[allow(deprecated)]
@@ -202,7 +205,7 @@ mod test_serialization {
                 create_time_unix: 1,
                 delete_time_unix: 0,
                 deleted: false,
-                password: None,
+                password: shared::EventPassword::Disabled,
                 premium_order: Some(String::from("order")),
                 last_edit_unix: 2,
                 questions: vec![QuestionItem {
@@ -249,7 +252,7 @@ mod test_serialization {
                 create_time_unix: 1,
                 delete_time_unix: 0,
                 deleted: false,
-                password: Some(String::from("pwd")),
+                password: shared::EventPassword::Enabled(String::from("pwd")),
                 premium_order: Some(String::from("order")),
                 last_edit_unix: 2,
                 questions: vec![QuestionItem {
