@@ -32,8 +32,8 @@
     }
 
     &.blurr {
-      color: transparent;
-      text-shadow: 0 0 8px #000;
+      filter: blur(5px);
+      -webkit-filter: blur(5px);
     }
   }
 

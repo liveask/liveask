@@ -289,7 +289,7 @@ impl App {
         let password_matches = e.password.matches(&password);
 
         let pwd_masked = if (e.password.is_enabled() && !password_matches) && !admin && !is_mod {
-            e.mask_questions();
+            e.mask_data();
             true
         } else {
             false

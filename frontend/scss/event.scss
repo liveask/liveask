@@ -130,10 +130,16 @@
   margin-left: 54px;
   margin-right: 54px;
   margin-top: 4px;
-}
 
-.event-desc.printable {
-  color: #1E1E1E;
+  &.blurr {
+    user-select: none;
+    filter: blur(5px);
+    -webkit-filter: blur(5px);
+  }
+
+  &.printable {
+    color: #1E1E1E;
+  }
 }
 
 .linkbox-title {

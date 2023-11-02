@@ -527,7 +527,7 @@ impl Event {
                         <div class="event-name-label">{"The Event"}</div>
                         <div class="event-name">{&e.info.data.name.clone()}</div>
                         //TODO: collapsable event desc
-                        <div class="event-desc">
+                        <div class={classes!("event-desc",e.masked.then_some("blurr"))}>
                             {{&e.info.data.description.clone()}}
                         </div>
 

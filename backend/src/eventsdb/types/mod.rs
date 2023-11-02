@@ -35,6 +35,13 @@ pub struct ApiEventInfo {
 
 const LOREM_IPSUM:&str = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam diam eros, tincidunt ac placerat in, sodales sit amet nibh.";
 
+#[allow(clippy::string_slice)]
+pub fn mask_string(s: &str) -> &str {
+    //Note: as soon as `LOREM_IPSUM` contains utf8 this risks to panic inside utf8 codes
+    let text_length = s.len().min(LOREM_IPSUM.len());
+    &LOREM_IPSUM[..text_length]
+}
+
 impl ApiEventInfo {
     fn is_timed_out(&self) -> bool {
         Self::timestamp_to_datetime(self.create_time_unix).map_or_else(
@@ -55,20 +62,18 @@ impl ApiEventInfo {
 
     pub fn adapt_if_timedout(&mut self) -> bool {
         if self.is_timed_out_and_free() {
-            self.mask_questions();
+            self.mask_data();
             return true;
         }
 
         false
     }
 
-    #[allow(clippy::string_slice)]
-    pub fn mask_questions(&mut self) {
+    pub fn mask_data(&mut self) {
         for q in &mut self.questions {
-            //Note: as soon as `LOREM_IPSUM` contains utf8 this risks to panic inside utf8 codes
-            let text_length = q.text.len().min(LOREM_IPSUM.len());
-            q.text = LOREM_IPSUM[..text_length].to_string();
+            q.text = mask_string(&q.text).to_string();
         }
+        self.data.description = mask_string(&self.data.description).to_string();
     }
 
     fn timestamp_to_datetime(timestamp: i64) -> Option<DateTime<Utc>> {
