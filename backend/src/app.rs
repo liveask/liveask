@@ -240,6 +240,19 @@ impl App {
     }
 
     #[instrument(skip(self))]
+    pub async fn check_event_password(&self, id: String, password: &str) -> Result<bool> {
+        tracing::info!("check_event_password");
+
+        let e = self.eventsdb.get(&id).await?.event;
+
+        if e.deleted {
+            return Err(InternalError::AccessingDeletedEvent(id));
+        }
+
+        Ok(e.password.matches(&Some(password.to_string())))
+    }
+
+    #[instrument(skip(self))]
     pub async fn get_event(
         &self,
         id: String,
@@ -897,6 +910,7 @@ mod test {
     use std::sync::Arc;
 
     #[tokio::test]
+    #[tracing_test::traced_test]
     async fn test_event_create_fail_validation() {
         let app = App::new(
             Arc::new(InMemoryEventsDB::default()),
@@ -924,6 +938,7 @@ mod test {
     }
 
     #[tokio::test]
+    #[tracing_test::traced_test]
     async fn test_event_create() {
         let eventdb = Arc::new(InMemoryEventsDB::default());
         let app = App::new(
@@ -952,6 +967,7 @@ mod test {
     }
 
     #[tokio::test]
+    #[tracing_test::traced_test]
     async fn test_event_mod_question_notification() {
         let pubsubreceiver = Arc::new(PubSubReceiverInMemory::default());
         let pubsub = PubSubInMemory::default();
@@ -1014,9 +1030,8 @@ mod test {
     }
 
     #[tokio::test]
+    #[tracing_test::traced_test]
     async fn test_screening_question() {
-        // env_logger::init();
-
         let pubsubreceiver = Arc::new(PubSubReceiverInMemory::default());
         let pubsub = PubSubInMemory::default();
         pubsub.set_receiver(pubsubreceiver.clone()).await;
@@ -1106,9 +1121,8 @@ mod test {
     }
 
     #[tokio::test]
+    #[tracing_test::traced_test]
     async fn test_screening_question_disapprove() {
-        // env_logger::init();
-
         let pubsubreceiver = Arc::new(PubSubReceiverInMemory::default());
         let pubsub = PubSubInMemory::default();
         pubsub.set_receiver(pubsubreceiver.clone()).await;
@@ -1182,9 +1196,8 @@ mod test {
     }
 
     #[tokio::test]
+    #[tracing_test::traced_test]
     async fn test_screening_enable() {
-        // env_logger::init();
-
         let pubsubreceiver = Arc::new(PubSubReceiverInMemory::default());
         let pubsub = PubSubInMemory::default();
         pubsub.set_receiver(pubsubreceiver.clone()).await;
@@ -1237,9 +1250,8 @@ mod test {
     }
 
     #[tokio::test]
+    #[tracing_test::traced_test]
     async fn test_duplicate_question_check() {
-        // env_logger::init();
-
         let pubsubreceiver = Arc::new(PubSubReceiverInMemory::default());
         let pubsub = PubSubInMemory::default();
         pubsub.set_receiver(pubsubreceiver.clone()).await;
@@ -1292,9 +1304,8 @@ mod test {
     }
 
     #[tokio::test]
+    #[tracing_test::traced_test]
     async fn test_password_protection() {
-        // env_logger::init();
-
         let pubsubreceiver = Arc::new(PubSubReceiverInMemory::default());
         let pubsub = PubSubInMemory::default();
         pubsub.set_receiver(pubsubreceiver.clone()).await;

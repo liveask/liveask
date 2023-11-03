@@ -51,10 +51,11 @@ features = ["cors", "trace", "auth", "sensitive-headers"]
 # ############################
 
 [dev-dependencies]
-env_logger = "0.10"
+axum-test = "13.1"
 mime = "0.3"
 mockall = "0.11"
 pretty_assertions = "1"
+tracing-test = "0.2"
 # ############################
 
 [build-dependencies]

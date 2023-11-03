@@ -3,13 +3,14 @@ use axum::{
     response::{Html, IntoResponse},
     Json,
 };
+use axum_sessions::extractors::{ReadableSession, WritableSession};
+use shared::EventPasswordResponse;
 use tracing::instrument;
 
 use crate::{
     app::SharedApp,
     auth::OptionalUser,
     error::InternalError,
-    password_header::ExtractPassword,
     payment::{
         PaymentCaptureDeclinedResource, PaymentCaptureRefundedResource,
         PaymentCheckoutApprovedResource, PaymentWebhookBase,
@@ -64,18 +65,40 @@ pub async fn addquestion_handler(
     Ok(Json(app.add_question(id, payload).await?))
 }
 
-#[instrument(skip(app))]
+#[instrument(skip(app, session))]
 pub async fn getevent_handler(
     Path(id): Path<String>,
     OptionalUser(user): OptionalUser,
-    ExtractPassword(password): ExtractPassword,
+    session: ReadableSession,
     State(app): State<SharedApp>,
 ) -> std::result::Result<impl IntoResponse, InternalError> {
     tracing::info!("getevent_handler");
 
+    let password = session.get_raw("pwd");
+
     Ok(Json(
         app.get_event(id, None, user.is_some(), password).await?,
     ))
+}
+
+#[instrument(skip(app, session))]
+pub async fn set_event_password(
+    Path(id): Path<String>,
+    mut session: WritableSession,
+    State(app): State<SharedApp>,
+    Json(payload): Json<shared::EventPasswordRequest>,
+) -> std::result::Result<impl IntoResponse, InternalError> {
+    tracing::info!("set_event_password");
+
+    let response = EventPasswordResponse {
+        ok: app.check_event_password(id, &payload.pwd).await?,
+    };
+
+    if response.ok {
+        session.insert_raw("pwd", payload.pwd);
+    }
+
+    Ok(Json(response))
 }
 
 #[instrument(skip(app))]
@@ -320,9 +343,8 @@ mod test_db_conflicts {
     }
 
     #[tokio::test]
+    #[tracing_test::traced_test]
     async fn test_conflicting_database_write() {
-        // env_logger::init();
-
         let app = app();
 
         let response = app
@@ -353,7 +375,7 @@ mod test_db_item_not_found {
     use crate::{
         app::App,
         auth,
-        eventsdb::{EventEntry, EventsDB},
+        eventsdb::{EventEntry, EventsDB, InMemoryEventsDB},
         payment::Payment,
         pubsub::PubSubInMemory,
         tracking::Tracking,
@@ -363,10 +385,13 @@ mod test_db_item_not_found {
     use axum::{
         body::Body,
         http::{self, Request, StatusCode},
-        routing::get,
+        routing::{get, post},
         Router,
     };
+    use axum_test::{TestServer, TestServerConfig};
     use pretty_assertions::assert_eq;
+    use serde_json::json;
+    use shared::{EventResponseFlags, TEST_EVENT_DESC, TEST_EVENT_NAME};
     use std::sync::Arc;
     use tower::util::ServiceExt;
     use tower_http::trace::TraceLayer;
@@ -383,33 +408,30 @@ mod test_db_item_not_found {
         }
     }
 
-    fn app() -> Router {
-        let app = Arc::new(App::new(
-            Arc::new(ItemNotFoundDB::default()),
-            Arc::new(PubSubInMemory::default()),
-            Arc::new(MockViewers::new()),
-            Arc::new(Payment::default()),
-            Tracking::default(),
-            String::new(),
-        ));
-
-        let (session, auth) = auth::setup_test();
-
-        Router::new()
-            .route("/api/event/:id", get(getevent_handler))
-            .layer(auth)
-            .layer(session)
-            .layer(TraceLayer::new_for_http())
-            .with_state(app)
-    }
-
     #[tokio::test]
+    #[tracing_test::traced_test]
     async fn test_db_item_not_found() {
-        // env_logger::init();
+        let router = {
+            let app = Arc::new(App::new(
+                Arc::new(ItemNotFoundDB::default()),
+                Arc::new(PubSubInMemory::default()),
+                Arc::new(MockViewers::new()),
+                Arc::new(Payment::default()),
+                Tracking::default(),
+                String::new(),
+            ));
 
-        let app = app();
+            let (session, auth) = auth::setup_test();
 
-        let response = app
+            Router::new()
+                .route("/api/event/:id", get(getevent_handler))
+                .layer(auth)
+                .layer(session)
+                .layer(TraceLayer::new_for_http())
+                .with_state(app.clone())
+        };
+
+        let response = router
             .oneshot(
                 Request::builder()
                     .method(http::Method::GET)
@@ -422,5 +444,147 @@ mod test_db_item_not_found {
             .unwrap();
 
         assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+    }
+
+    #[tokio::test]
+    #[tracing_test::traced_test]
+    async fn test_event_fetch() {
+        let (app, router) = {
+            let events = Arc::new(InMemoryEventsDB::default());
+            let app = Arc::new(App::new(
+                events.clone(),
+                Arc::new(PubSubInMemory::default()),
+                Arc::new(MockViewers::new()),
+                Arc::new(Payment::default()),
+                Tracking::default(),
+                String::new(),
+            ));
+            let (session, auth) = auth::setup_test();
+            let router = Router::new()
+                .route("/api/event/:id", get(getevent_handler))
+                .layer(auth)
+                .layer(session)
+                .layer(TraceLayer::new_for_http())
+                .with_state(app.clone());
+            (app, router)
+        };
+
+        let e = app
+            .create_event(shared::AddEvent {
+                data: shared::EventData {
+                    name: TEST_EVENT_NAME.into(),
+                    description: TEST_EVENT_DESC.into(),
+                    ..Default::default()
+                },
+                moderator_email: None,
+                test: false,
+            })
+            .await
+            .unwrap();
+
+        let response = router
+            .oneshot(
+                Request::builder()
+                    .method(http::Method::GET)
+                    .uri(format!("/api/event/{}", e.tokens.public_token))
+                    .header(http::header::CONTENT_TYPE, mime::APPLICATION_JSON.as_ref())
+                    .body(Body::default())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::OK);
+    }
+
+    #[tokio::test]
+    #[tracing_test::traced_test]
+    async fn test_event_pwd() {
+        let (app, router) = {
+            let events = Arc::new(InMemoryEventsDB::default());
+            let app = Arc::new(App::new(
+                events.clone(),
+                Arc::new(PubSubInMemory::default()),
+                Arc::new(MockViewers::new()),
+                Arc::new(Payment::default()),
+                Tracking::default(),
+                String::new(),
+            ));
+            let (session, auth) = auth::setup_test();
+            let router = Router::new()
+                .route("/api/event/:id", get(getevent_handler))
+                .route("/api/event/:id/pwd", post(set_event_password))
+                .layer(auth)
+                .layer(session)
+                .layer(TraceLayer::new_for_http())
+                .with_state(app.clone());
+            (app, router)
+        };
+
+        let e = app
+            .create_event(shared::AddEvent {
+                data: shared::EventData {
+                    name: TEST_EVENT_NAME.into(),
+                    description: TEST_EVENT_DESC.into(),
+                    ..Default::default()
+                },
+                moderator_email: None,
+                test: false,
+            })
+            .await
+            .unwrap();
+
+        app.mod_edit_event(
+            e.tokens.public_token.clone(),
+            e.tokens.moderator_token.clone().unwrap(),
+            shared::ModEvent {
+                password: Some(shared::EventPassword::Enabled("pwd".into())),
+                ..Default::default()
+            },
+        )
+        .await
+        .unwrap();
+
+        let server = TestServer::new_with_config(
+            router,
+            TestServerConfig::builder()
+                .default_content_type("application/json")
+                .save_cookies()
+                .expect_success_by_default()
+                .build(),
+        )
+        .unwrap();
+
+        let response: shared::GetEventResponse = server
+            .get(&format!("/api/event/{}", e.tokens.public_token))
+            .await
+            .json();
+
+        assert!(response.flags.contains(EventResponseFlags::WRONG_PASSWORD));
+
+        let res: shared::EventPasswordResponse = server
+            .post(&format!("/api/event/{}/pwd", e.tokens.public_token))
+            .json(&json!({
+                "pwd": "pw",
+            }))
+            .await
+            .json();
+        assert!(!res.ok);
+
+        let res: shared::EventPasswordResponse = server
+            .post(&format!("/api/event/{}/pwd", e.tokens.public_token))
+            .json(&json!({
+                "pwd": "pwd",
+            }))
+            .await
+            .json();
+        assert!(res.ok);
+
+        let response: shared::GetEventResponse = server
+            .get(&format!("/api/event/{}", e.tokens.public_token))
+            .await
+            .json();
+
+        assert!(!response.flags.contains(EventResponseFlags::WRONG_PASSWORD));
     }
 }

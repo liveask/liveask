@@ -12,7 +12,10 @@ pub use validation::{
     create_event::{CreateEventError, CreateEventValidation},
 };
 
+//TODO: validate in unittest against validator
 pub const TEST_VALID_QUESTION: &str = "1 2 3fourfive";
+pub const TEST_EVENT_DESC: &str = "minimum desc length possible!!";
+pub const TEST_EVENT_NAME: &str = "min name";
 
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Default)]
 pub struct EventTokens {
@@ -349,4 +352,14 @@ pub struct UserInfo {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct GetUserInfo {
     pub user: Option<UserInfo>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, Default)]
+pub struct EventPasswordRequest {
+    pub pwd: String,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, Default)]
+pub struct EventPasswordResponse {
+    pub ok: bool,
 }

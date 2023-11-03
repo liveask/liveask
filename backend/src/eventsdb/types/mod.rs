@@ -192,9 +192,8 @@ mod test_serialization {
     use shared::{EventState, States};
 
     #[test]
+    #[tracing_test::traced_test]
     fn test_ser_and_de_1() {
-        // env_logger::init();
-
         let entry = EventEntry {
             event: ApiEventInfo {
                 tokens: EventTokens {
@@ -239,9 +238,8 @@ mod test_serialization {
     }
 
     #[test]
+    #[tracing_test::traced_test]
     fn test_ser_and_de_2() {
-        // env_logger::init();
-
         let entry = EventEntry {
             event: ApiEventInfo {
                 tokens: EventTokens {

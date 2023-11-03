@@ -12,7 +12,7 @@ use std::{
 };
 use wasm_bindgen::{JsCast, JsValue};
 use wasm_bindgen_futures::JsFuture;
-use web_sys::{Request, RequestCredentials, RequestInit, RequestMode, Response};
+use web_sys::{Request, RequestCredentials, RequestInit, Response};
 
 /// Something wrong has occurred while fetching an external resource.
 #[derive(Debug)]
@@ -48,7 +48,6 @@ pub async fn fetch_version(base_api: &str) -> Result<String, FetchError> {
 
     let mut opts = RequestInit::new();
     opts.method("GET");
-    opts.mode(RequestMode::Cors);
 
     let request = Request::new_with_str_and_init(&url, &opts)?;
 
@@ -74,7 +73,6 @@ pub async fn fetch_event(
 
     let mut opts = RequestInit::new();
     opts.method("GET");
-    opts.mode(RequestMode::Cors);
     opts.credentials(RequestCredentials::Include);
 
     let request = Request::new_with_str_and_init(&url, &opts)?;
@@ -353,7 +351,6 @@ pub async fn fetch_user(base_api: &str) -> Result<GetUserInfo, FetchError> {
 
     let mut opts = RequestInit::new();
     opts.method("GET");
-    opts.mode(RequestMode::Cors);
     opts.credentials(RequestCredentials::Include);
 
     let request = Request::new_with_str_and_init(&url, &opts)?;
@@ -373,7 +370,6 @@ pub async fn admin_logout(base_api: &str) -> Result<(), FetchError> {
 
     let mut opts = RequestInit::new();
     opts.method("GET");
-    opts.mode(RequestMode::Cors);
     opts.credentials(RequestCredentials::Include);
 
     let request = Request::new_with_str_and_init(&url, &opts)?;
@@ -398,7 +394,7 @@ pub async fn delete_event(
 
     let opts = {
         let mut opts = RequestInit::new();
-        opts.method("GET").mode(RequestMode::Cors);
+        opts.method("GET");
         opts
     };
 
