@@ -21,8 +21,7 @@ impl Component for Print {
 
     fn create(ctx: &Context<Self>) -> Self {
         let event_id = ctx.props().id.to_string();
-        //TODO:
-        request_fetch(event_id, None, ctx.link());
+        request_fetch(event_id, ctx.link());
 
         Self {
             loading_state: LoadingState::Loading,
@@ -62,9 +61,9 @@ impl Component for Print {
 }
 
 //TODO: un-dup
-fn request_fetch(id: String, password: Option<String>, link: &html::Scope<Print>) {
+fn request_fetch(id: String, link: &html::Scope<Print>) {
     link.send_future(async move {
-        let res = fetch::fetch_event(BASE_API, id, None, password).await;
+        let res = fetch::fetch_event(BASE_API, id, None).await;
 
         res.map_or(Msg::Fetched(None), |val| Msg::Fetched(Some(val)))
     });

@@ -14,8 +14,8 @@ use yewdux::prelude::*;
 
 use crate::{
     components::{
-        DeletePopup, EventSocket, ModPassword, Question, QuestionClickType, QuestionFlags,
-        QuestionPopup, SharePopup, SocketResponse, Upgrade,
+        DeletePopup, EventSocket, ModPassword, PasswordPopup, Question, QuestionClickType,
+        QuestionFlags, QuestionPopup, SharePopup, SocketResponse, Upgrade,
     },
     environment::{la_env, LiveAskEnv},
     fetch,
@@ -96,6 +96,7 @@ pub enum Msg {
     ModExport,
     ModStateChange(yew::Event),
     StateChanged,
+    PasswordSet,
     CopyLink,
     ModEditScreening,
     GlobalEvent(GlobalEvent),
@@ -108,12 +109,7 @@ impl Component for Event {
     fn create(ctx: &Context<Self>) -> Self {
         let event_id = ctx.props().id.to_string();
         //TODO:
-        request_fetch(
-            event_id.clone(),
-            ctx.props().secret.clone(),
-            None,
-            ctx.link(),
-        );
+        request_fetch(event_id.clone(), ctx.props().secret.clone(), ctx.link());
 
         let socket_url = format!("{BASE_SOCKET}/push/{event_id}",);
 
@@ -242,6 +238,14 @@ impl Component for Event {
                 self.export_event();
                 false
             }
+            Msg::PasswordSet => {
+                request_fetch(
+                    self.current_event_id.clone(),
+                    ctx.props().secret.clone(),
+                    ctx.link(),
+                );
+                false
+            }
             Msg::GlobalEvent(ev) => self.handle_global_event(ev),
         }
     }
@@ -337,14 +341,9 @@ fn request_like(event: String, id: i64, like: bool, link: &html::Scope<Event>) {
 }
 
 //TODO: dedup
-fn request_fetch(
-    id: String,
-    secret: Option<String>,
-    password: Option<String>,
-    link: &html::Scope<Event>,
-) {
+fn request_fetch(id: String, secret: Option<String>, link: &html::Scope<Event>) {
     link.send_future(async move {
-        let res = fetch::fetch_event(BASE_API, id, secret, password).await;
+        let res = fetch::fetch_event(BASE_API, id, secret).await;
 
         res.map_or(Msg::Fetched(None), |val| Msg::Fetched(Some(val)))
     });
@@ -520,6 +519,7 @@ impl Event {
                     <div class={background}>
                     </div>
 
+                    <PasswordPopup event={e.info.tokens.public_token.clone()} show={e.is_wrong_pwd()} onconfirmed={ctx.link().callback(|()|Msg::PasswordSet)}/>
                     <QuestionPopup event={e.info.tokens.public_token.clone()} />
                     <SharePopup url={share_url} event_id={e.info.tokens.public_token.clone()}/>
 
@@ -700,62 +700,64 @@ impl Event {
         }
     }
 
+    //TODO: make mod component
     fn mod_view(&self, ctx: &Context<Self>, e: &GetEventResponse) -> Html {
+        if !matches!(self.mode, Mode::Moderator) {
+            return html! {};
+        }
+
         let payment_allowed = !e.info.is_premium();
         let pending_payment = self.query_params.paypal_token.is_some() && payment_allowed;
 
-        if matches!(self.mode, Mode::Moderator) {
-            let timed_out = e.is_timed_out();
-            let pwd = e
-                .mod_info
-                .as_ref()
-                .map(|info| info.pwd.clone())
-                .unwrap_or_default();
+        let timed_out = e.is_timed_out();
+        let pwd = e
+            .mod_info
+            .as_ref()
+            .map(|info| info.pwd.clone())
+            .unwrap_or_default();
 
-            html! {
+        html! {
             <>
-            <div class="mod-panel" >
-                <DeletePopup tokens={e.info.tokens.clone()} />
+                <div class="mod-panel" >
+                    <DeletePopup tokens={e.info.tokens.clone()} />
+
+                    {
+                        if timed_out {html!{}}else {html!{
+                        <div class="state">
+                            <select onchange={ctx.link().callback(Msg::ModStateChange)} >
+                                <option value="0" selected={e.info.state.is_open()}>{"Event open"}</option>
+                                <option value="1" selected={e.info.state.is_vote_only()}>{"Event vote only"}</option>
+                                <option value="2" selected={e.info.state.is_closed()}>{"Event closed"}</option>
+                            </select>
+                        </div>
+                        }}
+                    }
+
+                    <button class="button-white" onclick={ctx.link().callback(|_|Msg::ModDelete)} >
+                        {"Delete Event"}
+                    </button>
+
+                    <ModPassword tokens={e.info.tokens.clone()} {pwd} />
+
+                    {
+                        if e.info.is_premium() {
+                            Self::mod_view_premium(ctx,e)
+                        } else { html!{} }
+                    }
+                </div>
 
                 {
-                    if timed_out {html!{}}else {html!{
-                    <div class="state">
-                        <select onchange={ctx.link().callback(Msg::ModStateChange)} >
-                            <option value="0" selected={e.info.state.is_open()}>{"Event open"}</option>
-                            <option value="1" selected={e.info.state.is_vote_only()}>{"Event vote only"}</option>
-                            <option value="2" selected={e.info.state.is_closed()}>{"Event closed"}</option>
-                        </select>
-                    </div>
-                    }}
+                    if payment_allowed {
+                        html!{
+                            <Upgrade pending={pending_payment} tokens={e.info.tokens.clone()} />
+                        }
+                    } else { html!{} }
                 }
-
-                <button class="button-white" onclick={ctx.link().callback(|_|Msg::ModDelete)} >
-                    {"Delete Event"}
-                </button>
-
-                <ModPassword tokens={e.info.tokens.clone()} {pwd} />
 
                 {
-                    if self.is_premium() {
-                        Self::mod_view_premium(ctx,e)
-                    }else {html!{}}
+                    Self::mod_view_deadline(e)
                 }
-
-
-            </div>
-
-            {
-                if payment_allowed {html!{
-                    <Upgrade pending={pending_payment} tokens={e.info.tokens.clone()} />
-                }}else{html!{}}
-            }
-
-            {Self::mod_view_deadline(e)}
-
             </>
-            }
-        } else {
-            html! {}
         }
     }
 
@@ -1075,7 +1077,6 @@ impl Event {
                     request_fetch(
                         self.current_event_id.clone(),
                         ctx.props().secret.clone(),
-                        None,
                         ctx.link(),
                     );
                 }

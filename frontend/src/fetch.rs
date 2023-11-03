@@ -2,9 +2,9 @@
 
 use gloo_utils::format::JsValueSerdeExt;
 use shared::{
-    AddEvent, AddQuestion, EditLike, EventData, EventInfo, EventState, EventUpgrade,
-    GetEventResponse, GetUserInfo, ModEvent, ModQuestion, PaymentCapture, QuestionItem, States,
-    UserLogin,
+    AddEvent, AddQuestion, EditLike, EventData, EventInfo, EventPasswordRequest,
+    EventPasswordResponse, EventState, EventUpgrade, GetEventResponse, GetUserInfo, ModEvent,
+    ModQuestion, PaymentCapture, QuestionItem, States, UserLogin,
 };
 use std::{
     error::Error,
@@ -64,7 +64,6 @@ pub async fn fetch_event(
     base_api: &str,
     id: String,
     secret: Option<String>,
-    password: Option<String>,
 ) -> Result<GetEventResponse, FetchError> {
     let url = secret.map_or_else(
         || format!("{base_api}/api/event/{id}"),
@@ -76,9 +75,6 @@ pub async fn fetch_event(
     opts.credentials(RequestCredentials::Include);
 
     let request = Request::new_with_str_and_init(&url, &opts)?;
-    if let Some(pwd) = password {
-        request.headers().set("la-password", &pwd)?;
-    }
 
     let window = gloo_utils::window();
     let resp_value = JsFuture::from(window.fetch_with_request(&request)).await?;
@@ -136,6 +132,34 @@ pub async fn mod_edit_event(
     let res = JsValueSerdeExt::into_serde::<EventInfo>(&json)?;
 
     Ok(res)
+}
+
+pub async fn event_set_password(
+    base_api: &str,
+    id: String,
+    pwd: String,
+) -> Result<bool, FetchError> {
+    let body = serde_json::to_string(&EventPasswordRequest { pwd })?;
+    let body = JsValue::from_str(&body);
+
+    let url = format!("{base_api}/api/event/{id}/pwd");
+
+    let mut opts = RequestInit::new();
+    opts.method("POST");
+    opts.body(Some(&body));
+    opts.credentials(RequestCredentials::Include);
+
+    let request = Request::new_with_str_and_init(&url, &opts)?;
+    request.headers().set("content-type", "application/json")?;
+
+    let window = gloo_utils::window();
+    let resp_value = JsFuture::from(window.fetch_with_request(&request)).await?;
+    let resp: Response = resp_value.dyn_into()?;
+
+    let json = JsFuture::from(resp.json()?).await?;
+    let res = JsValueSerdeExt::into_serde::<EventPasswordResponse>(&json)?;
+
+    Ok(res.ok)
 }
 
 pub async fn mod_edit_screening(

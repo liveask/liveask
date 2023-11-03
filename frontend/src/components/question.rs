@@ -271,8 +271,7 @@ impl Component for Question {
         );
 
         html! {
-            <div class={main_classes}
-                ref={self.node_ref.clone()}>
+            <div class={main_classes} ref={self.node_ref.clone()} >
                 <div class={classes!("questionanchor",self.highlighted.then_some("highlighted"),)}
                     onclick={ctx.link().callback(|_| Msg::QuestionClick(QuestionClickType::Like))}>
 

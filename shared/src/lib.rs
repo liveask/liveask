@@ -171,6 +171,11 @@ impl GetEventResponse {
     }
 
     #[must_use]
+    pub const fn is_wrong_pwd(&self) -> bool {
+        self.flags.contains(EventResponseFlags::WRONG_PASSWORD)
+    }
+
+    #[must_use]
     pub fn deleted(id: String) -> Self {
         Self {
             info: EventInfo::deleted(id),

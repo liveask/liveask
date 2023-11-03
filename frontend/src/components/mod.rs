@@ -1,6 +1,7 @@
 mod delete_popup;
 mod iconbar;
 mod mod_password;
+mod password_popup;
 mod payment_popup;
 mod popup;
 mod qr;
@@ -15,6 +16,7 @@ mod upgrade;
 pub use delete_popup::DeletePopup;
 pub use iconbar::IconBar;
 pub use mod_password::ModPassword;
+pub use password_popup::PasswordPopup;
 pub use popup::Popup;
 pub use qr::Qr;
 pub use question::{Question, QuestionClickType, QuestionFlags};
