@@ -2,7 +2,8 @@ use async_trait::async_trait;
 use axum::extract::ws::{close_code::RESTART, CloseFrame, Message, WebSocket};
 use shared::{
     AddEvent, EventInfo, EventResponseFlags, EventState, EventTokens, EventUpgrade,
-    GetEventResponse, ModEvent, ModInfo, ModQuestion, PaymentCapture, QuestionItem, States,
+    GetEventResponse, ModEvent, ModInfo, ModQuestion, PasswordValidation, PaymentCapture,
+    QuestionItem, States,
 };
 use std::{
     collections::HashMap,
@@ -242,6 +243,12 @@ impl App {
     #[instrument(skip(self))]
     pub async fn check_event_password(&self, id: String, password: &str) -> Result<bool> {
         tracing::info!("check_event_password");
+
+        let mut validation = PasswordValidation::default();
+        validation.check(password);
+        if validation.has_any() {
+            return Err(InternalError::PasswordValidation(validation));
+        }
 
         let e = self.eventsdb.get(&id).await?.event;
 

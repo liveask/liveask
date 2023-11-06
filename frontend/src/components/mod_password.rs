@@ -1,4 +1,4 @@
-use shared::{EventPassword, EventTokens, ModEvent};
+use shared::{EventPassword, EventTokens, ModEvent, PasswordValidation};
 use wasm_bindgen::UnwrapThrowExt;
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
@@ -29,6 +29,7 @@ enum State {
 pub struct ModPassword {
     state: State,
     input: NodeRef,
+    errors: PasswordValidation,
 }
 impl Component for ModPassword {
     type Message = Msg;
@@ -38,6 +39,7 @@ impl Component for ModPassword {
         Self {
             state: Self::derive_state(&ctx.props().pwd),
             input: NodeRef::default(),
+            errors: PasswordValidation::default(),
         }
     }
 
@@ -58,12 +60,13 @@ impl Component for ModPassword {
             Msg::InputChange(e) => {
                 let target: HtmlInputElement = e.target_dyn_into().unwrap_throw();
                 self.state = State::PasswordEditing(target.value());
+                self.errors.check(&target.value());
                 true
             }
             Msg::InputExit => {
                 let current = self.current_value().to_string();
 
-                if current.trim().is_empty() {
+                if self.errors.has_any() {
                     self.disable_password(ctx);
                 } else {
                     let props = ctx.props();

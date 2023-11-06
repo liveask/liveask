@@ -10,6 +10,8 @@ pub use flags::{EventFlags, EventResponseFlags};
 pub use validation::{
     add_question::{AddQuestionError, AddQuestionValidation},
     create_event::{CreateEventError, CreateEventValidation},
+    pwd_validation::{PasswordError, PasswordValidation},
+    ValidationState,
 };
 
 //TODO: validate in unittest against validator

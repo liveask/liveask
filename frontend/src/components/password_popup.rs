@@ -1,4 +1,5 @@
 use crate::{components::Popup, fetch, pages::BASE_API};
+use shared::PasswordValidation;
 use wasm_bindgen::UnwrapThrowExt;
 use web_sys::HtmlInputElement;
 use yew::{prelude::*, virtual_dom::AttrValue};
@@ -13,6 +14,7 @@ pub struct PasswordPopup {
     show: bool,
     text: String,
     try_again: bool,
+    errors: PasswordValidation,
 }
 
 #[derive(Clone, Debug, PartialEq, Properties)]
@@ -34,6 +36,7 @@ impl Component for PasswordPopup {
             show,
             try_again: false,
             text: String::new(),
+            errors: PasswordValidation::default(),
         }
     }
 
@@ -68,6 +71,7 @@ impl Component for PasswordPopup {
             Msg::InputChanged(ev) => {
                 let target: HtmlInputElement = ev.target_dyn_into().unwrap_throw();
                 self.text = target.value();
+                self.errors.check(&self.text);
                 true
             }
         }
@@ -100,22 +104,40 @@ impl Component for PasswordPopup {
                             />
 
                         <div class="more-info">
-                            {
-                                html!{
-                                    <div hidden={!self.try_again} class="invalid">
-                                        <div>
-                                        {"try again"}
-                                        </div>
-                                    </div>
-                                }
-                            }
+                            {self.view_error()}
                         </div>
                     </div>
-                    <button class="dlg-button" onclick={on_click_ask}>
+                    <button class="dlg-button"
+                        onclick={on_click_ask}
+                        disabled={self.errors.has_any()}>
                         {"Ok"}
                     </button>
                 </div>
             </Popup>
+            }
+        } else {
+            html! {}
+        }
+    }
+}
+
+impl PasswordPopup {
+    fn view_error(&self) -> Html {
+        if self.try_again {
+            html! {
+                <div class="invalid">
+                    <div>
+                    {"try again"}
+                    </div>
+                </div>
+            }
+        } else if self.errors.content.is_invalid() {
+            html! {
+                <div class="invalid">
+                    <div>
+                    {"invalid password"}
+                    </div>
+                </div>
             }
         } else {
             html! {}
