@@ -108,7 +108,7 @@ impl Component for Event {
 
     fn create(ctx: &Context<Self>) -> Self {
         let event_id = ctx.props().id.to_string();
-        //TODO:
+
         request_fetch(event_id.clone(), ctx.props().secret.clone(), ctx.link());
 
         let socket_url = format!("{BASE_SOCKET}/push/{event_id}",);
