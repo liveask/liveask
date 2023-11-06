@@ -89,7 +89,7 @@ pub enum Msg {
     AskQuestionClick,
     Fetched(Option<GetEventResponse>),
     Captured,
-    SocketMsg(SocketResponse),
+    Socket(SocketResponse),
     QuestionClick((i64, QuestionClickType)),
     QuestionUpdated(i64),
     ModDelete,
@@ -180,7 +180,7 @@ impl Component for Event {
                     .map(|c| c.write_text(&self.moderator_url()));
                 true
             }
-            Msg::SocketMsg(msg) => self.handle_socket(msg, ctx),
+            Msg::Socket(msg) => self.handle_socket(msg, ctx),
             Msg::StateChanged => false, // nothing needs to happen here
             Msg::ModStateChange(ev) => {
                 let e: web_sys::HtmlSelectElement =
@@ -255,7 +255,7 @@ impl Component for Event {
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
-        let msg = ctx.link().callback(Msg::SocketMsg);
+        let msg = ctx.link().callback(Msg::Socket);
         html! {
             <div class="event">
                 <EventSocket reconnect={self.manual_reconnect} url={self.socket_url.clone()} {msg}/>
