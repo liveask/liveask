@@ -12,7 +12,7 @@ aws-config = "0.56"
 aws-sdk-dynamodb = "0.34"
 aws-sdk-ses = "0.34"
 aws-smithy-http = "0.56"
-axum = { version = "0.6", features = ["ws", "headers"] }
+axum = { version = "0.6", features = ["ws"] }
 axum-login = "0.6"
 axum-sessions = "0.5"
 chrono = { version = "0.4", default-features = false }

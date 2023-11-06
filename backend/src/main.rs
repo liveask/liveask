@@ -8,7 +8,6 @@ mod error;
 mod eventsdb;
 mod handle;
 mod mail;
-mod password_header;
 mod payment;
 mod pubsub;
 mod redis_pool;
