@@ -129,6 +129,7 @@ impl ModPassword {
                     ref={self.input.clone()}
                     type="text"
                     placeholder="password"
+                    maxlength="30"
                     {value}
                     oninput={ctx.link().callback(Msg::InputChange)}
                     onblur={ctx.link().callback(|_|Msg::InputExit)} />

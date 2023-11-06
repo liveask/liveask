@@ -1,10 +1,6 @@
-use crate::{
-    components::{Popup, TextArea},
-    fetch,
-    pages::BASE_API,
-};
+use crate::{components::Popup, fetch, pages::BASE_API};
 use wasm_bindgen::UnwrapThrowExt;
-use web_sys::HtmlTextAreaElement;
+use web_sys::HtmlInputElement;
 use yew::{prelude::*, virtual_dom::AttrValue};
 
 pub enum Msg {
@@ -70,7 +66,7 @@ impl Component for PasswordPopup {
                 true
             }
             Msg::InputChanged(ev) => {
-                let target: HtmlTextAreaElement = ev.target_dyn_into().unwrap_throw();
+                let target: HtmlInputElement = ev.target_dyn_into().unwrap_throw();
                 self.text = target.value();
                 true
             }
@@ -93,18 +89,15 @@ impl Component for PasswordPopup {
 
             html! {
             <Popup class="share-popup">
-                <div class="newquestion">
-                    <div class="add-question">
-                        <TextArea
-                            id="questiontext"
-                            name="questiontext"
-                            maxlength="100"
+                <div class="pwd-popup">
+                    <div class="">
+                        <input class="passwordtext"
+                            maxlength="30"
                             value={self.text.clone()}
                             placeholder="password"
                             required=true
                             oninput={ctx.link().callback(Msg::InputChanged)}
-                            >
-                        </TextArea>
+                            />
 
                         <div class="more-info">
                             {
