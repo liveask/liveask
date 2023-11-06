@@ -28,7 +28,7 @@ use crate::{
     mail::MailConfig,
     payment::Payment,
     pubsub::{PubSubPublish, PubSubReceiver},
-    tracking::Tracking,
+    tracking::{EditEvent, Tracking},
     utils::timestamp_now,
     viewers::Viewers,
 };
@@ -470,7 +470,7 @@ impl App {
             e.do_screening = screening;
         }
         if let Some(password) = changes.password {
-            e.password = password;
+            self.mod_edit_password(e, password);
         }
         if let Some(description) = changes.description {
             //TODO: desc
@@ -873,6 +873,22 @@ impl App {
                 tracing::error!("mail send error: {e}");
             }
         });
+    }
+
+    fn mod_edit_password(&self, e: &mut ApiEventInfo, password: shared::EventPassword) {
+        let edit_type = match (e.password.is_enabled(), password.is_enabled()) {
+            (false, true) => Some(EditEvent::Enabled),
+            (true, false) => Some(EditEvent::Disabled),
+            (true, true) => Some(EditEvent::Changed),
+            _ => None,
+        };
+
+        if let Some(edit_type) = edit_type {
+            self.tracking
+                .track_event_password_set(e.tokens.public_token.clone(), edit_type);
+        }
+
+        e.password = password;
     }
 }
 
