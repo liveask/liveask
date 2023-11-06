@@ -4,7 +4,9 @@ use crate::utils::timestamp_now;
 use aws_sdk_dynamodb::types::AttributeValue;
 use chrono::{DateTime, Duration, TimeZone, Utc};
 use serde::{Deserialize, Serialize};
-use shared::{EventData, EventInfo, EventState, EventTokens, QuestionItem};
+use shared::{
+    EventData, EventFlags, EventInfo, EventPassword, EventState, EventTokens, QuestionItem,
+};
 use std::collections::HashMap;
 
 use self::conversion::{attributes_to_event, event_to_attributes};
@@ -26,10 +28,19 @@ pub struct ApiEventInfo {
     #[serde(default)]
     pub do_screening: bool,
     pub state: EventState,
+    #[serde(default)]
+    pub password: EventPassword,
     pub premium_order: Option<String>,
 }
 
-const LOREM_IPSUM:&str = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam diam eros, tincidunt ac placerat in, sodales sit amet nibh.";
+const LOREM_IPSUM:&str = "Lorem ipsum dolor sit amet. Et adipisci repellendus id dolore molestiae sed quidem ratione! Aut itaque magnam eos corporis dolores ut repudiandae consequuntur et maiores accusantium. 33 quas illum vel cumque quisquam et possimus quaerat et nostrum galisum et similique dolorum quo earum earum et accusantium dignissimos!";
+
+#[allow(clippy::string_slice)]
+pub fn mask_string(s: &str) -> &str {
+    //Note: as soon as `LOREM_IPSUM` contains utf8 this risks to panic inside utf8 codes
+    let text_length = s.len().min(LOREM_IPSUM.len());
+    &LOREM_IPSUM[..text_length]
+}
 
 impl ApiEventInfo {
     fn is_timed_out(&self) -> bool {
@@ -49,15 +60,20 @@ impl ApiEventInfo {
         self.premium_order.is_none() && self.is_timed_out()
     }
 
-    #[allow(clippy::string_slice)]
-    pub fn adapt_if_timedout(&mut self) {
+    pub fn adapt_if_timedout(&mut self) -> bool {
         if self.is_timed_out_and_free() {
-            for q in &mut self.questions {
-                //Note: as soon as `LOREM_IPSUM` contains utf8 this risks to panic inside utf8 codes
-                let text_length = q.text.len().min(LOREM_IPSUM.len());
-                q.text = LOREM_IPSUM[..text_length].to_string();
-            }
+            self.mask_data();
+            return true;
         }
+
+        false
+    }
+
+    pub fn mask_data(&mut self) {
+        for q in &mut self.questions {
+            q.text = mask_string(&q.text).to_string();
+        }
+        self.data.description = mask_string(&self.data.description).to_string();
     }
 
     fn timestamp_to_datetime(timestamp: i64) -> Option<DateTime<Utc>> {
@@ -67,6 +83,15 @@ impl ApiEventInfo {
 
 impl From<ApiEventInfo> for EventInfo {
     fn from(val: ApiEventInfo) -> Self {
+        let mut flags = EventFlags::empty();
+
+        flags.set(EventFlags::DELETED, val.deleted);
+        flags.set(EventFlags::PREMIUM, val.premium_order.is_some());
+        flags.set(EventFlags::SCREENING, val.do_screening);
+        flags.set(EventFlags::PASSWORD, val.password.is_enabled());
+
+        //TODO:
+        #[allow(deprecated)]
         Self {
             tokens: val.tokens,
             data: val.data,
@@ -78,6 +103,7 @@ impl From<ApiEventInfo> for EventInfo {
             state: val.state,
             screening: val.do_screening,
             premium: val.premium_order.is_some(),
+            flags,
         }
     }
 }
@@ -166,9 +192,8 @@ mod test_serialization {
     use shared::{EventState, States};
 
     #[test]
+    #[tracing_test::traced_test]
     fn test_ser_and_de_1() {
-        // env_logger::init();
-
         let entry = EventEntry {
             event: ApiEventInfo {
                 tokens: EventTokens {
@@ -184,6 +209,7 @@ mod test_serialization {
                 create_time_unix: 1,
                 delete_time_unix: 0,
                 deleted: false,
+                password: shared::EventPassword::Disabled,
                 premium_order: Some(String::from("order")),
                 last_edit_unix: 2,
                 questions: vec![QuestionItem {
@@ -212,9 +238,8 @@ mod test_serialization {
     }
 
     #[test]
+    #[tracing_test::traced_test]
     fn test_ser_and_de_2() {
-        // env_logger::init();
-
         let entry = EventEntry {
             event: ApiEventInfo {
                 tokens: EventTokens {
@@ -230,6 +255,7 @@ mod test_serialization {
                 create_time_unix: 1,
                 delete_time_unix: 0,
                 deleted: false,
+                password: shared::EventPassword::Enabled(String::from("pwd")),
                 premium_order: Some(String::from("order")),
                 last_edit_unix: 2,
                 questions: vec![QuestionItem {

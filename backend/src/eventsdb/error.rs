@@ -41,7 +41,7 @@ pub enum Error {
     DynamoCreateTable(#[from] SdkError<CreateTableError, Response<SdkBody>>),
 
     #[error("Dynamo GetItemError: {0}")]
-    DynamoGetItemError(#[from] SdkError<GetItemError, Response<SdkBody>>),
+    DynamoGetItem(#[from] SdkError<GetItemError, Response<SdkBody>>),
 }
 
 pub type Result<T> = std::result::Result<T, Error>;

@@ -12,6 +12,13 @@ pub struct Tracking {
     env: String,
 }
 
+#[derive(Clone, Debug)]
+pub enum EditEvent {
+    Enabled,
+    Changed,
+    Disabled,
+}
+
 impl Tracking {
     pub const fn new(key: Option<String>, server: String, env: String) -> Self {
         Self { key, server, env }
@@ -22,6 +29,20 @@ impl Tracking {
 
         tokio::task::spawn_blocking(move || {
             if let Err(e) = tracking.logger("server-start", None) {
+                tracing::error!("posthog error: {e}");
+            }
+        });
+    }
+
+    pub fn track_event_password_set(&self, event: String, edit: EditEvent) {
+        let tracking = self.clone();
+
+        tokio::task::spawn_blocking(move || {
+            let mut data = HashMap::with_capacity(1);
+            data.insert("event".to_string(), event);
+            data.insert("edit".to_string(), format!("{edit:?}"));
+
+            if let Err(e) = tracking.logger("event-pwd", Some(data)) {
                 tracing::error!("posthog error: {e}");
             }
         });

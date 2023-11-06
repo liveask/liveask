@@ -276,11 +276,12 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
         .route("/logout", get(logout_handler));
 
     let event_routes = Router::new()
+        .route("/:id", get(handle::getevent_handler))
+        .route("/:id/pwd", post(handle::set_event_password))
         .route("/add", post(handle::addevent_handler))
         .route("/editlike/:id", post(handle::editlike_handler))
         .route("/addquestion/:id", post(handle::addquestion_handler))
-        .route("/question/:id/:question_id", get(handle::get_question))
-        .route("/:id", get(handle::getevent_handler));
+        .route("/question/:id/:question_id", get(handle::get_question));
 
     #[rustfmt::skip]
     let mod_routes = Router::new()
@@ -290,8 +291,10 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
         .route("/delete/:id/:secret", get(handle::mod_delete_event))
         .route("/question/:id/:secret/:question_id", get(handle::mod_get_question))
         .route("/questionmod/:id/:secret/:question_id", post(handle::mod_edit_question))
-        .route("/screening/:id/:secret", post(handle::mod_edit_screening))
-        .route("/state/:id/:secret", post(handle::mod_edit_state));
+        .route("/:id/:secret", post(handle::mod_edit_event))
+        //TODO: deprecate in favour of `mod_edit_event`
+        .route("/state/:id/:secret", post(handle::mod_edit_state))
+        .route("/screening/:id/:secret", post(handle::mod_edit_screening));
 
     #[rustfmt::skip]
     let router = Router::new()

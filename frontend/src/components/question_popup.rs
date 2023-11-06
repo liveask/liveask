@@ -6,7 +6,7 @@ use crate::{
     tracking, GlobalEvent,
 };
 use events::{event_context, EventBridge};
-use shared::{AddQuestionError, AddQuestionValidation};
+use shared::{AddQuestionError, AddQuestionValidation, ValidationState};
 use wasm_bindgen::UnwrapThrowExt;
 use web_sys::HtmlTextAreaElement;
 use yew::{prelude::*, virtual_dom::AttrValue};
@@ -157,17 +157,19 @@ impl Component for QuestionPopup {
 impl QuestionPopup {
     fn error_text(&self) -> Option<String> {
         match self.errors.content {
-            Some(AddQuestionError::MinLength(_, _)) => Some("Question too short.".to_string()),
-            Some(AddQuestionError::MaxLength(_, max)) => {
+            ValidationState::Invalid(AddQuestionError::MinLength(_, _)) => {
+                Some("Question too short.".to_string())
+            }
+            ValidationState::Invalid(AddQuestionError::MaxLength(_, max)) => {
                 Some(format!("Question too long. Max: {max})"))
             }
-            Some(AddQuestionError::MinWordCount(_, min)) => {
+            ValidationState::Invalid(AddQuestionError::MinWordCount(_, min)) => {
                 Some(format!("Minimum words required: {min}."))
             }
-            Some(AddQuestionError::WordLengthMax(max)) => {
+            ValidationState::Invalid(AddQuestionError::WordLengthMax(max)) => {
                 Some(format!("No word can be longer than: {max}."))
             }
-            None => None,
+            _ => None,
         }
     }
 }

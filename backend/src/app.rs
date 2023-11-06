@@ -1,8 +1,9 @@
 use async_trait::async_trait;
 use axum::extract::ws::{close_code::RESTART, CloseFrame, Message, WebSocket};
 use shared::{
-    AddEvent, EventInfo, EventState, EventTokens, EventUpgrade, GetEventResponse, ModQuestion,
-    PaymentCapture, QuestionItem, States,
+    AddEvent, EventInfo, EventResponseFlags, EventState, EventTokens, EventUpgrade,
+    GetEventResponse, ModEvent, ModInfo, ModQuestion, PasswordValidation, PaymentCapture,
+    QuestionItem, States,
 };
 use std::{
     collections::HashMap,
@@ -27,7 +28,7 @@ use crate::{
     mail::MailConfig,
     payment::Payment,
     pubsub::{PubSubPublish, PubSubReceiver},
-    tracking::Tracking,
+    tracking::{EditEvent, Tracking},
     utils::timestamp_now,
     viewers::Viewers,
 };
@@ -179,6 +180,7 @@ impl App {
             last_edit_unix: now,
             deleted: false,
             premium_order: None,
+            password: shared::EventPassword::Disabled,
             questions: Vec::new(),
             do_screening: false,
             state: EventState {
@@ -239,11 +241,31 @@ impl App {
     }
 
     #[instrument(skip(self))]
+    pub async fn check_event_password(&self, id: String, password: &str) -> Result<bool> {
+        tracing::info!("check_event_password");
+
+        let mut validation = PasswordValidation::default();
+        validation.check(password);
+        if validation.has_any() {
+            return Err(InternalError::PasswordValidation(validation));
+        }
+
+        let e = self.eventsdb.get(&id).await?.event;
+
+        if e.deleted {
+            return Err(InternalError::AccessingDeletedEvent(id));
+        }
+
+        Ok(e.password.matches(&Some(password.to_string())))
+    }
+
+    #[instrument(skip(self))]
     pub async fn get_event(
         &self,
         id: String,
         secret: Option<String>,
         admin: bool,
+        password: Option<String>,
     ) -> Result<GetEventResponse> {
         tracing::info!("get_event");
 
@@ -260,11 +282,18 @@ impl App {
             }
         }
 
+        let is_mod = secret.is_some();
+
         if e.deleted && !admin {
             return Ok(GetEventResponse::deleted(id));
         }
 
-        if secret.is_none() && !admin {
+        let mod_info = is_mod.then(|| ModInfo {
+            pwd: e.password.clone(),
+            private_token: e.tokens.moderator_token.clone().unwrap_or_default(),
+        });
+
+        if !is_mod && !admin {
             //TODO: can be NONE?
             e.tokens.moderator_token = Some(String::new());
 
@@ -275,9 +304,16 @@ impl App {
                 .collect::<Vec<_>>();
         }
 
-        if !admin {
-            e.adapt_if_timedout();
-        }
+        let time_out_masked = if admin { false } else { e.adapt_if_timedout() };
+
+        let password_matches = e.password.matches(&password);
+
+        let pwd_masked = if (e.password.is_enabled() && !password_matches) && !admin && !is_mod {
+            e.mask_data();
+            true
+        } else {
+            false
+        };
 
         let timed_out = e.is_timed_out_and_free();
         let viewers = if admin || e.premium_order.is_some() {
@@ -286,11 +322,23 @@ impl App {
             0
         };
 
+        let masked = time_out_masked || pwd_masked;
+
+        let mut flags = EventResponseFlags::empty();
+
+        flags.set(EventResponseFlags::TIMED_OUT, timed_out);
+        flags.set(EventResponseFlags::WRONG_PASSWORD, pwd_masked);
+
+        //TODO: fix deprecation
+        #[allow(deprecated)]
         Ok(GetEventResponse {
             info: e.into(),
             timed_out,
             admin,
             viewers,
+            flags,
+            masked,
+            mod_info,
         })
     }
 
@@ -388,11 +436,11 @@ impl App {
         Ok(e.into())
     }
 
-    pub async fn edit_event_state(
+    pub async fn mod_edit_event(
         &self,
         id: String,
         secret: String,
-        state: EventState,
+        changes: ModEvent,
     ) -> Result<EventInfo> {
         let mut entry = self.eventsdb.get(&id).await?.clone();
 
@@ -415,47 +463,19 @@ impl App {
             bail!("wrong mod token");
         }
 
-        e.state = state;
-
-        let result = e.clone();
-
-        entry.bump();
-
-        self.eventsdb.put(entry).await?;
-
-        self.notify_subscribers(&id, Notification::Event).await;
-
-        Ok(result.into())
-    }
-
-    pub async fn edit_event_screening(
-        &self,
-        id: String,
-        secret: String,
-        screening: bool,
-    ) -> Result<EventInfo> {
-        let mut entry = self.eventsdb.get(&id).await?.clone();
-
-        let e = &mut entry.event;
-
-        if e.deleted {
-            bail!("event not found");
+        if let Some(state) = changes.state {
+            e.state = state;
         }
-
-        if e.premium_order.is_none() {
-            bail!("event not premium");
+        if let Some(screening) = changes.screening {
+            e.do_screening = screening;
         }
-
-        if e.tokens
-            .moderator_token
-            .as_ref()
-            .map(|mod_token| mod_token != &secret)
-            .unwrap_or_default()
-        {
-            bail!("wrong mod token");
+        if let Some(password) = changes.password {
+            self.mod_edit_password(e, password);
         }
-
-        e.do_screening = screening;
+        if let Some(description) = changes.description {
+            //TODO: desc
+            tracing::warn!(desc=%description,"TBD");
+        }
 
         let result = e.clone();
 
@@ -854,6 +874,22 @@ impl App {
             }
         });
     }
+
+    fn mod_edit_password(&self, e: &mut ApiEventInfo, password: shared::EventPassword) {
+        let edit_type = match (e.password.is_enabled(), password.is_enabled()) {
+            (false, true) => Some(EditEvent::Enabled),
+            (true, false) => Some(EditEvent::Disabled),
+            (true, true) => Some(EditEvent::Changed),
+            _ => None,
+        };
+
+        if let Some(edit_type) = edit_type {
+            self.tracking
+                .track_event_password_set(e.tokens.public_token.clone(), edit_type);
+        }
+
+        e.password = password;
+    }
 }
 
 #[async_trait]
@@ -892,11 +928,12 @@ mod test {
         pubsub::{PubSubInMemory, PubSubReceiverInMemory},
         viewers::MockViewers,
     };
-    use pretty_assertions::assert_eq;
+    use pretty_assertions::{assert_eq, assert_ne};
     use shared::{AddQuestion, EventData, TEST_VALID_QUESTION};
     use std::sync::Arc;
 
     #[tokio::test]
+    #[tracing_test::traced_test]
     async fn test_event_create_fail_validation() {
         let app = App::new(
             Arc::new(InMemoryEventsDB::default()),
@@ -924,6 +961,7 @@ mod test {
     }
 
     #[tokio::test]
+    #[tracing_test::traced_test]
     async fn test_event_create() {
         let eventdb = Arc::new(InMemoryEventsDB::default());
         let app = App::new(
@@ -952,6 +990,7 @@ mod test {
     }
 
     #[tokio::test]
+    #[tracing_test::traced_test]
     async fn test_event_mod_question_notification() {
         let pubsubreceiver = Arc::new(PubSubReceiverInMemory::default());
         let pubsub = PubSubInMemory::default();
@@ -1014,9 +1053,8 @@ mod test {
     }
 
     #[tokio::test]
+    #[tracing_test::traced_test]
     async fn test_screening_question() {
-        // env_logger::init();
-
         let pubsubreceiver = Arc::new(PubSubReceiverInMemory::default());
         let pubsub = PubSubInMemory::default();
         pubsub.set_receiver(pubsubreceiver.clone()).await;
@@ -1066,7 +1104,7 @@ mod test {
         assert_eq!(q.screening, true);
 
         let e = app
-            .get_event(res.tokens.public_token.clone(), None, false)
+            .get_event(res.tokens.public_token.clone(), None, false, None)
             .await
             .unwrap();
 
@@ -1077,6 +1115,7 @@ mod test {
                 res.tokens.public_token.clone(),
                 Some(res.tokens.moderator_token.clone().unwrap()),
                 false,
+                None,
             )
             .await
             .unwrap();
@@ -1097,7 +1136,7 @@ mod test {
         .unwrap();
 
         let e = app
-            .get_event(res.tokens.public_token.clone(), None, false)
+            .get_event(res.tokens.public_token.clone(), None, false, None)
             .await
             .unwrap();
 
@@ -1105,9 +1144,8 @@ mod test {
     }
 
     #[tokio::test]
+    #[tracing_test::traced_test]
     async fn test_screening_question_disapprove() {
-        // env_logger::init();
-
         let pubsubreceiver = Arc::new(PubSubReceiverInMemory::default());
         let pubsub = PubSubInMemory::default();
         pubsub.set_receiver(pubsubreceiver.clone()).await;
@@ -1157,7 +1195,7 @@ mod test {
         assert_eq!(q.screening, true);
 
         let e = app
-            .get_event(res.tokens.public_token.clone(), None, false)
+            .get_event(res.tokens.public_token.clone(), None, false, None)
             .await
             .unwrap();
 
@@ -1181,9 +1219,8 @@ mod test {
     }
 
     #[tokio::test]
+    #[tracing_test::traced_test]
     async fn test_screening_enable() {
-        // env_logger::init();
-
         let pubsubreceiver = Arc::new(PubSubReceiverInMemory::default());
         let pubsub = PubSubInMemory::default();
         pubsub.set_receiver(pubsubreceiver.clone()).await;
@@ -1221,21 +1258,23 @@ mod test {
             .premium_order = Some(String::from("foo"));
 
         let e = app
-            .edit_event_screening(
+            .mod_edit_event(
                 res.tokens.public_token.clone(),
                 res.tokens.moderator_token.clone().unwrap(),
-                true,
+                ModEvent {
+                    screening: Some(true),
+                    ..Default::default()
+                },
             )
             .await
             .unwrap();
 
-        assert!(e.screening);
+        assert!(e.is_screening());
     }
 
     #[tokio::test]
+    #[tracing_test::traced_test]
     async fn test_duplicate_question_check() {
-        // env_logger::init();
-
         let pubsubreceiver = Arc::new(PubSubReceiverInMemory::default());
         let pubsub = PubSubInMemory::default();
         pubsub.set_receiver(pubsubreceiver.clone()).await;
@@ -1285,5 +1324,76 @@ mod test {
             request.unwrap_err(),
             InternalError::DuplicateQuestion
         ))
+    }
+
+    #[tokio::test]
+    #[tracing_test::traced_test]
+    async fn test_password_protection() {
+        let pubsubreceiver = Arc::new(PubSubReceiverInMemory::default());
+        let pubsub = PubSubInMemory::default();
+        pubsub.set_receiver(pubsubreceiver.clone()).await;
+        let events = Arc::new(InMemoryEventsDB::default());
+        let app = App::new(
+            events.clone(),
+            Arc::new(pubsub),
+            Arc::new(MockViewers::new()),
+            Arc::new(Payment::default()),
+            Tracking::default(),
+            String::new(),
+        );
+
+        let res = app
+            .create_event(AddEvent {
+                data: EventData {
+                    name: String::from("123456789"),
+                    description: String::from("123456789 123456789 123456789 !"),
+                    short_url: String::new(),
+                    long_url: None,
+                },
+                moderator_email: None,
+                test: false,
+            })
+            .await
+            .unwrap();
+
+        let event_id = res.tokens.public_token.clone();
+        let mod_token = res.tokens.moderator_token.clone().unwrap();
+
+        let question_text = "very long, sophisticated question you can ask!";
+        app.add_question(
+            event_id.clone(),
+            AddQuestion {
+                text: String::from(question_text),
+            },
+        )
+        .await
+        .unwrap();
+
+        app.mod_edit_event(
+            event_id.clone(),
+            mod_token.clone(),
+            ModEvent {
+                password: Some(shared::EventPassword::Enabled(String::from("pwd"))),
+                ..Default::default()
+            },
+        )
+        .await
+        .unwrap();
+
+        let e = app
+            .get_event(event_id.clone(), None, false, None)
+            .await
+            .unwrap();
+
+        assert_ne!(&e.info.questions[0].text, question_text);
+        assert!(e.flags.contains(EventResponseFlags::WRONG_PASSWORD));
+
+        let e = app
+            .get_event(event_id.clone(), None, false, Some(String::from("pwd")))
+            .await
+            .unwrap();
+
+        assert_eq!(&e.info.questions[0].text, question_text);
+        assert!(!e.flags.contains(EventResponseFlags::WRONG_PASSWORD));
     }
 }

@@ -14,8 +14,8 @@ use yewdux::prelude::*;
 
 use crate::{
     components::{
-        DeletePopup, EventSocket, Question, QuestionClickType, QuestionFlags, QuestionPopup,
-        SharePopup, SocketResponse, Upgrade,
+        DeletePopup, EventSocket, ModPassword, PasswordPopup, Question, QuestionClickType,
+        QuestionFlags, QuestionPopup, SharePopup, SocketResponse, Upgrade,
     },
     environment::{la_env, LiveAskEnv},
     fetch,
@@ -89,13 +89,14 @@ pub enum Msg {
     AskQuestionClick,
     Fetched(Option<GetEventResponse>),
     Captured,
-    SocketMsg(SocketResponse),
+    Socket(SocketResponse),
     QuestionClick((i64, QuestionClickType)),
     QuestionUpdated(i64),
     ModDelete,
     ModExport,
     ModStateChange(yew::Event),
     StateChanged,
+    PasswordSet,
     CopyLink,
     ModEditScreening,
     GlobalEvent(GlobalEvent),
@@ -107,6 +108,7 @@ impl Component for Event {
 
     fn create(ctx: &Context<Self>) -> Self {
         let event_id = ctx.props().id.to_string();
+
         request_fetch(event_id.clone(), ctx.props().secret.clone(), ctx.link());
 
         let socket_url = format!("{BASE_SOCKET}/push/{event_id}",);
@@ -178,7 +180,7 @@ impl Component for Event {
                     .map(|c| c.write_text(&self.moderator_url()));
                 true
             }
-            Msg::SocketMsg(msg) => self.handle_socket(msg, ctx),
+            Msg::Socket(msg) => self.handle_socket(msg, ctx),
             Msg::StateChanged => false, // nothing needs to happen here
             Msg::ModStateChange(ev) => {
                 let e: web_sys::HtmlSelectElement =
@@ -194,6 +196,7 @@ impl Component for Event {
 
                 false
             }
+
             Msg::ModEditScreening => {
                 request_screening_change(
                     self.current_event_id.clone(),
@@ -201,7 +204,7 @@ impl Component for Event {
                     self.state
                         .event
                         .as_ref()
-                        .map(|e| !e.info.screening)
+                        .map(|e| !e.info.is_screening())
                         .unwrap_or_default(),
                     ctx.link(),
                 );
@@ -235,6 +238,14 @@ impl Component for Event {
                 self.export_event();
                 false
             }
+            Msg::PasswordSet => {
+                request_fetch(
+                    self.current_event_id.clone(),
+                    ctx.props().secret.clone(),
+                    ctx.link(),
+                );
+                false
+            }
             Msg::GlobalEvent(ev) => self.handle_global_event(ev),
         }
     }
@@ -244,7 +255,7 @@ impl Component for Event {
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
-        let msg = ctx.link().callback(Msg::SocketMsg);
+        let msg = ctx.link().callback(Msg::Socket);
         html! {
             <div class="event">
                 <EventSocket reconnect={self.manual_reconnect} url={self.socket_url.clone()} {msg}/>
@@ -395,7 +406,7 @@ impl Event {
         self.state
             .event
             .as_ref()
-            .map(|e| e.info.premium)
+            .map(|e| e.info.is_premium())
             .unwrap_or_default()
     }
 
@@ -508,6 +519,7 @@ impl Event {
                     <div class={background}>
                     </div>
 
+                    <PasswordPopup event={e.info.tokens.public_token.clone()} show={e.is_wrong_pwd()} onconfirmed={ctx.link().callback(|()|Msg::PasswordSet)}/>
                     <QuestionPopup event={e.info.tokens.public_token.clone()} />
                     <SharePopup url={share_url} event_id={e.info.tokens.public_token.clone()}/>
 
@@ -515,7 +527,7 @@ impl Event {
                         <div class="event-name-label">{"The Event"}</div>
                         <div class="event-name">{&e.info.data.name.clone()}</div>
                         //TODO: collapsable event desc
-                        <div class="event-desc">
+                        <div class={classes!("event-desc",e.masked.then_some("blurr"))}>
                             {{&e.info.data.description.clone()}}
                         </div>
 
@@ -529,7 +541,7 @@ impl Event {
                         <div class="not-open" hidden={!e.info.state.is_vote_only()}>
                             {"This event is set to vote-only by the moderator. You cannot add new questions. You can still vote though."}
                         </div>
-                        <div class="not-open" hidden={!e.timed_out}>
+                        <div class="not-open" hidden={!e.is_timed_out()}>
                             {"This free event timed out. Only the moderator can upgrade it to be accessible again."}
                         </div>
                     </div>
@@ -540,7 +552,7 @@ impl Event {
 
                     {self.view_questions(ctx,e)}
 
-                    {self.view_cloud()}
+                    {self.view_cloud(e)}
 
                     {Self::view_ask_question(mod_view,ctx,e)}
                 </div>
@@ -548,22 +560,23 @@ impl Event {
         })
     }
 
-    fn view_cloud(&self) -> Html {
+    fn view_cloud(&self, e: &GetEventResponse) -> Html {
         let title_classes = self.question_separator_classes();
 
-        self.wordcloud.as_ref().map_or_else(
-            || html!(),
-            |cloud| {
-                html! {
+        if let Some(wc) = &self.wordcloud {
+            if !e.masked {
+                return html! {
                     <div>
                     <div class={title_classes}>
                         {"Word Cloud"}
                     </div>
-                    {cloud_as_yew_img(cloud)}
+                    {cloud_as_yew_img(wc)}
                     </div>
-                }
-            },
-        )
+                };
+            }
+        }
+
+        html!()
     }
 
     #[allow(clippy::if_not_else)]
@@ -628,11 +641,11 @@ impl Event {
         if !items.is_empty() {
             let title_classes = self.question_separator_classes();
 
-            let blurr = self
+            let masked = self
                 .state
                 .event
                 .as_ref()
-                .map(|e| e.timed_out && !e.admin)
+                .map(|e| e.masked)
                 .unwrap_or_default();
 
             return html! {
@@ -642,7 +655,7 @@ impl Event {
                     </div>
                     <div class="questions">
                         {
-                            for items.iter().enumerate().map(|(e,i)|self.view_item(ctx,can_vote,blurr,e,i))
+                            for items.iter().enumerate().map(|(e,i)|self.view_item(ctx,can_vote,masked,e,i))
                         }
                     </div>
                 </div>
@@ -687,55 +700,64 @@ impl Event {
         }
     }
 
+    //TODO: make mod component
     fn mod_view(&self, ctx: &Context<Self>, e: &GetEventResponse) -> Html {
-        let payment_allowed = !e.info.premium;
-        let pending_payment = self.query_params.paypal_token.is_some() && !e.info.premium;
+        if !matches!(self.mode, Mode::Moderator) {
+            return html! {};
+        }
 
-        if matches!(self.mode, Mode::Moderator) {
-            let timed_out = e.timed_out;
+        let payment_allowed = !e.info.is_premium();
+        let pending_payment = self.query_params.paypal_token.is_some() && payment_allowed;
 
-            html! {
+        let timed_out = e.is_timed_out();
+        let pwd = e
+            .mod_info
+            .as_ref()
+            .map(|info| info.pwd.clone())
+            .unwrap_or_default();
+
+        html! {
             <>
-            <div class="mod-panel" >
-                <DeletePopup tokens={e.info.tokens.clone()} />
+                <div class="mod-panel" >
+                    <DeletePopup tokens={e.info.tokens.clone()} />
+
+                    {
+                        if timed_out {html!{}}else {html!{
+                        <div class="state">
+                            <select onchange={ctx.link().callback(Msg::ModStateChange)} >
+                                <option value="0" selected={e.info.state.is_open()}>{"Event open"}</option>
+                                <option value="1" selected={e.info.state.is_vote_only()}>{"Event vote only"}</option>
+                                <option value="2" selected={e.info.state.is_closed()}>{"Event closed"}</option>
+                            </select>
+                        </div>
+                        }}
+                    }
+
+                    <button class="button-white" onclick={ctx.link().callback(|_|Msg::ModDelete)} >
+                        {"Delete Event"}
+                    </button>
+
+                    <ModPassword tokens={e.info.tokens.clone()} {pwd} />
+
+                    {
+                        if e.info.is_premium() {
+                            Self::mod_view_premium(ctx,e)
+                        } else { html!{} }
+                    }
+                </div>
 
                 {
-                    if timed_out {html!{}}else {html!{
-                    <div class="state">
-                        <select onchange={ctx.link().callback(Msg::ModStateChange)} >
-                            <option value="0" selected={e.info.state.is_open()}>{"Event open"}</option>
-                            <option value="1" selected={e.info.state.is_vote_only()}>{"Event vote only"}</option>
-                            <option value="2" selected={e.info.state.is_closed()}>{"Event closed"}</option>
-                        </select>
-                    </div>
-                    }}
+                    if payment_allowed {
+                        html!{
+                            <Upgrade pending={pending_payment} tokens={e.info.tokens.clone()} />
+                        }
+                    } else { html!{} }
                 }
-
-                <button class="button-white" onclick={ctx.link().callback(|_|Msg::ModDelete)} >
-                    {"Delete Event"}
-                </button>
 
                 {
-                    if self.is_premium() {
-                        Self::mod_view_premium(ctx,e)
-                    }else {html!{}}
+                    Self::mod_view_deadline(e)
                 }
-
-
-            </div>
-
-            {
-                if payment_allowed {html!{
-                    <Upgrade pending={pending_payment} tokens={e.info.tokens.clone()} />
-                }}else{html!{}}
-            }
-
-            {Self::mod_view_deadline(e)}
-
             </>
-            }
-        } else {
-            html! {}
         }
     }
 
@@ -746,7 +768,7 @@ impl Event {
                     {"This is a premium event"}
                 </div>
                 <div class="screening-option" onclick={ctx.link().callback(|_| Msg::ModEditScreening)}>
-                    <input type="checkbox" id="vehicle1" name="vehicle1" checked={e.info.screening} />
+                    <input type="checkbox" id="vehicle1" name="vehicle1" checked={e.info.is_screening()} />
                     {"Screening"}
                 </div>
                 <button class="button-white" onclick={ctx.link().callback(|_|Msg::ModExport)} >
@@ -793,7 +815,7 @@ impl Event {
     }
 
     fn mod_view_deadline(e: &GetEventResponse) -> Html {
-        if e.info.premium {
+        if e.info.is_premium() {
             html! {
                 <div class="deadline">
                 {"This is a premium event and will not time out!"}
@@ -895,7 +917,7 @@ impl Event {
             self.unanswered = unanswered.collect();
             self.hidden = hidden.collect();
 
-            if e.info.premium {
+            if e.info.is_premium() && !e.masked {
                 self.wordcloud_agent.send(WordCloudInput(
                     e.info
                         .questions
@@ -1083,7 +1105,7 @@ impl Event {
     fn handle_fetched(&mut self, res: Option<GetEventResponse>, ctx: &Context<Self>) -> bool {
         self.on_fetched(&res);
         if let Some(e) = res {
-            if !e.info.premium && self.query_params.paypal_token.is_some() {
+            if !e.info.is_premium() && self.query_params.paypal_token.is_some() {
                 request_capture(
                     e.info.tokens.public_token,
                     self.query_params

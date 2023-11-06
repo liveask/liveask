@@ -17,3 +17,6 @@ check:
 
 test-payment:
 	xh "${URL}/api/mod/event/upgrade/eventexample/eventexamplemod"
+
+header-test:
+	xh "${URL}/api/event/eventexample" my-header:foobar
