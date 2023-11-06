@@ -767,13 +767,15 @@ impl Event {
                 <div class="title">
                     {"This is a premium event"}
                 </div>
-                <div class="screening-option" onclick={ctx.link().callback(|_| Msg::ModEditScreening)}>
-                    <input type="checkbox" id="vehicle1" name="vehicle1" checked={e.info.is_screening()} />
-                    {"Screening"}
+                <div class="button-box">
+                    <div class="screening-option" onclick={ctx.link().callback(|_| Msg::ModEditScreening)}>
+                        <input type="checkbox" id="vehicle1" name="vehicle1" checked={e.info.is_screening()} />
+                        {"Screening"}
+                    </div>
+                    <button class="button-white" onclick={ctx.link().callback(|_|Msg::ModExport)} >
+                        {"Export"}
+                    </button>
                 </div>
-                <button class="button-white" onclick={ctx.link().callback(|_|Msg::ModExport)} >
-                    {"Export"}
-                </button>
             </div>
         }
     }

@@ -362,19 +362,44 @@
       color: white;
     }
 
-    .screening-option {
-      display: inline;
-      color: black;
-      border: 1px solid #e9e9e9;
-      border-radius: 4px;
-      box-shadow: 0px 2px 4px 0 rgba(0, 0, 0, 0.2);
-      background-color: white;
-      padding-left: 5px;
-      padding-right: 41px;
-      padding-top: 8px;
-      padding-bottom: 8px;
-      letter-spacing: 0.21875px;
-      font-size: 16px;
+    .button-box {
+      display: flex;
+      margin-top: 8px;
+      margin-bottom: 5px;
+
+      .screening-option {
+        display: inline-block;
+        margin: auto;
+
+        width: 158px;
+        height: 38px;
+
+        color: $pink-button;
+
+        border-radius: 64px;
+        border-width: 1px;
+        border-style: solid;
+        border-color: $button-border-color;
+
+        cursor: pointer;
+
+        box-shadow: 0px 2px 4px 0 rgba(0, 0, 0, 0.07);
+
+        background-color: white;
+
+        font-size: 14px;
+        letter-spacing: 0.22px;
+        line-height: 16px;
+        text-transform: uppercase;
+
+        input {
+            margin-top: 12px;
+        }
+      }
+
+      button {
+        margin: auto;
+      }
     }
   }
 }
