@@ -278,6 +278,7 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let event_routes = Router::new()
         .route("/:id", get(handle::getevent_handler))
         .route("/:id/pwd", post(handle::set_event_password))
+        .route("/:id/plots/questions", get(handle::get_plots_questions))
         .route("/add", post(handle::addevent_handler))
         .route("/editlike/:id", post(handle::editlike_handler))
         .route("/addquestion/:id", post(handle::addquestion_handler))
