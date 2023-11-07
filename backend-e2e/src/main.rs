@@ -97,7 +97,7 @@ async fn delete_event(id: String, secret: String) {
 async fn change_event_state(id: String, secret: String, state: u8) {
     let res = reqwest::Client::new()
         .post(format!(
-            "{}/api/mod/event/state/{}/{}",
+            "{}/api/mod/event/{}/{}",
             server_rest(),
             id,
             secret
