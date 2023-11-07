@@ -581,7 +581,7 @@ impl App {
 
         if entry.event.premium_order.is_some() {
             tracing::info!("event already premium");
-            return Ok(false);
+            return Ok(true);
         }
 
         if self.payment.capture_payment(order.clone()).await? {

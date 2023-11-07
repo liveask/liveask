@@ -157,7 +157,6 @@ pub async fn payment_webhook(
 
     if base.event_type == "CHECKOUT.ORDER.APPROVED" {
         let resource: PaymentCheckoutApprovedResource = serde_json::from_value(base.resource)?;
-
         app.payment_webhook(resource.id).await?;
     } else if base.event_type == "PAYMENT.CAPTURE.COMPLETED" {
         tracing::info!(base.id, "payment capture completed: {}", body);
