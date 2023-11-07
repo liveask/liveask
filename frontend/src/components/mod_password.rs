@@ -16,6 +16,7 @@ pub enum Msg {
     EditPassword,
     DisablePassword,
     InputChange(InputEvent),
+    KeyDown(KeyboardEvent),
     InputExit,
     Edited(bool),
 }
@@ -59,25 +60,19 @@ impl Component for ModPassword {
             }
             Msg::InputChange(e) => {
                 let target: HtmlInputElement = e.target_dyn_into().unwrap_throw();
+
                 self.state = State::PasswordEditing(target.value());
                 self.errors.check(&target.value());
                 true
             }
-            Msg::InputExit => {
-                let current = self.current_value().to_string();
-
-                if self.errors.has_any() {
-                    self.disable_password(ctx);
-                } else {
-                    let props = ctx.props();
-                    Self::request_edit(
-                        props.tokens.public_token.clone(),
-                        props.tokens.moderator_token.clone().unwrap_or_default(),
-                        ctx.link(),
-                        EventPassword::Enabled(current.clone()),
-                    );
-                    self.state = State::Confirmed(current);
+            Msg::KeyDown(e) => {
+                if e.key() == "Enter" {
+                    self.set_pwd(ctx);
                 }
+                true
+            }
+            Msg::InputExit => {
+                self.set_pwd(ctx);
 
                 true
             }
@@ -135,6 +130,7 @@ impl ModPassword {
                     maxlength="30"
                     {value}
                     oninput={ctx.link().callback(Msg::InputChange)}
+                    onkeydown={ctx.link().callback(Msg::KeyDown)}
                     onblur={ctx.link().callback(|_|Msg::InputExit)} />
                 <img id="edit" src="/assets/pwd/pwd-edit.svg"/>
             </>
@@ -196,6 +192,23 @@ impl ModPassword {
         match pwd {
             EventPassword::Disabled => State::Disabled,
             EventPassword::Enabled(pwd) => State::Confirmed(pwd.clone()),
+        }
+    }
+
+    fn set_pwd(&mut self, ctx: &Context<ModPassword>) {
+        let current = self.current_value().to_string();
+
+        if self.errors.has_any() {
+            self.disable_password(ctx);
+        } else {
+            let props = ctx.props();
+            Self::request_edit(
+                props.tokens.public_token.clone(),
+                props.tokens.moderator_token.clone().unwrap_or_default(),
+                ctx.link(),
+                EventPassword::Enabled(current.clone()),
+            );
+            self.state = State::Confirmed(current);
         }
     }
 }

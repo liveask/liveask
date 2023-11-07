@@ -8,6 +8,7 @@ pub enum Msg {
     Send,
     PasswordSetResponse(bool),
     InputChanged(InputEvent),
+    KeyDown(KeyboardEvent),
 }
 
 pub struct PasswordPopup {
@@ -15,6 +16,7 @@ pub struct PasswordPopup {
     text: String,
     try_again: bool,
     errors: PasswordValidation,
+    input: NodeRef,
 }
 
 #[derive(Clone, Debug, PartialEq, Properties)]
@@ -37,26 +39,14 @@ impl Component for PasswordPopup {
             try_again: false,
             text: String::new(),
             errors: PasswordValidation::default(),
+            input: NodeRef::default(),
         }
     }
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
             Msg::Send => {
-                let event_id: String = ctx.props().event.to_string();
-                let text = self.text.clone();
-
-                ctx.link().send_future(async move {
-                    fetch::event_set_password(BASE_API, event_id.clone(), text)
-                        .await
-                        .map_or_else(
-                            |_| Msg::PasswordSetResponse(false),
-                            Msg::PasswordSetResponse,
-                        )
-                });
-
-                self.text.clear();
-
+                self.send_pwd(ctx);
                 false
             }
             Msg::PasswordSetResponse(ok) => {
@@ -74,6 +64,12 @@ impl Component for PasswordPopup {
                 self.errors.check(&self.text);
                 true
             }
+            Msg::KeyDown(e) => {
+                if e.key() == "Enter" {
+                    self.send_pwd(ctx);
+                }
+                true
+            }
         }
     }
 
@@ -86,21 +82,33 @@ impl Component for PasswordPopup {
         changed
     }
 
+    fn rendered(&mut self, _ctx: &Context<Self>, first_render: bool) {
+        if first_render {
+            self.input
+                .cast::<HtmlInputElement>()
+                .unwrap_throw()
+                .focus()
+                .unwrap_throw();
+        }
+    }
+
     #[allow(clippy::if_not_else)]
     fn view(&self, ctx: &Context<Self>) -> Html {
         if self.show {
-            let on_click_ask = ctx.link().callback(|_| Msg::Send);
+            let on_click_send = ctx.link().callback(|_| Msg::Send);
 
             html! {
             <Popup class="share-popup">
                 <div class="pwd-popup">
                     <div class="">
                         <input class="passwordtext"
+                            ref={self.input.clone()}
                             maxlength="30"
                             value={self.text.clone()}
-                            placeholder="password"
+                            placeholder="Enter password"
                             required=true
                             oninput={ctx.link().callback(Msg::InputChanged)}
+                            onkeydown={ctx.link().callback(Msg::KeyDown)}
                             />
 
                         <div class="more-info">
@@ -108,7 +116,7 @@ impl Component for PasswordPopup {
                         </div>
                     </div>
                     <button class="dlg-button"
-                        onclick={on_click_ask}
+                        onclick={on_click_send}
                         disabled={self.errors.has_any()}>
                         {"Ok"}
                     </button>
@@ -142,5 +150,21 @@ impl PasswordPopup {
         } else {
             html! {}
         }
+    }
+
+    fn send_pwd(&mut self, ctx: &Context<PasswordPopup>) {
+        let event_id: String = ctx.props().event.to_string();
+        let text = self.text.clone();
+
+        ctx.link().send_future(async move {
+            fetch::event_set_password(BASE_API, event_id.clone(), text)
+                .await
+                .map_or_else(
+                    |_| Msg::PasswordSetResponse(false),
+                    Msg::PasswordSetResponse,
+                )
+        });
+
+        self.text.clear();
     }
 }
