@@ -7,8 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## [2.5.0] - 2023-11-07
+
 ### Added
 * event password support ([PR #50](https://github.com/liveask/liveask/pull/50))
+
+### Changed
 * make dropbown/checkbox match round button design
 
 ## [2.4.3] - 2023-10-21
