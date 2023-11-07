@@ -73,7 +73,6 @@ impl Component for ModPassword {
             }
             Msg::InputExit => {
                 self.set_pwd(ctx);
-
                 true
             }
             Msg::Edited(_) => true,
@@ -195,7 +194,7 @@ impl ModPassword {
         }
     }
 
-    fn set_pwd(&mut self, ctx: &Context<ModPassword>) {
+    fn set_pwd(&mut self, ctx: &Context<Self>) {
         let current = self.current_value().to_string();
 
         if self.errors.has_any() {

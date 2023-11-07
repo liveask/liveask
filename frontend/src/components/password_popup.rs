@@ -152,7 +152,7 @@ impl PasswordPopup {
         }
     }
 
-    fn send_pwd(&mut self, ctx: &Context<PasswordPopup>) {
+    fn send_pwd(&mut self, ctx: &Context<Self>) {
         let event_id: String = ctx.props().event.to_string();
         let text = self.text.clone();
 
