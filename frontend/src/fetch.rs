@@ -3,8 +3,8 @@
 use gloo_utils::format::JsValueSerdeExt;
 use shared::{
     AddEvent, AddQuestion, EditLike, EventData, EventInfo, EventPasswordRequest,
-    EventPasswordResponse, EventState, EventUpgrade, GetEventResponse, GetUserInfo, ModEvent,
-    ModQuestion, PaymentCapture, QuestionItem, States, UserLogin,
+    EventPasswordResponse, EventUpgrade, GetEventResponse, GetUserInfo, ModEvent, ModQuestion,
+    PaymentCapture, QuestionItem, UserLogin,
 };
 use std::{
     error::Error,
@@ -86,26 +86,6 @@ pub async fn fetch_event(
     Ok(res)
 }
 
-pub async fn mod_state_change(
-    base_api: &str,
-    id: String,
-    secret: String,
-    state: States,
-) -> Result<EventInfo, FetchError> {
-    let res = mod_edit_event(
-        base_api,
-        id,
-        secret,
-        ModEvent {
-            state: Some(EventState { state }),
-            ..Default::default()
-        },
-    )
-    .await?;
-
-    Ok(res)
-}
-
 pub async fn mod_edit_event(
     base_api: &str,
     id: String,
@@ -160,26 +140,6 @@ pub async fn event_set_password(
     let res = JsValueSerdeExt::into_serde::<EventPasswordResponse>(&json)?;
 
     Ok(res.ok)
-}
-
-pub async fn mod_edit_screening(
-    base_api: &str,
-    id: String,
-    secret: String,
-    screening: bool,
-) -> Result<EventInfo, FetchError> {
-    let res = mod_edit_event(
-        base_api,
-        id,
-        secret,
-        ModEvent {
-            screening: Some(screening),
-            ..Default::default()
-        },
-    )
-    .await?;
-
-    Ok(res)
 }
 
 pub async fn mod_upgrade(

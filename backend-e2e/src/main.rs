@@ -237,12 +237,11 @@ mod test {
         assert_eq!(q_after.likes, q_before.likes + 1);
     }
 
-    #[allow(deprecated)]
     #[tokio::test]
     #[tracing_test::traced_test]
     async fn test_delete_event() {
         let e = add_event(TEST_EVENT_NAME.to_string()).await;
-        assert!(!e.deleted);
+        assert!(!e.is_deleted());
 
         delete_event(
             e.tokens.public_token.clone(),
@@ -252,7 +251,7 @@ mod test {
 
         let e = get_event(e.tokens.public_token.clone(), e.tokens.moderator_token).await;
 
-        assert!(e.unwrap().info.deleted);
+        assert!(e.unwrap().info.is_deleted());
     }
 
     #[tokio::test]
