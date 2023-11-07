@@ -86,10 +86,10 @@ impl Component for ModPassword {
 
     fn rendered(&mut self, _ctx: &Context<Self>, _first_render: bool) {
         if let State::PasswordEditing(_) = self.state {
-            self.input
+            let _ = self
+                .input
                 .cast::<HtmlInputElement>()
-                .unwrap_throw()
-                .focus()
+                .map(|input| input.focus())
                 .unwrap_throw();
         }
     }

@@ -84,11 +84,9 @@ impl Component for PasswordPopup {
 
     fn rendered(&mut self, _ctx: &Context<Self>, first_render: bool) {
         if first_render {
-            self.input
-                .cast::<HtmlInputElement>()
-                .unwrap_throw()
-                .focus()
-                .unwrap_throw();
+            if let Some(input) = self.input.cast::<HtmlInputElement>() {
+                input.focus().unwrap_throw();
+            }
         }
     }
 
