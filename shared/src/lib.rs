@@ -68,32 +68,18 @@ pub struct EventInfo {
     pub create_time_unix: i64,
     #[serde(rename = "deleteTimeUnix")]
     pub delete_time_unix: i64,
-    //TODO: remove once everyone uses `flags`
-    #[deprecated]
-    pub deleted: bool,
     #[serde(rename = "lastEditUnix")]
     pub last_edit_unix: i64,
     pub questions: Vec<QuestionItem>,
     pub state: EventState,
-    //TODO: remove once everyone uses `flags`
-    #[serde(default)]
-    #[deprecated]
-    pub premium: bool,
-    //TODO: remove once everyone uses `flags`
-    #[serde(default)]
-    #[deprecated]
-    pub screening: bool,
     #[serde(default)]
     pub flags: EventFlags,
 }
 
 impl EventInfo {
     #[must_use]
-    //TODO:
-    #[allow(deprecated)]
     pub fn deleted(id: String) -> Self {
         Self {
-            deleted: true,
             tokens: EventTokens {
                 public_token: id,
                 ..Default::default()
@@ -131,10 +117,6 @@ pub struct ModInfo {
 pub struct GetEventResponse {
     //TODO: remove mod token from inside here
     pub info: EventInfo,
-    //TODO: remove and use `flags`
-    #[serde(default)]
-    #[deprecated]
-    pub timed_out: bool,
     pub viewers: i64,
     //TODO: not needed if client becomes aware of its user role via header
     #[serde(default)]
@@ -235,18 +217,6 @@ impl FromStr for States {
             _ => Err(()),
         }
     }
-}
-
-//TOOD: migrate to `ModEvent`
-#[derive(Serialize, Deserialize, Debug, Copy, Clone, Eq, PartialEq)]
-pub struct ModEventState {
-    pub state: EventState,
-}
-
-//TOOD: migrate to `ModEvent`
-#[derive(Serialize, Deserialize, Debug, Copy, Clone, Eq, PartialEq)]
-pub struct ModEditScreening {
-    pub screening: bool,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq)]

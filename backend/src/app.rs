@@ -329,11 +329,8 @@ impl App {
         flags.set(EventResponseFlags::TIMED_OUT, timed_out);
         flags.set(EventResponseFlags::WRONG_PASSWORD, pwd_masked);
 
-        //TODO: fix deprecation
-        #[allow(deprecated)]
         Ok(GetEventResponse {
             info: e.into(),
-            timed_out,
             admin,
             viewers,
             flags,

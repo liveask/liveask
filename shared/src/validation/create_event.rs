@@ -52,7 +52,8 @@ impl CreateEventValidation {
         }
     }
 
-    fn check_desc(v: &str) -> Option<CreateEventError> {
+    #[must_use]
+    pub fn check_desc(v: &str) -> Option<CreateEventError> {
         let trimmed_len = v.trim().len();
 
         if trimmed_len == 0 {

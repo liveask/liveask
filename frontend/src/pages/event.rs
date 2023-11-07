@@ -2,7 +2,7 @@ use chrono::{DateTime, Duration, NaiveDateTime, Utc};
 use const_format::formatcp;
 use events::{event_context, EventBridge};
 use serde::Deserialize;
-use shared::{EventInfo, GetEventResponse, ModQuestion, QuestionItem, States};
+use shared::{EventInfo, GetEventResponse, ModEvent, ModQuestion, QuestionItem, States};
 use std::{rc::Rc, str::FromStr};
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 use web_sys::HtmlAnchorElement;
@@ -187,10 +187,13 @@ impl Component for Event {
                     ev.target().unwrap_throw().dyn_into().unwrap_throw();
                 let new_state = States::from_str(e.value().as_str()).unwrap_throw();
 
-                request_state_change(
+                request_event_change(
                     self.current_event_id.clone(),
                     ctx.props().secret.clone(),
-                    new_state,
+                    ModEvent {
+                        state: Some(shared::EventState { state: new_state }),
+                        ..Default::default()
+                    },
                     ctx.link(),
                 );
 
@@ -198,14 +201,19 @@ impl Component for Event {
             }
 
             Msg::ModEditScreening => {
-                request_screening_change(
+                request_event_change(
                     self.current_event_id.clone(),
                     ctx.props().secret.clone(),
-                    self.state
-                        .event
-                        .as_ref()
-                        .map(|e| !e.info.is_screening())
-                        .unwrap_or_default(),
+                    ModEvent {
+                        screening: Some(
+                            self.state
+                                .event
+                                .as_ref()
+                                .map(|e| !e.info.is_screening())
+                                .unwrap_or_default(),
+                        ),
+                        ..Default::default()
+                    },
                     ctx.link(),
                 );
 
@@ -359,32 +367,15 @@ fn request_capture(id: String, order_id: String, link: &html::Scope<Event>) {
     });
 }
 
-fn request_state_change(
+fn request_event_change(
     id: String,
     secret: Option<String>,
-    state: States,
+    change: ModEvent,
     link: &html::Scope<Event>,
 ) {
     link.send_future(async move {
-        if let Err(e) = fetch::mod_state_change(BASE_API, id, secret.unwrap_throw(), state).await {
-            log::error!("mod_state_change error: {e}");
-        }
-
-        Msg::StateChanged
-    });
-}
-
-fn request_screening_change(
-    id: String,
-    secret: Option<String>,
-    screening: bool,
-    link: &html::Scope<Event>,
-) {
-    link.send_future(async move {
-        if let Err(e) =
-            fetch::mod_edit_screening(BASE_API, id, secret.unwrap_throw(), screening).await
-        {
-            log::error!("mod_edit_screening error: {e}");
+        if let Err(e) = fetch::mod_edit_event(BASE_API, id, secret.unwrap_throw(), change).await {
+            log::error!("mod_edit_event error: {e}");
         }
 
         Msg::StateChanged

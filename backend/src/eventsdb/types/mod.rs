@@ -90,19 +90,14 @@ impl From<ApiEventInfo> for EventInfo {
         flags.set(EventFlags::SCREENING, val.do_screening);
         flags.set(EventFlags::PASSWORD, val.password.is_enabled());
 
-        //TODO:
-        #[allow(deprecated)]
         Self {
             tokens: val.tokens,
             data: val.data,
             create_time_unix: val.create_time_unix,
             delete_time_unix: val.delete_time_unix,
-            deleted: val.deleted,
             last_edit_unix: val.last_edit_unix,
             questions: val.questions,
             state: val.state,
-            screening: val.do_screening,
-            premium: val.premium_order.is_some(),
             flags,
         }
     }

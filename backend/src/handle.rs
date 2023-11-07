@@ -211,27 +211,6 @@ pub async fn mod_edit_question(
 }
 
 #[instrument(skip(app))]
-pub async fn mod_edit_state(
-    Path((id, secret)): Path<(String, String)>,
-    State(app): State<SharedApp>,
-    Json(payload): Json<shared::ModEventState>,
-) -> std::result::Result<impl IntoResponse, InternalError> {
-    tracing::info!("mod_edit_state");
-
-    Ok(Json(
-        app.mod_edit_event(
-            id,
-            secret,
-            shared::ModEvent {
-                state: Some(payload.state),
-                ..Default::default()
-            },
-        )
-        .await?,
-    ))
-}
-
-#[instrument(skip(app))]
 pub async fn mod_edit_event(
     Path((id, secret)): Path<(String, String)>,
     State(app): State<SharedApp>,
@@ -240,27 +219,6 @@ pub async fn mod_edit_event(
     tracing::info!("mod_edit_state");
 
     Ok(Json(app.mod_edit_event(id, secret, payload).await?))
-}
-
-#[instrument(skip(app))]
-pub async fn mod_edit_screening(
-    Path((id, secret)): Path<(String, String)>,
-    State(app): State<SharedApp>,
-    Json(payload): Json<shared::ModEditScreening>,
-) -> std::result::Result<impl IntoResponse, InternalError> {
-    tracing::info!("mod_edit_screening");
-
-    Ok(Json(
-        app.mod_edit_event(
-            id,
-            secret,
-            shared::ModEvent {
-                screening: Some(payload.screening),
-                ..Default::default()
-            },
-        )
-        .await?,
-    ))
 }
 
 #[instrument]
