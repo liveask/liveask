@@ -5,7 +5,7 @@ use reqwest::StatusCode;
 use shared::{AddQuestionValidation, PasswordValidation};
 use thiserror::Error;
 
-use crate::{eventsdb, payment::PaymentError};
+use crate::{eventsdb, payment::PaymentError, plots::PlottingError};
 
 #[derive(Error, Debug)]
 pub enum InternalError {
@@ -50,6 +50,9 @@ pub enum InternalError {
 
     #[error("Uri Error: {0}")]
     Uri(#[from] axum::http::uri::InvalidUri),
+
+    #[error("Plotting Error: {0}")]
+    PlottingError(#[from] PlottingError),
 }
 
 impl IntoResponse for InternalError {
@@ -57,6 +60,11 @@ impl IntoResponse for InternalError {
     fn into_response(self) -> Response {
         match self {
             Self::General(e) => {
+                tracing::error!("{e}");
+                (StatusCode::INTERNAL_SERVER_ERROR, "").into_response()
+            }
+
+            Self::PlottingError(e) => {
                 tracing::error!("{e}");
                 (StatusCode::INTERNAL_SERVER_ERROR, "").into_response()
             }

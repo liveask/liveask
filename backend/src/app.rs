@@ -27,6 +27,7 @@ use crate::{
     eventsdb::{ApiEventInfo, EventEntry, EventsDB},
     mail::MailConfig,
     payment::Payment,
+    plots,
     pubsub::{PubSubPublish, PubSubReceiver},
     tracking::{EditEvent, Tracking},
     utils::timestamp_now,
@@ -155,6 +156,40 @@ impl App {
 
         tracing::info!("no tiny url token");
         url.to_owned()
+    }
+
+    #[instrument(skip(self))]
+    pub async fn plot_questions(&self, id: String) -> Result<String> {
+        let entry = self.eventsdb.get(&id).await?;
+
+        let e = &entry.event;
+
+        if e.deleted {
+            return Err(InternalError::AccessingDeletedEvent(id));
+        }
+
+        if e.is_timed_out_and_free() {
+            return Err(InternalError::TimedOutFreeEvent(id));
+        }
+
+        let data = e
+            .questions
+            .iter()
+            .map(|q| {
+                let create_time = chrono::DateTime::<chrono::Utc>::from_naive_utc_and_offset(
+                    chrono::NaiveDateTime::from_timestamp_opt(q.create_time_unix, 0)
+                        .unwrap_or_default(),
+                    chrono::Utc,
+                );
+                (create_time, q.likes)
+            })
+            .collect::<Vec<_>>();
+
+        let mut output = String::with_capacity(100);
+
+        plots::plot_questions(&mut output, data.as_slice())?;
+
+        Ok(output)
     }
 
     #[instrument(skip(self, request))]
