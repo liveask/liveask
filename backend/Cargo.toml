@@ -17,7 +17,7 @@ axum-login = "0.6"
 axum-sessions = "0.5"
 chrono = { version = "0.4", default-features = false }
 futures-util = "0.3"
-handlebars = "4.3"
+handlebars = "4.4"
 paypal-rust = "0.0.9-alpha"
 plotters = "0.3"
 posthog-rs = { git = "https://github.com/rivet-gg/posthog-rs.git", rev = "fa4d39a" }
