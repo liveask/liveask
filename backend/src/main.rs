@@ -9,6 +9,7 @@ mod eventsdb;
 mod handle;
 mod mail;
 mod payment;
+mod plots;
 mod pubsub;
 mod redis_pool;
 mod ses;
