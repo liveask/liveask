@@ -64,6 +64,6 @@ wasm-bindgen-test = "0.3.0"
 
 [build-dependencies]
 anyhow = "1"
-handlebars = "4.3"
+handlebars = "4.4"
 konst = "0.3"
 vergen = { version = "8", features = ["git", "gitcl", "build"] }
