@@ -19,7 +19,7 @@ mod utils;
 mod viewers;
 
 use async_redis_session::RedisSessionStore;
-use aws_config::meta::region::RegionProviderChain;
+use aws_config::BehaviorVersion;
 use aws_sdk_dynamodb::config::Credentials;
 use axum::{
     http::header,
@@ -114,8 +114,7 @@ fn posthog_key() -> String {
 }
 
 async fn aws_ses_client() -> Result<aws_sdk_ses::Client> {
-    let region_provider = RegionProviderChain::default_provider();
-    let config = aws_config::from_env().region(region_provider);
+    let config = aws_config::defaults(BehaviorVersion::v2023_11_09());
 
     let config = config.load().await;
 
@@ -125,8 +124,7 @@ async fn aws_ses_client() -> Result<aws_sdk_ses::Client> {
 async fn dynamo_client() -> Result<aws_sdk_dynamodb::Client> {
     use aws_sdk_dynamodb::Client;
 
-    let region_provider = RegionProviderChain::default_provider();
-    let config = aws_config::from_env().region(region_provider);
+    let config = aws_config::defaults(BehaviorVersion::v2023_11_09());
 
     let config = if use_local_db() {
         let url = std::env::var(env::ENV_DB_URL)

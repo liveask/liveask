@@ -14,8 +14,8 @@ pub async fn send_message(
         .set_to_addresses(Some(to.into()))
         .build();
 
-    let subject_content = Content::builder().data(subject).charset("UTF-8").build();
-    let body_content = Content::builder().data(message).charset("UTF-8").build();
+    let subject_content = Content::builder().data(subject).charset("UTF-8").build()?;
+    let body_content = Content::builder().data(message).charset("UTF-8").build()?;
     let body = Body::builder().html(body_content).build();
 
     let msg = Message::builder()

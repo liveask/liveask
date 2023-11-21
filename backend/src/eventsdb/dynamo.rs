@@ -7,8 +7,6 @@ use aws_sdk_dynamodb::{
         ScalarAttributeType,
     },
 };
-use aws_smithy_http::body::SdkBody;
-use axum::http::Response;
 use tracing::instrument;
 
 use crate::eventsdb::event_key;
@@ -92,7 +90,7 @@ impl EventsDB for DynamoEventsDB {
 
         //Note: filter out conditional error
         if let Err(e) = request.send().await {
-            if matches!(&e,SdkError::<PutItemError, Response<SdkBody>>::ServiceError (err)
+            if matches!(&e,SdkError::<PutItemError>::ServiceError (err)
             if matches!(
                 err.err(),PutItemError::ConditionalCheckFailedException(_)
 
@@ -111,7 +109,7 @@ impl DynamoEventsDB {
     pub async fn new(db: aws_sdk_dynamodb::Client, check_table_exists: bool) -> Result<Self> {
         if check_table_exists {
             let resp = db.list_tables().send().await?;
-            let names = resp.table_names().unwrap_or_default();
+            let names = resp.table_names();
 
             tracing::trace!("tables: {}", names.join(","));
 
@@ -137,17 +135,17 @@ async fn create_table(
     let ad = AttributeDefinition::builder()
         .attribute_name(&key_name)
         .attribute_type(ScalarAttributeType::S)
-        .build();
+        .build()?;
 
     let ks = KeySchemaElement::builder()
         .attribute_name(&key_name)
         .key_type(KeyType::Hash)
-        .build();
+        .build()?;
 
     let pt = ProvisionedThroughput::builder()
         .read_capacity_units(5)
         .write_capacity_units(5)
-        .build();
+        .build()?;
 
     client
         .create_table()
