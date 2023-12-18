@@ -13,6 +13,10 @@ public_url = "/"
 filehash = true
 # Whether to inject scripts (and module preloads) into the finalized output.
 inject_scripts = true
+# Allow disabling minification
+no_minification = true
+# Allow disabling sub-resource integrity (SRI)
+no_sri = false
 
 [watch]
 # Paths to watch. The `build.target`'s parent folder is watched by default.
@@ -38,8 +42,8 @@ cargo = false
 
 [tools]
 # Default dart-sass version to download.
-sass = "1.68.0"
+sass = "1.69.1"
 # Default wasm-bindgen version to download.
-wasm_bindgen = "0.2.87"
+wasm_bindgen = "0.2.89"
 # Default wasm-opt version to download.
-wasm_opt = "version_110"
+wasm_opt = "version_116"
