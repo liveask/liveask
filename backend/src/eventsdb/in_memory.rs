@@ -1,3 +1,5 @@
+#![allow(clippy::blocks_in_conditions)]
+
 use super::{
     error::{Error, Result},
     event_key, EventEntry, EventsDB,
