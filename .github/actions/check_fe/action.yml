@@ -43,3 +43,9 @@ runs:
       run: |
         cd frontend
         cargo make test
+
+    - name: Build Release
+      shell: bash
+      run: |
+        cd frontend
+        cargo make build-and-check
