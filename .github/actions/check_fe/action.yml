@@ -47,5 +47,4 @@ runs:
     - name: Build Release
       shell: bash
       run: |
-        cd frontend
-        cargo make build-and-check
+        cd frontend && cargo make build-and-check
