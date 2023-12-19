@@ -14,7 +14,7 @@ filehash = true
 # Whether to inject scripts (and module preloads) into the finalized output.
 inject_scripts = true
 # Allow disabling minification
-no_minification = true
+no_minification = false
 # Allow disabling sub-resource integrity (SRI)
 no_sri = false
 
