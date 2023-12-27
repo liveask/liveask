@@ -249,6 +249,10 @@ impl Home {
                     {"Privacy Policy"}
                 </div>
 
+                <a class="status" href="https://liveask.instatus.com" target="_blank">
+                    {"Status"}
+                </a>
+
                 <a class="version" href="https://github.com/liveask/liveask/blob/main/CHANGELOG.md" target="_blank">
                     { format!("v{VERSION_STR}-{git_sha} {branch} {api_version}") }
                 </a>
