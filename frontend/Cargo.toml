@@ -13,6 +13,7 @@ const_format = "0.2"
 csv = "1.2"
 easy-cast = "0.5"
 events = { path = "events" }
+getrandom = { version = "0.2", features = ["js"] }
 gloo-storage = "0.2"
 gloo-timers = "0.2"
 gloo-utils = "0.1"

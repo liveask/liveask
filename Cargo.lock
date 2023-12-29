@@ -1862,6 +1862,7 @@ dependencies = [
  "csv",
  "easy-cast",
  "events",
+ "getrandom 0.2.11",
  "gloo-storage",
  "gloo-timers",
  "gloo-utils",
