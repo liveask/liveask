@@ -425,7 +425,7 @@ impl Event {
 
         anchor.set_href(&format!(
             "data:text/csv;charset=utf-8,{}",
-            js_sys::encode_uri_component(&csv)
+            web_sys::js_sys::encode_uri_component(&csv)
         ));
         anchor.set_target("_blank");
         anchor.set_download(&format!("live-ask:{name}.csv"));
