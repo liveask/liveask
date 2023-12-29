@@ -1,3 +1,5 @@
+#![allow(renamed_and_removed_lints, clippy::blocks_in_if_conditions)]
+
 use super::{
     error::{Error, Result},
     event_key, EventEntry, EventsDB,

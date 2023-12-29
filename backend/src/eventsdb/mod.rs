@@ -5,6 +5,7 @@ mod types;
 
 pub use dynamo::DynamoEventsDB;
 pub use error::{Error, Result};
+#[cfg(test)]
 pub use in_memory::InMemoryEventsDB;
 
 use async_trait::async_trait;
