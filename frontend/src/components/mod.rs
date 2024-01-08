@@ -1,4 +1,5 @@
 mod delete_popup;
+mod footer;
 mod iconbar;
 mod mod_password;
 mod password_popup;
@@ -14,6 +15,7 @@ mod textarea;
 mod upgrade;
 
 pub use delete_popup::DeletePopup;
+pub use footer::Footer;
 pub use iconbar::IconBar;
 pub use mod_password::ModPassword;
 pub use password_popup::PasswordPopup;
