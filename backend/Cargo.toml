@@ -3,6 +3,11 @@ name = "liveask-server"
 version = "0.1.0"
 edition = "2021"
 build = "build.rs"
+rust-version = "1.74"
+
+[lints]
+workspace = true
+
 # ############################
 
 [dependencies]

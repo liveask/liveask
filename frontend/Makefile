@@ -10,6 +10,9 @@ serve:
 serve-release:
 	cargo make serve-release --disable-check-for-updates
 
+clippy:
+	cargo make clippy
+
 check:
 	cargo make checks
 	cargo make clippy-nightly
