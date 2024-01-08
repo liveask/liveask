@@ -14,7 +14,7 @@ use yewdux::prelude::*;
 
 use crate::{
     components::{
-        DeletePopup, EventSocket, ModPassword, PasswordPopup, Question, QuestionClickType,
+        DeletePopup, EventSocket, Footer, ModPassword, PasswordPopup, Question, QuestionClickType,
         QuestionFlags, QuestionPopup, SharePopup, SocketResponse, Upgrade,
     },
     environment::{la_env, LiveAskEnv},
@@ -265,10 +265,13 @@ impl Component for Event {
     fn view(&self, ctx: &Context<Self>) -> Html {
         let msg = ctx.link().callback(Msg::Socket);
         html! {
+            <>
             <div class="event">
                 <EventSocket reconnect={self.manual_reconnect} url={self.socket_url.clone()} {msg}/>
                 {self.view_internal(ctx)}
             </div>
+            <Footer></Footer>
+            </>
         }
     }
 }

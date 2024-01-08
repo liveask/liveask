@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 * add service status page & link
 
+### Changed
+* show footer on event page
+
 ## [2.5.0] - 2023-11-07
 
 ### Added

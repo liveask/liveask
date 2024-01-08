@@ -39,21 +39,6 @@
 
     padding-top: 57px;
   }
-
-  .social {
-    top: 2px;
-    width: 32px;
-    margin-top: 20px;
-    margin-left: 10px;
-    margin-right: 10px;
-    display: inline-block;
-    position: relative;
-    filter: invert(1);
-  }
-
-  #admin {
-    filter: invert(1);
-  }
 }
 
 .feature-dark h1 {
@@ -84,43 +69,4 @@
 #img-crossplatform {
   width: 479px;
   margin-left: 20px;
-}
-
-.copyright {
-  color: #B0B0B0;
-  font-size: 10px;
-  letter-spacing: 0.16px;
-  line-height: 11px;
-  margin-top: 31px;
-}
-
-.about {
-  color: #B0B0B0;
-  font-size: 14px;
-  letter-spacing: 0.16px;
-  line-height: 11px;
-  margin-top: 20px;
-  margin-bottom: 10px;
-  text-decoration: none;
-  display: block;
-}
-
-.status {
-  color: #B0B0B0;
-  font-size: 14px;
-  letter-spacing: 0.16px;
-  margin-top: 10px;
-  margin-bottom: 10px;
-  text-decoration: none;
-  display: block;
-}
-
-.version {
-  color: #B0B0B0;
-  font-size: 10px;
-  letter-spacing: 0.16px;
-  line-height: 11px;
-  margin-top: 20px;
-  text-decoration: none;
-  display: block;
 }

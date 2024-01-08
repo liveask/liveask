@@ -107,6 +107,15 @@ impl Component for Home {
                     </p>
                 </div>
 
+                <div class="feature-dark">
+                    <h1>
+                        {"Try it now for free!"}
+                    </h1>
+                    <button class="button-red" onclick={ctx.link().callback(|_| Msg::CreateEvent)}>
+                        {"Create your Event"}
+                    </button>
+                </div>
+
                 <Footer></Footer>
             </div>
         }

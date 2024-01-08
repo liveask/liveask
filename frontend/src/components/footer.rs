@@ -8,7 +8,6 @@ pub struct Footer {
     api_version: Option<String>,
 }
 pub enum Msg {
-    CreateEvent,
     Privacy,
     Admin,
     VersionReceived(Option<String>),
@@ -25,10 +24,6 @@ impl Component for Footer {
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
-            Msg::CreateEvent => {
-                ctx.link().navigator().unwrap_throw().push(&Route::NewEvent);
-                false
-            }
             Msg::Privacy => {
                 ctx.link().navigator().unwrap_throw().push(&Route::Privacy);
                 false
@@ -45,7 +40,56 @@ impl Component for Footer {
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
-        self.view_footer(ctx)
+        let branch = if GIT_BRANCH == "main" {
+            String::new()
+        } else {
+            format!("({GIT_BRANCH})",)
+        };
+
+        let git_sha = env!("VERGEN_GIT_SHA");
+
+        let api_version = self
+            .api_version
+            .as_ref()
+            .filter(|version| version != &git_sha)
+            .map_or_else(String::new, |api_version| format!("[api:{api_version}]"));
+
+        html! {
+            <div id="footer">
+
+                <a class="usingrust" href="https://github.com/liveask/liveask" target="_blank">
+                    {"🦀 Written entirely in rust for your safety and security 🦀"}
+                </a>
+
+                <div class="copyright">
+                    {"© 2024 Live-Ask. All right reserved."}
+                </div>
+
+                {Self::view_social()}
+
+                <a class="about" href="https://github.com/liveask/liveask" target="_blank">
+                    {"About"}
+                </a>
+
+                <div class="link about" onclick={ctx.link().callback(|_| Msg::Privacy)}>
+                    {"Privacy Policy"}
+                </div>
+
+                <a class="status" href="https://liveask.instatus.com" target="_blank">
+                    {"Status"}
+                </a>
+
+                <a class="version" href="https://github.com/liveask/liveask/blob/main/CHANGELOG.md" target="_blank">
+                    { format!("v{VERSION_STR}-{git_sha} {branch} {api_version}") }
+                </a>
+
+                <div id="admin">
+                    <div class="inner" onclick={ctx.link().callback(|_| Msg::Admin)}>
+                        <img alt="admin-button" src="/assets/admin.svg" />
+                    </div>
+                </div>
+            </div>
+        }
     }
 }
 
@@ -104,80 +148,25 @@ impl Footer {
         };
 
         html! {
-            <>
-            <a href="https://github.com/liveask/liveask" target="_blank">
-                {github_svg}
-            </a>
-            <a href="https://twitter.com/liveaskapp" target="_blank">
-                {twitter_svg}
-            </a>
-            <a href="https://www.instagram.com/liveaskapp/" target="_blank">
-                {insta_svg}
-            </a>
-            <a href="https://mastodon.social/@liveask" target="_blank">
-                {mastodon_svg}
-            </a>
-            <a href="https://www.linkedin.com/company/live-ask" target="_blank">
-                {linkedin_svg}
-            </a>
-            <a href="https://www.producthunt.com/products/live-ask" target="_blank">
-                {producthunt_svg}
-            </a>
-            </>
-        }
-    }
-
-    fn view_footer(&self, ctx: &Context<Self>) -> Html {
-        let branch = if GIT_BRANCH == "main" {
-            String::new()
-        } else {
-            format!("({GIT_BRANCH})",)
-        };
-
-        let git_sha = env!("VERGEN_GIT_SHA");
-
-        let api_version = self
-            .api_version
-            .as_ref()
-            .filter(|version| version != &git_sha)
-            .map_or_else(String::new, |api_version| format!("[api:{api_version}]"));
-
-        html! {
-            <div class="feature-dark">
-                <h1>
-                    {"Try it now for free!"}
-                </h1>
-                <button class="button-red" onclick={ctx.link().callback(|_| Msg::CreateEvent)}>
-                    {"Create your Event"}
-                </button>
-
-                <div class="copyright">
-                    {"© 2023 Live-Ask. All right reserved"}
-                </div>
-
-                {Self::view_social()}
-
-                <a class="about" href="https://github.com/liveask/liveask" target="_blank">
-                    {"About"}
+            <div id="socials">
+                <a href="https://github.com/liveask/liveask" target="_blank">
+                    {github_svg}
                 </a>
-
-                <div class="link about" onclick={ctx.link().callback(|_| Msg::Privacy)}>
-                    {"Privacy Policy"}
-                </div>
-
-                <a class="status" href="https://liveask.instatus.com" target="_blank">
-                    {"Status"}
+                <a href="https://twitter.com/liveaskapp" target="_blank">
+                    {twitter_svg}
                 </a>
-
-                <a class="version" href="https://github.com/liveask/liveask/blob/main/CHANGELOG.md" target="_blank">
-                    { format!("v{VERSION_STR}-{git_sha} {branch} {api_version}") }
+                <a href="https://www.instagram.com/liveaskapp/" target="_blank">
+                    {insta_svg}
                 </a>
-
-                <div id="admin">
-                    <div class="inner" onclick={ctx.link().callback(|_| Msg::Admin)}>
-                        <img alt="admin-button" src="/assets/admin.svg" />
-                    </div>
-                </div>
+                <a href="https://mastodon.social/@liveask" target="_blank">
+                    {mastodon_svg}
+                </a>
+                <a href="https://www.linkedin.com/company/live-ask" target="_blank">
+                    {linkedin_svg}
+                </a>
+                <a href="https://www.producthunt.com/products/live-ask" target="_blank">
+                    {producthunt_svg}
+                </a>
             </div>
         }
     }
