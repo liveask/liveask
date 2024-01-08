@@ -1,12 +1,12 @@
 [workspace]
 members = [
-    "shared",
-    "frontend",
-    "frontend/worker",
-    "frontend/events",
-    "backend-e2e",
-    "backend",
     "async-redis-session",
+    "backend",
+    "backend-e2e",
+    "frontend",
+    "frontend/events",
+    "frontend/worker",
+    "shared",
 ]
 resolver = "2"
 
