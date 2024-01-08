@@ -266,11 +266,11 @@ impl Component for Event {
         let msg = ctx.link().callback(Msg::Socket);
         html! {
             <>
-            <div class="event">
-                <EventSocket reconnect={self.manual_reconnect} url={self.socket_url.clone()} {msg}/>
-                {self.view_internal(ctx)}
-            </div>
-            <Footer></Footer>
+                <div class="event">
+                    <EventSocket reconnect={self.manual_reconnect} url={self.socket_url.clone()} {msg}/>
+                    {self.view_internal(ctx)}
+                </div>
+                <Footer></Footer>
             </>
         }
     }
@@ -520,6 +520,12 @@ impl Event {
                     <div class="event-block">
                         <div class="event-name-label">{"The Event"}</div>
                         <div class="event-name">{&e.info.data.name.clone()}</div>
+                        <div class="context">
+                            <img src="assets/context.svg" />
+                            <div class="label">
+                                {"Meetup-Page"}
+                            </div>
+                        </div>
                         //TODO: collapsable event desc
                         <div class={classes!("event-desc",e.masked.then_some("blurr"))}>
                             {{&e.info.data.description.clone()}}

@@ -393,7 +393,7 @@
         text-transform: uppercase;
 
         input {
-            margin-top: 12px;
+          margin-top: 12px;
         }
       }
 
@@ -441,5 +441,22 @@
   img {
     width: 100%;
     max-width: 700px;
+  }
+}
+
+.context {
+  display: flex;
+  margin-left: 52px;
+  margin-top: 2px;
+
+  img {
+    width: 18px;
+    margin-right: 2px;
+  }
+
+  .label {
+    color: $pink-button;
+    font-size: 12px;
+    margin-top: 1px;
   }
 }
