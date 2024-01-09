@@ -24,7 +24,7 @@ impl Component for EventContext {
             html! {
                 <div class="context">
                     {
-                        for items.iter().map(|i|self.view_item(i))
+                        for items.iter().map(Self::view_item)
                     }
                 </div>
             }
@@ -33,7 +33,7 @@ impl Component for EventContext {
 }
 
 impl EventContext {
-    fn view_item(&self, item: &ContextItem) -> Html {
+    fn view_item(item: &ContextItem) -> Html {
         html! {
             <a href={item.url.clone()} target="_blank" >
                 <img src="assets/context.svg" />
