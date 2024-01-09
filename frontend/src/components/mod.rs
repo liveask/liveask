@@ -1,4 +1,5 @@
 mod delete_popup;
+mod event_context;
 mod footer;
 mod iconbar;
 mod mod_password;
@@ -15,6 +16,7 @@ mod textarea;
 mod upgrade;
 
 pub use delete_popup::DeletePopup;
+pub use event_context::EventContext;
 pub use footer::Footer;
 pub use iconbar::IconBar;
 pub use mod_password::ModPassword;

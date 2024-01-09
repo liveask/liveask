@@ -1,7 +1,9 @@
 use super::{ApiEventInfo, AttributeMap};
 use crate::eventsdb::Error;
 use aws_sdk_dynamodb::types::AttributeValue;
-use shared::{EventData, EventPassword, EventState, EventTokens, QuestionItem, States};
+use shared::{
+    ContextItem, EventData, EventPassword, EventState, EventTokens, QuestionItem, States,
+};
 
 const ATTR_EVENT_INFO_LAST_EDIT: &str = "last_edit";
 const ATTR_EVENT_INFO_DELETE_TIME: &str = "delete_time";
@@ -14,6 +16,7 @@ const ATTR_EVENT_INFO_ITEMS: &str = "items";
 const ATTR_EVENT_INFO_DATA: &str = "data";
 const ATTR_EVENT_INFO_PREMIUM: &str = "premium";
 const ATTR_EVENT_INFO_PASSWORD: &str = "password";
+const ATTR_EVENT_INFO_CONTEXT: &str = "ctx";
 
 pub fn event_to_attributes(value: ApiEventInfo) -> AttributeMap {
     let mut map: AttributeMap = vec![
@@ -68,10 +71,24 @@ pub fn event_to_attributes(value: ApiEventInfo) -> AttributeMap {
         map.insert(ATTR_EVENT_INFO_PASSWORD.into(), AttributeValue::S(password));
     }
 
+    map.insert(
+        ATTR_EVENT_INFO_CONTEXT.into(),
+        AttributeValue::L(contexts_to_attributes(value.context)),
+    );
+
     map
 }
 
 pub fn attributes_to_event(value: &AttributeMap) -> Result<ApiEventInfo, super::Error> {
+    let context = attributes_to_contexts(
+        value
+            .get(ATTR_EVENT_INFO_CONTEXT)
+            .cloned()
+            .unwrap_or_else(|| AttributeValue::L(Vec::new()))
+            .as_l()
+            .map_err(|_| Error::MalformedObject(ATTR_EVENT_INFO_CONTEXT.into()))?,
+    )?;
+
     let tokens = attributes_to_tokens(
         value[ATTR_EVENT_INFO_TOKENS]
             .as_m()
@@ -147,6 +164,7 @@ pub fn attributes_to_event(value: &AttributeMap) -> Result<ApiEventInfo, super::
         state,
         password,
         premium_order,
+        context,
     })
 }
 
@@ -185,6 +203,52 @@ fn attributes_to_tokens(value: &AttributeMap) -> Result<EventTokens, super::Erro
         public_token,
         moderator_token,
     })
+}
+
+fn contexts_to_attributes(value: Vec<ContextItem>) -> Vec<AttributeValue> {
+    value
+        .into_iter()
+        .map(|i| AttributeValue::M(context_item_to_attributes(i)))
+        .collect()
+}
+
+fn context_item_to_attributes(value: ContextItem) -> AttributeMap {
+    let mut map = AttributeMap::new();
+
+    map.insert("label".into(), AttributeValue::S(value.label));
+    map.insert("url".into(), AttributeValue::S(value.url));
+
+    map
+}
+
+fn attributes_to_contexts(value: &Vec<AttributeValue>) -> Result<Vec<ContextItem>, super::Error> {
+    let mut result = Vec::with_capacity(value.len());
+
+    for e in value {
+        let f = e
+            .as_m()
+            .as_ref()
+            .map(|e| attributes_to_context_itemn(e))
+            .map_err(|_| Error::MalformedObject(ATTR_EVENT_INFO_CONTEXT.into()))??;
+
+        result.push(f);
+    }
+
+    Ok(result)
+}
+
+fn attributes_to_context_itemn(value: &AttributeMap) -> Result<ContextItem, super::Error> {
+    let label = value["label"]
+        .as_s()
+        .map_err(|_| Error::MalformedObject("label".into()))?
+        .clone();
+
+    let url = value["url"]
+        .as_s()
+        .map_err(|_| Error::MalformedObject("url".into()))?
+        .clone();
+
+    Ok(ContextItem { label, url })
 }
 
 const ATTR_EVENT_DATA_NAME: &str = "name";

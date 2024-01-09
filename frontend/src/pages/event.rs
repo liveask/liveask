@@ -14,8 +14,8 @@ use yewdux::prelude::*;
 
 use crate::{
     components::{
-        DeletePopup, EventSocket, Footer, ModPassword, PasswordPopup, Question, QuestionClickType,
-        QuestionFlags, QuestionPopup, SharePopup, SocketResponse, Upgrade,
+        DeletePopup, EventContext, EventSocket, Footer, ModPassword, PasswordPopup, Question,
+        QuestionClickType, QuestionFlags, QuestionPopup, SharePopup, SocketResponse, Upgrade,
     },
     environment::{la_env, LiveAskEnv},
     fetch,
@@ -520,12 +520,7 @@ impl Event {
                     <div class="event-block">
                         <div class="event-name-label">{"The Event"}</div>
                         <div class="event-name">{&e.info.data.name.clone()}</div>
-                        <div class="context">
-                            <img src="assets/context.svg" />
-                            <div class="label">
-                                {"Meetup-Page"}
-                            </div>
-                        </div>
+                        <EventContext context={e.info.context.clone()}></EventContext>
                         //TODO: collapsable event desc
                         <div class={classes!("event-desc",e.masked.then_some("blurr"))}>
                             {{&e.info.data.description.clone()}}

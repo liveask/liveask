@@ -448,15 +448,23 @@
   display: flex;
   margin-left: 52px;
   margin-top: 2px;
+  margin-bottom: 2px;
 
-  img {
-    width: 18px;
-    margin-right: 2px;
-  }
+  a {
+    display: flex;
+    margin-right: 10px;
+    padding-top: 2px;
+    padding-bottom: 2px;
 
-  .label {
-    color: $pink-button;
-    font-size: 12px;
-    margin-top: 1px;
+    img {
+      width: 15px;
+      margin-right: 2px;
+    }
+
+    .label {
+      color: $pink-button;
+      font-size: 10px;
+      margin-top: 1px;
+    }
   }
 }

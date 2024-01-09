@@ -56,6 +56,12 @@ pub struct EventUpgrade {
 }
 
 #[derive(Serialize, Deserialize, Default, Debug, Clone, Eq, PartialEq)]
+pub struct ContextItem {
+    pub label: String,
+    pub url: String,
+}
+
+#[derive(Serialize, Deserialize, Default, Debug, Clone, Eq, PartialEq)]
 pub struct PaymentCapture {
     pub order_captured: bool,
 }
@@ -74,6 +80,8 @@ pub struct EventInfo {
     pub state: EventState,
     #[serde(default)]
     pub flags: EventFlags,
+    #[serde(default)]
+    pub context: Vec<ContextItem>,
 }
 
 impl EventInfo {
