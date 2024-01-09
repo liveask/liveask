@@ -48,6 +48,8 @@ pub struct QuestionItem {
     pub screening: bool,
     #[serde(rename = "createTimeUnix")]
     pub create_time_unix: i64,
+    #[serde(default)]
+    pub tag: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Default, Debug, Clone, Eq, PartialEq)]

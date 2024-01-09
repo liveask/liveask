@@ -279,6 +279,10 @@ impl Component for Question {
                         {self.get_age()}
                     </div>
 
+                    <div class="tag">
+                        {"#talk 1"}
+                    </div>
+
                     {
                         if screened {
                             if liked {
