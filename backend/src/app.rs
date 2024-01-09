@@ -226,6 +226,7 @@ impl App {
                 public_token: public_token.clone(),
                 moderator_token: Some(mod_token.clone()),
             },
+            context: Vec::new(),
         };
 
         let url = format!("{}/event/{}", self.base_url, e.tokens.public_token);

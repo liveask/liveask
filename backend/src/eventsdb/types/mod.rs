@@ -5,7 +5,8 @@ use aws_sdk_dynamodb::types::AttributeValue;
 use chrono::{DateTime, Duration, TimeZone, Utc};
 use serde::{Deserialize, Serialize};
 use shared::{
-    EventData, EventFlags, EventInfo, EventPassword, EventState, EventTokens, QuestionItem,
+    ContextItem, EventData, EventFlags, EventInfo, EventPassword, EventState, EventTokens,
+    QuestionItem,
 };
 use std::collections::HashMap;
 
@@ -31,6 +32,8 @@ pub struct ApiEventInfo {
     #[serde(default)]
     pub password: EventPassword,
     pub premium_order: Option<String>,
+    #[serde(default)]
+    pub context: Vec<ContextItem>,
 }
 
 const LOREM_IPSUM:&str = "Lorem ipsum dolor sit amet. Et adipisci repellendus id dolore molestiae sed quidem ratione! Aut itaque magnam eos corporis dolores ut repudiandae consequuntur et maiores accusantium. 33 quas illum vel cumque quisquam et possimus quaerat et nostrum galisum et similique dolorum quo earum earum et accusantium dignissimos!";
@@ -99,6 +102,7 @@ impl From<ApiEventInfo> for EventInfo {
             questions: val.questions,
             state: val.state,
             flags,
+            context: val.context,
         }
     }
 }
@@ -220,6 +224,7 @@ mod test_serialization {
                 state: EventState {
                     state: States::Closed,
                 },
+                context: Vec::new(),
             },
             version: 2,
             ttl: None,
@@ -262,11 +267,14 @@ mod test_serialization {
                     screening: true,
                     create_time_unix: 3,
                 }],
-
                 do_screening: false,
                 state: EventState {
                     state: States::Closed,
                 },
+                context: vec![ContextItem {
+                    label: String::new(),
+                    url: String::from("foobar"),
+                }],
             },
             version: 2,
             ttl: Some(12345),
