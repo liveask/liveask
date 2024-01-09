@@ -3,8 +3,12 @@
 
   .usingrust {
     display: block;
-    color: #B0B0B0;
     margin-bottom: 20px;
+
+    svg {
+      max-width: 400px;
+      fill: #B0B0B0;
+    }
   }
 
   .social {
@@ -44,6 +48,7 @@
     color: #B0B0B0;
     font-size: 14px;
     letter-spacing: 0.16px;
+    line-height: 11px;
     margin-top: 10px;
     margin-bottom: 10px;
     text-decoration: none;

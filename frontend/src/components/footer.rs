@@ -58,7 +58,9 @@ impl Component for Footer {
             <div id="footer">
 
                 <a class="usingrust" href="https://github.com/liveask/liveask" target="_blank">
-                    {"🦀 Written entirely in rust for your safety and security 🦀"}
+                    <svg viewBox="0 0 400 18">
+                        <text x="0" y="15">{"🦀 Written entirely in rust for your safety and security 🦀"}</text>
+                    </svg>
                 </a>
 
                 <div class="copyright">
