@@ -392,6 +392,8 @@ fn attributes_to_question(value: &AttributeMap) -> Result<QuestionItem, super::E
         answered,
         screening,
         create_time_unix,
+        //TODO:
+        tag: None,
     })
 }
 

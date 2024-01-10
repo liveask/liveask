@@ -38,6 +38,9 @@ pub struct EventData {
 }
 
 #[derive(Serialize, Deserialize, Default, Debug, Clone, Eq, PartialEq)]
+pub struct TagIndex(u8);
+
+#[derive(Serialize, Deserialize, Default, Debug, Clone, Eq, PartialEq)]
 pub struct QuestionItem {
     pub id: i64,
     pub likes: i32,
@@ -49,7 +52,7 @@ pub struct QuestionItem {
     #[serde(rename = "createTimeUnix")]
     pub create_time_unix: i64,
     #[serde(default)]
-    pub tag: Option<String>,
+    pub tag: Option<TagIndex>,
 }
 
 #[derive(Serialize, Deserialize, Default, Debug, Clone, Eq, PartialEq)]

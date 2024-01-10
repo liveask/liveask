@@ -219,6 +219,7 @@ mod test_serialization {
                     answered: true,
                     screening: false,
                     create_time_unix: 3,
+                    tag: None,
                 }],
                 do_screening: true,
                 state: EventState {
@@ -266,6 +267,8 @@ mod test_serialization {
                     answered: true,
                     screening: true,
                     create_time_unix: 3,
+                    //TODO:
+                    tag: None,
                 }],
                 do_screening: false,
                 state: EventState {

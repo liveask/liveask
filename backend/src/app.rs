@@ -688,6 +688,7 @@ impl App {
             screening: e.do_screening,
             id: question_id,
             likes: 1,
+            tag: None,
         };
 
         e.questions.push(question.clone());
