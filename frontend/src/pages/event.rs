@@ -509,7 +509,7 @@ impl Event {
             let admin = e.admin;
 
             html! {
-                <div>
+                <div class="some-event">
                     <div class={background}>
                     </div>
 
