@@ -5,8 +5,8 @@ use aws_sdk_dynamodb::types::AttributeValue;
 use chrono::{DateTime, Duration, TimeZone, Utc};
 use serde::{Deserialize, Serialize};
 use shared::{
-    ContextItem, EventData, EventFlags, EventInfo, EventPassword, EventState, EventTokens,
-    QuestionItem,
+    ContextItem, EventData, EventFlags, EventInfo, EventPassword, EventState, EventTags,
+    EventTokens, QuestionItem, Tag, TagId,
 };
 use std::collections::HashMap;
 
@@ -99,10 +99,25 @@ impl From<ApiEventInfo> for EventInfo {
             create_time_unix: val.create_time_unix,
             delete_time_unix: val.delete_time_unix,
             last_edit_unix: val.last_edit_unix,
-            questions: val.questions,
+            questions: val
+                .questions
+                .iter()
+                .map(|q| {
+                    let mut q = q.clone();
+                    q.tag = Some(TagId(0));
+                    q
+                })
+                .collect::<Vec<_>>(),
             state: val.state,
             flags,
             context: val.context,
+            tags: EventTags {
+                tags: vec![Tag {
+                    name: String::from("talk1"),
+                    id: TagId(0),
+                }],
+                current_tag: Some(TagId(0)),
+            },
         }
     }
 }

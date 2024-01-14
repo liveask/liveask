@@ -61,8 +61,6 @@
     }
 
     .tag {
-      background-color: #D4D4D4;
-      color: white;
       margin-left: 8px;
       margin-top: 10px;
       float: left;
@@ -71,6 +69,8 @@
       line-height: 11px;
       border-radius: 10px;
       padding: 3px;
+      background-color: #D4D4D4;
+      color: white;
     }
 
     &.highlighted {

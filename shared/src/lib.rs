@@ -37,8 +37,8 @@ pub struct EventData {
     pub long_url: Option<String>,
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, Eq, PartialEq)]
-pub struct TagIndex(u8);
+#[derive(Serialize, Deserialize, Default, Debug, Copy, Clone, Eq, PartialEq, Hash)]
+pub struct TagId(pub u8);
 
 #[derive(Serialize, Deserialize, Default, Debug, Clone, Eq, PartialEq)]
 pub struct QuestionItem {
@@ -52,7 +52,7 @@ pub struct QuestionItem {
     #[serde(rename = "createTimeUnix")]
     pub create_time_unix: i64,
     #[serde(default)]
-    pub tag: Option<TagIndex>,
+    pub tag: Option<TagId>,
 }
 
 #[derive(Serialize, Deserialize, Default, Debug, Clone, Eq, PartialEq)]
@@ -72,6 +72,27 @@ pub struct PaymentCapture {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, Default)]
+pub struct Tag {
+    pub name: String,
+    pub id: TagId,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, Default)]
+pub struct EventTags {
+    pub tags: Vec<Tag>,
+    pub current_tag: Option<TagId>,
+}
+impl EventTags {
+    pub fn get_current_tag_label(&self) -> Option<String> {
+        self.current_tag
+            .as_ref()
+            .map(|current| self.tags.iter().find(|tag| tag.id == *current))
+            .flatten()
+            .map(|tag| tag.name.clone())
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, Default)]
 pub struct EventInfo {
     pub tokens: EventTokens,
     pub data: EventData,
@@ -87,6 +108,8 @@ pub struct EventInfo {
     pub flags: EventFlags,
     #[serde(default)]
     pub context: Vec<ContextItem>,
+    #[serde(default)]
+    pub tags: EventTags,
 }
 
 impl EventInfo {
