@@ -691,8 +691,7 @@ impl Event {
         let tag = item
             .tag
             .as_ref()
-            .map(|tag| self.tags.get(&tag))
-            .flatten()
+            .and_then(|tag| self.tags.get(tag))
             .cloned();
 
         html! {
@@ -907,7 +906,7 @@ impl Event {
         use split_iter::Splittable;
 
         self.unanswered.clear();
-        self.tags = Default::default();
+        self.tags = Rc::default();
 
         if let Some(e) = &self.state.event {
             let mut questions = e.info.questions.clone();

@@ -83,11 +83,11 @@ pub struct EventTags {
     pub current_tag: Option<TagId>,
 }
 impl EventTags {
+    #[must_use]
     pub fn get_current_tag_label(&self) -> Option<String> {
         self.current_tag
             .as_ref()
-            .map(|current| self.tags.iter().find(|tag| tag.id == *current))
-            .flatten()
+            .and_then(|current| self.tags.iter().find(|tag| tag.id == *current))
             .map(|tag| tag.name.clone())
     }
 }

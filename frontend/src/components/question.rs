@@ -271,15 +271,16 @@ impl Component for Question {
             self.data.item.screening.then_some("unscreened-question"),
         );
 
-        let tag = if let Some(tag) = &ctx.props().tag {
-            html! {
-                <div class="tag">
-                    {tag.clone()}
-                </div>
-            }
-        } else {
-            html! {}
-        };
+        let tag = ctx.props().tag.as_ref().map_or_else(
+            || html! {},
+            |tag| {
+                html! {
+                    <div class="tag">
+                        {tag.clone()}
+                    </div>
+                }
+            },
+        );
 
         html! {
             <div class={main_classes} ref={self.node_ref.clone()} >

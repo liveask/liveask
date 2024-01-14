@@ -107,6 +107,15 @@ impl Component for QuestionPopup {
             let on_close = ctx.link().callback(|()| Msg::Close);
             let on_click_ask = ctx.link().callback(|_| Msg::Send);
 
+            let tag = ctx.props().tag.as_ref().map_or_else(
+                || html! {},
+                |tag| {
+                    html! {
+                        <div class="tag">{"current tag:"}<div class="name">{tag.clone()}</div></div>
+                    }
+                },
+            );
+
             html! {
             <Popup class="share-popup" {on_close}>
                 <div class="newquestion">
@@ -139,13 +148,7 @@ impl Component for QuestionPopup {
                             }
                         }
                     </div>
-                    {
-                        if let Some(tag) = &ctx.props().tag {
-                            html!{
-                                <div class="tag">{"current tag:"}<div class="name">{tag.clone()}</div></div>
-                            }
-                        }else{html!{}}
-                    }
+                    {tag}
                 </div>
                 <button class="dlg-button"
                     onclick={on_click_ask}

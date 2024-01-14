@@ -18,13 +18,13 @@
   }
 
   .social {
+    display: inline-block;
+    position: relative;
+    fill: #B0B0B0;
     top: 2px;
     width: 25px;
     margin-left: 10px;
     margin-right: 10px;
-    display: inline-block;
-    position: relative;
-    filter: invert(1);
   }
 
   #admin {
