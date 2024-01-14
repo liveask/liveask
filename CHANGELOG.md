@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 * add service status page & link
 * admin-only: allow setting event context link (eg. to point to meetup page)
+* premium: moderator can tag questions (*use case: multiple parts/talks/topics in an event - the moderator can change the tag during the event and new questions will be tagged with the currently active tag*)
 
 ### Changed
 * show footer on event page
