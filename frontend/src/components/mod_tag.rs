@@ -142,11 +142,11 @@ impl ModTag {
         }
     }
 
-    fn view_confirmed(value: &String, ctx: &Context<Self>) -> Html {
+    fn view_confirmed(value: &str, ctx: &Context<Self>) -> Html {
         html! {
             <>
                 <div class="confirmed" onclick={ctx.link().callback(|_|Msg::EditPassword)}>
-                    {value.clone()}
+                    {value.to_string()}
                 </div>
                 <img id="delete" src="/assets/pwd/pwd-remove.svg" onmousedown={ctx.link().callback(|_|Msg::DisablePassword)} />
             </>
