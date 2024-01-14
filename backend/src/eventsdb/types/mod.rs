@@ -6,7 +6,7 @@ use chrono::{DateTime, Duration, TimeZone, Utc};
 use serde::{Deserialize, Serialize};
 use shared::{
     ContextItem, EventData, EventFlags, EventInfo, EventPassword, EventState, EventTags,
-    EventTokens, QuestionItem, TagId,
+    EventTokens, QuestionItem,
 };
 use std::collections::HashMap;
 
@@ -101,15 +101,7 @@ impl From<ApiEventInfo> for EventInfo {
             create_time_unix: val.create_time_unix,
             delete_time_unix: val.delete_time_unix,
             last_edit_unix: val.last_edit_unix,
-            questions: val
-                .questions
-                .iter()
-                .map(|q| {
-                    let mut q = q.clone();
-                    q.tag = Some(TagId(0));
-                    q
-                })
-                .collect::<Vec<_>>(),
+            questions: val.questions,
             state: val.state,
             flags,
             context: val.context,
