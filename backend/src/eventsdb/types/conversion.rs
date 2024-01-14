@@ -2,7 +2,8 @@ use super::{ApiEventInfo, AttributeMap};
 use crate::eventsdb::Error;
 use aws_sdk_dynamodb::types::AttributeValue;
 use shared::{
-    ContextItem, EventData, EventPassword, EventState, EventTokens, QuestionItem, States,
+    ContextItem, EventData, EventPassword, EventState, EventTags, EventTokens, QuestionItem,
+    States, Tag, TagId,
 };
 
 const ATTR_EVENT_INFO_LAST_EDIT: &str = "last_edit";
@@ -165,6 +166,14 @@ pub fn attributes_to_event(value: &AttributeMap) -> Result<ApiEventInfo, super::
         password,
         premium_order,
         context,
+        //TODO:
+        tags: EventTags {
+            tags: vec![Tag {
+                name: String::from("talk1"),
+                id: TagId(0),
+            }],
+            current_tag: Some(TagId(0)),
+        },
     })
 }
 

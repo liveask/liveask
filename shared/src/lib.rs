@@ -38,7 +38,7 @@ pub struct EventData {
 }
 
 #[derive(Serialize, Deserialize, Default, Debug, Copy, Clone, Eq, PartialEq, Hash)]
-pub struct TagId(pub u8);
+pub struct TagId(pub usize);
 
 #[derive(Serialize, Deserialize, Default, Debug, Clone, Eq, PartialEq)]
 pub struct QuestionItem {
@@ -89,6 +89,20 @@ impl EventTags {
             .as_ref()
             .and_then(|current| self.tags.iter().find(|tag| tag.id == *current))
             .map(|tag| tag.name.clone())
+    }
+
+    pub fn set_tag(&mut self, tag: &str) {
+        //TODO: validate not more than X tags
+        //TODO: validate length
+        let tag = tag.to_lowercase();
+
+        if let Some(i) = self.tags.iter().find(|e| *e.name == tag) {
+            self.current_tag = Some(i.id);
+        } else {
+            let id = TagId(self.tags.len());
+            self.tags.push(Tag { name: tag, id });
+            self.current_tag = Some(id);
+        }
     }
 }
 
@@ -261,6 +275,12 @@ pub enum EventPassword {
     Enabled(String),
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq)]
+pub enum CurrentTag {
+    Disabled,
+    Enabled(String),
+}
+
 impl Default for EventPassword {
     fn default() -> Self {
         Self::Disabled
@@ -297,6 +317,7 @@ impl EventPassword {
 
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Default)]
 pub struct ModEvent {
+    pub current_tag: Option<CurrentTag>,
     pub password: Option<EventPassword>,
     pub state: Option<EventState>,
     pub description: Option<String>,

@@ -21,6 +21,12 @@ pub enum InternalError {
     #[error("Trying to modify timed out Event: {0}")]
     TimedOutFreeEvent(String),
 
+    #[error("wrong moderator token: {0}")]
+    WrongModeratorToken(String),
+
+    #[error("Premium Only Feature: {0}")]
+    PremiumOnlyFeature(String),
+
     #[error("Duplicate Question Error")]
     DuplicateQuestion,
 
@@ -81,6 +87,16 @@ impl IntoResponse for InternalError {
 
             Self::TimedOutFreeEvent(id) => {
                 tracing::info!("trying to modify timed out Event: {id}");
+                (StatusCode::BAD_REQUEST, "").into_response()
+            }
+
+            Self::WrongModeratorToken(id) => {
+                tracing::warn!("wrong moderator token: {id}");
+                (StatusCode::BAD_REQUEST, "").into_response()
+            }
+
+            Self::PremiumOnlyFeature(id) => {
+                tracing::warn!("trying to access premium feature: {id}");
                 (StatusCode::BAD_REQUEST, "").into_response()
             }
 
