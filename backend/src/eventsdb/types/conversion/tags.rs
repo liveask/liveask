@@ -31,12 +31,12 @@ pub fn eventtags_to_attributes(value: EventTags) -> AttributeMap {
     map
 }
 
-pub fn attributes_to_eventtags(value: &AttributeMap) -> Result<EventTags, super::Error> {
+pub fn attributes_to_eventtags(value: &AttributeMap) -> EventTags {
     let tags = value
         .get(ATTR_TAGS_TAGS)
         .and_then(|v| v.as_l().ok())
         .map(|list| {
-            list.into_iter()
+            list.iter()
                 .filter_map(|tag| tag.as_m().ok().and_then(|tag| attributes_to_tag(tag).ok()))
                 .collect::<Vec<_>>()
         })
@@ -46,9 +46,9 @@ pub fn attributes_to_eventtags(value: &AttributeMap) -> Result<EventTags, super:
         .get(ATTR_TAGS_CURRENT)
         .and_then(|value| value.as_n().ok())
         .and_then(|v| v.parse::<usize>().ok())
-        .map(|v| TagId(v));
+        .map(TagId);
 
-    Ok(EventTags { current_tag, tags })
+    EventTags { tags, current_tag }
 }
 
 const ATTR_TAG_ID: &str = "id";

@@ -2,7 +2,7 @@ use chrono::{DateTime, Duration, NaiveDateTime, Utc};
 use const_format::formatcp;
 use events::{event_context, EventBridge};
 use serde::Deserialize;
-use shared::{EventInfo, GetEventResponse, ModEvent, ModQuestion, QuestionItem, States, TagId};
+use shared::{EventInfo, GetEventResponse, ModEvent, ModQuestion, QuestionItem, States};
 use std::{collections::HashMap, rc::Rc, str::FromStr};
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 use web_sys::HtmlAnchorElement;
@@ -14,8 +14,9 @@ use yewdux::prelude::*;
 
 use crate::{
     components::{
-        DeletePopup, EventContext, EventSocket, Footer, ModPassword, PasswordPopup, Question,
-        QuestionClickType, QuestionFlags, QuestionPopup, SharePopup, SocketResponse, Upgrade,
+        DeletePopup, EventContext, EventSocket, Footer, ModPassword, ModTag, PasswordPopup,
+        Question, QuestionClickType, QuestionFlags, QuestionPopup, SharableTags, SharePopup,
+        SocketResponse, Upgrade,
     },
     environment::{la_env, LiveAskEnv},
     fetch,
@@ -71,7 +72,7 @@ pub struct Event {
     wordcloud: Option<String>,
     query_params: QueryParams,
     mode: Mode,
-    tags: Rc<HashMap<TagId, String>>,
+    tags: SharableTags,
     unanswered: Vec<Rc<QuestionItem>>,
     answered: Vec<Rc<QuestionItem>>,
     hidden: Vec<Rc<QuestionItem>>,
@@ -747,7 +748,7 @@ impl Event {
 
                     {
                         if e.info.is_premium() {
-                            Self::mod_view_premium(ctx,e)
+                            self.mod_view_premium(ctx,e)
                         } else { html!{} }
                     }
                 </div>
@@ -767,7 +768,10 @@ impl Event {
         }
     }
 
-    fn mod_view_premium(ctx: &Context<Self>, e: &GetEventResponse) -> Html {
+    fn mod_view_premium(&self, ctx: &Context<Self>, e: &GetEventResponse) -> Html {
+        let tag = e.info.tags.get_current_tag_label();
+        let tags = SharableTags::clone(&self.tags);
+
         html! {
             <div class="premium">
                 <div class="title">
@@ -781,6 +785,7 @@ impl Event {
                     <button class="button-white" onclick={ctx.link().callback(|_|Msg::ModExport)} >
                         {"Export"}
                     </button>
+                    <ModTag tokens={e.info.tokens.clone()} {tag} {tags}/>
                 </div>
             </div>
         }

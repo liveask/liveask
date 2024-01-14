@@ -191,7 +191,7 @@ impl From<EventEntry> for AttributeMap {
 mod test_serialization {
     use super::*;
     use pretty_assertions::assert_eq;
-    use shared::{EventState, States, Tag};
+    use shared::{EventState, States, Tag, TagId};
 
     #[test]
     #[tracing_test::traced_test]

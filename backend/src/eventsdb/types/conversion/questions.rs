@@ -110,7 +110,7 @@ fn attributes_to_question(value: &AttributeMap) -> Result<QuestionItem, super::E
         .get(ATTR_QUESTION_TAG)
         .and_then(|v| v.as_n().ok())
         .and_then(|v| v.parse::<usize>().ok())
-        .map(|v| TagId(v));
+        .map(TagId);
 
     Ok(QuestionItem {
         id,

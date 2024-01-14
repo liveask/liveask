@@ -171,7 +171,7 @@ pub fn attributes_to_event(value: &AttributeMap) -> Result<ApiEventInfo, super::
         attributes_to_eventtags(
             attr.as_m()
                 .map_err(|_| Error::MalformedObject(ATTR_EVENT_INFO_TAGS.into()))?,
-        )?
+        )
     } else {
         EventTags::default()
     };
