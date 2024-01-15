@@ -1,6 +1,6 @@
 use std::{collections::HashMap, rc::Rc};
 
-use shared::{CurrentTag, EventTokens, ModEvent, TagId};
+use shared::{CurrentTag, EventTokens, ModEvent, TagId, TagValidation};
 use wasm_bindgen::UnwrapThrowExt;
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
@@ -35,6 +35,7 @@ enum State {
 pub struct ModTag {
     state: State,
     input: NodeRef,
+    errors: TagValidation,
 }
 impl Component for ModTag {
     type Message = Msg;
@@ -44,6 +45,7 @@ impl Component for ModTag {
         Self {
             state: Self::derive_state(&ctx.props().tag),
             input: NodeRef::default(),
+            errors: TagValidation::default(),
         }
     }
 
@@ -65,8 +67,7 @@ impl Component for ModTag {
                 let target: HtmlInputElement = e.target_dyn_into().unwrap_throw();
 
                 self.state = State::Editing(target.value());
-                //TODO:
-                // self.errors.check(&target.value());
+                self.errors.check(&target.value());
                 true
             }
             Msg::KeyDown(e) => {
@@ -199,18 +200,17 @@ impl ModTag {
     fn set_pwd(&mut self, ctx: &Context<Self>) {
         let current = self.current_value().to_string();
 
-        //TODO:
-        // if self.errors.has_any() {
-        //     self.disable_password(ctx);
-        // } else {
-        let props = ctx.props();
-        Self::request_edit(
-            props.tokens.public_token.clone(),
-            props.tokens.moderator_token.clone().unwrap_or_default(),
-            ctx.link(),
-            CurrentTag::Enabled(current.clone()),
-        );
-        self.state = State::Confirmed(current);
-        // }
+        if self.errors.has_any() {
+            self.disable(ctx);
+        } else {
+            let props = ctx.props();
+            Self::request_edit(
+                props.tokens.public_token.clone(),
+                props.tokens.moderator_token.clone().unwrap_or_default(),
+                ctx.link(),
+                CurrentTag::Enabled(current.clone()),
+            );
+            self.state = State::Confirmed(current);
+        }
     }
 }

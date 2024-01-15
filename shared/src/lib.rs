@@ -11,6 +11,7 @@ pub use validation::{
     add_question::{AddQuestionError, AddQuestionValidation},
     create_event::{CreateEventError, CreateEventValidation},
     pwd_validation::{PasswordError, PasswordValidation},
+    tag_validation::{TagError, TagValidation},
     ValidationState,
 };
 
@@ -18,6 +19,8 @@ pub use validation::{
 pub const TEST_VALID_QUESTION: &str = "1 2 3fourfive";
 pub const TEST_EVENT_DESC: &str = "minimum desc length possible!!";
 pub const TEST_EVENT_NAME: &str = "min name";
+
+pub const MAX_TAGS: usize = 15;
 
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Default)]
 pub struct EventTokens {
@@ -92,9 +95,11 @@ impl EventTags {
     }
 
     pub fn set_tag(&mut self, tag: &str) {
-        //TODO: validate not more than X tags
-        //TODO: validate length
         let tag = tag.to_lowercase();
+
+        if self.tags.len() > MAX_TAGS {
+            return;
+        }
 
         if let Some(i) = self.tags.iter().find(|e| *e.name == tag) {
             self.current_tag = Some(i.id);

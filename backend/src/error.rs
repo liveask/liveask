@@ -2,7 +2,7 @@ use axum::response::{IntoResponse, Response};
 use deadpool_redis::{CreatePoolError, PoolError};
 use redis::RedisError;
 use reqwest::StatusCode;
-use shared::{AddQuestionValidation, PasswordValidation};
+use shared::{AddQuestionValidation, PasswordValidation, TagValidation};
 use thiserror::Error;
 
 use crate::{eventsdb, payment::PaymentError, plots::PlottingError};
@@ -35,6 +35,9 @@ pub enum InternalError {
 
     #[error("Password Validation")]
     PasswordValidation(PasswordValidation),
+
+    #[error("Tag Validation")]
+    TagValidation(TagValidation),
 
     #[error("Events DB Error: {0}")]
     EventsDB(#[from] eventsdb::Error),
@@ -119,6 +122,11 @@ impl IntoResponse for InternalError {
 
             Self::PasswordValidation(e) => {
                 tracing::warn!("password validation: {:?}", e);
+                (StatusCode::BAD_REQUEST, "").into_response()
+            }
+
+            Self::TagValidation(e) => {
+                tracing::warn!("tag validation: {:?}", e);
                 (StatusCode::BAD_REQUEST, "").into_response()
             }
 

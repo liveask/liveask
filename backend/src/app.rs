@@ -3,7 +3,7 @@ use axum::extract::ws::{close_code::RESTART, CloseFrame, Message, WebSocket};
 use shared::{
     AddEvent, EventInfo, EventResponseFlags, EventState, EventTags, EventTokens, EventUpgrade,
     GetEventResponse, ModEvent, ModInfo, ModQuestion, PasswordValidation, PaymentCapture,
-    QuestionItem, States,
+    QuestionItem, States, TagValidation, MAX_TAGS,
 };
 use std::{
     collections::HashMap,
@@ -937,6 +937,17 @@ impl App {
         }
 
         if let shared::CurrentTag::Enabled(tag) = &current_tag {
+            let mut validation = TagValidation::default();
+            validation.check(tag);
+
+            if validation.has_any() {
+                return Err(InternalError::TagValidation(validation));
+            }
+
+            if e.tags.tags.len() >= MAX_TAGS {
+                bail!("max tags reached");
+            }
+
             e.tags.set_tag(tag);
         } else {
             e.tags.current_tag = None;

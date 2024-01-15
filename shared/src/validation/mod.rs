@@ -1,6 +1,7 @@
 pub mod add_question;
 pub mod create_event;
 pub mod pwd_validation;
+pub mod tag_validation;
 
 #[derive(Debug)]
 pub enum ValidationState<T> {
