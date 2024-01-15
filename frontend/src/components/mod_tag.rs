@@ -17,9 +17,9 @@ pub struct TagProps {
 }
 
 pub enum Msg {
-    EnablePasswordInput,
-    EditPassword,
-    DisablePassword,
+    EnableInput,
+    Edit,
+    Disable,
     InputChange(InputEvent),
     KeyDown(KeyboardEvent),
     InputExit,
@@ -28,7 +28,7 @@ pub enum Msg {
 
 enum State {
     Disabled,
-    PasswordEditing(String),
+    Editing(String),
     Confirmed(String),
 }
 
@@ -49,22 +49,22 @@ impl Component for ModTag {
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
-            Msg::EnablePasswordInput => {
-                self.state = State::PasswordEditing(String::new());
+            Msg::EnableInput => {
+                self.state = State::Editing(String::new());
                 true
             }
-            Msg::EditPassword => {
-                self.state = State::PasswordEditing(self.current_value().to_string());
+            Msg::Edit => {
+                self.state = State::Editing(self.current_value().to_string());
                 true
             }
-            Msg::DisablePassword => {
-                self.disable_password(ctx);
+            Msg::Disable => {
+                self.disable(ctx);
                 true
             }
             Msg::InputChange(e) => {
                 let target: HtmlInputElement = e.target_dyn_into().unwrap_throw();
 
-                self.state = State::PasswordEditing(target.value());
+                self.state = State::Editing(target.value());
                 //TODO:
                 // self.errors.check(&target.value());
                 true
@@ -89,7 +89,7 @@ impl Component for ModTag {
     }
 
     fn rendered(&mut self, _ctx: &Context<Self>, _first_render: bool) {
-        if let State::PasswordEditing(_) = self.state {
+        if let State::Editing(_) = self.state {
             let _ = self
                 .input
                 .cast::<HtmlInputElement>()
@@ -101,7 +101,7 @@ impl Component for ModTag {
     fn view(&self, ctx: &Context<Self>) -> Html {
         let content = match &self.state {
             State::Disabled => Self::view_disabled(ctx),
-            State::PasswordEditing(value) => self.view_input_unconfirmed(value, ctx),
+            State::Editing(value) => self.view_input_unconfirmed(value, ctx),
             State::Confirmed(value) => Self::view_confirmed(value, ctx),
         };
 
@@ -116,9 +116,8 @@ impl Component for ModTag {
 impl ModTag {
     fn view_disabled(ctx: &Context<Self>) -> Html {
         html! {
-            <button class="button-white" onclick={ctx.link().callback(|_|Msg::EnablePasswordInput)} >
-                //TODO: parameterize
-                {"Tag"}
+            <button class="button-white" onclick={ctx.link().callback(|_|Msg::EnableInput)} >
+                {"Tag Questions"}
             </button>
         }
     }
@@ -130,7 +129,6 @@ impl ModTag {
                 <input
                     ref={self.input.clone()}
                     type="text"
-                    //TODO: parameterize
                     placeholder="tag"
                     maxlength="30"
                     {value}
@@ -145,17 +143,17 @@ impl ModTag {
     fn view_confirmed(value: &str, ctx: &Context<Self>) -> Html {
         html! {
             <>
-                <div class="confirmed" onclick={ctx.link().callback(|_|Msg::EditPassword)}>
+                <div class="confirmed" onclick={ctx.link().callback(|_|Msg::Edit)}>
                     {value.to_string()}
                 </div>
-                <img id="delete" src="/assets/pwd/pwd-remove.svg" onmousedown={ctx.link().callback(|_|Msg::DisablePassword)} />
+                <img id="delete" src="/assets/pwd/pwd-remove.svg" onmousedown={ctx.link().callback(|_|Msg::Disable)} />
             </>
         }
     }
 
     fn current_value(&self) -> &str {
         match &self.state {
-            State::PasswordEditing(value) | State::Confirmed(value) => value,
+            State::Editing(value) | State::Confirmed(value) => value,
             State::Disabled => "",
         }
     }
@@ -182,7 +180,7 @@ impl ModTag {
         });
     }
 
-    fn disable_password(&mut self, ctx: &Context<Self>) {
+    fn disable(&mut self, ctx: &Context<Self>) {
         let props = ctx.props();
         Self::request_edit(
             props.tokens.public_token.clone(),
