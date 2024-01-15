@@ -11,6 +11,7 @@ pub use validation::{
     add_question::{AddQuestionError, AddQuestionValidation},
     create_event::{CreateEventError, CreateEventValidation},
     pwd_validation::{PasswordError, PasswordValidation},
+    tag_validation::{TagError, TagValidation},
     ValidationState,
 };
 
@@ -18,6 +19,8 @@ pub use validation::{
 pub const TEST_VALID_QUESTION: &str = "1 2 3fourfive";
 pub const TEST_EVENT_DESC: &str = "minimum desc length possible!!";
 pub const TEST_EVENT_NAME: &str = "min name";
+
+pub const MAX_TAGS: usize = 15;
 
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Default)]
 pub struct EventTokens {
@@ -37,6 +40,9 @@ pub struct EventData {
     pub long_url: Option<String>,
 }
 
+#[derive(Serialize, Deserialize, Default, Debug, Copy, Clone, Eq, PartialEq, Hash)]
+pub struct TagId(pub usize);
+
 #[derive(Serialize, Deserialize, Default, Debug, Clone, Eq, PartialEq)]
 pub struct QuestionItem {
     pub id: i64,
@@ -48,6 +54,8 @@ pub struct QuestionItem {
     pub screening: bool,
     #[serde(rename = "createTimeUnix")]
     pub create_time_unix: i64,
+    #[serde(default)]
+    pub tag: Option<TagId>,
 }
 
 #[derive(Serialize, Deserialize, Default, Debug, Clone, Eq, PartialEq)]
@@ -67,6 +75,46 @@ pub struct PaymentCapture {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, Default)]
+pub struct Tag {
+    pub name: String,
+    pub id: TagId,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, Default)]
+pub struct EventTags {
+    pub tags: Vec<Tag>,
+    pub current_tag: Option<TagId>,
+}
+impl EventTags {
+    #[must_use]
+    pub fn get_current_tag_label(&self) -> Option<String> {
+        self.current_tag
+            .as_ref()
+            .and_then(|current| self.tags.iter().find(|tag| tag.id == *current))
+            .map(|tag| tag.name.clone())
+    }
+
+    /// returns `false` if max tags is reached and a new tag would have to be added
+    pub fn set_or_add_tag(&mut self, tag: &str) -> bool {
+        let tag = tag.to_lowercase();
+
+        if let Some(i) = self.tags.iter().find(|e| *e.name == tag) {
+            self.current_tag = Some(i.id);
+        } else {
+            if self.tags.len() >= MAX_TAGS {
+                return false;
+            }
+
+            let id = TagId(self.tags.len());
+            self.tags.push(Tag { name: tag, id });
+            self.current_tag = Some(id);
+        }
+
+        true
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, Default)]
 pub struct EventInfo {
     pub tokens: EventTokens,
     pub data: EventData,
@@ -82,6 +130,8 @@ pub struct EventInfo {
     pub flags: EventFlags,
     #[serde(default)]
     pub context: Vec<ContextItem>,
+    #[serde(default)]
+    pub tags: EventTags,
 }
 
 impl EventInfo {
@@ -233,6 +283,12 @@ pub enum EventPassword {
     Enabled(String),
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq)]
+pub enum CurrentTag {
+    Disabled,
+    Enabled(String),
+}
+
 impl Default for EventPassword {
     fn default() -> Self {
         Self::Disabled
@@ -269,6 +325,7 @@ impl EventPassword {
 
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Default)]
 pub struct ModEvent {
+    pub current_tag: Option<CurrentTag>,
     pub password: Option<EventPassword>,
     pub state: Option<EventState>,
     pub description: Option<String>,

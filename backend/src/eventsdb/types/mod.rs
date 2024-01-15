@@ -5,8 +5,8 @@ use aws_sdk_dynamodb::types::AttributeValue;
 use chrono::{DateTime, Duration, TimeZone, Utc};
 use serde::{Deserialize, Serialize};
 use shared::{
-    ContextItem, EventData, EventFlags, EventInfo, EventPassword, EventState, EventTokens,
-    QuestionItem,
+    ContextItem, EventData, EventFlags, EventInfo, EventPassword, EventState, EventTags,
+    EventTokens, QuestionItem,
 };
 use std::collections::HashMap;
 
@@ -34,6 +34,8 @@ pub struct ApiEventInfo {
     pub premium_order: Option<String>,
     #[serde(default)]
     pub context: Vec<ContextItem>,
+    #[serde(default)]
+    pub tags: EventTags,
 }
 
 const LOREM_IPSUM:&str = "Lorem ipsum dolor sit amet. Et adipisci repellendus id dolore molestiae sed quidem ratione! Aut itaque magnam eos corporis dolores ut repudiandae consequuntur et maiores accusantium. 33 quas illum vel cumque quisquam et possimus quaerat et nostrum galisum et similique dolorum quo earum earum et accusantium dignissimos!";
@@ -103,6 +105,7 @@ impl From<ApiEventInfo> for EventInfo {
             state: val.state,
             flags,
             context: val.context,
+            tags: val.tags,
         }
     }
 }
@@ -188,7 +191,7 @@ impl From<EventEntry> for AttributeMap {
 mod test_serialization {
     use super::*;
     use pretty_assertions::assert_eq;
-    use shared::{EventState, States};
+    use shared::{EventState, States, Tag, TagId};
 
     #[test]
     #[tracing_test::traced_test]
@@ -219,12 +222,14 @@ mod test_serialization {
                     answered: true,
                     screening: false,
                     create_time_unix: 3,
+                    tag: None,
                 }],
                 do_screening: true,
                 state: EventState {
                     state: States::Closed,
                 },
                 context: Vec::new(),
+                tags: EventTags::default(),
             },
             version: 2,
             ttl: None,
@@ -266,6 +271,7 @@ mod test_serialization {
                     answered: true,
                     screening: true,
                     create_time_unix: 3,
+                    tag: Some(TagId(0)),
                 }],
                 do_screening: false,
                 state: EventState {
@@ -275,6 +281,13 @@ mod test_serialization {
                     label: String::new(),
                     url: String::from("foobar"),
                 }],
+                tags: EventTags {
+                    tags: vec![Tag {
+                        name: String::from("talk1"),
+                        id: TagId(0),
+                    }],
+                    current_tag: Some(TagId(0)),
+                },
             },
             version: 2,
             ttl: Some(12345),

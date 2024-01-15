@@ -1,9 +1,9 @@
 use async_trait::async_trait;
 use axum::extract::ws::{close_code::RESTART, CloseFrame, Message, WebSocket};
 use shared::{
-    AddEvent, EventInfo, EventResponseFlags, EventState, EventTokens, EventUpgrade,
+    AddEvent, EventInfo, EventResponseFlags, EventState, EventTags, EventTokens, EventUpgrade,
     GetEventResponse, ModEvent, ModInfo, ModQuestion, PasswordValidation, PaymentCapture,
-    QuestionItem, States,
+    QuestionItem, States, TagValidation,
 };
 use std::{
     collections::HashMap,
@@ -227,6 +227,7 @@ impl App {
                 moderator_token: Some(mod_token.clone()),
             },
             context: Vec::new(),
+            tags: EventTags::default(),
         };
 
         let url = format!("{}/event/{}", self.base_url, e.tokens.public_token);
@@ -314,7 +315,7 @@ impl App {
                 .map(|mod_token| mod_token != secret)
                 .unwrap_or_default()
             {
-                bail!("wrong mod token");
+                return Err(InternalError::WrongModeratorToken(id));
             }
         }
 
@@ -436,7 +437,7 @@ impl App {
                 .map(|mod_token| mod_token != &secret)
                 .unwrap_or_default()
             {
-                bail!("wrong mod token");
+                return Err(InternalError::WrongModeratorToken(id));
             }
 
             let q = e
@@ -493,7 +494,7 @@ impl App {
             .map(|mod_token| mod_token != &secret)
             .unwrap_or_default()
         {
-            bail!("wrong mod token");
+            return Err(InternalError::WrongModeratorToken(id));
         }
 
         if let Some(state) = changes.state {
@@ -504,6 +505,9 @@ impl App {
         }
         if let Some(password) = changes.password {
             self.mod_edit_password(e, password);
+        }
+        if let Some(current_tag) = &changes.current_tag {
+            Self::mod_edit_tag(e, current_tag)?;
         }
         if let Some(description) = changes.description {
             //TODO: desc
@@ -532,7 +536,7 @@ impl App {
             .map(|mod_token| mod_token != &secret)
             .unwrap_or_default()
         {
-            bail!("wrong mod token");
+            return Err(InternalError::WrongModeratorToken(id));
         }
 
         e.deleted = true;
@@ -562,7 +566,7 @@ impl App {
             .map(|mod_token| mod_token != &secret)
             .unwrap_or_default()
         {
-            bail!("wrong mod token");
+            return Err(InternalError::WrongModeratorToken(id));
         }
 
         if e.deleted {
@@ -688,6 +692,7 @@ impl App {
             screening: e.do_screening,
             id: question_id,
             likes: 1,
+            tag: e.tags.current_tag,
         };
 
         e.questions.push(question.clone());
@@ -923,6 +928,31 @@ impl App {
 
         e.password = password;
     }
+
+    fn mod_edit_tag(e: &mut ApiEventInfo, current_tag: &shared::CurrentTag) -> Result<()> {
+        if e.premium_order.is_none() {
+            return Err(InternalError::PremiumOnlyFeature(
+                e.tokens.public_token.clone(),
+            ));
+        }
+
+        if let shared::CurrentTag::Enabled(tag) = &current_tag {
+            let mut validation = TagValidation::default();
+            validation.check(tag);
+
+            if validation.has_any() {
+                return Err(InternalError::TagValidation(validation));
+            }
+
+            if !e.tags.set_or_add_tag(tag) {
+                bail!("max tags reached");
+            }
+        } else {
+            e.tags.current_tag = None;
+        }
+
+        Ok(())
+    }
 }
 
 #[async_trait]
@@ -962,7 +992,7 @@ mod test {
         viewers::MockViewers,
     };
     use pretty_assertions::{assert_eq, assert_ne};
-    use shared::{AddQuestion, EventData, TEST_VALID_QUESTION};
+    use shared::{AddQuestion, CurrentTag, EventData, TagId, TEST_VALID_QUESTION};
     use std::sync::Arc;
 
     #[tokio::test]
@@ -1428,5 +1458,74 @@ mod test {
 
         assert_eq!(&e.info.questions[0].text, question_text);
         assert!(!e.flags.contains(EventResponseFlags::WRONG_PASSWORD));
+    }
+
+    #[tokio::test]
+    #[tracing_test::traced_test]
+    async fn test_event_question_tags() {
+        let pubsubreceiver = Arc::new(PubSubReceiverInMemory::default());
+        let pubsub = PubSubInMemory::default();
+        pubsub.set_receiver(pubsubreceiver.clone()).await;
+        let events = Arc::new(InMemoryEventsDB::default());
+        let app = App::new(
+            events.clone(),
+            Arc::new(pubsub),
+            Arc::new(MockViewers::new()),
+            Arc::new(Payment::default()),
+            Tracking::default(),
+            String::new(),
+        );
+
+        let res = app
+            .create_event(AddEvent {
+                data: EventData {
+                    name: String::from("123456789"),
+                    description: String::from("123456789 123456789 123456789 !"),
+                    short_url: String::new(),
+                    long_url: None,
+                },
+                moderator_email: None,
+                test: false,
+            })
+            .await
+            .unwrap();
+
+        events
+            .db
+            .lock()
+            .await
+            .get_mut(&event_key(&res.tokens.public_token))
+            .unwrap()
+            .event
+            .premium_order = Some(String::from("foo"));
+
+        assert_eq!(
+            app.mod_edit_event(
+                res.tokens.public_token.clone(),
+                res.tokens.moderator_token.clone().unwrap(),
+                ModEvent {
+                    current_tag: Some(CurrentTag::Enabled(String::from("tag1"))),
+                    ..Default::default()
+                },
+            )
+            .await
+            .unwrap()
+            .tags
+            .current_tag
+            .unwrap(),
+            TagId(0)
+        );
+
+        let request = app
+            .add_question(
+                res.tokens.public_token.clone(),
+                AddQuestion {
+                    text: String::from(TEST_VALID_QUESTION),
+                },
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(request.tag.unwrap(), TagId(0))
     }
 }

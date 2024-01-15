@@ -41,6 +41,7 @@ pub struct Props {
     pub index: usize,
     pub flags: QuestionFlags,
     pub on_click: Callback<(i64, QuestionClickType)>,
+    pub tag: Option<String>,
 }
 
 impl Props {
@@ -270,6 +271,17 @@ impl Component for Question {
             self.data.item.screening.then_some("unscreened-question"),
         );
 
+        let tag = ctx.props().tag.as_ref().map_or_else(
+            || html! {},
+            |tag| {
+                html! {
+                    <div class="tag">
+                        {tag.clone()}
+                    </div>
+                }
+            },
+        );
+
         html! {
             <div class={main_classes} ref={self.node_ref.clone()} >
                 <div class={classes!("questionanchor",self.highlighted.then_some("highlighted"),)}
@@ -278,6 +290,8 @@ impl Component for Question {
                     <div class="time-since">
                         {self.get_age()}
                     </div>
+
+                    {tag}
 
                     {
                         if screened {

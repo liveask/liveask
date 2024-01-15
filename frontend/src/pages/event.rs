@@ -3,7 +3,7 @@ use const_format::formatcp;
 use events::{event_context, EventBridge};
 use serde::Deserialize;
 use shared::{EventInfo, GetEventResponse, ModEvent, ModQuestion, QuestionItem, States};
-use std::{rc::Rc, str::FromStr};
+use std::{collections::HashMap, rc::Rc, str::FromStr};
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 use web_sys::HtmlAnchorElement;
 use worker2::{WordCloudAgent, WordCloudInput, WordCloudOutput};
@@ -14,8 +14,9 @@ use yewdux::prelude::*;
 
 use crate::{
     components::{
-        DeletePopup, EventContext, EventSocket, Footer, ModPassword, PasswordPopup, Question,
-        QuestionClickType, QuestionFlags, QuestionPopup, SharePopup, SocketResponse, Upgrade,
+        DeletePopup, EventContext, EventSocket, Footer, ModPassword, ModTag, PasswordPopup,
+        Question, QuestionClickType, QuestionFlags, QuestionPopup, SharableTags, SharePopup,
+        SocketResponse, Upgrade,
     },
     environment::{la_env, LiveAskEnv},
     fetch,
@@ -71,6 +72,7 @@ pub struct Event {
     wordcloud: Option<String>,
     query_params: QueryParams,
     mode: Mode,
+    tags: SharableTags,
     unanswered: Vec<Rc<QuestionItem>>,
     answered: Vec<Rc<QuestionItem>>,
     hidden: Vec<Rc<QuestionItem>>,
@@ -146,6 +148,7 @@ impl Component for Event {
             },
             loading_state: LoadingState::Loading,
             state: dispatch.get(),
+            tags: Rc::new(HashMap::new()),
             unanswered: Vec::new(),
             answered: Vec::new(),
             hidden: Vec::new(),
@@ -508,13 +511,15 @@ impl Event {
             let mod_view = matches!(self.mode, Mode::Moderator);
             let admin = e.admin;
 
+            let tag = e.info.tags.get_current_tag_label();
+
             html! {
-                <div>
+                <div class="some-event">
                     <div class={background}>
                     </div>
 
                     <PasswordPopup event={e.info.tokens.public_token.clone()} show={e.is_wrong_pwd()} onconfirmed={ctx.link().callback(|()|Msg::PasswordSet)}/>
-                    <QuestionPopup event={e.info.tokens.public_token.clone()} />
+                    <QuestionPopup event_id={e.info.tokens.public_token.clone()} {tag}/>
                     <SharePopup url={share_url} event_id={e.info.tokens.public_token.clone()}/>
 
                     <div class="event-block">
@@ -684,12 +689,19 @@ impl Event {
         flags.set(QuestionFlags::CAN_VOTE, can_vote);
         flags.set(QuestionFlags::BLURR, blurr);
 
+        let tag = item
+            .tag
+            .as_ref()
+            .and_then(|tag| self.tags.get(tag))
+            .cloned();
+
         html! {
             <Question
                 {item}
                 {index}
                 key={item.id}
                 {flags}
+                {tag}
                 on_click={ctx.link().callback(Msg::QuestionClick)}
                 />
         }
@@ -736,7 +748,7 @@ impl Event {
 
                     {
                         if e.info.is_premium() {
-                            Self::mod_view_premium(ctx,e)
+                            self.mod_view_premium(ctx,e)
                         } else { html!{} }
                     }
                 </div>
@@ -756,7 +768,10 @@ impl Event {
         }
     }
 
-    fn mod_view_premium(ctx: &Context<Self>, e: &GetEventResponse) -> Html {
+    fn mod_view_premium(&self, ctx: &Context<Self>, e: &GetEventResponse) -> Html {
+        let tag = e.info.tags.get_current_tag_label();
+        let tags = SharableTags::clone(&self.tags);
+
         html! {
             <div class="premium">
                 <div class="title">
@@ -770,6 +785,7 @@ impl Event {
                     <button class="button-white" onclick={ctx.link().callback(|_|Msg::ModExport)} >
                         {"Export"}
                     </button>
+                    <ModTag tokens={e.info.tokens.clone()} {tag} {tags}/>
                 </div>
             </div>
         }
@@ -895,6 +911,7 @@ impl Event {
         use split_iter::Splittable;
 
         self.unanswered.clear();
+        self.tags = Rc::default();
 
         if let Some(e) = &self.state.event {
             let mut questions = e.info.questions.clone();
@@ -913,6 +930,15 @@ impl Event {
             self.answered = answered.collect();
             self.unanswered = unanswered.collect();
             self.hidden = hidden.collect();
+
+            self.tags = e
+                .info
+                .tags
+                .tags
+                .iter()
+                .map(|t| (t.id, t.name.clone()))
+                .collect::<HashMap<_, _>>()
+                .into();
 
             if e.info.is_premium() && !e.masked {
                 self.wordcloud_agent.send(WordCloudInput(
