@@ -3,7 +3,7 @@ use axum::extract::ws::{close_code::RESTART, CloseFrame, Message, WebSocket};
 use shared::{
     AddEvent, EventInfo, EventResponseFlags, EventState, EventTags, EventTokens, EventUpgrade,
     GetEventResponse, ModEvent, ModInfo, ModQuestion, PasswordValidation, PaymentCapture,
-    QuestionItem, States, TagValidation, MAX_TAGS,
+    QuestionItem, States, TagValidation,
 };
 use std::{
     collections::HashMap,
@@ -944,11 +944,9 @@ impl App {
                 return Err(InternalError::TagValidation(validation));
             }
 
-            if e.tags.tags.len() >= MAX_TAGS {
+            if !e.tags.set_or_add_tag(tag) {
                 bail!("max tags reached");
             }
-
-            e.tags.set_tag(tag);
         } else {
             e.tags.current_tag = None;
         }

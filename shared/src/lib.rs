@@ -94,20 +94,23 @@ impl EventTags {
             .map(|tag| tag.name.clone())
     }
 
-    pub fn set_tag(&mut self, tag: &str) {
+    /// returns `false` if max tags is reached and a new tag would have to be added
+    pub fn set_or_add_tag(&mut self, tag: &str) -> bool {
         let tag = tag.to_lowercase();
-
-        if self.tags.len() > MAX_TAGS {
-            return;
-        }
 
         if let Some(i) = self.tags.iter().find(|e| *e.name == tag) {
             self.current_tag = Some(i.id);
         } else {
+            if self.tags.len() >= MAX_TAGS {
+                return false;
+            }
+
             let id = TagId(self.tags.len());
             self.tags.push(Tag { name: tag, id });
             self.current_tag = Some(id);
         }
+
+        true
     }
 }
 

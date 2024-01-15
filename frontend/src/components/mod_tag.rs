@@ -118,7 +118,7 @@ impl ModTag {
     fn view_disabled(ctx: &Context<Self>) -> Html {
         html! {
             <button class="button-white" onclick={ctx.link().callback(|_|Msg::EnableInput)} >
-                {"Tag Questions"}
+                {"Tag new questions"}
             </button>
         }
     }
