@@ -50,3 +50,35 @@ fn attributes_to_context_itemn(value: &AttributeMap) -> Result<ContextItem, supe
 
     Ok(ContextItem { label, url })
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use serde_dynamo::{from_item, to_item};
+    use shared::ContextItem;
+
+    #[test]
+    #[tracing_test::traced_test]
+    fn test_serde_dynamo_compare() {
+        let original = ContextItem {
+            label: String::from("label"),
+            url: String::from("url"),
+        };
+
+        let serde: AttributeMap = to_item(original.clone()).unwrap();
+
+        let manual = context_item_to_attributes(original.clone());
+
+        assert_eq!(serde, manual);
+
+        let from_serde: ContextItem = from_item(serde.clone()).unwrap();
+
+        assert_eq!(from_serde, original);
+
+        let from_manual = attributes_to_context_itemn(&serde).unwrap();
+
+        assert_eq!(from_manual, original);
+
+        assert_eq!(from_serde, from_manual);
+    }
+}
