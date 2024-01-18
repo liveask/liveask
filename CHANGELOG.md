@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 * use `serde_dynamo` for tags and contexts as a test (potentially rolling it out to everything at some point but certainly for new data added in the future)
+* fix safari animation issue due to wordcloud always updateing when like happened
 
 ## [2.6.0] - 2024-01-15
 

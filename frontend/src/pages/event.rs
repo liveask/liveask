@@ -223,8 +223,17 @@ impl Component for Event {
                 false
             }
             Msg::WordCloud(w) => {
-                self.wordcloud = Some(w.0);
-                true
+                if self
+                    .wordcloud
+                    .as_ref()
+                    .map(|old| old == &w.0)
+                    .unwrap_or_default()
+                {
+                    false
+                } else {
+                    self.wordcloud = Some(w.0);
+                    true
+                }
             }
             Msg::ModDelete => {
                 self.events.emit(GlobalEvent::DeletePopup);
