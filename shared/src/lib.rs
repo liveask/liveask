@@ -82,8 +82,8 @@ pub struct Tag {
 
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, Default)]
 pub struct EventTags {
-    pub tags: Vec<Tag>,
     pub current_tag: Option<TagId>,
+    pub tags: Vec<Tag>,
 }
 impl EventTags {
     #[must_use]

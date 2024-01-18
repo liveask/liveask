@@ -1,20 +1,19 @@
 mod context;
 mod eventdata;
 mod questions;
-mod tags;
 mod tokens;
 
 use self::{
     context::{attributes_to_contexts, contexts_to_attributes},
     eventdata::{attributes_to_eventdata, eventdata_to_attributes},
     questions::{attributes_to_questions, questions_to_attributes},
-    tags::{attributes_to_eventtags, eventtags_to_attributes},
     tokens::{attributes_to_tokens, tokens_to_attributes},
 };
 
 use super::{ApiEventInfo, AttributeMap};
 use crate::eventsdb::Error;
 use aws_sdk_dynamodb::types::AttributeValue;
+use serde_dynamo::{from_item, to_item};
 use shared::{EventPassword, EventState, EventTags, States};
 
 const ATTR_EVENT_INFO_LAST_EDIT: &str = "last_edit";
@@ -75,7 +74,7 @@ pub fn event_to_attributes(value: ApiEventInfo) -> AttributeMap {
         ),
         (
             ATTR_EVENT_INFO_TAGS.into(),
-            AttributeValue::M(eventtags_to_attributes(value.tags)),
+            AttributeValue::M(to_item(value.tags).unwrap_or_default()),
         ),
     ];
     let mut map: AttributeMap = vec.into_iter().collect();
@@ -168,10 +167,12 @@ pub fn attributes_to_event(value: &AttributeMap) -> Result<ApiEventInfo, super::
     });
 
     let tags = if let Some(attr) = value.get(ATTR_EVENT_INFO_TAGS) {
-        attributes_to_eventtags(
-            attr.as_m()
-                .map_err(|_| Error::MalformedObject(ATTR_EVENT_INFO_TAGS.into()))?,
-        )
+        let map = attr
+            .as_m()
+            .map_err(|_| Error::MalformedObject(ATTR_EVENT_INFO_TAGS.into()))?
+            .clone();
+
+        from_item(map).unwrap_or_default()
     } else {
         EventTags::default()
     };
@@ -191,4 +192,76 @@ pub fn attributes_to_event(value: &AttributeMap) -> Result<ApiEventInfo, super::
         context,
         tags,
     })
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    use pretty_assertions::assert_eq;
+    use serde_dynamo::{aws_sdk_dynamodb_1::to_item, from_item};
+    use shared::{
+        ContextItem, EventData, EventState, EventTags, EventTokens, QuestionItem, States, Tag,
+        TagId,
+    };
+
+    use crate::eventsdb::{types::AttributeMap, ApiEventInfo};
+
+    #[test]
+    #[tracing_test::traced_test]
+    fn test_serde_dynamo_compare() {
+        let entry = ApiEventInfo {
+            tokens: EventTokens {
+                public_token: String::from("token1"),
+                moderator_token: Some(String::from("token2")),
+            },
+            data: EventData {
+                name: String::from("name"),
+                description: String::from("desc"),
+                short_url: String::from(""),
+                long_url: Some(String::from("foo")),
+            },
+            create_time_unix: 1,
+            delete_time_unix: 0,
+            deleted: false,
+            password: shared::EventPassword::Enabled(String::from("pwd")),
+            premium_order: Some(String::from("order")),
+            last_edit_unix: 2,
+            questions: vec![QuestionItem {
+                id: 0,
+                likes: 2,
+                text: String::from("q"),
+                hidden: false,
+                answered: true,
+                screening: true,
+                create_time_unix: 3,
+                tag: Some(TagId(0)),
+            }],
+            do_screening: false,
+            state: EventState {
+                state: States::Closed,
+            },
+            context: vec![ContextItem {
+                label: String::new(),
+                url: String::from("foobar"),
+            }],
+            tags: EventTags {
+                tags: vec![Tag {
+                    name: String::from("talk1"),
+                    id: TagId(0),
+                }],
+                current_tag: Some(TagId(0)),
+            },
+        };
+
+        let map: AttributeMap = event_to_attributes(entry.clone());
+
+        let map_deserialized: ApiEventInfo = attributes_to_event(&map).unwrap();
+
+        let serde_map: AttributeMap = to_item(entry).unwrap();
+
+        let serde_map_deserialized: ApiEventInfo = from_item(serde_map).unwrap();
+
+        assert_eq!(map_deserialized, serde_map_deserialized);
+    }
 }

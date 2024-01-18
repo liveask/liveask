@@ -2789,6 +2789,7 @@ dependencies = [
  "reqwest",
  "sentry",
  "serde",
+ "serde_dynamo",
  "serde_json",
  "shared",
  "thiserror",
@@ -4319,6 +4320,17 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.43",
+]
+
+[[package]]
+name = "serde_dynamo"
+version = "4.2.13"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8b652e4dd5549c24a4ec779981278cccae2f85b4d5649441c745d58866e20283"
+dependencies = [
+ "aws-sdk-dynamodb",
+ "base64 0.21.5",
+ "serde",
 ]
 
 [[package]]

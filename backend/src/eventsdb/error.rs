@@ -43,6 +43,9 @@ pub enum Error {
 
     #[error("Dynamo BuildError: {0}")]
     DynamoBuild(#[from] aws_sdk_dynamodb::error::BuildError),
+
+    #[error("serde_dynamo BuildError: {0}")]
+    SerdeDynamo(#[from] serde_dynamo::Error),
 }
 
 pub type Result<T> = std::result::Result<T, Error>;
