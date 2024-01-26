@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## [2.6.2] - 2024-01-26
+
+### Added
+* set safari theme color
+
 ## [2.6.1] - 2024-01-19
 
 ### Fixes
