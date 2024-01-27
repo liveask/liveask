@@ -1,67 +1,19 @@
 mod error;
 
-use std::sync::{
-    atomic::{AtomicBool, Ordering},
-    Arc,
-};
+use std::str::FromStr;
 
-use paypal_rust::{
-    client::AppInfo, AmountWithBreakdown, Client, CreateOrderDto, Environment, Order,
-    OrderApplicationContext, OrderIntent, OrderStatus, PurchaseUnitRequest,
+use stripe::{
+    CheckoutSession, CheckoutSessionId, CheckoutSessionMode, CheckoutSessionStatus, Client,
+    CreateCheckoutSession, CreateCheckoutSessionLineItems, ListProducts,
 };
-use serde::Deserialize;
 
 pub use self::error::PaymentError;
 use self::error::PaymentResult;
 
-#[derive(Deserialize, Debug)]
-pub struct PaymentCheckoutApprovedResource {
-    pub id: String,
-    pub status: String,
-    pub intent: String,
-    pub create_time: String,
-}
-
-#[derive(Deserialize, Debug)]
-pub struct PaymentCaptureRefundedResource {
-    pub id: String,
-    pub status: String,
-    pub custom_id: Option<String>,
-    pub note_to_payer: Option<String>,
-}
-
-#[derive(Deserialize, Debug)]
-pub struct PaymentRelatedIds {
-    pub order_id: Option<String>,
-}
-
-#[derive(Deserialize, Debug)]
-pub struct PaymentSupplementaryData {
-    pub related_ids: Option<PaymentRelatedIds>,
-}
-
-#[derive(Deserialize, Debug)]
-pub struct PaymentCaptureDeclinedResource {
-    pub id: String,
-    pub status: String,
-    pub custom_id: Option<String>,
-    pub supplementary_data: Option<PaymentSupplementaryData>,
-}
-
-#[derive(Deserialize, Debug)]
-pub struct PaymentWebhookBase {
-    pub id: String,
-    pub create_time: String,
-    pub resource_type: String,
-    pub event_type: String,
-    pub summary: String,
-    pub resource: serde_json::Value,
-}
-
 #[derive(Clone)]
 pub struct Payment {
     client: Client,
-    authenticated: Arc<AtomicBool>,
+    price: Option<String>,
 }
 
 #[cfg(test)]
@@ -69,42 +21,50 @@ pub struct Payment {
 impl Default for Payment {
     fn default() -> Self {
         Self {
-            client: Client::new(String::new(), String::new(), Environment::Sandbox).expect(""),
-            authenticated: Arc::new(AtomicBool::new(false)),
+            client: Client::new(String::new()),
+            price: None,
         }
     }
 }
 
 impl Payment {
-    pub fn new(username: String, password: String, sandbox: bool) -> PaymentResult<Self> {
-        let client = Client::new(
-            username,
-            password,
-            if sandbox {
-                Environment::Sandbox
-            } else {
-                Environment::Live
-            },
-        )?
-        .with_app_info(&AppInfo {
-            name: "liveask".to_string(),
-            version: crate::GIT_HASH.to_string(),
-            website: Some("www.live-ask.com".to_string()),
-        });
-
+    pub fn new(secret: String) -> PaymentResult<Self> {
+        let client = Client::new(secret);
         Ok(Self {
             client,
-            authenticated: Arc::new(AtomicBool::new(false)),
+            price: None,
         })
     }
 
-    pub async fn authenticate(&self) -> PaymentResult<()> {
-        if !self.authenticated.load(Ordering::Relaxed) {
-            self.client.authenticate().await?;
-            self.authenticated.store(true, Ordering::Relaxed);
+    pub async fn authenticate(&mut self) -> PaymentResult<bool> {
+        let res = stripe::Product::list(&self.client, &ListProducts::new()).await?;
+
+        for p in &res.data {
+            tracing::info!(
+                "[stripe] prod: {:?} [id: {}, live: {:?}, active: {:?}, price: {:?}]",
+                p.name,
+                p.id,
+                p.livemode,
+                p.active,
+                p.default_price,
+            );
+
+            if p.metadata
+                .as_ref()
+                .and_then(|meta| meta.get("id"))
+                .map(|id| id == "premium")
+                .unwrap_or_default()
+            {
+                tracing::info!("[stripe] prod id: {:?} is premium package", p.id);
+                self.price = Some(p.default_price.as_ref().unwrap().id().to_string());
+
+                if p.livemode.unwrap() {
+                    return Ok(true);
+                }
+            }
         }
 
-        Ok(())
+        Ok(false)
     }
 
     pub async fn create_order(
@@ -113,90 +73,35 @@ impl Payment {
         mod_url: &str,
         return_url: &str,
     ) -> PaymentResult<String> {
-        self.authenticate().await?;
+        let checkout_session = {
+            let mut params = CreateCheckoutSession::new();
+            params.cancel_url = Some(mod_url);
+            params.success_url = Some(return_url);
+            params.client_reference_id = Some(event);
+            params.mode = Some(CheckoutSessionMode::Payment);
+            params.line_items = Some(vec![CreateCheckoutSessionLineItems {
+                quantity: Some(1),
+                price: Some(self.price.clone().unwrap()),
+                ..Default::default()
+            }]);
 
-        let order = Order::create(
-            &self.client,
-            CreateOrderDto {
-                intent: OrderIntent::Capture,
-                purchase_units: vec![PurchaseUnitRequest {
-                    description: Some(format!("live-ask premium: {mod_url}")),
-                    custom_id: Some(event.to_string()),
-                    amount: AmountWithBreakdown {
-                        currency_code: String::from("EUR"),
-                        value: String::from("7"),
-                        breakdown: None,
-                    },
-                    ..Default::default()
-                }],
-                application_context: Some(
-                    OrderApplicationContext::new().return_url(return_url.to_string()),
-                ),
-                payer: None,
-            },
-        )
-        .await?;
+            CheckoutSession::create(&self.client, params).await.unwrap()
+        };
 
-        tracing::debug!("order: {:?}", order);
-
-        Ok(order
-            .links
-            .ok_or_else(|| PaymentError::General(String::from("links not populated")))?
-            .iter()
-            .find(|e| e.rel == "approve")
-            .ok_or_else(|| PaymentError::General(String::from("approve link not found")))?
-            .href
-            .clone())
+        Ok(checkout_session.url.unwrap())
     }
 
-    pub async fn event_of_order(&self, order_id: String) -> PaymentResult<String> {
-        self.authenticate().await?;
+    pub async fn retrieve_event_state(&self, session_id: String) -> PaymentResult<(String, bool)> {
+        let sess = CheckoutSessionId::from_str(session_id.as_str())?;
 
-        let order = Order::show_details(&self.client, &order_id).await?;
+        let sess = CheckoutSession::retrieve(&self.client, &sess, &[]).await?;
 
-        let unit = order
-            .purchase_units
-            .and_then(|units| {
-                if units.len() > 1 {
-                    tracing::warn!(
-                        "payment contains more than expected PurchaseUnits: {}",
-                        units.len()
-                    );
-                }
-                units.first().cloned()
-            })
-            .ok_or_else(|| PaymentError::General(String::from("purchase unit not found")))?;
-
-        let event_id = unit
-            .custom_id
-            .ok_or_else(|| PaymentError::General(String::from("custom id not found")))?;
-
-        tracing::info!(
-            "order: {} - {:?} - {}",
-            order.id.unwrap_or_default(),
-            order.status,
-            event_id
-        );
-
-        Ok(event_id)
-    }
-
-    pub async fn capture_payment(&self, order_id: String) -> PaymentResult<bool> {
-        self.authenticate().await?;
-
-        let captured_ordered = Order::capture(&self.client, &order_id, None).await?;
-
-        tracing::debug!("auth: {:?}", captured_ordered);
-
-        let completed = captured_ordered
+        let event = sess.client_reference_id.unwrap_or_default();
+        let completed = sess
             .status
-            .map(|status| status == OrderStatus::Completed)
+            .map(|status| status == CheckoutSessionStatus::Complete)
             .unwrap_or_default();
 
-        if !completed {
-            tracing::warn!("payment capture failed: {:?}", captured_ordered);
-        }
-
-        Ok(completed)
+        Ok((event, completed))
     }
 }
