@@ -28,12 +28,12 @@ impl Default for Payment {
 }
 
 impl Payment {
-    pub fn new(secret: String) -> PaymentResult<Self> {
+    pub fn new(secret: String) -> Self {
         let client = Client::new(secret);
-        Ok(Self {
+        Self {
             client,
             price: None,
-        })
+        }
     }
 
     pub async fn authenticate(&mut self) -> PaymentResult<bool> {
@@ -56,9 +56,15 @@ impl Payment {
                 .unwrap_or_default()
             {
                 tracing::info!("[stripe] prod id: {:?} is premium package", p.id);
-                self.price = Some(p.default_price.as_ref().unwrap().id().to_string());
+                self.price = Some(
+                    p.default_price
+                        .as_ref()
+                        .ok_or_else(|| PaymentError::Generic("default price not set".into()))?
+                        .id()
+                        .to_string(),
+                );
 
-                if p.livemode.unwrap() {
+                if p.livemode.unwrap_or_default() {
                     return Ok(true);
                 }
             }
@@ -81,14 +87,20 @@ impl Payment {
             params.mode = Some(CheckoutSessionMode::Payment);
             params.line_items = Some(vec![CreateCheckoutSessionLineItems {
                 quantity: Some(1),
-                price: Some(self.price.clone().unwrap()),
+                price: Some(
+                    self.price
+                        .clone()
+                        .ok_or_else(|| PaymentError::Generic("price id not defined".into()))?,
+                ),
                 ..Default::default()
             }]);
 
-            CheckoutSession::create(&self.client, params).await.unwrap()
+            CheckoutSession::create(&self.client, params).await?
         };
 
-        Ok(checkout_session.url.unwrap())
+        checkout_session
+            .url
+            .ok_or_else(|| PaymentError::Generic("no url in payment session".into()))
     }
 
     pub async fn retrieve_event_state(&self, session_id: String) -> PaymentResult<(String, bool)> {

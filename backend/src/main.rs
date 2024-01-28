@@ -152,7 +152,7 @@ async fn dynamo_client() -> Result<aws_sdk_dynamodb::Client> {
 async fn payment() -> Result<Arc<Payment>> {
     let is_test = !is_prod();
     let secret = stripe_secret();
-    let mut payment = Payment::new(secret.clone())?;
+    let mut payment = Payment::new(secret.clone());
 
     match payment.authenticate().await {
         Err(e) => {
