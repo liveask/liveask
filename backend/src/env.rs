@@ -11,6 +11,7 @@ pub const ENV_POSTHOG_KEY: &str = "LA_POSTHOG_KEY";
 const ENV_ADMIN_PWD_HASH: &str = "LA_ADMIN_PWD_HASH";
 const ENV_SESSION_SECRET: &str = "LA_SESSION_SECRET";
 pub const ENV_STRIPE_SECRET: &str = "LA_STRIPE_SECRET";
+pub const ENV_STRIPE_HOOK_SECRET: &str = "LA_STRIPE_HOOK_SECRET";
 
 pub fn admin_pwd_hash() -> String {
     std::env::var(ENV_ADMIN_PWD_HASH).unwrap_or_default()

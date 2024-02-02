@@ -11,7 +11,7 @@ workspace = true
 
 [dependencies]
 async-redis-session = { path = "../async-redis-session" }
-async-stripe = { version = "0.31", default-features = false, features = ["checkout","runtime-tokio-hyper"] }
+async-stripe = { version = "0.31", default-features = false, features = ["checkout","webhook-events","connect","runtime-tokio-hyper"] }
 async-trait = "0.1"
 aws-config = "1.0"
 aws-sdk-dynamodb = "1.2"

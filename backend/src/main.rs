@@ -14,6 +14,7 @@ mod pubsub;
 mod redis_pool;
 mod ses;
 mod signals;
+mod stripe_webhooks;
 mod tracking;
 mod utils;
 mod viewers;
@@ -299,8 +300,7 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
         .route("/api/ping", get(handle::ping_handler))
         .route("/api/version", get(handle::version_handler))
         .route("/api/error", get(handle::error_handler))
-        //TODO
-        // .route("/api/payment/webhook", post(handle::payment_webhook))
+        .route("/api/payment/stripe/webhook", post(stripe_webhooks::handle_webhook))
         .route("/push/:id", get(push_handler))
         .nest("/api/event", event_routes)
         .nest("/api/mod/event", mod_routes)

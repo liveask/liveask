@@ -605,18 +605,19 @@ impl App {
         Ok(PaymentCapture { order_captured })
     }
 
-    // #[instrument(skip(self))]
-    // pub async fn payment_webhook(&self, id: String) -> Result<()> {
-    //     tracing::info!("order processing");
+    #[instrument(skip(self))]
+    pub async fn payment_webhook(&self, stripe_session_id: String, event_id: String) -> Result<()> {
+        tracing::info!("order processing");
 
-    //     let event_id = self.payment.event_of_order(id.clone()).await?;
+        if !self
+            .capture_payment_and_upgrade(event_id, stripe_session_id)
+            .await?
+        {
+            tracing::warn!("webhook failed");
+        }
 
-    //     if !self.capture_payment_and_upgrade(event_id, id).await? {
-    //         tracing::warn!("webhook failed");
-    //     }
-
-    //     Ok(())
-    // }
+        Ok(())
+    }
 
     async fn capture_payment_and_upgrade(&self, event: String, order: String) -> Result<bool> {
         let mut entry = self.eventsdb.get(&event).await?;
