@@ -1,18 +1,14 @@
-use paypal_rust::client::PayPalError;
+use stripe::{ParseIdError, StripeError};
 use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum PaymentError {
-    #[error("General Error: {0}")]
-    General(String),
-    #[error("Paypal Error: {0}")]
-    Paypal(#[from] Box<PayPalError>),
+    #[error("Payment Error: {0}")]
+    Generic(String),
+    #[error("Stripe Error: {0}")]
+    Paypal(#[from] StripeError),
+    #[error("Stripe Id Error: {0}")]
+    IdError(#[from] ParseIdError),
 }
 
 pub type PaymentResult<T> = std::result::Result<T, PaymentError>;
-
-impl From<PayPalError> for PaymentError {
-    fn from(value: PayPalError) -> Self {
-        Self::Paypal(Box::new(value))
-    }
-}

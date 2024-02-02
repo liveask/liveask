@@ -14,6 +14,7 @@ mod pubsub;
 mod redis_pool;
 mod ses;
 mod signals;
+mod stripe_webhooks;
 mod tracking;
 mod utils;
 mod viewers;
@@ -113,6 +114,10 @@ fn posthog_key() -> String {
     std::env::var(env::ENV_POSTHOG_KEY).map_or_else(|_| String::new(), |env| env)
 }
 
+fn stripe_secret() -> String {
+    std::env::var(env::ENV_STRIPE_SECRET).map_or_else(|_| String::new(), |env| env)
+}
+
 async fn aws_ses_client() -> Result<aws_sdk_ses::Client> {
     let config = aws_config::defaults(BehaviorVersion::v2023_11_09());
 
@@ -146,32 +151,29 @@ async fn dynamo_client() -> Result<aws_sdk_dynamodb::Client> {
 }
 
 async fn payment() -> Result<Arc<Payment>> {
-    let paypal_id = std::env::var(env::ENV_PAYPAL_ID).unwrap_or_default();
-    let paypal_secret = std::env::var(env::ENV_PAYPAL_SECRET).unwrap_or_default();
+    let is_test = !is_prod();
+    let secret = stripe_secret();
+    let mut payment = Payment::new(secret.clone());
 
-    if paypal_secret.is_empty() {
-        tracing::warn!("paypal secret not provided for: {paypal_id}");
+    match payment.authenticate().await {
+        Err(e) => {
+            tracing::error!(
+                "payment auth error: [secret: {} ({}), test: {is_test}] {}",
+                secret.get(0..6).unwrap_or("utf8 error in secret"),
+                secret.len(),
+                e
+            );
+        }
+        Ok(live) => {
+            tracing::info!("payment auth ok: [test: {is_test}, live: {live}]");
+
+            if is_test != !live {
+                bail!("expected environment not matching");
+            }
+        }
     }
 
-    let sandbox = !is_prod();
-    let payment = Arc::new(Payment::new(
-        paypal_id.clone(),
-        paypal_secret.clone(),
-        sandbox,
-    )?);
-
-    if let Err(e) = payment.authenticate().await {
-        tracing::error!(
-            "payment auth error: [id: {paypal_id}, secret: {} ({}), sandbox: {sandbox}] {}",
-            paypal_secret.get(0..6).unwrap_or("utf8 error in secret"),
-            paypal_secret.len(),
-            e
-        );
-    } else {
-        tracing::info!("payment auth ok: [sandbox: {sandbox}, id: {paypal_id}]");
-    }
-
-    Ok(payment)
+    Ok(Arc::new(payment))
 }
 
 async fn setup_app(
@@ -298,7 +300,7 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
         .route("/api/ping", get(handle::ping_handler))
         .route("/api/version", get(handle::version_handler))
         .route("/api/error", get(handle::error_handler))
-        .route("/api/payment/webhook", post(handle::payment_webhook))
+        .route("/api/payment/stripe/webhook", post(stripe_webhooks::handle_webhook))
         .route("/push/:id", get(push_handler))
         .nest("/api/event", event_routes)
         .nest("/api/mod/event", mod_routes)

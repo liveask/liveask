@@ -579,7 +579,7 @@ impl App {
             .create_order(
                 &e.tokens.public_token,
                 &mod_url,
-                &format!("{mod_url}?payment=true"),
+                &format!("{mod_url}?payment=true&token={{CHECKOUT_SESSION_ID}}"),
             )
             .await?;
 
@@ -590,23 +590,29 @@ impl App {
     pub async fn premium_capture(&self, id: String, order: String) -> Result<PaymentCapture> {
         tracing::info!("premium_capture");
 
-        let event_id = self.payment.event_of_order(order.clone()).await?;
+        let (event_id, complete) = self.payment.retrieve_event_state(order.clone()).await?;
+
         if event_id != id {
             return Err(InternalError::General("invalid parameter".into()));
         }
 
-        let order_captured = self.capture_payment_and_upgrade(event_id, order).await?;
+        let order_captured = complete;
+
+        if order_captured {
+            self.capture_payment_and_upgrade(id, order).await?;
+        }
 
         Ok(PaymentCapture { order_captured })
     }
 
     #[instrument(skip(self))]
-    pub async fn payment_webhook(&self, id: String) -> Result<()> {
+    pub async fn payment_webhook(&self, stripe_session_id: String, event_id: String) -> Result<()> {
         tracing::info!("order processing");
 
-        let event_id = self.payment.event_of_order(id.clone()).await?;
-
-        if !self.capture_payment_and_upgrade(event_id, id).await? {
+        if !self
+            .capture_payment_and_upgrade(event_id, stripe_session_id)
+            .await?
+        {
             tracing::warn!("webhook failed");
         }
 
@@ -621,25 +627,19 @@ impl App {
             return Ok(true);
         }
 
-        if self.payment.capture_payment(order.clone()).await? {
-            tracing::info!("order captured");
+        entry.event.premium_order = Some(order);
 
-            entry.event.premium_order = Some(order);
+        entry.bump();
 
-            entry.bump();
+        let data = entry.event.data.clone();
 
-            let data = entry.event.data.clone();
+        self.eventsdb.put(entry).await?;
 
-            self.eventsdb.put(entry).await?;
+        self.notify_subscribers(&event, Notification::Event).await;
 
-            self.notify_subscribers(&event, Notification::Event).await;
+        self.tracking.track_event_upgrade(&event, &data);
 
-            self.tracking.track_event_upgrade(&event, &data);
-
-            Ok(true)
-        } else {
-            Ok(false)
-        }
+        Ok(true)
     }
 
     //TODO: fix clippy-allow
