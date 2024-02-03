@@ -31,6 +31,7 @@ where
             .map_err(IntoResponse::into_response)?;
 
         //TODO: do not read env everytime
+        // see https://github.com/arlyon/async-stripe/issues/456#issue-2029662003
         let secret = std::env::var(env::ENV_STRIPE_HOOK_SECRET).unwrap_or_default();
 
         Ok(Self(
@@ -39,7 +40,14 @@ where
                 signature.to_str().unwrap_or_default(),
                 &secret,
             )
-            .map_err(|_| StatusCode::BAD_REQUEST.into_response())?,
+            .map_err(|e| {
+                tracing::error!(
+                    "failed to construct event of payload: {:?} with err: {:?}",
+                    payload,
+                    e
+                );
+                StatusCode::BAD_REQUEST.into_response()
+            })?,
         ))
     }
 }
@@ -60,7 +68,14 @@ pub async fn handle_webhook(
                 }
             }
         }
-        //TODO: handle refunds
+        EventType::ChargeRefunded => {
+            tracing::debug!("[hooks] ChargeRefunded: {:?}", event.data);
+        }
+        EventType::ChargeRefundUpdated => {
+            if let EventObject::Refund(refund) = event.data.object {
+                tracing::info!("[hooks] refund: {:?}", refund);
+            }
+        }
         _ => {
             tracing::warn!("[hooks] unknown stripe hook: {:?}", event.type_);
         }
