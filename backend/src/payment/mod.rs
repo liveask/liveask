@@ -84,6 +84,11 @@ impl Payment {
             params.cancel_url = Some(mod_url);
             params.success_url = Some(return_url);
             params.client_reference_id = Some(event);
+            params.metadata = Some(
+                vec![(String::from("event"), event.to_string())]
+                    .into_iter()
+                    .collect(),
+            );
             params.mode = Some(CheckoutSessionMode::Payment);
             params.line_items = Some(vec![CreateCheckoutSessionLineItems {
                 quantity: Some(1),
