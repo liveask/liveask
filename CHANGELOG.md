@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 * use stripe as payment processor to help premium customers in more countries to be able to upgrade
 
+### Fixes
+* ok button was still enabled after wrong password input
+
 ## [2.6.2] - 2024-01-26
 
 ### Added

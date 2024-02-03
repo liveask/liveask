@@ -62,6 +62,7 @@ impl Component for PasswordPopup {
                 let target: HtmlInputElement = ev.target_dyn_into().unwrap_throw();
                 self.text = target.value();
                 self.errors.check(&self.text);
+                self.try_again = false;
                 true
             }
             Msg::KeyDown(e) => {
@@ -115,7 +116,7 @@ impl Component for PasswordPopup {
                     </div>
                     <button class="dlg-button"
                         onclick={on_click_send}
-                        disabled={self.errors.has_any()}>
+                        disabled={self.errors.has_any() || self.try_again}>
                         {"Ok"}
                     </button>
                 </div>
