@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * use stripe as payment processor to help premium customers in more countries to be able to upgrade
 * send event age in seconds into tracking
 * tracking `event-tag` to analyze tag usage
+* do not show wordcloud when event has no questions
 
 ### Fixes
 * ok button was still enabled after wrong password input

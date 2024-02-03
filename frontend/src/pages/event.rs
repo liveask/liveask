@@ -949,7 +949,7 @@ impl Event {
                 .collect::<HashMap<_, _>>()
                 .into();
 
-            if e.info.is_premium() && !e.masked {
+            if e.info.is_premium() && !e.masked && e.any_questions() {
                 self.wordcloud_agent.send(WordCloudInput(
                     e.info
                         .questions

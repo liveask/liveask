@@ -224,6 +224,11 @@ impl GetEventResponse {
             ..Default::default()
         }
     }
+
+    #[must_use]
+    pub fn any_questions(&self) -> bool {
+        !self.info.questions.is_empty()
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug)]
