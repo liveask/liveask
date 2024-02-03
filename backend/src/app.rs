@@ -643,13 +643,18 @@ impl App {
 
         entry.bump();
 
-        let data = entry.event.data.clone();
+        let (name, long_url, age) = (
+            entry.event.data.name.clone(),
+            entry.event.data.long_url.clone().unwrap_or_default(),
+            entry.event.age_in_seconds(),
+        );
 
         self.eventsdb.put(entry).await?;
 
         self.notify_subscribers(&event, Notification::Event).await;
 
-        self.tracking.track_event_upgrade(&event, &data);
+        self.tracking
+            .track_event_upgrade(&event, name, long_url, age);
 
         Ok(true)
     }

@@ -99,6 +99,13 @@ impl ApiEventInfo {
     fn timestamp_to_datetime(timestamp: i64) -> Option<DateTime<Utc>> {
         Utc.timestamp_opt(timestamp, 0).latest()
     }
+
+    pub fn age_in_seconds(&self) -> i64 {
+        Self::timestamp_to_datetime(self.create_time_unix)
+            .map(|create| Utc::now() - create)
+            .map(|age| age.num_seconds())
+            .unwrap_or_default()
+    }
 }
 
 impl From<ApiEventInfo> for EventInfo {
