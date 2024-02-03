@@ -137,35 +137,6 @@ pub async fn mod_premium_capture(
     Ok(Json(app.premium_capture(id, order).await?))
 }
 
-// #[instrument(skip(app, body))]
-// pub async fn payment_webhook(
-//     State(app): State<SharedApp>,
-//     body: String,
-// ) -> std::result::Result<impl IntoResponse, InternalError> {
-//     tracing::info!("payment_webhook");
-
-//     let base: PaymentWebhookBase = serde_json::from_str(&body)?;
-
-//     if base.event_type == "CHECKOUT.ORDER.APPROVED" {
-//         let resource: PaymentCheckoutApprovedResource = serde_json::from_value(base.resource)?;
-//         app.payment_webhook(resource.id).await?;
-//     } else if base.event_type == "PAYMENT.CAPTURE.COMPLETED" {
-//         tracing::info!(base.id, "payment capture completed: {}", body);
-//     } else if base.event_type == "PAYMENT.CAPTURE.DECLINED" {
-//         let resource: PaymentCaptureDeclinedResource = serde_json::from_value(base.resource)?;
-//         tracing::warn!("payment declined: {:?}", resource);
-//     } else if base.event_type == "PAYMENT.CAPTURE.REFUNDED" {
-//         let resource: PaymentCaptureRefundedResource = serde_json::from_value(base.resource)?;
-
-//         //TODO: make event not-premium again
-//         tracing::warn!("refund: {:?}", resource);
-//     } else {
-//         tracing::warn!("unknown payment hook: {}", body);
-//     }
-
-//     Ok(Html(""))
-// }
-
 #[instrument(skip(app))]
 pub async fn mod_get_question(
     Path((id, secret, question_id)): Path<(String, String, i64)>,
