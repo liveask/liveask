@@ -42,7 +42,7 @@ impl Worker for WordCloudAgent {
     fn update(&mut self, _msg: Self::Message) {}
 
     fn handle_input(&mut self, input: Self::Input, id: HandlerId) {
-        log::info!(target: "worker", "[wc] requested");
+        log::debug!(target: "worker", "[wc] requested");
 
         let start = Utc::now();
 
@@ -55,15 +55,15 @@ impl Worker for WordCloudAgent {
 
         let hash = pwd_hash(&text);
 
-        log::info!(target: "worker", "[wc] text generated [{hash}]: {}ms",elapsed(start));
+        log::debug!(target: "worker", "[wc] text generated [{hash}]: {}ms",elapsed(start));
 
         if let Some((cached_hash, data)) = &self.cache {
             if &hash == cached_hash {
-                log::info!(target: "worker", "[wc] result from cache: {}ms",elapsed(start));
+                log::debug!(target: "worker", "[wc] result from cache: {}ms",elapsed(start));
 
                 self.link.respond(id, WordCloudOutput(data.clone()));
 
-                log::info!(target: "worker", "[wc] send: {}ms",elapsed(start));
+                log::debug!(target: "worker", "[wc] send: {}ms",elapsed(start));
 
                 return;
             }
@@ -71,15 +71,15 @@ impl Worker for WordCloudAgent {
 
         match create_cloud(&text) {
             Ok(cloud) => {
-                log::info!(target: "worker", "[wc] generated: {}ms",elapsed(start));
+                log::debug!(target: "worker", "[wc] generated: {}ms",elapsed(start));
 
                 self.link.respond(id, WordCloudOutput(cloud.clone()));
 
-                log::info!(target: "worker", "[wc] send: {}ms",elapsed(start));
+                log::debug!(target: "worker", "[wc] send: {}ms",elapsed(start));
 
                 self.cache = Some((hash, cloud));
 
-                log::info!(target: "worker", "[wc] cached: {}ms",elapsed(start));
+                log::debug!(target: "worker", "[wc] cached: {}ms",elapsed(start));
             }
 
             Err(e) => {

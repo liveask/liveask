@@ -1087,7 +1087,7 @@ impl Event {
 
                     true
                 } else if msg.starts_with("v:") {
-                    log::info!("received viewer update: {}", msg);
+                    log::debug!("received viewer update: {}", msg);
 
                     let viewers = msg
                         .split(':')
