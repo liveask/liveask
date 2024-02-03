@@ -10,7 +10,7 @@ pub use in_memory::InMemoryEventsDB;
 
 use async_trait::async_trait;
 
-pub use self::types::{ApiEventInfo, EventEntry};
+pub use self::types::{ApiEventInfo, EventEntry, PremiumOrder};
 
 pub fn event_key(key: &str) -> String {
     format!("events/ev-{key}.json")

@@ -10,7 +10,7 @@ use self::{
     tokens::{attributes_to_tokens, tokens_to_attributes},
 };
 
-use super::{ApiEventInfo, AttributeMap};
+use super::{ApiEventInfo, AttributeMap, PremiumOrder};
 use crate::eventsdb::Error;
 use aws_sdk_dynamodb::types::AttributeValue;
 use serde_dynamo::{from_item, to_item};
@@ -25,7 +25,7 @@ const ATTR_EVENT_INFO_STATE: &str = "state";
 const ATTR_EVENT_INFO_TOKENS: &str = "tokens";
 const ATTR_EVENT_INFO_ITEMS: &str = "items";
 const ATTR_EVENT_INFO_DATA: &str = "data";
-const ATTR_EVENT_INFO_PREMIUM: &str = "premium";
+const ATTR_EVENT_INFO_PREMIUM: &str = "premium_id";
 const ATTR_EVENT_INFO_PASSWORD: &str = "password";
 const ATTR_EVENT_INFO_CONTEXT: &str = "ctx";
 const ATTR_EVENT_INFO_TAGS: &str = "tags";
@@ -79,10 +79,10 @@ pub fn event_to_attributes(value: ApiEventInfo) -> AttributeMap {
     ];
     let mut map: AttributeMap = vec.into_iter().collect();
 
-    if let Some(premium_order) = value.premium_order {
+    if let Some(premium) = value.premium_id {
         map.insert(
             ATTR_EVENT_INFO_PREMIUM.into(),
-            AttributeValue::S(premium_order),
+            AttributeValue::M(to_item(premium).unwrap_or_default()),
         );
     }
 
@@ -147,9 +147,10 @@ pub fn attributes_to_event(value: &AttributeMap) -> Result<ApiEventInfo, super::
         .copied()
         .unwrap_or_default();
 
-    let premium_order = value
+    let premium_receipt: Option<PremiumOrder> = value
         .get(ATTR_EVENT_INFO_PREMIUM)
-        .and_then(|value| value.as_s().ok().cloned());
+        .and_then(|value| value.as_m().ok().cloned())
+        .and_then(|v| from_item(v).ok());
 
     let password = value
         .get(ATTR_EVENT_INFO_PASSWORD)
@@ -188,7 +189,7 @@ pub fn attributes_to_event(value: &AttributeMap) -> Result<ApiEventInfo, super::
         do_screening,
         state,
         password,
-        premium_order,
+        premium_id: premium_receipt,
         context,
         tags,
     })
@@ -225,7 +226,7 @@ mod test {
             delete_time_unix: 0,
             deleted: false,
             password: shared::EventPassword::Enabled(String::from("pwd")),
-            premium_order: Some(String::from("order")),
+            premium_id: Some(PremiumOrder::PaypalOrderId(String::from("order"))),
             last_edit_unix: 2,
             questions: vec![QuestionItem {
                 id: 0,

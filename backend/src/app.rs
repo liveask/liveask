@@ -24,7 +24,7 @@ use ulid::Ulid;
 use crate::{
     bail, env,
     error::{InternalError, Result},
-    eventsdb::{ApiEventInfo, EventEntry, EventsDB},
+    eventsdb::{ApiEventInfo, EventEntry, EventsDB, PremiumOrder},
     mail::MailConfig,
     payment::Payment,
     plots,
@@ -214,7 +214,7 @@ impl App {
             delete_time_unix: 0,
             last_edit_unix: now,
             deleted: false,
-            premium_order: None,
+            premium_id: None,
             password: shared::EventPassword::Disabled,
             questions: Vec::new(),
             do_screening: false,
@@ -353,7 +353,7 @@ impl App {
         };
 
         let timed_out = e.is_timed_out_and_free();
-        let viewers = if admin || e.premium_order.is_some() {
+        let viewers = if admin || e.premium_id.is_some() {
             self.viewers.count(&id).await
         } else {
             0
@@ -587,10 +587,17 @@ impl App {
     }
 
     #[instrument(skip(self))]
-    pub async fn premium_capture(&self, id: String, order: String) -> Result<PaymentCapture> {
+    pub async fn premium_capture(
+        &self,
+        id: String,
+        stripe_order_id: String,
+    ) -> Result<PaymentCapture> {
         tracing::info!("premium_capture");
 
-        let (event_id, complete) = self.payment.retrieve_event_state(order.clone()).await?;
+        let (event_id, complete) = self
+            .payment
+            .retrieve_event_state(stripe_order_id.clone())
+            .await?;
 
         if event_id != id {
             return Err(InternalError::General("invalid parameter".into()));
@@ -599,7 +606,8 @@ impl App {
         let order_captured = complete;
 
         if order_captured {
-            self.capture_payment_and_upgrade(id, order).await?;
+            self.capture_payment_and_upgrade(id, stripe_order_id)
+                .await?;
         }
 
         Ok(PaymentCapture { order_captured })
@@ -619,15 +627,19 @@ impl App {
         Ok(())
     }
 
-    async fn capture_payment_and_upgrade(&self, event: String, order: String) -> Result<bool> {
+    async fn capture_payment_and_upgrade(
+        &self,
+        event: String,
+        stripe_session_id: String,
+    ) -> Result<bool> {
         let mut entry = self.eventsdb.get(&event).await?;
 
-        if entry.event.premium_order.is_some() {
+        if entry.event.premium_id.is_some() {
             tracing::info!("event already premium");
             return Ok(true);
         }
 
-        entry.event.premium_order = Some(order);
+        entry.event.premium_id = Some(PremiumOrder::StripeSessionId(stripe_session_id));
 
         entry.bump();
 
@@ -930,7 +942,7 @@ impl App {
     }
 
     fn mod_edit_tag(e: &mut ApiEventInfo, current_tag: &shared::CurrentTag) -> Result<()> {
-        if e.premium_order.is_none() {
+        if e.premium_id.is_none() {
             return Err(InternalError::PremiumOnlyFeature(
                 e.tokens.public_token.clone(),
             ));
@@ -987,7 +999,7 @@ impl PubSubReceiver for App {
 mod test {
     use super::*;
     use crate::{
-        eventsdb::{event_key, InMemoryEventsDB},
+        eventsdb::{event_key, InMemoryEventsDB, PremiumOrder},
         pubsub::{PubSubInMemory, PubSubReceiverInMemory},
         viewers::MockViewers,
     };
@@ -1318,7 +1330,7 @@ mod test {
             .get_mut(&event_key(&res.tokens.public_token))
             .unwrap()
             .event
-            .premium_order = Some(String::from("foo"));
+            .premium_id = Some(PremiumOrder::PaypalOrderId(String::from("foo")));
 
         let e = app
             .mod_edit_event(
@@ -1497,7 +1509,7 @@ mod test {
             .get_mut(&event_key(&res.tokens.public_token))
             .unwrap()
             .event
-            .premium_order = Some(String::from("foo"));
+            .premium_id = Some(PremiumOrder::PaypalOrderId(String::from("foo")));
 
         assert_eq!(
             app.mod_edit_event(

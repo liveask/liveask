@@ -4,6 +4,7 @@ use crate::utils::timestamp_now;
 use aws_sdk_dynamodb::types::AttributeValue;
 use chrono::{DateTime, Duration, TimeZone, Utc};
 use serde::{Deserialize, Serialize};
+use serde_dynamo::from_item;
 use shared::{
     ContextItem, EventData, EventFlags, EventInfo, EventPassword, EventState, EventTags,
     EventTokens, QuestionItem,
@@ -13,6 +14,20 @@ use std::collections::HashMap;
 use self::conversion::{attributes_to_event, event_to_attributes};
 
 use super::{event_key, Error};
+
+#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq)]
+pub enum PremiumOrder {
+    PaypalOrderId(String),
+    StripeSessionId(String),
+}
+
+/// old db entries had a untyped payment receipt that was only used in the paypal implmentation.
+/// we use `LegacyEventInfo` to deserialize these and extract/convert it into the new format
+#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, Default)]
+pub struct LegacyEventInfo {
+    #[serde(rename = "premium")]
+    pub paypal_order: Option<String>,
+}
 
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, Default)]
 pub struct ApiEventInfo {
@@ -31,7 +46,7 @@ pub struct ApiEventInfo {
     pub state: EventState,
     #[serde(default)]
     pub password: EventPassword,
-    pub premium_order: Option<String>,
+    pub premium_id: Option<PremiumOrder>,
     #[serde(default)]
     pub context: Vec<ContextItem>,
     #[serde(default)]
@@ -62,7 +77,7 @@ impl ApiEventInfo {
     }
 
     pub fn is_timed_out_and_free(&self) -> bool {
-        self.premium_order.is_none() && self.is_timed_out()
+        self.premium_id.is_none() && self.is_timed_out()
     }
 
     pub fn adapt_if_timedout(&mut self) -> bool {
@@ -91,7 +106,7 @@ impl From<ApiEventInfo> for EventInfo {
         let mut flags = EventFlags::empty();
 
         flags.set(EventFlags::DELETED, val.deleted);
-        flags.set(EventFlags::PREMIUM, val.premium_order.is_some());
+        flags.set(EventFlags::PREMIUM, val.premium_id.is_some());
         flags.set(EventFlags::SCREENING, val.do_screening);
         flags.set(EventFlags::PASSWORD, val.password.is_enabled());
 
@@ -134,7 +149,7 @@ impl EventEntry {
 
 pub type AttributeMap = HashMap<std::string::String, AttributeValue>;
 
-const CURRENT_FORMAT: usize = 1;
+const CURRENT_FORMAT: usize = 2;
 
 impl TryFrom<&AttributeMap> for EventEntry {
     type Error = super::Error;
@@ -145,7 +160,12 @@ impl TryFrom<&AttributeMap> for EventEntry {
             .map_err(|_| Error::General("malformed event: `v`".into()))?
             .parse::<usize>()?;
 
-        let event = value["event"]
+        let format = value["format"]
+            .as_n()
+            .map_err(|_| Error::General("malformed event: `format`".into()))?
+            .parse::<usize>()?;
+
+        let event_data = value["event"]
             .as_m()
             .map_err(|_| Error::MalformedObject("event".into()))?;
 
@@ -154,7 +174,17 @@ impl TryFrom<&AttributeMap> for EventEntry {
             .and_then(|ttl| ttl.as_n().ok())
             .and_then(|ttl| ttl.parse::<i64>().ok());
 
-        let event = attributes_to_event(event)?;
+        let mut event = attributes_to_event(event_data)?;
+
+        if format <= 2 {
+            let legacy: Option<LegacyEventInfo> = from_item(event_data.clone()).ok();
+            if let Some(legacy) = legacy {
+                tracing::info!("legacy: {:?}", legacy);
+                if let Some(paypal_order) = legacy.paypal_order {
+                    event.premium_id = Some(PremiumOrder::PaypalOrderId(paypal_order));
+                }
+            }
+        }
 
         Ok(Self {
             event,
@@ -212,7 +242,7 @@ mod test_serialization {
                 delete_time_unix: 0,
                 deleted: false,
                 password: shared::EventPassword::Disabled,
-                premium_order: Some(String::from("order")),
+                premium_id: Some(PremiumOrder::PaypalOrderId(String::from("order"))),
                 last_edit_unix: 2,
                 questions: vec![QuestionItem {
                     id: 0,
@@ -261,7 +291,7 @@ mod test_serialization {
                 delete_time_unix: 0,
                 deleted: false,
                 password: shared::EventPassword::Enabled(String::from("pwd")),
-                premium_order: Some(String::from("order")),
+                premium_id: Some(PremiumOrder::StripeSessionId(String::from("order"))),
                 last_edit_unix: 2,
                 questions: vec![QuestionItem {
                     id: 0,
