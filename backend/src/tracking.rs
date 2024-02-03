@@ -47,6 +47,20 @@ impl Tracking {
         });
     }
 
+    pub fn track_event_tag_set(&self, event: String, edit: EditEvent) {
+        let tracking = self.clone();
+
+        tokio::task::spawn_blocking(move || {
+            let mut data = HashMap::with_capacity(1);
+            data.insert("event".to_string(), event);
+            data.insert("edit".to_string(), format!("{edit:?}"));
+
+            if let Err(e) = tracking.logger("event-tag", Some(data)) {
+                tracing::error!("posthog error: {e}");
+            }
+        });
+    }
+
     pub fn track_event_create(&self, event: String, url: String, name: String) {
         let tracking = self.clone();
 

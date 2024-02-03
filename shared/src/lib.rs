@@ -289,6 +289,13 @@ pub enum CurrentTag {
     Enabled(String),
 }
 
+impl CurrentTag {
+    #[must_use]
+    pub const fn is_enabled(&self) -> bool {
+        matches!(self, Self::Enabled(_))
+    }
+}
+
 impl Default for EventPassword {
     fn default() -> Self {
         Self::Disabled

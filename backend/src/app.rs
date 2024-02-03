@@ -507,7 +507,7 @@ impl App {
             self.mod_edit_password(e, password);
         }
         if let Some(current_tag) = &changes.current_tag {
-            Self::mod_edit_tag(e, current_tag)?;
+            self.mod_edit_tag(e, current_tag)?;
         }
         if let Some(description) = changes.description {
             //TODO: desc
@@ -946,11 +946,23 @@ impl App {
         e.password = password;
     }
 
-    fn mod_edit_tag(e: &mut ApiEventInfo, current_tag: &shared::CurrentTag) -> Result<()> {
+    fn mod_edit_tag(&self, e: &mut ApiEventInfo, current_tag: &shared::CurrentTag) -> Result<()> {
         if e.premium_id.is_none() {
             return Err(InternalError::PremiumOnlyFeature(
                 e.tokens.public_token.clone(),
             ));
+        }
+
+        let edit_type = match (e.tags.current_tag.is_some(), current_tag.is_enabled()) {
+            (false, true) => Some(EditEvent::Enabled),
+            (true, false) => Some(EditEvent::Disabled),
+            (true, true) => Some(EditEvent::Changed),
+            _ => None,
+        };
+
+        if let Some(edit_type) = edit_type {
+            self.tracking
+                .track_event_tag_set(e.tokens.public_token.clone(), edit_type);
         }
 
         if let shared::CurrentTag::Enabled(tag) = &current_tag {
