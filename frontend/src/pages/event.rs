@@ -874,7 +874,7 @@ impl Event {
                         </button>
                         <button class="button-blue">
                             <a class="feedback-anchor"
-                                href="https://forms.gle/DsD9ZEX5uv1QqDjV7"
+                                href="https://noteforms.com/forms/user-feedback-wlfknf"
                                 target="_blank"
                                 onclick={ctx.link().callback(|_| Msg::FeedbackClick)}>
                                 <div class="feedback-text">{"Give us feedback"}</div>
