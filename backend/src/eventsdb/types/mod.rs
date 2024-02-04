@@ -4,12 +4,30 @@ use crate::utils::timestamp_now;
 use aws_sdk_dynamodb::types::AttributeValue;
 use chrono::{DateTime, Duration, TimeZone, Utc};
 use serde::{Deserialize, Serialize};
-use shared::{EventData, EventInfo, EventState, EventTokens, QuestionItem};
+use serde_dynamo::from_item;
+use shared::{
+    ContextItem, EventData, EventFlags, EventInfo, EventPassword, EventState, EventTags,
+    EventTokens, QuestionItem,
+};
 use std::collections::HashMap;
 
 use self::conversion::{attributes_to_event, event_to_attributes};
 
 use super::{event_key, Error};
+
+#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq)]
+pub enum PremiumOrder {
+    PaypalOrderId(String),
+    StripeSessionId(String),
+}
+
+/// old db entries had a untyped payment receipt that was only used in the paypal implmentation.
+/// we use `LegacyEventInfo` to deserialize these and extract/convert it into the new format
+#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, Default)]
+pub struct LegacyEventInfo {
+    #[serde(rename = "premium")]
+    pub paypal_order: Option<String>,
+}
 
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, Default)]
 pub struct ApiEventInfo {
@@ -26,9 +44,22 @@ pub struct ApiEventInfo {
     #[serde(default)]
     pub do_screening: bool,
     pub state: EventState,
-    pub premium_order: Option<String>,
     #[serde(default)]
-    pub mod_email: Option<String>,
+    pub password: EventPassword,
+    pub premium_id: Option<PremiumOrder>,
+    #[serde(default)]
+    pub context: Vec<ContextItem>,
+    #[serde(default)]
+    pub tags: EventTags,
+}
+
+const LOREM_IPSUM:&str = "Lorem ipsum dolor sit amet. Et adipisci repellendus id dolore molestiae sed quidem ratione! Aut itaque magnam eos corporis dolores ut repudiandae consequuntur et maiores accusantium. 33 quas illum vel cumque quisquam et possimus quaerat et nostrum galisum et similique dolorum quo earum earum et accusantium dignissimos!";
+
+#[allow(clippy::string_slice)]
+pub fn mask_string(s: &str) -> &str {
+    //Note: as soon as `LOREM_IPSUM` contains utf8 this risks to panic inside utf8 codes
+    let text_length = s.len().min(LOREM_IPSUM.len());
+    &LOREM_IPSUM[..text_length]
 }
 
 impl ApiEventInfo {
@@ -46,38 +77,57 @@ impl ApiEventInfo {
     }
 
     pub fn is_timed_out_and_free(&self) -> bool {
-        self.premium_order.is_none() && self.is_timed_out()
+        self.premium_id.is_none() && self.is_timed_out()
     }
 
-    pub fn adapt_if_timedout(&mut self) {
+    pub fn adapt_if_timedout(&mut self) -> bool {
         if self.is_timed_out_and_free() {
-            for q in &mut self.questions {
-                let sentence = LOREM_IPSUM;
-                q.text = sentence[0..q.text.len().min(sentence.len())].to_string();
-            }
+            self.mask_data();
+            return true;
         }
+
+        false
+    }
+
+    pub fn mask_data(&mut self) {
+        for q in &mut self.questions {
+            q.text = mask_string(&q.text).to_string();
+        }
+        self.data.description = mask_string(&self.data.description).to_string();
     }
 
     fn timestamp_to_datetime(timestamp: i64) -> Option<DateTime<Utc>> {
         Utc.timestamp_opt(timestamp, 0).latest()
     }
-}
 
-const LOREM_IPSUM:&str = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam diam eros, tincidunt ac placerat in, sodales sit amet nibh.";
+    pub fn age_in_seconds(&self) -> i64 {
+        Self::timestamp_to_datetime(self.create_time_unix)
+            .map(|create| Utc::now() - create)
+            .map(|age| age.num_seconds())
+            .unwrap_or_default()
+    }
+}
 
 impl From<ApiEventInfo> for EventInfo {
     fn from(val: ApiEventInfo) -> Self {
+        let mut flags = EventFlags::empty();
+
+        flags.set(EventFlags::DELETED, val.deleted);
+        flags.set(EventFlags::PREMIUM, val.premium_id.is_some());
+        flags.set(EventFlags::SCREENING, val.do_screening);
+        flags.set(EventFlags::PASSWORD, val.password.is_enabled());
+
         Self {
             tokens: val.tokens,
             data: val.data,
             create_time_unix: val.create_time_unix,
             delete_time_unix: val.delete_time_unix,
-            deleted: val.deleted,
             last_edit_unix: val.last_edit_unix,
             questions: val.questions,
             state: val.state,
-            screening: val.do_screening,
-            premium: val.premium_order.is_some(),
+            flags,
+            context: val.context,
+            tags: val.tags,
         }
     }
 }
@@ -106,7 +156,7 @@ impl EventEntry {
 
 pub type AttributeMap = HashMap<std::string::String, AttributeValue>;
 
-const CURRENT_FORMAT: usize = 1;
+const CURRENT_FORMAT: usize = 2;
 
 impl TryFrom<&AttributeMap> for EventEntry {
     type Error = super::Error;
@@ -117,7 +167,12 @@ impl TryFrom<&AttributeMap> for EventEntry {
             .map_err(|_| Error::General("malformed event: `v`".into()))?
             .parse::<usize>()?;
 
-        let event = value["event"]
+        let format = value["format"]
+            .as_n()
+            .map_err(|_| Error::General("malformed event: `format`".into()))?
+            .parse::<usize>()?;
+
+        let event_data = value["event"]
             .as_m()
             .map_err(|_| Error::MalformedObject("event".into()))?;
 
@@ -126,7 +181,17 @@ impl TryFrom<&AttributeMap> for EventEntry {
             .and_then(|ttl| ttl.as_n().ok())
             .and_then(|ttl| ttl.parse::<i64>().ok());
 
-        let event = attributes_to_event(event)?;
+        let mut event = attributes_to_event(event_data)?;
+
+        if format <= 2 {
+            let legacy: Option<LegacyEventInfo> = from_item(event_data.clone()).ok();
+            if let Some(legacy) = legacy {
+                tracing::info!("legacy: {:?}", legacy);
+                if let Some(paypal_order) = legacy.paypal_order {
+                    event.premium_id = Some(PremiumOrder::PaypalOrderId(paypal_order));
+                }
+            }
+        }
 
         Ok(Self {
             event,
@@ -163,12 +228,11 @@ impl From<EventEntry> for AttributeMap {
 mod test_serialization {
     use super::*;
     use pretty_assertions::assert_eq;
-    use shared::{EventState, States};
+    use shared::{EventState, States, Tag, TagId};
 
     #[test]
+    #[tracing_test::traced_test]
     fn test_ser_and_de_1() {
-        // env_logger::init();
-
         let entry = EventEntry {
             event: ApiEventInfo {
                 tokens: EventTokens {
@@ -184,9 +248,9 @@ mod test_serialization {
                 create_time_unix: 1,
                 delete_time_unix: 0,
                 deleted: false,
-                premium_order: Some(String::from("order")),
+                password: shared::EventPassword::Disabled,
+                premium_id: Some(PremiumOrder::PaypalOrderId(String::from("order"))),
                 last_edit_unix: 2,
-                mod_email: None,
                 questions: vec![QuestionItem {
                     id: 0,
                     likes: 2,
@@ -195,11 +259,14 @@ mod test_serialization {
                     answered: true,
                     screening: false,
                     create_time_unix: 3,
+                    tag: None,
                 }],
                 do_screening: true,
                 state: EventState {
                     state: States::Closed,
                 },
+                context: Vec::new(),
+                tags: EventTags::default(),
             },
             version: 2,
             ttl: None,
@@ -213,9 +280,8 @@ mod test_serialization {
     }
 
     #[test]
+    #[tracing_test::traced_test]
     fn test_ser_and_de_2() {
-        // env_logger::init();
-
         let entry = EventEntry {
             event: ApiEventInfo {
                 tokens: EventTokens {
@@ -231,9 +297,9 @@ mod test_serialization {
                 create_time_unix: 1,
                 delete_time_unix: 0,
                 deleted: false,
-                premium_order: Some(String::from("order")),
+                password: shared::EventPassword::Enabled(String::from("pwd")),
+                premium_id: Some(PremiumOrder::StripeSessionId(String::from("order"))),
                 last_edit_unix: 2,
-                mod_email: Some(String::from("mail")),
                 questions: vec![QuestionItem {
                     id: 0,
                     likes: 2,
@@ -242,11 +308,22 @@ mod test_serialization {
                     answered: true,
                     screening: true,
                     create_time_unix: 3,
+                    tag: Some(TagId(0)),
                 }],
-
                 do_screening: false,
                 state: EventState {
                     state: States::Closed,
+                },
+                context: vec![ContextItem {
+                    label: String::new(),
+                    url: String::from("foobar"),
+                }],
+                tags: EventTags {
+                    tags: vec![Tag {
+                        name: String::from("talk1"),
+                        id: TagId(0),
+                    }],
+                    current_tag: Some(TagId(0)),
                 },
             },
             version: 2,

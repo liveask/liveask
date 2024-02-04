@@ -1,3 +1,5 @@
+# makefile backend
+
 URL=http://127.0.0.1:8090
 
 test-create-event:
@@ -15,3 +17,9 @@ check:
 
 test-payment:
 	xh "${URL}/api/mod/event/upgrade/eventexample/eventexamplemod"
+
+test-version:
+	xh "${URL}/api/version"
+
+header-test:
+	xh "${URL}/api/event/eventexample" my-header:foobar

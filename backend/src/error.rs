@@ -2,10 +2,10 @@ use axum::response::{IntoResponse, Response};
 use deadpool_redis::{CreatePoolError, PoolError};
 use redis::RedisError;
 use reqwest::StatusCode;
-use shared::AddQuestionValidation;
+use shared::{AddQuestionValidation, PasswordValidation, TagValidation};
 use thiserror::Error;
 
-use crate::{eventsdb, payment::PaymentError};
+use crate::{eventsdb, payment::PaymentError, plots::PlottingError};
 
 #[derive(Error, Debug)]
 pub enum InternalError {
@@ -15,17 +15,29 @@ pub enum InternalError {
     #[error("Invalid Login Error")]
     InvalidLogin,
 
-    #[error("Acceesssing Deleted Event: {0}")]
+    #[error("Accessing Deleted Event: {0}")]
     AccessingDeletedEvent(String),
 
     #[error("Trying to modify timed out Event: {0}")]
     TimedOutFreeEvent(String),
 
+    #[error("wrong moderator token: {0}")]
+    WrongModeratorToken(String),
+
+    #[error("Premium Only Feature: {0}")]
+    PremiumOnlyFeature(String),
+
     #[error("Duplicate Question Error")]
     DuplicateQuestion,
 
-    #[error("Add Question Valdiation")]
-    AddQuestionValdiation(AddQuestionValidation),
+    #[error("Add Question Validation")]
+    AddQuestionValidation(AddQuestionValidation),
+
+    #[error("Password Validation")]
+    PasswordValidation(PasswordValidation),
+
+    #[error("Tag Validation")]
+    TagValidation(TagValidation),
 
     #[error("Events DB Error: {0}")]
     EventsDB(#[from] eventsdb::Error),
@@ -47,6 +59,9 @@ pub enum InternalError {
 
     #[error("Uri Error: {0}")]
     Uri(#[from] axum::http::uri::InvalidUri),
+
+    #[error("Plotting Error: {0}")]
+    PlottingError(#[from] PlottingError),
 }
 
 impl IntoResponse for InternalError {
@@ -54,6 +69,11 @@ impl IntoResponse for InternalError {
     fn into_response(self) -> Response {
         match self {
             Self::General(e) => {
+                tracing::error!("{e}");
+                (StatusCode::INTERNAL_SERVER_ERROR, "").into_response()
+            }
+
+            Self::PlottingError(e) => {
                 tracing::error!("{e}");
                 (StatusCode::INTERNAL_SERVER_ERROR, "").into_response()
             }
@@ -73,6 +93,16 @@ impl IntoResponse for InternalError {
                 (StatusCode::BAD_REQUEST, "").into_response()
             }
 
+            Self::WrongModeratorToken(id) => {
+                tracing::warn!("wrong moderator token: {id}");
+                (StatusCode::BAD_REQUEST, "").into_response()
+            }
+
+            Self::PremiumOnlyFeature(id) => {
+                tracing::warn!("trying to access premium feature: {id}");
+                (StatusCode::BAD_REQUEST, "").into_response()
+            }
+
             Self::DuplicateQuestion => (StatusCode::BAD_REQUEST, "").into_response(),
 
             Self::Payment(e) => {
@@ -85,8 +115,18 @@ impl IntoResponse for InternalError {
                 (StatusCode::BAD_REQUEST, "").into_response()
             }
 
-            Self::AddQuestionValdiation(e) => {
+            Self::AddQuestionValidation(e) => {
                 tracing::warn!("add question validation: {:?}", e);
+                (StatusCode::BAD_REQUEST, "").into_response()
+            }
+
+            Self::PasswordValidation(e) => {
+                tracing::warn!("password validation: {:?}", e);
+                (StatusCode::BAD_REQUEST, "").into_response()
+            }
+
+            Self::TagValidation(e) => {
+                tracing::warn!("tag validation: {:?}", e);
                 (StatusCode::BAD_REQUEST, "").into_response()
             }
 

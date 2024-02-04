@@ -2,9 +2,9 @@
 
 use gloo_utils::format::JsValueSerdeExt;
 use shared::{
-    AddEvent, AddQuestion, EditLike, EventData, EventInfo, EventState, EventUpgrade,
-    GetEventResponse, GetUserInfo, ModEditScreening, ModEventState, ModQuestion, PaymentCapture,
-    QuestionItem, States, UserLogin,
+    AddEvent, AddQuestion, EditLike, EventData, EventInfo, EventPasswordRequest,
+    EventPasswordResponse, EventUpgrade, GetEventResponse, GetUserInfo, ModEvent, ModQuestion,
+    PaymentCapture, QuestionItem, UserLogin,
 };
 use std::{
     error::Error,
@@ -12,7 +12,7 @@ use std::{
 };
 use wasm_bindgen::{JsCast, JsValue};
 use wasm_bindgen_futures::JsFuture;
-use web_sys::{Request, RequestCredentials, RequestInit, RequestMode, Response};
+use web_sys::{Request, RequestCredentials, RequestInit, Response};
 
 /// Something wrong has occurred while fetching an external resource.
 #[derive(Debug)]
@@ -48,7 +48,6 @@ pub async fn fetch_version(base_api: &str) -> Result<String, FetchError> {
 
     let mut opts = RequestInit::new();
     opts.method("GET");
-    opts.mode(RequestMode::Cors);
 
     let request = Request::new_with_str_and_init(&url, &opts)?;
 
@@ -73,7 +72,6 @@ pub async fn fetch_event(
 
     let mut opts = RequestInit::new();
     opts.method("GET");
-    opts.mode(RequestMode::Cors);
     opts.credentials(RequestCredentials::Include);
 
     let request = Request::new_with_str_and_init(&url, &opts)?;
@@ -88,19 +86,16 @@ pub async fn fetch_event(
     Ok(res)
 }
 
-pub async fn mod_state_change(
+pub async fn mod_edit_event(
     base_api: &str,
     id: String,
     secret: String,
-    state: States,
+    change: ModEvent,
 ) -> Result<EventInfo, FetchError> {
-    let body = ModEventState {
-        state: EventState { state },
-    };
-    let body = serde_json::to_string(&body)?;
+    let body = serde_json::to_string(&change)?;
     let body = JsValue::from_str(&body);
 
-    let url = format!("{base_api}/api/mod/event/state/{id}/{secret}");
+    let url = format!("{base_api}/api/mod/event/{id}/{secret}");
 
     let mut opts = RequestInit::new();
     opts.method("POST");
@@ -119,21 +114,20 @@ pub async fn mod_state_change(
     Ok(res)
 }
 
-pub async fn mod_edit_screening(
+pub async fn event_set_password(
     base_api: &str,
     id: String,
-    secret: String,
-    screening: bool,
-) -> Result<EventInfo, FetchError> {
-    let body = ModEditScreening { screening };
-    let body = serde_json::to_string(&body)?;
+    pwd: String,
+) -> Result<bool, FetchError> {
+    let body = serde_json::to_string(&EventPasswordRequest { pwd })?;
     let body = JsValue::from_str(&body);
 
-    let url = format!("{base_api}/api/mod/event/screening/{id}/{secret}");
+    let url = format!("{base_api}/api/event/{id}/pwd");
 
     let mut opts = RequestInit::new();
     opts.method("POST");
     opts.body(Some(&body));
+    opts.credentials(RequestCredentials::Include);
 
     let request = Request::new_with_str_and_init(&url, &opts)?;
     request.headers().set("content-type", "application/json")?;
@@ -143,9 +137,9 @@ pub async fn mod_edit_screening(
     let resp: Response = resp_value.dyn_into()?;
 
     let json = JsFuture::from(resp.json()?).await?;
-    let res = JsValueSerdeExt::into_serde::<EventInfo>(&json)?;
+    let res = JsValueSerdeExt::into_serde::<EventPasswordResponse>(&json)?;
 
-    Ok(res)
+    Ok(res.ok)
 }
 
 pub async fn mod_upgrade(
@@ -341,7 +335,6 @@ pub async fn fetch_user(base_api: &str) -> Result<GetUserInfo, FetchError> {
 
     let mut opts = RequestInit::new();
     opts.method("GET");
-    opts.mode(RequestMode::Cors);
     opts.credentials(RequestCredentials::Include);
 
     let request = Request::new_with_str_and_init(&url, &opts)?;
@@ -361,7 +354,6 @@ pub async fn admin_logout(base_api: &str) -> Result<(), FetchError> {
 
     let mut opts = RequestInit::new();
     opts.method("GET");
-    opts.mode(RequestMode::Cors);
     opts.credentials(RequestCredentials::Include);
 
     let request = Request::new_with_str_and_init(&url, &opts)?;
@@ -386,7 +378,7 @@ pub async fn delete_event(
 
     let opts = {
         let mut opts = RequestInit::new();
-        opts.method("GET").mode(RequestMode::Cors);
+        opts.method("GET");
         opts
     };
 

@@ -1,18 +1,17 @@
 # https://sagiegurari.github.io/cargo-make
 
 [env]
-RUSTFLAGS="--cfg=web_sys_unstable_apis"
+RUSTFLAGS = "--cfg=web_sys_unstable_apis"
 # "beta" or "local"
 LA_ENV = { value = "local", condition = { env_not_set = ["LA_ENV"] } }
 
 [tasks.cargo-check]
 command = "cargo"
-args = ["c","--target=wasm32-unknown-unknown"]
+args = ["c", "--target=wasm32-unknown-unknown"]
 
 [tasks.clippy]
-install_crate = "clippy"
 command = "cargo"
-args = ["clippy","--target=wasm32-unknown-unknown"]
+args = ["clippy", "--target=wasm32-unknown-unknown"]
 
 [tasks.clippy-nightly]
 script_runner = "@shell"
@@ -20,45 +19,51 @@ script = '''
 cargo +nightly clippy --target=wasm32-unknown-unknown
 '''
 
+[tasks.nightly-test]
+script_runner = "@shell"
+script = '''
+cargo +nightly test --target=wasm32-unknown-unknown
+'''
+
 [tasks.cargo-sort]
 install_crate = "cargo-sort"
 command = "cargo"
-args = ["sort","-c"]
+args = ["sort", "-c"]
 
 [tasks.test]
 command = "cargo"
-args = ["test","--target=wasm32-unknown-unknown"]
+args = ["test", "--target=wasm32-unknown-unknown"]
 
 [tasks.udeps]
 command = "cargo"
-toolchain="nightly"
-args = ["udeps","--target=wasm32-unknown-unknown"]
+toolchain = "nightly"
+args = ["udeps", "--target=wasm32-unknown-unknown"]
 
 [tasks.format]
 install_crate = "fmt"
 command = "cargo"
-args = ["fmt","--","--check"]
+args = ["fmt", "--", "--check"]
 
 [tasks.checks]
-dependencies = ["cargo-sort","format","cargo-check","clippy","udeps"]
+dependencies = ["cargo-sort", "format", "cargo-check", "clippy", "udeps"]
 
 [tasks.checks_ci]
-dependencies = ["cargo-sort","format","cargo-check","clippy"]
+dependencies = ["cargo-sort", "format", "cargo-check", "clippy"]
 
 [tasks.serve]
 install_crate = "trunk"
 command = "trunk"
-args = ["serve","--no-autoreload"]
+args = ["serve", "--no-autoreload"]
 
 [tasks.serve-release]
 install_crate = "trunk"
 command = "trunk"
-args = ["serve","--release","--no-autoreload"]
+args = ["serve", "--release", "--no-autoreload"]
 
 [tasks.build-release]
 install_crate = "trunk"
 command = "trunk"
-args = ["build","--release"]
+args = ["build", "--release"]
 
 [tasks.build]
 install_crate = "trunk"
@@ -72,4 +77,4 @@ ls -lh dist/*.wasm
 '''
 
 [tasks.build-and-check]
-dependencies = ["build-release","check-size"]
+dependencies = ["build-release", "check-size"]

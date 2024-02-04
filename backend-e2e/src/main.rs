@@ -1,11 +1,13 @@
-#![allow(dead_code)]
+#![allow(
+    dead_code,
+    clippy::unwrap_used,
+    clippy::if_then_some_else_none,
+    clippy::option_if_let_else
+)]
 
 use reqwest::{header::CONTENT_TYPE, StatusCode};
 use serde_json::json;
-use shared::{EventInfo, GetEventResponse, TEST_VALID_QUESTION};
-
-const MIN_DESC: &str = "minimum desc length possible!!";
-const MIN_NAME: &str = "min name";
+use shared::{EventInfo, GetEventResponse, TEST_EVENT_DESC, TEST_VALID_QUESTION};
 
 fn main() {}
 
@@ -49,9 +51,9 @@ async fn add_event(name: String) -> EventInfo {
         .post(format!("{}/api/event/add", server_rest()))
         .json(&json!({
             "eventData":{
-                "maxLikes":0,
+                "maxLikes":0_i32,
                 "name":name,
-                "description":MIN_DESC,
+                "description": TEST_EVENT_DESC,
                 "shortUrl":"",
                 "longUrl":null},
             "test": true,
@@ -95,7 +97,7 @@ async fn delete_event(id: String, secret: String) {
 async fn change_event_state(id: String, secret: String, state: u8) {
     let res = reqwest::Client::new()
         .post(format!(
-            "{}/api/mod/event/state/{}/{}",
+            "{}/api/mod/event/{}/{}",
             server_rest(),
             id,
             secret
@@ -187,9 +189,11 @@ mod test {
     use super::*;
     use pretty_assertions::assert_eq;
     use reqwest::StatusCode;
+    use shared::TEST_EVENT_NAME;
     use tungstenite::connect;
 
     #[tokio::test]
+    #[tracing_test::traced_test]
     async fn test_status() {
         let res = reqwest::get(format!("{}/api/ping", server_rest()))
             .await
@@ -199,17 +203,17 @@ mod test {
     }
 
     #[tokio::test]
+    #[tracing_test::traced_test]
     async fn test_add_event() {
-        let e = add_event(MIN_NAME.to_string()).await;
-        assert_eq!(e.data.name, MIN_NAME);
+        let e = add_event(TEST_EVENT_NAME.to_string()).await;
+        assert_eq!(e.data.name, TEST_EVENT_NAME);
     }
 
     #[tokio::test]
+    #[tracing_test::traced_test]
     async fn test_get_event() {
-        // env_logger::init();
-
-        let e = add_event(MIN_NAME.to_string()).await;
-        assert_eq!(e.data.name, MIN_NAME);
+        let e = add_event(TEST_EVENT_NAME.to_string()).await;
+        assert_eq!(e.data.name, TEST_EVENT_NAME);
 
         let e2 = get_event(
             e.tokens.public_token.clone(),
@@ -225,19 +229,19 @@ mod test {
     }
 
     #[tokio::test]
+    #[tracing_test::traced_test]
     async fn test_like_question() {
-        let e = add_event(MIN_NAME.to_string()).await;
+        let e = add_event(TEST_EVENT_NAME.to_string()).await;
         let q_before = add_question(e.tokens.public_token.clone()).await;
         let q_after = like_question(e.tokens.public_token, q_before.id, true).await;
         assert_eq!(q_after.likes, q_before.likes + 1);
     }
 
     #[tokio::test]
+    #[tracing_test::traced_test]
     async fn test_delete_event() {
-        // env_logger::init();
-
-        let e = add_event(MIN_NAME.to_string()).await;
-        assert_eq!(e.deleted, false);
+        let e = add_event(TEST_EVENT_NAME.to_string()).await;
+        assert!(!e.is_deleted());
 
         delete_event(
             e.tokens.public_token.clone(),
@@ -247,12 +251,13 @@ mod test {
 
         let e = get_event(e.tokens.public_token.clone(), e.tokens.moderator_token).await;
 
-        assert!(e.unwrap().info.deleted);
+        assert!(e.unwrap().info.is_deleted());
     }
 
     #[tokio::test]
+    #[tracing_test::traced_test]
     async fn test_hide_question() {
-        let e_mod = add_event(MIN_NAME.to_string()).await;
+        let e_mod = add_event(TEST_EVENT_NAME.to_string()).await;
 
         let q_before = add_question(e_mod.tokens.public_token.clone()).await;
 
@@ -279,10 +284,9 @@ mod test {
     }
 
     #[tokio::test]
+    #[tracing_test::traced_test]
     async fn test_websockets() {
-        // env_logger::init();
-
-        let tokens = add_event(MIN_NAME.to_string()).await.tokens;
+        let tokens = add_event(TEST_EVENT_NAME.to_string()).await.tokens;
 
         let event = tokens.public_token;
         let secret = tokens.moderator_token.unwrap();

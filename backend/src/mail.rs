@@ -1,76 +1,61 @@
-use mailjet_rs::common::Recipient;
-use mailjet_rs::v3::Message;
-use mailjet_rs::{Client, SendAPIVersion};
-use mailjet_rs::{Map, Value};
+use std::collections::HashMap;
 
-use crate::env;
+use handlebars::Handlebars;
+use tracing::instrument;
 
-#[derive(Clone, Debug)]
-pub struct MailJetCredentials {
-    pub public_key: String,
-    pub private_key: String,
-}
+use crate::{aws_ses_client, ses};
 
 #[derive(Clone, Debug)]
-pub struct MailjetConfig {
-    pub credentials: MailJetCredentials,
-    pub template_id: usize,
-}
+pub struct MailConfig;
 
-impl MailjetConfig {
-    pub fn new() -> Option<Self> {
-        let template_id = std::env::var(env::ENV_MAILJET_TEMPLATE_ID)
-            .ok()?
-            .parse::<usize>()
-            .ok()?;
+const MAIL_TEMPLATE: &str = include_str!("../mail_template.html.hbs");
 
-        let key = std::env::var(env::ENV_MAILJET_KEY).ok()?;
-        let secret = std::env::var(env::ENV_MAILJET_SECRET).ok()?;
-
-        Some(Self {
-            template_id,
-            credentials: MailJetCredentials {
-                public_key: key,
-                private_key: secret,
-            },
-        })
+impl MailConfig {
+    pub const fn new() -> Self {
+        Self {}
     }
 
+    fn create_mail(
+        event_name: &str,
+        public_link: &str,
+        mod_link: &str,
+    ) -> std::result::Result<String, Box<dyn std::error::Error + Send + Sync>> {
+        let mut hb = Handlebars::new();
+        hb.register_template_string("template", MAIL_TEMPLATE)?;
+
+        let mut data: HashMap<&str, &str> = HashMap::with_capacity(3);
+        data.insert("event_name", event_name);
+        data.insert("short_link", public_link);
+        data.insert("mod_link", mod_link);
+        let content = hb.render("template", &data)?;
+
+        Ok(content)
+    }
+
+    #[instrument(err, skip(self, mod_link))]
     pub async fn send_mail(
         &self,
+        event_id: String,
         receiver: String,
         event_name: String,
         public_link: String,
         mod_link: String,
     ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        let client = Client::new(
-            SendAPIVersion::V3,
-            &self.credentials.public_key,
-            &self.credentials.private_key,
-        );
+        tracing::info!("mail::send_mail: {event_id}");
 
-        // Create your a `Message` instance with the minimum required values
-        let mut message = Message::new(
+        let content = Self::create_mail(&event_name, &public_link, &mod_link)?;
+
+        let client = aws_ses_client().await?;
+        let response = ses::send_message(
+            &client,
+            &[receiver],
+            "New Event Created",
+            &content,
             "mail@live-ask.com",
-            "liveask",
-            Some("New Event Created".to_string()),
-            None,
-        );
-        message.push_recipient(Recipient::new(&receiver));
+        )
+        .await?;
 
-        message.set_template_id(self.template_id);
-
-        let mut vars = Map::new();
-
-        vars.insert(String::from("eventname"), Value::from(event_name));
-        vars.insert(String::from("publiclink"), Value::from(public_link));
-        vars.insert(String::from("moderatorlink"), Value::from(mod_link));
-
-        message.vars = Some(vars);
-
-        let response = client.send(message).await;
-
-        tracing::debug!("mailjet response: {:?}", response);
+        tracing::info!("mail sent response: {:?}", response);
 
         Ok(())
     }

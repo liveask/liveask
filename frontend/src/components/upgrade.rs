@@ -98,6 +98,7 @@ impl Upgrade {
                     <li>{"Export your event data"}</li>
                     <li>{"Word-Cloud"}</li>
                     <li>{"Prescreen questions before they appear"}</li>
+                    <li>{"Automatically tag questions"}</li>
                     <li>{"Plus much more .."}</li>
                 </ul>
                 </div>

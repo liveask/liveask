@@ -1,0 +1,28 @@
+name: deploy_ecs
+description: redploy ecs
+inputs:
+  cluster:
+    description: 'cluster name'
+    required: true
+  aws_key_id: 
+    description: 'aws key id'
+    required: true
+  aws_key_secret:
+    description: 'aws key secret'
+    required: true
+  aws_region:
+    description: 'aws region'
+    required: true
+runs:
+  using: "composite"
+  steps:
+    - name: Deploy
+      shell: bash
+      env:
+        AWS_ACCESS_KEY_ID: ${{ inputs.aws_key_id }}
+        AWS_SECRET_ACCESS_KEY: ${{ inputs.aws_key_secret }}
+        AWS_DEFAULT_REGION: ${{ inputs.aws_region }}
+      run: |
+        aws sts get-caller-identity
+        ECS_SERVICE_ARN=$(aws ecs list-services --region=${{ inputs.aws_region }} --cluster=${{ inputs.cluster }} --output=text | head -1 | awk '{print $2}')
+        aws ecs update-service --region=${{ inputs.aws_region }} --service=${ECS_SERVICE_ARN} --cluster=${{ inputs.cluster }} --force-new-deployment

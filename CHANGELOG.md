@@ -7,6 +7,64 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Changed
+* use stripe as payment processor to help premium customers in more countries to be able to upgrade
+* send event age in seconds into tracking
+* tracking `event-tag` to analyze tag usage
+* do not show wordcloud when event has no questions
+
+### Fixes
+* ok button was still enabled after wrong password input
+
+## [2.6.2] - 2024-01-26
+
+### Added
+* set safari theme color
+
+## [2.6.1] - 2024-01-19
+
+### Fixes
+* fix safari animation issue (since `2.3.5`) due to wordcloud always updateing when like happened
+
+### Changed
+* use `serde_dynamo` for tags and contexts as a test (potentially rolling it out to everything at some point but certainly for new data added in the future)
+
+## [2.6.0] - 2024-01-15
+
+### Added
+* add service status page & link
+* admin-only: allow setting event context link (eg. to point to meetup page)
+* premium: moderator can tag questions (*use case: multiple parts/talks/topics in an event - the moderator can change the tag during the event and new questions will be tagged with the currently active tag*)
+
+### Changed
+* show footer on event page
+
+## [2.5.0] - 2023-11-07
+
+### Added
+* event password support ([PR #50](https://github.com/liveask/liveask/pull/50))
+
+### Changed
+* make dropbown/checkbox match round button design
+
+## [2.4.3] - 2023-10-21
+
+### Changed
+* use aws ses for mail sending instead of mailjet
+
+## [2.4.2] - 2023-10-15
+
+### Changed
+* add tracking event for survey open button
+* fix text alignment of 'ask question'
+
+## [2.4.1] - 2023-10-09
+
+### Changed
+* improved SEO via meta tag
+* better readability of social icons
+* less standard warnings to lower pressure on sentry
+
 ## [2.4.0] - 2023-10-08
 
 ### Changed
@@ -34,7 +92,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * premium upgrade window improvements
 * show if an event was deleted vs. never existed
 * BE: fix event upgrade tracking
-* FE: better free event timeout explenation and CTA
+* FE: better free event timeout explanation and CTA
 
 ## [2.3.8] - 2023-09-28
 
@@ -63,8 +121,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * simplify going to the right event from paypal purchase receipt
 
 ### Changed
-* backend: remove panic testing route 
-* backend: cleanup some todos around event validation 
+* backend: remove panic testing route
+* backend: cleanup some todos around event validation
 * backend: update, simplify and auto-format dependencies
 * frontend: merge multiple bool flags into bitflag (optimization and clippy cleanup)
 * frontend: clicking version leads to changelog
@@ -100,7 +158,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * admin view exposes mod link in event view
 
 ### Fixes
-* continous re-renders due to data change detection in `question-age-timer`
+* continuous re-renders due to data change detection in `question-age-timer`
 * scrolling to newly added question was broken
 * remove `/api/addevent` (see `2.2.1`)
 
@@ -111,4 +169,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 * add duplicate route `/api/event/add` for `/api/addevent` (to deprecate)
-

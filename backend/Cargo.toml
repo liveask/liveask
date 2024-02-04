@@ -3,26 +3,33 @@ name = "liveask-server"
 version = "0.1.0"
 edition = "2021"
 build = "build.rs"
+rust-version = "1.74"
+
+[lints]
+workspace = true
 # ############################
 
 [dependencies]
 async-redis-session = { path = "../async-redis-session" }
+async-stripe = { version = "0.31", default-features = false, features = ["checkout","webhook-events","connect","runtime-tokio-hyper"] }
 async-trait = "0.1"
-aws-config = "0.56"
-aws-sdk-dynamodb = "0.33"
-aws-smithy-http = "0.56"
+aws-config = "1.0"
+aws-sdk-dynamodb = "1.2"
+aws-sdk-ses = "1.2"
+aws-smithy-http = "0.60"
 axum = { version = "0.6", features = ["ws"] }
 axum-login = "0.6"
 axum-sessions = "0.5"
 chrono = { version = "0.4", default-features = false }
 futures-util = "0.3"
-mailjet-rs = "0.3"
-paypal-rust = "0.0.9-alpha"
+handlebars = "4.4"
+plotters = "0.3"
 posthog-rs = { git = "https://github.com/rivet-gg/posthog-rs.git", rev = "fa4d39a" }
 rand = { version = "0.8", features = ["min_const_gen"] }
 reqwest = { version = "0.11", features = ["json"] }
 sentry = { version = "0.31", features = ["tracing", "tower", "tower-http"] }
 serde = "1"
+serde_dynamo = { version = "4.2", default-features = false, features = ["aws-sdk-dynamodb+1"] }
 serde_json = "1"
 shared = { path = "../shared" }
 thiserror = "1.0"
@@ -50,10 +57,11 @@ features = ["cors", "trace", "auth", "sensitive-headers"]
 # ############################
 
 [dev-dependencies]
-env_logger = "0.10"
+axum-test = "13.1"
 mime = "0.3"
 mockall = "0.11"
 pretty_assertions = "1"
+tracing-test = "0.2"
 # ############################
 
 [build-dependencies]

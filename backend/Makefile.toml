@@ -11,15 +11,20 @@ args = ["r"]
 [tasks.format]
 install_crate = "fmt"
 command = "cargo"
-args = ["fmt","--","--check"]
+args = ["fmt", "--", "--check"]
 
 [tasks.cargo-sort]
 install_crate = "cargo-sort"
 command = "cargo"
-args = ["sort","-c"]
+args = ["sort", "-c"]
 
 [tasks.tests]
 command = "cargo"
+args = ["t"]
+
+[tasks.test-nightly]
+command = "cargo"
+toolchain = "nightly"
 args = ["t"]
 
 [tasks.clippy]
@@ -28,20 +33,20 @@ args = ["clippy"]
 
 [tasks.clippy-nightly]
 command = "cargo"
-toolchain="nightly"
+toolchain = "nightly"
 args = ["clippy"]
 
 [tasks.udeps]
 command = "cargo"
-toolchain="nightly"
+toolchain = "nightly"
 args = ["udeps"]
 
 [tasks.checks]
-dependencies = ["cargo-sort","format","tests","clippy","udeps"]
+dependencies = ["cargo-sort", "format", "tests", "clippy", "udeps"]
 
 [tasks.checks_ci]
-dependencies = ["cargo-sort","format","tests","clippy"]
+dependencies = ["cargo-sort", "format", "tests", "clippy"]
 
 [tasks.run-release]
 command = "cargo"
-args = ["r","--release"]
+args = ["r", "--release"]

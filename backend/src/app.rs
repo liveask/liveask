@@ -1,8 +1,9 @@
 use async_trait::async_trait;
 use axum::extract::ws::{close_code::RESTART, CloseFrame, Message, WebSocket};
 use shared::{
-    AddEvent, EventInfo, EventState, EventTokens, EventUpgrade, GetEventResponse, ModQuestion,
-    PaymentCapture, QuestionItem, States,
+    AddEvent, EventInfo, EventResponseFlags, EventState, EventTags, EventTokens, EventUpgrade,
+    GetEventResponse, ModEvent, ModInfo, ModQuestion, PasswordValidation, PaymentCapture,
+    QuestionItem, States, TagValidation,
 };
 use std::{
     collections::HashMap,
@@ -23,11 +24,12 @@ use ulid::Ulid;
 use crate::{
     bail, env,
     error::{InternalError, Result},
-    eventsdb::{ApiEventInfo, EventEntry, EventsDB},
-    mail::MailjetConfig,
+    eventsdb::{ApiEventInfo, EventEntry, EventsDB, PremiumOrder},
+    mail::MailConfig,
     payment::Payment,
+    plots,
     pubsub::{PubSubPublish, PubSubReceiver},
-    tracking::Tracking,
+    tracking::{EditEvent, Tracking},
     utils::timestamp_now,
     viewers::Viewers,
 };
@@ -52,7 +54,7 @@ pub struct App {
     tracking: Tracking,
     base_url: String,
     tiny_url_token: Option<String>,
-    mailjet_config: Option<MailjetConfig>,
+    mail_config: MailConfig,
 }
 
 static NEXT_USER_ID: AtomicUsize = AtomicUsize::new(1);
@@ -71,13 +73,7 @@ impl App {
     ) -> Self {
         let tiny_url_token = Self::tinyurl_token();
 
-        let mailjet_config = MailjetConfig::new();
-
-        if mailjet_config.is_some() {
-            tracing::info!("mail configured");
-        } else {
-            tracing::warn!("mail not configured");
-        }
+        let mail_config = MailConfig::new();
 
         Self {
             eventsdb,
@@ -85,7 +81,7 @@ impl App {
             channels: Arc::default(),
             base_url,
             tiny_url_token,
-            mailjet_config,
+            mail_config,
             payment,
             viewers,
             tracking,
@@ -162,6 +158,40 @@ impl App {
         url.to_owned()
     }
 
+    #[instrument(skip(self))]
+    pub async fn plot_questions(&self, id: String) -> Result<String> {
+        let entry = self.eventsdb.get(&id).await?;
+
+        let e = &entry.event;
+
+        if e.deleted {
+            return Err(InternalError::AccessingDeletedEvent(id));
+        }
+
+        if e.is_timed_out_and_free() {
+            return Err(InternalError::TimedOutFreeEvent(id));
+        }
+
+        let data = e
+            .questions
+            .iter()
+            .map(|q| {
+                let create_time = chrono::DateTime::<chrono::Utc>::from_naive_utc_and_offset(
+                    chrono::NaiveDateTime::from_timestamp_opt(q.create_time_unix, 0)
+                        .unwrap_or_default(),
+                    chrono::Utc,
+                );
+                (create_time, q.likes)
+            })
+            .collect::<Vec<_>>();
+
+        let mut output = String::with_capacity(100);
+
+        plots::plot_questions(&mut output, data.as_slice())?;
+
+        Ok(output)
+    }
+
     #[instrument(skip(self, request))]
     pub async fn create_event(&self, request: AddEvent) -> Result<EventInfo> {
         let mut validation = shared::CreateEventValidation::default();
@@ -174,6 +204,9 @@ impl App {
 
         let now = timestamp_now();
 
+        let request_mod_mail = request.moderator_email.clone();
+
+        let public_token = Ulid::new().to_string();
         let mod_token = Ulid::new().to_string();
 
         let mut e = ApiEventInfo {
@@ -181,18 +214,20 @@ impl App {
             delete_time_unix: 0,
             last_edit_unix: now,
             deleted: false,
-            premium_order: None,
+            premium_id: None,
+            password: shared::EventPassword::Disabled,
             questions: Vec::new(),
             do_screening: false,
             state: EventState {
                 state: States::Open,
             },
             data: request.data,
-            mod_email: request.moderator_email,
             tokens: EventTokens {
-                public_token: Ulid::new().to_string(),
+                public_token: public_token.clone(),
                 moderator_token: Some(mod_token.clone()),
             },
+            context: Vec::new(),
+            tags: EventTags::default(),
         };
 
         let url = format!("{}/event/{}", self.base_url, e.tokens.public_token);
@@ -209,8 +244,9 @@ impl App {
             .put(EventEntry::new(e, request.test.then_some(now + 60)))
             .await?;
 
-        if let Some(mail) = result.mod_email.as_ref() {
+        if let Some(mail) = request_mod_mail.as_ref() {
             self.send_mail(
+                public_token,
                 mail.clone(),
                 result.data.name.clone(),
                 result.data.short_url.clone(),
@@ -242,11 +278,31 @@ impl App {
     }
 
     #[instrument(skip(self))]
+    pub async fn check_event_password(&self, id: String, password: &str) -> Result<bool> {
+        tracing::info!("check_event_password");
+
+        let mut validation = PasswordValidation::default();
+        validation.check(password);
+        if validation.has_any() {
+            return Err(InternalError::PasswordValidation(validation));
+        }
+
+        let e = self.eventsdb.get(&id).await?.event;
+
+        if e.deleted {
+            return Err(InternalError::AccessingDeletedEvent(id));
+        }
+
+        Ok(e.password.matches(&Some(password.to_string())))
+    }
+
+    #[instrument(skip(self))]
     pub async fn get_event(
         &self,
         id: String,
         secret: Option<String>,
         admin: bool,
+        password: Option<String>,
     ) -> Result<GetEventResponse> {
         tracing::info!("get_event");
 
@@ -259,15 +315,22 @@ impl App {
                 .map(|mod_token| mod_token != secret)
                 .unwrap_or_default()
             {
-                bail!("wrong mod token");
+                return Err(InternalError::WrongModeratorToken(id));
             }
         }
+
+        let is_mod = secret.is_some();
 
         if e.deleted && !admin {
             return Ok(GetEventResponse::deleted(id));
         }
 
-        if secret.is_none() && !admin {
+        let mod_info = is_mod.then(|| ModInfo {
+            pwd: e.password.clone(),
+            private_token: e.tokens.moderator_token.clone().unwrap_or_default(),
+        });
+
+        if !is_mod && !admin {
             //TODO: can be NONE?
             e.tokens.moderator_token = Some(String::new());
 
@@ -278,22 +341,38 @@ impl App {
                 .collect::<Vec<_>>();
         }
 
-        if !admin {
-            e.adapt_if_timedout();
-        }
+        let time_out_masked = if admin { false } else { e.adapt_if_timedout() };
+
+        let password_matches = e.password.matches(&password);
+
+        let pwd_masked = if (e.password.is_enabled() && !password_matches) && !admin && !is_mod {
+            e.mask_data();
+            true
+        } else {
+            false
+        };
 
         let timed_out = e.is_timed_out_and_free();
-        let viewers = if admin || e.premium_order.is_some() {
+        let viewers = if admin || e.premium_id.is_some() {
             self.viewers.count(&id).await
         } else {
             0
         };
 
+        let masked = time_out_masked || pwd_masked;
+
+        let mut flags = EventResponseFlags::empty();
+
+        flags.set(EventResponseFlags::TIMED_OUT, timed_out);
+        flags.set(EventResponseFlags::WRONG_PASSWORD, pwd_masked);
+
         Ok(GetEventResponse {
             info: e.into(),
-            timed_out,
             admin,
             viewers,
+            flags,
+            masked,
+            mod_info,
         })
     }
 
@@ -358,7 +437,7 @@ impl App {
                 .map(|mod_token| mod_token != &secret)
                 .unwrap_or_default()
             {
-                bail!("wrong mod token");
+                return Err(InternalError::WrongModeratorToken(id));
             }
 
             let q = e
@@ -391,11 +470,11 @@ impl App {
         Ok(e.into())
     }
 
-    pub async fn edit_event_state(
+    pub async fn mod_edit_event(
         &self,
         id: String,
         secret: String,
-        state: EventState,
+        changes: ModEvent,
     ) -> Result<EventInfo> {
         let mut entry = self.eventsdb.get(&id).await?.clone();
 
@@ -415,50 +494,25 @@ impl App {
             .map(|mod_token| mod_token != &secret)
             .unwrap_or_default()
         {
-            bail!("wrong mod token");
+            return Err(InternalError::WrongModeratorToken(id));
         }
 
-        e.state = state;
-
-        let result = e.clone();
-
-        entry.bump();
-
-        self.eventsdb.put(entry).await?;
-
-        self.notify_subscribers(&id, Notification::Event).await;
-
-        Ok(result.into())
-    }
-
-    pub async fn edit_event_screening(
-        &self,
-        id: String,
-        secret: String,
-        screening: bool,
-    ) -> Result<EventInfo> {
-        let mut entry = self.eventsdb.get(&id).await?.clone();
-
-        let e = &mut entry.event;
-
-        if e.deleted {
-            bail!("event not found");
+        if let Some(state) = changes.state {
+            e.state = state;
         }
-
-        if e.premium_order.is_none() {
-            bail!("event not premium");
+        if let Some(screening) = changes.screening {
+            e.do_screening = screening;
         }
-
-        if e.tokens
-            .moderator_token
-            .as_ref()
-            .map(|mod_token| mod_token != &secret)
-            .unwrap_or_default()
-        {
-            bail!("wrong mod token");
+        if let Some(password) = changes.password {
+            self.mod_edit_password(e, password);
         }
-
-        e.do_screening = screening;
+        if let Some(current_tag) = &changes.current_tag {
+            self.mod_edit_tag(e, current_tag)?;
+        }
+        if let Some(description) = changes.description {
+            //TODO: desc
+            tracing::warn!(desc=%description,"TBD");
+        }
 
         let result = e.clone();
 
@@ -482,7 +536,7 @@ impl App {
             .map(|mod_token| mod_token != &secret)
             .unwrap_or_default()
         {
-            bail!("wrong mod token");
+            return Err(InternalError::WrongModeratorToken(id));
         }
 
         e.deleted = true;
@@ -512,7 +566,7 @@ impl App {
             .map(|mod_token| mod_token != &secret)
             .unwrap_or_default()
         {
-            bail!("wrong mod token");
+            return Err(InternalError::WrongModeratorToken(id));
         }
 
         if e.deleted {
@@ -525,7 +579,7 @@ impl App {
             .create_order(
                 &e.tokens.public_token,
                 &mod_url,
-                &format!("{mod_url}?payment=true"),
+                &format!("{mod_url}?payment=true&token={{CHECKOUT_SESSION_ID}}"),
             )
             .await?;
 
@@ -533,58 +587,76 @@ impl App {
     }
 
     #[instrument(skip(self))]
-    pub async fn premium_capture(&self, id: String, order: String) -> Result<PaymentCapture> {
+    pub async fn premium_capture(
+        &self,
+        id: String,
+        stripe_order_id: String,
+    ) -> Result<PaymentCapture> {
         tracing::info!("premium_capture");
 
-        let event_id = self.payment.event_of_order(order.clone()).await?;
+        let (event_id, complete) = self
+            .payment
+            .retrieve_event_state(stripe_order_id.clone())
+            .await?;
+
         if event_id != id {
             return Err(InternalError::General("invalid parameter".into()));
         }
 
-        let order_captured = self.capture_payment_and_upgrade(event_id, order).await?;
+        let order_captured = complete;
+
+        if order_captured {
+            self.capture_payment_and_upgrade(id, stripe_order_id)
+                .await?;
+        }
 
         Ok(PaymentCapture { order_captured })
     }
 
     #[instrument(skip(self))]
-    pub async fn payment_webhook(&self, id: String) -> Result<()> {
+    pub async fn payment_webhook(&self, stripe_session_id: String, event_id: String) -> Result<()> {
         tracing::info!("order processing");
 
-        let event_id = self.payment.event_of_order(id.clone()).await?;
-
-        if !self.capture_payment_and_upgrade(event_id, id).await? {
-            tracing::warn!("capture failed");
+        if !self
+            .capture_payment_and_upgrade(event_id, stripe_session_id)
+            .await?
+        {
+            tracing::warn!("webhook failed");
         }
 
         Ok(())
     }
 
-    async fn capture_payment_and_upgrade(&self, event: String, order: String) -> Result<bool> {
+    async fn capture_payment_and_upgrade(
+        &self,
+        event: String,
+        stripe_session_id: String,
+    ) -> Result<bool> {
         let mut entry = self.eventsdb.get(&event).await?;
 
-        if entry.event.premium_order.is_some() {
-            return Err(InternalError::General("event already premium".into()));
+        if entry.event.premium_id.is_some() {
+            tracing::info!("event already premium");
+            return Ok(true);
         }
 
-        if self.payment.capture_payment(order.clone()).await? {
-            tracing::info!("order captured");
+        entry.event.premium_id = Some(PremiumOrder::StripeSessionId(stripe_session_id));
 
-            entry.event.premium_order = Some(order);
+        entry.bump();
 
-            entry.bump();
+        let (name, long_url, age) = (
+            entry.event.data.name.clone(),
+            entry.event.data.long_url.clone().unwrap_or_default(),
+            entry.event.age_in_seconds(),
+        );
 
-            let data = entry.event.data.clone();
+        self.eventsdb.put(entry).await?;
 
-            self.eventsdb.put(entry).await?;
+        self.notify_subscribers(&event, Notification::Event).await;
 
-            self.notify_subscribers(&event, Notification::Event).await;
+        self.tracking
+            .track_event_upgrade(&event, name, long_url, age);
 
-            self.tracking.track_event_upgrade(&event, &data);
-
-            Ok(true)
-        } else {
-            Ok(false)
-        }
+        Ok(true)
     }
 
     //TODO: fix clippy-allow
@@ -601,7 +673,7 @@ impl App {
         validation.check(&trimmed_question);
 
         if validation.has_any() {
-            return Err(InternalError::AddQuestionValdiation(validation));
+            return Err(InternalError::AddQuestionValidation(validation));
         }
 
         let mut entry = self.eventsdb.get(&id).await?;
@@ -637,6 +709,7 @@ impl App {
             screening: e.do_screening,
             id: question_id,
             likes: 1,
+            tag: e.tags.current_tag,
         };
 
         e.questions.push(question.clone());
@@ -666,7 +739,7 @@ impl App {
 
         if let Some(f) = e.questions.iter_mut().find(|e| e.id == edit.question_id) {
             f.likes = if edit.like {
-                f.likes + 1
+                f.likes.saturating_add(1)
             } else {
                 f.likes.saturating_sub(1)
             };
@@ -804,7 +877,10 @@ impl App {
 
         tokio::task::spawn(rx.forward(ws_sender).map(|result| {
             if let Err(e) = result {
-                if e.to_string() != "Connection closed normally" {
+                let error_string_lowcase = e.to_string().to_lowercase();
+                let well_known = error_string_lowcase.starts_with("connection closed normally")
+                    || error_string_lowcase.starts_with("trying to work with closed connection");
+                if !well_known {
                     tracing::warn!("websocket send error: {}", e);
                 }
             }
@@ -825,32 +901,86 @@ impl App {
 
     fn send_mail(
         &self,
+        event_id: String,
         receiver: String,
         event_name: String,
         public_link: String,
         mod_link: String,
     ) {
         if receiver.trim().is_empty() {
+            tracing::debug!("mail not sent, no receiver specified");
             return;
         }
 
-        self.mailjet_config.clone().map_or_else(
-            || {
-                tracing::warn!("mail not send: not configured");
-            },
-            |mail| {
-                tracing::debug!("mail sending to: {receiver}");
+        let mail = self.mail_config.clone();
 
-                tokio::spawn(async move {
-                    if let Err(e) = mail
-                        .send_mail(receiver.clone(), event_name, public_link, mod_link)
-                        .await
-                    {
-                        tracing::error!("mail send error: {e}");
-                    }
-                });
-            },
-        );
+        tokio::spawn(async move {
+            if let Err(e) = mail
+                .send_mail(
+                    event_id,
+                    receiver.clone(),
+                    event_name,
+                    public_link,
+                    mod_link,
+                )
+                .await
+            {
+                tracing::error!("mail send error: {e}");
+            }
+        });
+    }
+
+    fn mod_edit_password(&self, e: &mut ApiEventInfo, password: shared::EventPassword) {
+        let edit_type = match (e.password.is_enabled(), password.is_enabled()) {
+            (false, true) => Some(EditEvent::Enabled),
+            (true, false) => Some(EditEvent::Disabled),
+            (true, true) => Some(EditEvent::Changed),
+            _ => None,
+        };
+
+        if let Some(edit_type) = edit_type {
+            self.tracking
+                .track_event_password_set(e.tokens.public_token.clone(), edit_type);
+        }
+
+        e.password = password;
+    }
+
+    fn mod_edit_tag(&self, e: &mut ApiEventInfo, current_tag: &shared::CurrentTag) -> Result<()> {
+        if e.premium_id.is_none() {
+            return Err(InternalError::PremiumOnlyFeature(
+                e.tokens.public_token.clone(),
+            ));
+        }
+
+        let edit_type = match (e.tags.current_tag.is_some(), current_tag.is_enabled()) {
+            (false, true) => Some(EditEvent::Enabled),
+            (true, false) => Some(EditEvent::Disabled),
+            (true, true) => Some(EditEvent::Changed),
+            _ => None,
+        };
+
+        if let Some(edit_type) = edit_type {
+            self.tracking
+                .track_event_tag_set(e.tokens.public_token.clone(), edit_type);
+        }
+
+        if let shared::CurrentTag::Enabled(tag) = &current_tag {
+            let mut validation = TagValidation::default();
+            validation.check(tag);
+
+            if validation.has_any() {
+                return Err(InternalError::TagValidation(validation));
+            }
+
+            if !e.tags.set_or_add_tag(tag) {
+                bail!("max tags reached");
+            }
+        } else {
+            e.tags.current_tag = None;
+        }
+
+        Ok(())
     }
 }
 
@@ -860,7 +990,7 @@ impl PubSubReceiver for App {
         let topic = topic.to_string();
         let msg = Message::Text(payload.to_string());
 
-        let channels = self.channels.clone();
+        let channels = Arc::clone(&self.channels);
 
         if let Err(e) = tokio::spawn(async move {
             //TODO: lookup subscriber based on topic name
@@ -870,7 +1000,7 @@ impl PubSubReceiver for App {
                     if let Err(inner_err) = &e.0 {
                         tracing::error!("pubsub send err: {} ({})", e, inner_err);
                     } else {
-                        tracing::warn!("pubsub send err: {}", e);
+                        tracing::info!("pubsub not sent: {}", e);
                     }
                 }
             }
@@ -886,15 +1016,16 @@ impl PubSubReceiver for App {
 mod test {
     use super::*;
     use crate::{
-        eventsdb::{event_key, InMemoryEventsDB},
+        eventsdb::{event_key, InMemoryEventsDB, PremiumOrder},
         pubsub::{PubSubInMemory, PubSubReceiverInMemory},
         viewers::MockViewers,
     };
-    use pretty_assertions::assert_eq;
-    use shared::{AddQuestion, EventData, TEST_VALID_QUESTION};
+    use pretty_assertions::{assert_eq, assert_ne};
+    use shared::{AddQuestion, CurrentTag, EventData, TagId, TEST_VALID_QUESTION};
     use std::sync::Arc;
 
     #[tokio::test]
+    #[tracing_test::traced_test]
     async fn test_event_create_fail_validation() {
         let app = App::new(
             Arc::new(InMemoryEventsDB::default()),
@@ -922,6 +1053,7 @@ mod test {
     }
 
     #[tokio::test]
+    #[tracing_test::traced_test]
     async fn test_event_create() {
         let eventdb = Arc::new(InMemoryEventsDB::default());
         let app = App::new(
@@ -950,6 +1082,7 @@ mod test {
     }
 
     #[tokio::test]
+    #[tracing_test::traced_test]
     async fn test_event_mod_question_notification() {
         let pubsubreceiver = Arc::new(PubSubReceiverInMemory::default());
         let pubsub = PubSubInMemory::default();
@@ -1012,9 +1145,8 @@ mod test {
     }
 
     #[tokio::test]
+    #[tracing_test::traced_test]
     async fn test_screening_question() {
-        // env_logger::init();
-
         let pubsubreceiver = Arc::new(PubSubReceiverInMemory::default());
         let pubsub = PubSubInMemory::default();
         pubsub.set_receiver(pubsubreceiver.clone()).await;
@@ -1064,7 +1196,7 @@ mod test {
         assert_eq!(q.screening, true);
 
         let e = app
-            .get_event(res.tokens.public_token.clone(), None, false)
+            .get_event(res.tokens.public_token.clone(), None, false, None)
             .await
             .unwrap();
 
@@ -1075,6 +1207,7 @@ mod test {
                 res.tokens.public_token.clone(),
                 Some(res.tokens.moderator_token.clone().unwrap()),
                 false,
+                None,
             )
             .await
             .unwrap();
@@ -1095,7 +1228,7 @@ mod test {
         .unwrap();
 
         let e = app
-            .get_event(res.tokens.public_token.clone(), None, false)
+            .get_event(res.tokens.public_token.clone(), None, false, None)
             .await
             .unwrap();
 
@@ -1103,9 +1236,8 @@ mod test {
     }
 
     #[tokio::test]
+    #[tracing_test::traced_test]
     async fn test_screening_question_disapprove() {
-        // env_logger::init();
-
         let pubsubreceiver = Arc::new(PubSubReceiverInMemory::default());
         let pubsub = PubSubInMemory::default();
         pubsub.set_receiver(pubsubreceiver.clone()).await;
@@ -1155,7 +1287,7 @@ mod test {
         assert_eq!(q.screening, true);
 
         let e = app
-            .get_event(res.tokens.public_token.clone(), None, false)
+            .get_event(res.tokens.public_token.clone(), None, false, None)
             .await
             .unwrap();
 
@@ -1179,9 +1311,8 @@ mod test {
     }
 
     #[tokio::test]
+    #[tracing_test::traced_test]
     async fn test_screening_enable() {
-        // env_logger::init();
-
         let pubsubreceiver = Arc::new(PubSubReceiverInMemory::default());
         let pubsub = PubSubInMemory::default();
         pubsub.set_receiver(pubsubreceiver.clone()).await;
@@ -1216,24 +1347,26 @@ mod test {
             .get_mut(&event_key(&res.tokens.public_token))
             .unwrap()
             .event
-            .premium_order = Some(String::from("foo"));
+            .premium_id = Some(PremiumOrder::PaypalOrderId(String::from("foo")));
 
         let e = app
-            .edit_event_screening(
+            .mod_edit_event(
                 res.tokens.public_token.clone(),
                 res.tokens.moderator_token.clone().unwrap(),
-                true,
+                ModEvent {
+                    screening: Some(true),
+                    ..Default::default()
+                },
             )
             .await
             .unwrap();
 
-        assert!(e.screening);
+        assert!(e.is_screening());
     }
 
     #[tokio::test]
+    #[tracing_test::traced_test]
     async fn test_duplicate_question_check() {
-        // env_logger::init();
-
         let pubsubreceiver = Arc::new(PubSubReceiverInMemory::default());
         let pubsub = PubSubInMemory::default();
         pubsub.set_receiver(pubsubreceiver.clone()).await;
@@ -1283,5 +1416,145 @@ mod test {
             request.unwrap_err(),
             InternalError::DuplicateQuestion
         ))
+    }
+
+    #[tokio::test]
+    #[tracing_test::traced_test]
+    async fn test_password_protection() {
+        let pubsubreceiver = Arc::new(PubSubReceiverInMemory::default());
+        let pubsub = PubSubInMemory::default();
+        pubsub.set_receiver(pubsubreceiver.clone()).await;
+        let events = Arc::new(InMemoryEventsDB::default());
+        let app = App::new(
+            events.clone(),
+            Arc::new(pubsub),
+            Arc::new(MockViewers::new()),
+            Arc::new(Payment::default()),
+            Tracking::default(),
+            String::new(),
+        );
+
+        let res = app
+            .create_event(AddEvent {
+                data: EventData {
+                    name: String::from("123456789"),
+                    description: String::from("123456789 123456789 123456789 !"),
+                    short_url: String::new(),
+                    long_url: None,
+                },
+                moderator_email: None,
+                test: false,
+            })
+            .await
+            .unwrap();
+
+        let event_id = res.tokens.public_token.clone();
+        let mod_token = res.tokens.moderator_token.clone().unwrap();
+
+        let question_text = "very long, sophisticated question you can ask!";
+        app.add_question(
+            event_id.clone(),
+            AddQuestion {
+                text: String::from(question_text),
+            },
+        )
+        .await
+        .unwrap();
+
+        app.mod_edit_event(
+            event_id.clone(),
+            mod_token.clone(),
+            ModEvent {
+                password: Some(shared::EventPassword::Enabled(String::from("pwd"))),
+                ..Default::default()
+            },
+        )
+        .await
+        .unwrap();
+
+        let e = app
+            .get_event(event_id.clone(), None, false, None)
+            .await
+            .unwrap();
+
+        assert_ne!(&e.info.questions[0].text, question_text);
+        assert!(e.flags.contains(EventResponseFlags::WRONG_PASSWORD));
+
+        let e = app
+            .get_event(event_id.clone(), None, false, Some(String::from("pwd")))
+            .await
+            .unwrap();
+
+        assert_eq!(&e.info.questions[0].text, question_text);
+        assert!(!e.flags.contains(EventResponseFlags::WRONG_PASSWORD));
+    }
+
+    #[tokio::test]
+    #[tracing_test::traced_test]
+    async fn test_event_question_tags() {
+        let pubsubreceiver = Arc::new(PubSubReceiverInMemory::default());
+        let pubsub = PubSubInMemory::default();
+        pubsub.set_receiver(pubsubreceiver.clone()).await;
+        let events = Arc::new(InMemoryEventsDB::default());
+        let app = App::new(
+            events.clone(),
+            Arc::new(pubsub),
+            Arc::new(MockViewers::new()),
+            Arc::new(Payment::default()),
+            Tracking::default(),
+            String::new(),
+        );
+
+        let res = app
+            .create_event(AddEvent {
+                data: EventData {
+                    name: String::from("123456789"),
+                    description: String::from("123456789 123456789 123456789 !"),
+                    short_url: String::new(),
+                    long_url: None,
+                },
+                moderator_email: None,
+                test: false,
+            })
+            .await
+            .unwrap();
+
+        events
+            .db
+            .lock()
+            .await
+            .get_mut(&event_key(&res.tokens.public_token))
+            .unwrap()
+            .event
+            .premium_id = Some(PremiumOrder::PaypalOrderId(String::from("foo")));
+
+        assert_eq!(
+            app.mod_edit_event(
+                res.tokens.public_token.clone(),
+                res.tokens.moderator_token.clone().unwrap(),
+                ModEvent {
+                    current_tag: Some(CurrentTag::Enabled(String::from("tag1"))),
+                    ..Default::default()
+                },
+            )
+            .await
+            .unwrap()
+            .tags
+            .current_tag
+            .unwrap(),
+            TagId(0)
+        );
+
+        let request = app
+            .add_question(
+                res.tokens.public_token.clone(),
+                AddQuestion {
+                    text: String::from(TEST_VALID_QUESTION),
+                },
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(request.tag.unwrap(), TagId(0))
     }
 }

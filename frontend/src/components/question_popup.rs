@@ -6,7 +6,7 @@ use crate::{
     tracking, GlobalEvent,
 };
 use events::{event_context, EventBridge};
-use shared::{AddQuestionError, AddQuestionValidation};
+use shared::{AddQuestionError, AddQuestionValidation, ValidationState};
 use wasm_bindgen::UnwrapThrowExt;
 use web_sys::HtmlTextAreaElement;
 use yew::{prelude::*, virtual_dom::AttrValue};
@@ -28,7 +28,8 @@ pub struct QuestionPopup {
 
 #[derive(Clone, Debug, Eq, PartialEq, Properties)]
 pub struct AddQuestionProps {
-    pub event: AttrValue,
+    pub event_id: AttrValue,
+    pub tag: Option<String>,
 }
 
 impl Component for QuestionPopup {
@@ -63,7 +64,7 @@ impl Component for QuestionPopup {
                 true
             }
             Msg::Send => {
-                let event_id: String = ctx.props().event.to_string();
+                let event_id: String = ctx.props().event_id.to_string();
                 let text = self.text.clone();
 
                 tracking::track_event(tracking::EVNT_ASK_SENT);
@@ -106,6 +107,15 @@ impl Component for QuestionPopup {
             let on_close = ctx.link().callback(|()| Msg::Close);
             let on_click_ask = ctx.link().callback(|_| Msg::Send);
 
+            let tag = ctx.props().tag.as_ref().map_or_else(
+                || html! {},
+                |tag| {
+                    html! {
+                        <div class="tag">{"current tag:"}<div class="name">{tag.clone()}</div></div>
+                    }
+                },
+            );
+
             html! {
             <Popup class="share-popup" {on_close}>
                 <div class="newquestion">
@@ -138,6 +148,7 @@ impl Component for QuestionPopup {
                             }
                         }
                     </div>
+                    {tag}
                 </div>
                 <button class="dlg-button"
                     onclick={on_click_ask}
@@ -157,17 +168,19 @@ impl Component for QuestionPopup {
 impl QuestionPopup {
     fn error_text(&self) -> Option<String> {
         match self.errors.content {
-            Some(AddQuestionError::MinLength(_, _)) => Some("Question too short.".to_string()),
-            Some(AddQuestionError::MaxLength(_, max)) => {
+            ValidationState::Invalid(AddQuestionError::MinLength(_, _)) => {
+                Some("Question too short.".to_string())
+            }
+            ValidationState::Invalid(AddQuestionError::MaxLength(_, max)) => {
                 Some(format!("Question too long. Max: {max})"))
             }
-            Some(AddQuestionError::MinWordCount(_, min)) => {
+            ValidationState::Invalid(AddQuestionError::MinWordCount(_, min)) => {
                 Some(format!("Minimum words required: {min}."))
             }
-            Some(AddQuestionError::WordLengthMax(max)) => {
+            ValidationState::Invalid(AddQuestionError::WordLengthMax(max)) => {
                 Some(format!("No word can be longer than: {max}."))
             }
-            None => None,
+            _ => None,
         }
     }
 }

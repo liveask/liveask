@@ -19,6 +19,11 @@
 .noevent {
   background-color: white;
   text-align: center;
+  margin: 100px;
+}
+
+.some-event {
+  min-height: 524px;
 }
 
 .event-name-label {
@@ -130,10 +135,16 @@
   margin-left: 54px;
   margin-right: 54px;
   margin-top: 4px;
-}
 
-.event-desc.printable {
-  color: #1E1E1E;
+  &.blurr {
+    user-select: none;
+    filter: blur(5px);
+    -webkit-filter: blur(5px);
+  }
+
+  &.printable {
+    color: #1E1E1E;
+  }
 }
 
 .linkbox-title {
@@ -315,8 +326,9 @@
 
     select {
       padding: 8px;
-      padding-left: 13px;
-      padding-right: 20px;
+      padding-left: 22px;
+      padding-right: 30px;
+      height: 40px;
 
       font-style: normal;
       font-weight: 500;
@@ -328,9 +340,9 @@
       background-color: white;
 
       border: 1px solid #e9e9e9;
-      border-radius: 4px;
+      border-radius: 64px;
 
-      box-shadow: 0px 2px 4px 0 rgba(0, 0, 0, 0.2);
+      box-shadow: 0px 2px 4px 0 rgba(0, 0, 0, 0.07);
 
       -webkit-appearance: none;
       appearance: none;
@@ -355,19 +367,44 @@
       color: white;
     }
 
-    .screening-option {
-      display: inline;
-      color: black;
-      border: 1px solid #e9e9e9;
-      border-radius: 4px;
-      box-shadow: 0px 2px 4px 0 rgba(0, 0, 0, 0.2);
-      background-color: white;
-      padding-left: 5px;
-      padding-right: 41px;
-      padding-top: 8px;
-      padding-bottom: 8px;
-      letter-spacing: 0.21875px;
-      font-size: 16px;
+    .button-box {
+      display: flex;
+      margin-top: 8px;
+      margin-bottom: 5px;
+
+      .screening-option {
+        display: inline-block;
+        margin: auto;
+
+        width: 158px;
+        height: 38px;
+
+        color: $pink-button;
+
+        border-radius: 64px;
+        border-width: 1px;
+        border-style: solid;
+        border-color: $button-border-color;
+
+        cursor: pointer;
+
+        box-shadow: 0px 2px 4px 0 rgba(0, 0, 0, 0.07);
+
+        background-color: white;
+
+        font-size: 14px;
+        letter-spacing: 0.22px;
+        line-height: 16px;
+        text-transform: uppercase;
+
+        input {
+          margin-top: 12px;
+        }
+      }
+
+      button {
+        margin: auto;
+      }
     }
   }
 }
@@ -409,5 +446,35 @@
   img {
     width: 100%;
     max-width: 700px;
+  }
+}
+
+.context {
+  display: flex;
+  margin-left: 52px;
+  margin-top: 2px;
+  margin-bottom: 2px;
+
+  a {
+    display: flex;
+    margin-right: 10px;
+    padding-top: 2px;
+    padding-bottom: 2px;
+    border-radius: 10px;
+    background-color: black;
+
+    img {
+      width: 15px;
+      margin-right: 2px;
+      margin-left: 2px;
+    }
+
+    .label {
+      color: $pink-button;
+      font-size: 12px;
+      margin-top: 1px;
+      margin-right: 5px;
+      margin-bottom: 1px;
+    }
   }
 }

@@ -1,32 +1,5 @@
-#![deny(
-    warnings,
-    unused_imports,
-    unused_must_use,
-    unused_variables,
-    unused_mut,
-    dead_code
-)]
-#![deny(
-    clippy::all,
-    clippy::pedantic,
-    clippy::nursery,
-    clippy::dbg_macro,
-    clippy::unwrap_used,
-    clippy::expect_used,
-    clippy::panic,
-    clippy::needless_update,
-    clippy::match_like_matches_macro,
-    clippy::from_over_into,
-    clippy::useless_conversion,
-    clippy::float_cmp_const,
-    clippy::lossy_float_literal,
-    clippy::string_to_string,
-    clippy::unneeded_field_pattern,
-    clippy::verbose_file_reads
-)]
-#![allow(clippy::module_name_repetitions)]
-//TODO: get rid of having to allow this
-#![allow(clippy::result_large_err)]
+#![forbid(unsafe_code)]
+
 mod app;
 mod auth;
 mod ecs_task_id;
@@ -36,15 +9,18 @@ mod eventsdb;
 mod handle;
 mod mail;
 mod payment;
+mod plots;
 mod pubsub;
 mod redis_pool;
+mod ses;
 mod signals;
+mod stripe_webhooks;
 mod tracking;
 mod utils;
 mod viewers;
 
 use async_redis_session::RedisSessionStore;
-use aws_config::meta::region::RegionProviderChain;
+use aws_config::BehaviorVersion;
 use aws_sdk_dynamodb::config::Credentials;
 use axum::{
     http::header,
@@ -138,11 +114,22 @@ fn posthog_key() -> String {
     std::env::var(env::ENV_POSTHOG_KEY).map_or_else(|_| String::new(), |env| env)
 }
 
+fn stripe_secret() -> String {
+    std::env::var(env::ENV_STRIPE_SECRET).map_or_else(|_| String::new(), |env| env)
+}
+
+async fn aws_ses_client() -> Result<aws_sdk_ses::Client> {
+    let config = aws_config::defaults(BehaviorVersion::v2023_11_09());
+
+    let config = config.load().await;
+
+    Ok(aws_sdk_ses::Client::new(&config))
+}
+
 async fn dynamo_client() -> Result<aws_sdk_dynamodb::Client> {
     use aws_sdk_dynamodb::Client;
 
-    let region_provider = RegionProviderChain::default_provider().or_else("us-west-1");
-    let config = aws_config::from_env().region(region_provider);
+    let config = aws_config::defaults(BehaviorVersion::v2023_11_09());
 
     let config = if use_local_db() {
         let url = std::env::var(env::ENV_DB_URL)
@@ -152,6 +139,7 @@ async fn dynamo_client() -> Result<aws_sdk_dynamodb::Client> {
 
         config
             .credentials_provider(Credentials::new("aid", "sid", None, None, "local"))
+            .region(aws_sdk_dynamodb::config::Region::new(""))
             .endpoint_url(&url)
     } else {
         config
@@ -163,35 +151,78 @@ async fn dynamo_client() -> Result<aws_sdk_dynamodb::Client> {
 }
 
 async fn payment() -> Result<Arc<Payment>> {
-    let paypal_id = std::env::var(env::ENV_PAYPAL_ID).unwrap_or_default();
-    let paypal_secret = std::env::var(env::ENV_PAYPAL_SECRET).unwrap_or_default();
+    let is_test = !is_prod();
+    let secret = stripe_secret();
+    let mut payment = Payment::new(secret.clone());
 
-    if paypal_secret.is_empty() {
-        tracing::warn!("paypal secret not provided for: {paypal_id}");
+    match payment.authenticate().await {
+        Err(e) => {
+            tracing::error!(
+                "payment auth error: [secret: {} ({}), test: {is_test}] {}",
+                secret.get(0..6).unwrap_or("utf8 error in secret"),
+                secret.len(),
+                e
+            );
+        }
+        Ok(live) => {
+            tracing::info!("payment auth ok: [test: {is_test}, live: {live}]");
+
+            if is_test != !live {
+                bail!("expected environment not matching");
+            }
+        }
     }
 
-    let sandbox = !is_prod();
-    let payment = Arc::new(Payment::new(
-        paypal_id.clone(),
-        paypal_secret.clone(),
-        sandbox,
-    )?);
-
-    if let Err(e) = payment.authenticate().await {
-        tracing::error!(
-            "payment auth error: [id: {paypal_id}, secret: {} ({}), sandbox: {sandbox}] {}",
-            &paypal_secret[..6],
-            paypal_secret.len(),
-            e
-        );
-    } else {
-        tracing::info!("payment auth ok: [sandbox: {sandbox}, id: {paypal_id}]");
-    }
-
-    Ok(payment)
+    Ok(Arc::new(payment))
 }
 
-#[allow(clippy::too_many_lines)]
+async fn setup_app(
+    redis_url: &str,
+    prod_env: &str,
+    log_level: &str,
+) -> std::result::Result<Arc<App>, Box<dyn std::error::Error>> {
+    let base_url = base_url();
+
+    let server_id = server_id().await.unwrap_or_else(|| "server".to_string());
+
+    tracing::info!(
+        git= %GIT_HASH,
+        env= prod_env,
+        is_prod= is_prod(),
+        log_level,
+        redis_url,
+        base_url,
+        server_id,
+        "server-starting",
+    );
+
+    let tracking = Tracking::new(Some(posthog_key()), server_id.clone(), prod_env.to_string());
+
+    tracking.track_server_start();
+
+    let redis_pool = create_pool(redis_url)?;
+    ping_test_redis(&redis_pool).await?;
+
+    let payment = payment().await?;
+
+    let pubsub = Arc::new(PubSubRedis::new(redis_pool.clone(), redis_url.to_string()));
+    let viewers = Arc::new(RedisViewers::new(redis_pool));
+
+    let eventsdb = Arc::new(DynamoEventsDB::new(dynamo_client().await?, use_local_db()).await?);
+    let app = Arc::new(App::new(
+        eventsdb,
+        Arc::<PubSubRedis>::clone(&pubsub),
+        viewers,
+        payment,
+        tracking,
+        base_url,
+    ));
+
+    pubsub.set_receiver(Arc::<App>::clone(&app)).await;
+
+    Ok(app)
+}
+
 #[tokio::main]
 async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let log_level = std::env::var("RUST_LOG")
@@ -230,44 +261,7 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
 
     let redis_url = get_redis_url();
 
-    let base_url = base_url();
-
-    let server_id = server_id().await.unwrap_or_else(|| "server".to_string());
-
-    tracing::info!(
-        git= %GIT_HASH,
-        env= prod_env,
-        is_prod= is_prod(),
-        log_level,
-        redis_url,
-        base_url,
-        server_id,
-        "server-starting",
-    );
-
-    let tracking = Tracking::new(Some(posthog_key()), server_id.clone(), prod_env.clone());
-
-    tracking.track_server_start();
-
-    let redis_pool = create_pool(&redis_url)?;
-    ping_test_redis(&redis_pool).await?;
-
-    let payment = payment().await?;
-
-    let pubsub = Arc::new(PubSubRedis::new(redis_pool.clone(), redis_url.clone()));
-    let viewers = Arc::new(RedisViewers::new(redis_pool));
-
-    let eventsdb = Arc::new(DynamoEventsDB::new(dynamo_client().await?, use_local_db()).await?);
-    let app = Arc::new(App::new(
-        eventsdb,
-        pubsub.clone(),
-        viewers,
-        payment,
-        tracking,
-        base_url,
-    ));
-
-    pubsub.set_receiver(app.clone()).await;
+    let app = setup_app(&redis_url, &prod_env, &log_level).await?;
 
     let secret = session_secret()
         .ok_or_else(|| error::InternalError::General(String::from("invalid session secret")))?;
@@ -283,11 +277,13 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
         .route("/logout", get(logout_handler));
 
     let event_routes = Router::new()
+        .route("/:id", get(handle::getevent_handler))
+        .route("/:id/pwd", post(handle::set_event_password))
+        .route("/:id/plots/questions", get(handle::get_plots_questions))
         .route("/add", post(handle::addevent_handler))
         .route("/editlike/:id", post(handle::editlike_handler))
         .route("/addquestion/:id", post(handle::addquestion_handler))
-        .route("/question/:id/:question_id", get(handle::get_question))
-        .route("/:id", get(handle::getevent_handler));
+        .route("/question/:id/:question_id", get(handle::get_question));
 
     #[rustfmt::skip]
     let mod_routes = Router::new()
@@ -297,15 +293,14 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
         .route("/delete/:id/:secret", get(handle::mod_delete_event))
         .route("/question/:id/:secret/:question_id", get(handle::mod_get_question))
         .route("/questionmod/:id/:secret/:question_id", post(handle::mod_edit_question))
-        .route("/screening/:id/:secret", post(handle::mod_edit_screening))
-        .route("/state/:id/:secret", post(handle::mod_edit_state));
+        .route("/:id/:secret", post(handle::mod_edit_event));
 
     #[rustfmt::skip]
     let router = Router::new()
         .route("/api/ping", get(handle::ping_handler))
         .route("/api/version", get(handle::version_handler))
         .route("/api/error", get(handle::error_handler))
-        .route("/api/payment/webhook", post(handle::payment_webhook))
+        .route("/api/payment/stripe/webhook", post(stripe_webhooks::handle_webhook))
         .route("/push/:id", get(push_handler))
         .nest("/api/event", event_routes)
         .nest("/api/mod/event", mod_routes)

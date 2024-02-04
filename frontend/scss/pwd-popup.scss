@@ -1,0 +1,60 @@
+@import 'colors';
+
+.pwd-popup {
+	max-width: 260px;
+	margin-left: 1em;
+	margin-right: 1em;
+
+
+	.invalid {
+		color: red;
+		font-size: 70%;
+	}
+
+	.dlg-button {
+		margin-top: 15px;
+		bottom: 0;
+
+		font-style: normal;
+		font-weight: 500;
+		line-height: normal;
+		font-size: 14px;
+		letter-spacing: 0.21875px;
+		text-transform: uppercase;
+
+		color: $pink-button;
+		background: transparent;
+		border: none;
+		cursor: pointer;
+
+		&:disabled {
+			color: $col-button-disabled;
+		}
+	}
+
+	.passwordtext {
+		margin-top: 20px;
+
+		width: 100%;
+
+		border: 0;
+		border-radius: 0;
+		border-bottom: 1px solid #D4D4D4;
+
+		line-height: 25px;
+		font-size: 20px;
+		letter-spacing: 0.31px;
+
+		resize: none;
+
+		max-height: 390px;
+
+		:focus {
+			border-bottom: 2px solid $pink-bg;
+		}
+	}
+
+	.more-info {
+		text-align: left;
+	}
+}

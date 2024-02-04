@@ -120,6 +120,9 @@ where
     }
 }
 
+//Note: session livetime
+const COOKIE_TTL: std::time::Duration = std::time::Duration::from_secs(60 * 60 * 2);
+
 pub fn setup(
     secret: &[u8],
     session_store: RedisSessionStore,
@@ -130,7 +133,7 @@ pub fn setup(
     let session_layer = SessionLayer::new(session_store, secret)
         .with_cookie_name("sid")
         .with_persistence_policy(axum_login::axum_sessions::PersistencePolicy::ExistingOnly)
-        .with_session_ttl(Some(std::time::Duration::from_secs(60 * 60)));
+        .with_session_ttl(Some(COOKIE_TTL));
 
     let auth_layer = AuthLayer::new(DumbAdminUserStore {}, secret);
 
@@ -147,7 +150,7 @@ pub fn setup_test() -> (
     let session_layer = SessionLayer::new(session_store, secret.as_bytes())
         .with_cookie_name("sid")
         .with_persistence_policy(axum_login::axum_sessions::PersistencePolicy::ExistingOnly)
-        .with_session_ttl(Some(std::time::Duration::from_secs(60 * 60)));
+        .with_session_ttl(Some(COOKIE_TTL));
 
     let auth_layer = AuthLayer::new(DumbAdminUserStore {}, secret.as_bytes());
 

@@ -1,15 +1,26 @@
+mod flags;
 mod validation;
+
+use std::{str::FromStr, time::Duration};
 
 use serde::{Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
-use std::{str::FromStr, time::Duration};
 
+pub use flags::{EventFlags, EventResponseFlags};
 pub use validation::{
     add_question::{AddQuestionError, AddQuestionValidation},
     create_event::{CreateEventError, CreateEventValidation},
+    pwd_validation::{PasswordError, PasswordValidation},
+    tag_validation::{TagError, TagValidation},
+    ValidationState,
 };
 
+//TODO: validate in unittest against validator
 pub const TEST_VALID_QUESTION: &str = "1 2 3fourfive";
+pub const TEST_EVENT_DESC: &str = "minimum desc length possible!!";
+pub const TEST_EVENT_NAME: &str = "min name";
+
+pub const MAX_TAGS: usize = 15;
 
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Default)]
 pub struct EventTokens {
@@ -29,6 +40,9 @@ pub struct EventData {
     pub long_url: Option<String>,
 }
 
+#[derive(Serialize, Deserialize, Default, Debug, Copy, Clone, Eq, PartialEq, Hash)]
+pub struct TagId(pub usize);
+
 #[derive(Serialize, Deserialize, Default, Debug, Clone, Eq, PartialEq)]
 pub struct QuestionItem {
     pub id: i64,
@@ -40,6 +54,8 @@ pub struct QuestionItem {
     pub screening: bool,
     #[serde(rename = "createTimeUnix")]
     pub create_time_unix: i64,
+    #[serde(default)]
+    pub tag: Option<TagId>,
 }
 
 #[derive(Serialize, Deserialize, Default, Debug, Clone, Eq, PartialEq)]
@@ -48,8 +64,54 @@ pub struct EventUpgrade {
 }
 
 #[derive(Serialize, Deserialize, Default, Debug, Clone, Eq, PartialEq)]
+pub struct ContextItem {
+    pub label: String,
+    pub url: String,
+}
+
+#[derive(Serialize, Deserialize, Default, Debug, Clone, Eq, PartialEq)]
 pub struct PaymentCapture {
     pub order_captured: bool,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, Default)]
+pub struct Tag {
+    pub name: String,
+    pub id: TagId,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, Default)]
+pub struct EventTags {
+    pub current_tag: Option<TagId>,
+    pub tags: Vec<Tag>,
+}
+impl EventTags {
+    #[must_use]
+    pub fn get_current_tag_label(&self) -> Option<String> {
+        self.current_tag
+            .as_ref()
+            .and_then(|current| self.tags.iter().find(|tag| tag.id == *current))
+            .map(|tag| tag.name.clone())
+    }
+
+    /// returns `false` if max tags is reached and a new tag would have to be added
+    pub fn set_or_add_tag(&mut self, tag: &str) -> bool {
+        let tag = tag.to_lowercase();
+
+        if let Some(i) = self.tags.iter().find(|e| *e.name == tag) {
+            self.current_tag = Some(i.id);
+        } else {
+            if self.tags.len() >= MAX_TAGS {
+                return false;
+            }
+
+            let id = TagId(self.tags.len());
+            self.tags.push(Tag { name: tag, id });
+            self.current_tag = Some(id);
+        }
+
+        true
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, Default)]
@@ -60,39 +122,68 @@ pub struct EventInfo {
     pub create_time_unix: i64,
     #[serde(rename = "deleteTimeUnix")]
     pub delete_time_unix: i64,
-    pub deleted: bool,
     #[serde(rename = "lastEditUnix")]
     pub last_edit_unix: i64,
     pub questions: Vec<QuestionItem>,
     pub state: EventState,
     #[serde(default)]
-    pub premium: bool,
+    pub flags: EventFlags,
     #[serde(default)]
-    pub screening: bool,
+    pub context: Vec<ContextItem>,
+    #[serde(default)]
+    pub tags: EventTags,
 }
 
 impl EventInfo {
+    #[must_use]
     pub fn deleted(id: String) -> Self {
         Self {
-            deleted: true,
             tokens: EventTokens {
                 public_token: id,
                 ..Default::default()
             },
+            flags: EventFlags::DELETED,
             ..Default::default()
         }
+    }
+
+    #[must_use]
+    pub const fn is_premium(&self) -> bool {
+        self.flags.contains(EventFlags::PREMIUM)
+    }
+    #[must_use]
+    pub const fn is_deleted(&self) -> bool {
+        self.flags.contains(EventFlags::DELETED)
+    }
+    #[must_use]
+    pub const fn is_screening(&self) -> bool {
+        self.flags.contains(EventFlags::SCREENING)
+    }
+    #[must_use]
+    pub const fn has_password(&self) -> bool {
+        self.flags.contains(EventFlags::PASSWORD)
     }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, Default)]
+pub struct ModInfo {
+    pub pwd: EventPassword,
+    pub private_token: String,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, Default)]
 pub struct GetEventResponse {
+    //TODO: remove mod token from inside here
     pub info: EventInfo,
-    #[serde(default)]
-    pub timed_out: bool,
     pub viewers: i64,
-    //TODO: not needed if client becomes aware of its user role
+    //TODO: not needed if client becomes aware of its user role via header
     #[serde(default)]
     pub admin: bool,
+    #[serde(default)]
+    pub masked: bool,
+    #[serde(default)]
+    pub flags: EventResponseFlags,
+    pub mod_info: Option<ModInfo>,
 }
 
 impl GetEventResponse {
@@ -108,19 +199,35 @@ impl GetEventResponse {
 
     #[must_use]
     pub const fn is_closed(&self) -> bool {
-        matches!(self.info.state.state, States::Closed) || self.timed_out
+        matches!(self.info.state.state, States::Closed) || self.is_timed_out()
     }
 
     #[must_use]
     pub const fn is_deleted(&self) -> bool {
-        self.info.deleted
+        self.info.is_deleted()
     }
 
+    #[must_use]
+    pub const fn is_timed_out(&self) -> bool {
+        self.flags.contains(EventResponseFlags::TIMED_OUT)
+    }
+
+    #[must_use]
+    pub const fn is_wrong_pwd(&self) -> bool {
+        self.flags.contains(EventResponseFlags::WRONG_PASSWORD)
+    }
+
+    #[must_use]
     pub fn deleted(id: String) -> Self {
         Self {
             info: EventInfo::deleted(id),
             ..Default::default()
         }
+    }
+
+    #[must_use]
+    pub fn any_questions(&self) -> bool {
+        !self.info.questions.is_empty()
     }
 }
 
@@ -175,14 +282,66 @@ impl FromStr for States {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Copy, Clone, Eq, PartialEq)]
-pub struct ModEventState {
-    pub state: EventState,
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq)]
+pub enum EventPassword {
+    Disabled,
+    Enabled(String),
 }
 
-#[derive(Serialize, Deserialize, Debug, Copy, Clone, Eq, PartialEq)]
-pub struct ModEditScreening {
-    pub screening: bool,
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq)]
+pub enum CurrentTag {
+    Disabled,
+    Enabled(String),
+}
+
+impl CurrentTag {
+    #[must_use]
+    pub const fn is_enabled(&self) -> bool {
+        matches!(self, Self::Enabled(_))
+    }
+}
+
+impl Default for EventPassword {
+    fn default() -> Self {
+        Self::Disabled
+    }
+}
+
+impl From<Option<String>> for EventPassword {
+    fn from(value: Option<String>) -> Self {
+        value
+            .as_ref()
+            .map_or(Self::Disabled, |v| Self::Enabled(v.clone()))
+    }
+}
+
+impl EventPassword {
+    #[must_use]
+    pub const fn is_enabled(&self) -> bool {
+        matches!(self, Self::Enabled(_))
+    }
+
+    #[must_use]
+    pub fn matches(&self, v: &Option<String>) -> bool {
+        if v.is_none() && !self.is_enabled() {
+            return true;
+        } else if let Some(v) = v {
+            if let Self::Enabled(pwd) = self {
+                return pwd == v;
+            }
+        }
+
+        false
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Default)]
+pub struct ModEvent {
+    pub current_tag: Option<CurrentTag>,
+    pub password: Option<EventPassword>,
+    pub state: Option<EventState>,
+    pub description: Option<String>,
+    pub screening: Option<bool>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Copy, Clone, Eq, PartialEq, Default)]
@@ -206,7 +365,8 @@ impl EventState {
         matches!(self.state, States::Closed)
     }
 
-    pub fn to_value(&self) -> u8 {
+    #[must_use]
+    pub const fn to_value(&self) -> u8 {
         match self.state {
             States::Open => 0,
             States::VotingOnly => 1,
@@ -214,6 +374,7 @@ impl EventState {
         }
     }
 
+    #[must_use]
     pub fn from_value(value: u8) -> Option<Self> {
         Some(match value {
             0 => Self {
@@ -245,4 +406,14 @@ pub struct UserInfo {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct GetUserInfo {
     pub user: Option<UserInfo>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, Default)]
+pub struct EventPasswordRequest {
+    pub pwd: String,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, Default)]
+pub struct EventPasswordResponse {
+    pub ok: bool,
 }

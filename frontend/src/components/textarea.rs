@@ -1,5 +1,3 @@
-#![allow(unused_imports)]
-
 use wasm_bindgen::UnwrapThrowExt;
 use web_sys::HtmlTextAreaElement;
 use yew::{prelude::*, virtual_dom::AttrValue};
@@ -22,7 +20,7 @@ pub enum Msg {
     Input(InputEvent),
 }
 
-pub struct TextArea {}
+pub struct TextArea;
 impl Component for TextArea {
     type Message = Msg;
     type Properties = TextAreaProps;

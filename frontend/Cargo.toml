@@ -3,6 +3,10 @@ name = "frontend"
 version = "0.1.0"
 edition = "2021"
 build = "build.rs"
+rust-version = "1.74"
+
+[lints]
+workspace = true
 
 [dependencies]
 anyhow = "1"
@@ -16,17 +20,16 @@ events = { path = "events" }
 gloo-storage = "0.2"
 gloo-timers = "0.2"
 gloo-utils = "0.1"
-js-sys = "0.3"
 konst = "0.3"
 # logging
 log = "0.4"
-qrcode = "0.12"
+qrcode = "0.13"
 serde = "1"
 serde_json = "1"
 shared = { path = "../shared" }
 split-iter = "0.1"
 urlencoding = "2.1"
-wasm-bindgen = "=0.2.87"
+wasm-bindgen = "=0.2.90"
 wasm-bindgen-futures = "0.4"
 wasm-logger = "0.2"
 wasm-sockets = "1.0"
@@ -64,6 +67,6 @@ wasm-bindgen-test = "0.3.0"
 
 [build-dependencies]
 anyhow = "1"
-handlebars = "4.3"
+handlebars = "4.4"
 konst = "0.3"
 vergen = { version = "8", features = ["git", "gitcl", "build"] }
