@@ -163,6 +163,8 @@ async fn payment() -> Result<Arc<Payment>> {
                 secret.len(),
                 e
             );
+
+            bail!("premium not configured")
         }
         Ok(premium_id) => {
             tracing::info!("payment auth ok: [test: {is_test}, product: {premium_id}]");
