@@ -155,7 +155,7 @@ async fn payment() -> Result<Arc<Payment>> {
     let secret = stripe_secret();
     let mut payment = Payment::new(secret.clone());
 
-    match payment.authenticate().await {
+    match payment.authenticate(!is_test).await {
         Err(e) => {
             tracing::error!(
                 "payment auth error: [secret: {} ({}), test: {is_test}] {}",
@@ -164,12 +164,8 @@ async fn payment() -> Result<Arc<Payment>> {
                 e
             );
         }
-        Ok(live) => {
-            tracing::info!("payment auth ok: [test: {is_test}, live: {live}]");
-
-            if is_test != !live {
-                bail!("expected environment not matching");
-            }
+        Ok(premium_id) => {
+            tracing::info!("payment auth ok: [test: {is_test}, product: {premium_id}]");
         }
     }
 

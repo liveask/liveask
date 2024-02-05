@@ -36,7 +36,7 @@ impl Payment {
         }
     }
 
-    pub async fn authenticate(&mut self) -> PaymentResult<bool> {
+    pub async fn authenticate(&mut self, live: bool) -> PaymentResult<String> {
         let res = stripe::Product::list(&self.client, &ListProducts::new()).await?;
 
         for p in &res.data {
@@ -56,21 +56,24 @@ impl Payment {
                 .unwrap_or_default()
             {
                 tracing::info!("[stripe] prod id: {:?} is premium package", p.id);
-                self.price = Some(
-                    p.default_price
-                        .as_ref()
-                        .ok_or_else(|| PaymentError::Generic("default price not set".into()))?
-                        .id()
-                        .to_string(),
-                );
 
-                if p.livemode.unwrap_or_default() {
-                    return Ok(true);
+                if p.livemode.unwrap_or_default() == live {
+                    self.price = Some(
+                        p.default_price
+                            .as_ref()
+                            .ok_or_else(|| PaymentError::Generic("default price not set".into()))?
+                            .id()
+                            .to_string(),
+                    );
+
+                    return Ok(p.id.to_string());
                 }
             }
         }
 
-        Ok(false)
+        Err(PaymentError::Generic(String::from(
+            "no premium product found",
+        )))
     }
 
     pub async fn create_order(
