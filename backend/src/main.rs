@@ -159,7 +159,7 @@ async fn payment() -> Result<Arc<Payment>> {
         Err(e) => {
             tracing::error!(
                 "payment auth error: [secret: {} ({}), test: {is_test}] {}",
-                secret.get(0..6).unwrap_or("utf8 error in secret"),
+                secret.get(0..8).unwrap_or("utf8 error in secret"),
                 secret.len(),
                 e
             );
