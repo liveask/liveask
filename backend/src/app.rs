@@ -277,8 +277,7 @@ impl App {
             if e.tokens
                 .moderator_token
                 .as_ref()
-                .map(|mod_token| mod_token != secret)
-                .unwrap_or_default()
+                .is_some_and(|mod_token| mod_token != secret)
             {
                 return Err(InternalError::WrongModeratorToken(id));
             }
@@ -358,8 +357,7 @@ impl App {
             .moderator_token
             .clone()
             .zip(secret.clone())
-            .map(|tokens| tokens.0 != tokens.1)
-            .unwrap_or_default();
+            .is_some_and(|tokens| tokens.0 != tokens.1);
 
         let q = e
             .questions
@@ -399,8 +397,7 @@ impl App {
             if e.tokens
                 .moderator_token
                 .as_ref()
-                .map(|mod_token| mod_token != &secret)
-                .unwrap_or_default()
+                .is_some_and(|mod_token| mod_token != &secret)
             {
                 return Err(InternalError::WrongModeratorToken(id));
             }
@@ -456,8 +453,7 @@ impl App {
         if e.tokens
             .moderator_token
             .as_ref()
-            .map(|mod_token| mod_token != &secret)
-            .unwrap_or_default()
+            .is_some_and(|mod_token| mod_token != &secret)
         {
             return Err(InternalError::WrongModeratorToken(id));
         }
@@ -498,8 +494,7 @@ impl App {
         if e.tokens
             .moderator_token
             .as_ref()
-            .map(|mod_token| mod_token != &secret)
-            .unwrap_or_default()
+            .is_some_and(|mod_token| mod_token != &secret)
         {
             return Err(InternalError::WrongModeratorToken(id));
         }
@@ -528,8 +523,7 @@ impl App {
         if e.tokens
             .moderator_token
             .as_ref()
-            .map(|mod_token| mod_token != &secret)
-            .unwrap_or_default()
+            .is_some_and(|mod_token| mod_token != &secret)
         {
             return Err(InternalError::WrongModeratorToken(id));
         }

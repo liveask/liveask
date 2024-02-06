@@ -52,8 +52,7 @@ impl Payment {
             if p.metadata
                 .as_ref()
                 .and_then(|meta| meta.get("id"))
-                .map(|id| id == "premium")
-                .unwrap_or_default()
+                .is_some_and(|id| id == "premium")
             {
                 tracing::info!("[stripe] prod id: {:?} is premium package", p.id);
 
@@ -119,8 +118,7 @@ impl Payment {
         let event = sess.client_reference_id.unwrap_or_default();
         let completed = sess
             .status
-            .map(|status| status == CheckoutSessionStatus::Complete)
-            .unwrap_or_default();
+            .is_some_and(|status| status == CheckoutSessionStatus::Complete);
 
         Ok((event, completed))
     }

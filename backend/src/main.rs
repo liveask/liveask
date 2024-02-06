@@ -89,9 +89,7 @@ fn is_prod() -> bool {
 }
 
 fn use_relaxed_cors() -> bool {
-    std::env::var(env::ENV_RELAX_CORS)
-        .map(|var| var == "1")
-        .unwrap_or_default()
+    std::env::var(env::ENV_RELAX_CORS).is_ok_and(|var| var == "1")
 }
 
 fn get_port() -> u16 {
