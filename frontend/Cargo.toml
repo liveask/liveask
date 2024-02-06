@@ -25,7 +25,6 @@ gloo-storage = "0.2"
 gloo-timers = "0.2"
 gloo-utils = "0.1"
 konst = "0.3"
-# logging
 log = "0.4"
 qrcode = "0.13"
 serde = "1"
