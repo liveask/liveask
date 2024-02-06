@@ -132,8 +132,7 @@ impl Component for IconBar {
             .link()
             .route::<Route>()
             .as_ref()
-            .map(|route| route == &Route::NewEvent)
-            .unwrap_or_default();
+            .is_some_and(|route| route == &Route::NewEvent);
 
         html! {
             <div class={classes!(vec!["topbar", "shrink"],not(self.connected).then_some("offline"))}>
@@ -193,8 +192,7 @@ impl IconBar {
             .state
             .event
             .as_ref()
-            .map(|e| e.info.state.is_open())
-            .unwrap_or_default();
+            .is_some_and(|e| e.info.state.is_open());
 
         if is_open {
             return html! {

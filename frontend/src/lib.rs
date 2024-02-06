@@ -6,6 +6,7 @@ mod fetch;
 mod global_events;
 mod local_cache;
 mod pages;
+mod pwd;
 mod routes;
 mod tracking;
 

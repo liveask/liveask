@@ -6,9 +6,7 @@ use shared::{EventInfo, GetEventResponse, ModEvent, ModQuestion, QuestionItem, S
 use std::{collections::HashMap, rc::Rc, str::FromStr};
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 use web_sys::HtmlAnchorElement;
-use worker2::{WordCloudAgent, WordCloudInput, WordCloudOutput};
 use yew::{prelude::*, virtual_dom::AttrValue};
-use yew_agent::{Bridge, Bridged};
 use yew_router::scope_ext::RouterScopeExt;
 use yewdux::prelude::*;
 
@@ -69,7 +67,6 @@ struct QueryParams {
 pub struct Event {
     current_event_id: String,
     copied_to_clipboard: bool,
-    wordcloud: Option<String>,
     query_params: QueryParams,
     mode: Mode,
     tags: SharableTags,
@@ -81,7 +78,6 @@ pub struct Event {
     state: Rc<State>,
     dispatch: Dispatch<State>,
     events: EventBridge<GlobalEvent>,
-    wordcloud_agent: Box<dyn Bridge<WordCloudAgent>>,
     socket_url: String,
     manual_reconnect: bool,
 }
@@ -102,7 +98,6 @@ pub enum Msg {
     CopyLink,
     ModEditScreening,
     GlobalEvent(GlobalEvent),
-    WordCloud(WordCloudOutput),
 }
 impl Component for Event {
     type Message = Msg;
@@ -129,17 +124,11 @@ impl Component for Event {
             .unwrap_throw()
             .subscribe(ctx.link().callback(Msg::GlobalEvent));
 
-        let cb_wordcloud = {
-            let link = ctx.link().clone();
-            move |e| link.send_message(Msg::WordCloud(e))
-        };
-
         let dispatch = Dispatch::<State>::subscribe(Callback::noop());
 
         Self {
             current_event_id: event_id,
             query_params,
-            wordcloud: None,
             copied_to_clipboard: false,
             mode: if ctx.props().secret.is_some() {
                 Mode::Moderator
@@ -155,7 +144,6 @@ impl Component for Event {
             unscreened: Vec::new(),
             dispatch,
             events,
-            wordcloud_agent: WordCloudAgent::bridge(Rc::new(cb_wordcloud)),
             socket_url,
             manual_reconnect: false,
         }
@@ -212,8 +200,7 @@ impl Component for Event {
                             self.state
                                 .event
                                 .as_ref()
-                                .map(|e| !e.info.is_screening())
-                                .unwrap_or_default(),
+                                .is_some_and(|e| !e.info.is_screening()),
                         ),
                         ..Default::default()
                     },
@@ -221,19 +208,6 @@ impl Component for Event {
                 );
 
                 false
-            }
-            Msg::WordCloud(w) => {
-                if self
-                    .wordcloud
-                    .as_ref()
-                    .map(|old| old == &w.0)
-                    .unwrap_or_default()
-                {
-                    false
-                } else {
-                    self.wordcloud = Some(w.0);
-                    true
-                }
             }
             Msg::ModDelete => {
                 self.events.emit(GlobalEvent::DeletePopup);
@@ -412,8 +386,7 @@ impl Event {
         self.state
             .event
             .as_ref()
-            .map(|e| e.info.is_premium())
-            .unwrap_or_default()
+            .is_some_and(|e| e.info.is_premium())
     }
 
     fn export_event(&self) {
@@ -561,31 +534,10 @@ impl Event {
 
                     {self.view_questions(ctx,e)}
 
-                    {self.view_cloud(e)}
-
                     {Self::view_ask_question(mod_view,ctx,e)}
                 </div>
             }
         })
-    }
-
-    fn view_cloud(&self, e: &GetEventResponse) -> Html {
-        let title_classes = self.question_separator_classes();
-
-        if let Some(wc) = &self.wordcloud {
-            if !e.masked {
-                return html! {
-                    <div>
-                    <div class={title_classes}>
-                        {"Word Cloud"}
-                    </div>
-                    {cloud_as_yew_img(wc)}
-                    </div>
-                };
-            }
-        }
-
-        html!()
     }
 
     #[allow(clippy::if_not_else)]
@@ -650,12 +602,7 @@ impl Event {
         if !items.is_empty() {
             let title_classes = self.question_separator_classes();
 
-            let masked = self
-                .state
-                .event
-                .as_ref()
-                .map(|e| e.masked)
-                .unwrap_or_default();
+            let masked = self.state.event.as_ref().is_some_and(|e| e.masked);
 
             return html! {
                 <div>
@@ -684,11 +631,7 @@ impl Event {
     ) -> Html {
         let local_like = LocalCache::is_liked(&self.current_event_id, item.id);
         let mod_view = matches!(self.mode, Mode::Moderator);
-        let is_new = self
-            .state
-            .new_question
-            .map(|id| id == item.id)
-            .unwrap_or_default();
+        let is_new = self.state.new_question.is_some_and(|id| id == item.id);
 
         let mut flags = QuestionFlags::empty();
 
@@ -948,16 +891,6 @@ impl Event {
                 .map(|t| (t.id, t.name.clone()))
                 .collect::<HashMap<_, _>>()
                 .into();
-
-            if e.info.is_premium() && !e.masked && e.any_questions() {
-                self.wordcloud_agent.send(WordCloudInput(
-                    e.info
-                        .questions
-                        .iter()
-                        .map(|q| q.text.clone())
-                        .collect::<Vec<_>>(),
-                ));
-            }
         }
     }
 
@@ -1075,8 +1008,7 @@ impl Event {
                         .state
                         .event
                         .as_ref()
-                        .map(|e| e.info.questions.iter().any(|q| q.id == id))
-                        .unwrap_or_default();
+                        .is_some_and(|e| e.info.questions.iter().any(|q| q.id == id));
 
                     if !found {
                         log::info!("new question: {}", id);
@@ -1140,23 +1072,11 @@ impl Event {
             if !e.info.is_premium() && self.query_params.paypal_token.is_some() {
                 request_capture(
                     e.info.tokens.public_token,
-                    self.query_params
-                        .paypal_token
-                        .as_ref()
-                        .cloned()
-                        .unwrap_throw(),
+                    self.query_params.paypal_token.clone().unwrap_throw(),
                     ctx.link(),
                 );
             }
         }
         true
-    }
-}
-
-pub fn cloud_as_yew_img(b64: &str) -> yew::Html {
-    html! {
-        <div class="cloud">
-            <img alt="wordcloud" src={format!("data:image/png;base64,{b64}")} />
-        </div>
     }
 }

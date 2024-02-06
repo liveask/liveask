@@ -84,9 +84,7 @@ fn process_html_template(git_hash: &str) {
 }
 
 fn file_content_changed(path: &str, content: &str) -> bool {
-    read_to_string(path)
-        .map(|current_content| content != current_content)
-        .unwrap_or_default()
+    read_to_string(path).is_ok_and(|current_content| content != current_content)
 }
 
 // build.rs main func
