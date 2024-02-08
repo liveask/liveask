@@ -86,6 +86,7 @@ impl Payment {
             params.cancel_url = Some(mod_url);
             params.success_url = Some(return_url);
             params.client_reference_id = Some(event);
+            params.allow_promotion_codes = Some(true);
             params.metadata = Some(
                 vec![(String::from("event"), event.to_string())]
                     .into_iter()
