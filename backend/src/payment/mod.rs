@@ -88,18 +88,13 @@ impl Payment {
             params.client_reference_id = Some(event);
             params.allow_promotion_codes = Some(true);
             params.metadata = Some(
-                vec![(String::from("event"), event.to_string())]
-                    .into_iter()
-                    .collect(),
+                vec![
+                    (String::from("event"), event.to_string()),
+                    (String::from("url"), mod_url.to_string()),
+                ]
+                .into_iter()
+                .collect(),
             );
-            params.custom_text = Some(stripe::CreateCheckoutSessionCustomText {
-                after_submit: None,
-                shipping_address: None,
-                submit: Some(stripe::CreateCheckoutSessionCustomTextSubmit {
-                    message: String::from("test"),
-                }),
-                terms_of_service_acceptance: None,
-            });
             params.mode = Some(CheckoutSessionMode::Payment);
             params.line_items = Some(vec![CreateCheckoutSessionLineItems {
                 quantity: Some(1),
