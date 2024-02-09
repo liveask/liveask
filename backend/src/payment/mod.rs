@@ -92,6 +92,14 @@ impl Payment {
                     .into_iter()
                     .collect(),
             );
+            params.custom_text = Some(stripe::CreateCheckoutSessionCustomText {
+                after_submit: None,
+                shipping_address: None,
+                submit: Some(stripe::CreateCheckoutSessionCustomTextSubmit {
+                    message: String::from("test"),
+                }),
+                terms_of_service_acceptance: None,
+            });
             params.mode = Some(CheckoutSessionMode::Payment);
             params.line_items = Some(vec![CreateCheckoutSessionLineItems {
                 quantity: Some(1),
