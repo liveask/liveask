@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 * remove wordcloud, value did not justify effort and can be manuall generated from export data
 * allow promo codes for discounts
+* add mod url as stripe checkout metadata
 
 ## [2.7.1] - 2024-02-05
 
