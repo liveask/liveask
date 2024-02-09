@@ -88,9 +88,12 @@ impl Payment {
             params.client_reference_id = Some(event);
             params.allow_promotion_codes = Some(true);
             params.metadata = Some(
-                vec![(String::from("event"), event.to_string())]
-                    .into_iter()
-                    .collect(),
+                vec![
+                    (String::from("event"), event.to_string()),
+                    (String::from("url"), mod_url.to_string()),
+                ]
+                .into_iter()
+                .collect(),
             );
             params.mode = Some(CheckoutSessionMode::Payment);
             params.line_items = Some(vec![CreateCheckoutSessionLineItems {
