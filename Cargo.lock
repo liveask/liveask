@@ -200,6 +200,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "async-posthog"
+version = "0.2.3"
+source = "git+https://github.com/rivet-gg/posthog-rs.git?rev=fa4d39a#fa4d39ac465aab259bf3fe67329c47cfd64dd4ea"
+dependencies = [
+ "posthog-core",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "thiserror",
+ "tokio",
+]
+
+[[package]]
 name = "async-redis-session"
 version = "0.2.2"
 dependencies = [
@@ -2014,7 +2027,7 @@ dependencies = [
  "httpdate",
  "itoa",
  "pin-project-lite",
- "socket2 0.5.5",
+ "socket2 0.4.10",
  "tokio",
  "tower-service",
  "tracing",
@@ -2251,6 +2264,7 @@ name = "liveask-server"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "async-posthog",
  "async-redis-session",
  "async-stripe",
  "async-trait",
@@ -2268,7 +2282,7 @@ dependencies = [
  "handlebars",
  "mime",
  "mockall",
- "posthog-rs",
+ "posthog-core",
  "pretty_assertions",
  "rand 0.8.5",
  "redis",
@@ -2732,18 +2746,6 @@ version = "0.1.0"
 source = "git+https://github.com/rivet-gg/posthog-rs.git?rev=fa4d39a#fa4d39ac465aab259bf3fe67329c47cfd64dd4ea"
 dependencies = [
  "chrono",
- "serde",
- "serde_json",
- "thiserror",
-]
-
-[[package]]
-name = "posthog-rs"
-version = "0.2.3"
-source = "git+https://github.com/rivet-gg/posthog-rs.git?rev=fa4d39a#fa4d39ac465aab259bf3fe67329c47cfd64dd4ea"
-dependencies = [
- "posthog-core",
- "reqwest",
  "serde",
  "serde_json",
  "thiserror",

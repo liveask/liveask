@@ -196,7 +196,7 @@ async fn setup_app(
 
     let tracking = Tracking::new(Some(posthog_key()), server_id.clone(), prod_env.to_string());
 
-    tracking.track_server_start();
+    tracking.track_server_start().await?;
 
     let redis_pool = create_pool(redis_url)?;
     ping_test_redis(&redis_pool).await?;

@@ -5,7 +5,7 @@ use reqwest::StatusCode;
 use shared::{AddQuestionValidation, PasswordValidation, TagValidation};
 use thiserror::Error;
 
-use crate::{eventsdb, payment::PaymentError};
+use crate::{eventsdb, payment::PaymentError, tracking};
 
 #[derive(Error, Debug)]
 pub enum InternalError {
@@ -59,6 +59,9 @@ pub enum InternalError {
 
     #[error("Uri Error: {0}")]
     Uri(#[from] axum::http::uri::InvalidUri),
+
+    #[error("Tracking Error: {0}")]
+    Tracking(#[from] tracking::TrackingError),
 }
 
 impl IntoResponse for InternalError {
@@ -143,6 +146,7 @@ impl IntoResponse for InternalError {
             Self::Uri(e) => convert_error(e),
             Self::DeadPoolCreatePool(e) => convert_error(e),
             Self::DeadPoolRedis(e) => convert_error(e),
+            Self::Tracking(e) => convert_error(e),
         }
     }
 }

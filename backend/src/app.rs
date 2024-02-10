@@ -220,11 +220,13 @@ impl App {
         }
 
         if !request.test {
-            self.tracking.track_event_create(
-                result.tokens.public_token.clone(),
-                url,
-                result.data.name.clone(),
-            );
+            self.tracking
+                .track_event_create(
+                    result.tokens.public_token.clone(),
+                    url,
+                    result.data.name.clone(),
+                )
+                .await?;
         }
 
         Ok(result.into())
@@ -465,10 +467,10 @@ impl App {
             e.do_screening = screening;
         }
         if let Some(password) = changes.password {
-            self.mod_edit_password(e, password);
+            self.mod_edit_password(e, password).await?;
         }
         if let Some(current_tag) = &changes.current_tag {
-            self.mod_edit_tag(e, current_tag)?;
+            self.mod_edit_tag(e, current_tag).await?;
         }
         if let Some(description) = changes.description {
             //TODO: desc
@@ -613,7 +615,8 @@ impl App {
         self.notify_subscribers(&event, Notification::Event).await;
 
         self.tracking
-            .track_event_upgrade(&event, name, long_url, age);
+            .track_event_upgrade(event.clone(), name, long_url, age)
+            .await?;
 
         Ok(true)
     }
@@ -889,7 +892,11 @@ impl App {
         });
     }
 
-    fn mod_edit_password(&self, e: &mut ApiEventInfo, password: shared::EventPassword) {
+    async fn mod_edit_password(
+        &self,
+        e: &mut ApiEventInfo,
+        password: shared::EventPassword,
+    ) -> Result<()> {
         let edit_type = match (e.password.is_enabled(), password.is_enabled()) {
             (false, true) => Some(EditEvent::Enabled),
             (true, false) => Some(EditEvent::Disabled),
@@ -899,13 +906,20 @@ impl App {
 
         if let Some(edit_type) = edit_type {
             self.tracking
-                .track_event_password_set(e.tokens.public_token.clone(), edit_type);
+                .track_event_password_set(e.tokens.public_token.clone(), edit_type)
+                .await?;
         }
 
         e.password = password;
+
+        Ok(())
     }
 
-    fn mod_edit_tag(&self, e: &mut ApiEventInfo, current_tag: &shared::CurrentTag) -> Result<()> {
+    async fn mod_edit_tag(
+        &self,
+        e: &mut ApiEventInfo,
+        current_tag: &shared::CurrentTag,
+    ) -> Result<()> {
         if e.premium_id.is_none() {
             return Err(InternalError::PremiumOnlyFeature(
                 e.tokens.public_token.clone(),
@@ -921,7 +935,8 @@ impl App {
 
         if let Some(edit_type) = edit_type {
             self.tracking
-                .track_event_tag_set(e.tokens.public_token.clone(), edit_type);
+                .track_event_tag_set(e.tokens.public_token.clone(), edit_type, e.age_in_seconds())
+                .await?;
         }
 
         if let shared::CurrentTag::Enabled(tag) = &current_tag {
