@@ -15,6 +15,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * add mod url as stripe checkout metadata
 * allow tracking non-string data
 
+### Fixes
+* show my local unscreened questions if not other questions in event
+
 ## [2.7.1] - 2024-02-05
 
 ### Changed

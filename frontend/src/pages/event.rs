@@ -567,7 +567,7 @@ impl Event {
     }
 
     fn view_questions(&self, ctx: &Context<Self>, e: &GetEventResponse) -> Html {
-        if e.info.questions.is_empty() {
+        if e.info.questions.is_empty() && self.unscreened.is_empty() {
             let no_questions_classes = classes!(match self.mode {
                 Mode::Moderator => "noquestions modview",
                 Mode::Viewer => "noquestions",
