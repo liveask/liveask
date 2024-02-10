@@ -472,6 +472,9 @@ impl App {
         if let Some(current_tag) = &changes.current_tag {
             self.mod_edit_tag(e, current_tag).await?;
         }
+        if let Some(context_link) = &changes.context {
+            self.mod_context(e, context_link).await?;
+        }
         if let Some(description) = changes.description {
             //TODO: desc
             tracing::warn!(desc=%description,"TBD");
@@ -615,7 +618,7 @@ impl App {
         self.notify_subscribers(&event, Notification::Event).await;
 
         self.tracking
-            .track_event_upgrade(event.clone(), name, long_url, age)
+            .track_event_upgrade(&event, name, long_url, age)
             .await?;
 
         Ok(true)
@@ -935,7 +938,7 @@ impl App {
 
         if let Some(edit_type) = edit_type {
             self.tracking
-                .track_event_tag_set(e.tokens.public_token.clone(), edit_type, e.age_in_seconds())
+                .track_event_tag_set(e.tokens.public_token.clone(), edit_type)
                 .await?;
         }
 
@@ -952,6 +955,32 @@ impl App {
             }
         } else {
             e.tags.current_tag = None;
+        }
+
+        Ok(())
+    }
+
+    async fn mod_context(
+        &self,
+        e: &mut ApiEventInfo,
+        context_link: &shared::EditContextLink,
+    ) -> Result<()> {
+        if e.premium_id.is_none() {
+            return Err(InternalError::PremiumOnlyFeature(
+                e.tokens.public_token.clone(),
+            ));
+        }
+
+        match context_link {
+            shared::EditContextLink::Disabled => e.context = vec![],
+            shared::EditContextLink::Enabled(item) => {
+                //TODO: verify url/label
+                e.context = vec![item.clone()];
+
+                self.tracking
+                    .track_event_context_set(e.tokens.public_token.clone(), &item.label, &item.url)
+                    .await?;
+            }
         }
 
         Ok(())

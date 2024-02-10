@@ -294,6 +294,12 @@ pub enum CurrentTag {
     Enabled(String),
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq)]
+pub enum EditContextLink {
+    Disabled,
+    Enabled(ContextItem),
+}
+
 impl CurrentTag {
     #[must_use]
     pub const fn is_enabled(&self) -> bool {
@@ -342,6 +348,7 @@ pub struct ModEvent {
     pub state: Option<EventState>,
     pub description: Option<String>,
     pub screening: Option<bool>,
+    pub context: Option<EditContextLink>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Copy, Clone, Eq, PartialEq, Default)]
