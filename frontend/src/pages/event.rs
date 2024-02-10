@@ -513,9 +513,9 @@ impl Event {
                     <QuestionPopup event_id={e.info.tokens.public_token.clone()} {tag} />
                     <SharePopup url={share_url} event_id={e.info.tokens.public_token.clone()} />
                     <div class="event-block">
-                        <div class="event-name-label">{ "The Event" }</div>
-                        <div class="event-name">{ &e.info.data.name.clone() }</div>
-                        <EventContext context={e.info.context.clone()} />
+                        <div class="event-name-label">{"The Event"}</div>
+                        <div class="event-name">{&e.info.data.name.clone()}</div>
+                        <EventContext context={e.info.context.clone()} tokens={e.info.tokens.clone()}></EventContext>
                         //TODO: collapsable event desc
                         <div
                             class={classes!("event-desc",e.masked.then_some("blurr"))}
