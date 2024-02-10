@@ -161,7 +161,10 @@ async fn payment() -> Result<Arc<Payment>> {
                 e
             );
 
-            bail!("premium not configured")
+            // panic if this is not working in live
+            if !is_test {
+                bail!("premium not configured")
+            }
         }
         Ok(premium_id) => {
             tracing::info!("payment auth ok: [test: {is_test}, product: {premium_id}]");
