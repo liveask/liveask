@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * allow promo codes for discounts
 * add mod url as stripe checkout metadata
 * allow tracking non-string data
+* text explainer if moderator has `screening` enabled
 
 ### Fixes
 * show my local unscreened questions if not other questions in event

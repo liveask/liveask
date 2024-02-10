@@ -2,7 +2,7 @@ use chrono::{DateTime, Duration, NaiveDateTime, Utc};
 use const_format::formatcp;
 use events::{event_context, EventBridge};
 use serde::Deserialize;
-use shared::{EventInfo, GetEventResponse, ModEvent, ModQuestion, QuestionItem, States};
+use shared::{EventFlags, EventInfo, GetEventResponse, ModEvent, ModQuestion, QuestionItem, States};
 use std::{collections::HashMap, rc::Rc, str::FromStr};
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 use web_sys::HtmlAnchorElement;
@@ -494,6 +494,7 @@ impl Event {
             let admin = e.admin;
 
             let tag = e.info.tags.get_current_tag_label();
+            let screening_enabled = e.info.flags.contains(EventFlags::SCREENING);
 
             html! {
                 <div class="some-event">
@@ -530,7 +531,11 @@ impl Event {
 
                     {self.mod_urls(ctx,admin)}
 
-                    {self.view_viewers()}
+                    {self.view_stats()}
+
+                    <div class="review-note" hidden={!screening_enabled || mod_view}>
+                        {"Moderator enabled question reviewing. New questions have to be approved first."}
+                    </div>  
 
                     {self.view_questions(ctx,e)}
 
@@ -743,7 +748,7 @@ impl Event {
         }
     }
 
-    fn view_viewers(&self) -> Html {
+    fn view_stats(&self) -> Html {
         if !self.is_premium() {
             return html! {};
         }
