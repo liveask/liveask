@@ -538,7 +538,7 @@ impl Event {
                     { self.mod_urls(ctx,admin) }
                     { self.view_stats() }
                     <div class="review-note" hidden={!screening_enabled || mod_view}>
-                        { "Moderator enabled question reviewing. New questions have to be approved first." }
+                    { "Moderator enabled question reviewing. New questions have to be approved first." }
                     </div>
                     { self.view_questions(ctx,e) }
                     { Self::view_ask_question(mod_view,ctx,e) }
