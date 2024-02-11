@@ -2,7 +2,9 @@ use chrono::{DateTime, Duration, NaiveDateTime, Utc};
 use const_format::formatcp;
 use events::{event_context, EventBridge};
 use serde::Deserialize;
-use shared::{EventFlags, EventInfo, GetEventResponse, ModEvent, ModQuestion, QuestionItem, States};
+use shared::{
+    EventFlags, EventInfo, GetEventResponse, ModEvent, ModQuestion, QuestionItem, States,
+};
 use std::{collections::HashMap, rc::Rc, str::FromStr};
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 use web_sys::HtmlAnchorElement;
@@ -535,7 +537,7 @@ impl Event {
 
                     <div class="review-note" hidden={!screening_enabled || mod_view}>
                         {"Moderator enabled question reviewing. New questions have to be approved first."}
-                    </div>  
+                    </div>
 
                     {self.view_questions(ctx,e)}
 
