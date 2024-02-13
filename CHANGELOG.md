@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## [2.7.2] - 2024-02-??
+
+### Changed
+* remove wordcloud, value did not justify effort and can be manuall generated from export data
+* allow promo codes for discounts
+* add mod url as stripe checkout metadata
+* allow tracking non-string data
+* text explainer if moderator has `screening` enabled
+
+### Fixes
+* show my local unscreened questions if not other questions in event
+
+## [2.7.1] - 2024-02-05
+
 ### Changed
 * use stripe as payment processor to help premium customers in more countries to be able to upgrade
 * send event age in seconds into tracking

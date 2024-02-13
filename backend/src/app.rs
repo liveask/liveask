@@ -27,7 +27,6 @@ use crate::{
     eventsdb::{ApiEventInfo, EventEntry, EventsDB, PremiumOrder},
     mail::MailConfig,
     payment::Payment,
-    plots,
     pubsub::{PubSubPublish, PubSubReceiver},
     tracking::{EditEvent, Tracking},
     utils::timestamp_now,
@@ -158,40 +157,6 @@ impl App {
         url.to_owned()
     }
 
-    #[instrument(skip(self))]
-    pub async fn plot_questions(&self, id: String) -> Result<String> {
-        let entry = self.eventsdb.get(&id).await?;
-
-        let e = &entry.event;
-
-        if e.deleted {
-            return Err(InternalError::AccessingDeletedEvent(id));
-        }
-
-        if e.is_timed_out_and_free() {
-            return Err(InternalError::TimedOutFreeEvent(id));
-        }
-
-        let data = e
-            .questions
-            .iter()
-            .map(|q| {
-                let create_time = chrono::DateTime::<chrono::Utc>::from_naive_utc_and_offset(
-                    chrono::NaiveDateTime::from_timestamp_opt(q.create_time_unix, 0)
-                        .unwrap_or_default(),
-                    chrono::Utc,
-                );
-                (create_time, q.likes)
-            })
-            .collect::<Vec<_>>();
-
-        let mut output = String::with_capacity(100);
-
-        plots::plot_questions(&mut output, data.as_slice())?;
-
-        Ok(output)
-    }
-
     #[instrument(skip(self, request))]
     pub async fn create_event(&self, request: AddEvent) -> Result<EventInfo> {
         let mut validation = shared::CreateEventValidation::default();
@@ -255,11 +220,13 @@ impl App {
         }
 
         if !request.test {
-            self.tracking.track_event_create(
-                result.tokens.public_token.clone(),
-                url,
-                result.data.name.clone(),
-            );
+            self.tracking
+                .track_event_create(
+                    result.tokens.public_token.clone(),
+                    url,
+                    result.data.name.clone(),
+                )
+                .await?;
         }
 
         Ok(result.into())
@@ -312,8 +279,7 @@ impl App {
             if e.tokens
                 .moderator_token
                 .as_ref()
-                .map(|mod_token| mod_token != secret)
-                .unwrap_or_default()
+                .is_some_and(|mod_token| mod_token != secret)
             {
                 return Err(InternalError::WrongModeratorToken(id));
             }
@@ -393,8 +359,7 @@ impl App {
             .moderator_token
             .clone()
             .zip(secret.clone())
-            .map(|tokens| tokens.0 != tokens.1)
-            .unwrap_or_default();
+            .is_some_and(|tokens| tokens.0 != tokens.1);
 
         let q = e
             .questions
@@ -434,8 +399,7 @@ impl App {
             if e.tokens
                 .moderator_token
                 .as_ref()
-                .map(|mod_token| mod_token != &secret)
-                .unwrap_or_default()
+                .is_some_and(|mod_token| mod_token != &secret)
             {
                 return Err(InternalError::WrongModeratorToken(id));
             }
@@ -491,8 +455,7 @@ impl App {
         if e.tokens
             .moderator_token
             .as_ref()
-            .map(|mod_token| mod_token != &secret)
-            .unwrap_or_default()
+            .is_some_and(|mod_token| mod_token != &secret)
         {
             return Err(InternalError::WrongModeratorToken(id));
         }
@@ -504,10 +467,10 @@ impl App {
             e.do_screening = screening;
         }
         if let Some(password) = changes.password {
-            self.mod_edit_password(e, password);
+            self.mod_edit_password(e, password).await?;
         }
         if let Some(current_tag) = &changes.current_tag {
-            self.mod_edit_tag(e, current_tag)?;
+            self.mod_edit_tag(e, current_tag).await?;
         }
         if let Some(description) = changes.description {
             //TODO: desc
@@ -533,8 +496,7 @@ impl App {
         if e.tokens
             .moderator_token
             .as_ref()
-            .map(|mod_token| mod_token != &secret)
-            .unwrap_or_default()
+            .is_some_and(|mod_token| mod_token != &secret)
         {
             return Err(InternalError::WrongModeratorToken(id));
         }
@@ -563,8 +525,7 @@ impl App {
         if e.tokens
             .moderator_token
             .as_ref()
-            .map(|mod_token| mod_token != &secret)
-            .unwrap_or_default()
+            .is_some_and(|mod_token| mod_token != &secret)
         {
             return Err(InternalError::WrongModeratorToken(id));
         }
@@ -654,7 +615,8 @@ impl App {
         self.notify_subscribers(&event, Notification::Event).await;
 
         self.tracking
-            .track_event_upgrade(&event, name, long_url, age);
+            .track_event_upgrade(event.clone(), name, long_url, age)
+            .await?;
 
         Ok(true)
     }
@@ -930,7 +892,11 @@ impl App {
         });
     }
 
-    fn mod_edit_password(&self, e: &mut ApiEventInfo, password: shared::EventPassword) {
+    async fn mod_edit_password(
+        &self,
+        e: &mut ApiEventInfo,
+        password: shared::EventPassword,
+    ) -> Result<()> {
         let edit_type = match (e.password.is_enabled(), password.is_enabled()) {
             (false, true) => Some(EditEvent::Enabled),
             (true, false) => Some(EditEvent::Disabled),
@@ -940,13 +906,20 @@ impl App {
 
         if let Some(edit_type) = edit_type {
             self.tracking
-                .track_event_password_set(e.tokens.public_token.clone(), edit_type);
+                .track_event_password_set(e.tokens.public_token.clone(), edit_type)
+                .await?;
         }
 
         e.password = password;
+
+        Ok(())
     }
 
-    fn mod_edit_tag(&self, e: &mut ApiEventInfo, current_tag: &shared::CurrentTag) -> Result<()> {
+    async fn mod_edit_tag(
+        &self,
+        e: &mut ApiEventInfo,
+        current_tag: &shared::CurrentTag,
+    ) -> Result<()> {
         if e.premium_id.is_none() {
             return Err(InternalError::PremiumOnlyFeature(
                 e.tokens.public_token.clone(),
@@ -962,7 +935,8 @@ impl App {
 
         if let Some(edit_type) = edit_type {
             self.tracking
-                .track_event_tag_set(e.tokens.public_token.clone(), edit_type);
+                .track_event_tag_set(e.tokens.public_token.clone(), edit_type, e.age_in_seconds())
+                .await?;
         }
 
         if let shared::CurrentTag::Enabled(tag) = &current_tag {

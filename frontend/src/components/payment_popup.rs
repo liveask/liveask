@@ -61,9 +61,10 @@ impl Component for PaymentPopup {
                 false
             }
             Msg::TimerDone(url) => {
+                self.show = false;
                 log::info!("redirect to: {}", url);
                 gloo_utils::window().location().assign(&url).unwrap_throw();
-                false
+                true
             }
             Msg::UpgradeRequested(u) => {
                 if let Some(u) = u {

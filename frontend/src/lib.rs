@@ -6,6 +6,7 @@ mod fetch;
 mod global_events;
 mod local_cache;
 mod pages;
+mod pwd;
 mod routes;
 mod tracking;
 
@@ -24,7 +25,7 @@ use crate::{
     pages::{Event, Home, NewEvent, Print, Privacy},
 };
 
-pub const VERSION_STR: &str = "2.6.2";
+pub const VERSION_STR: &str = "2.7.2";
 pub const GIT_BRANCH: &str = env!("VERGEN_GIT_BRANCH");
 
 #[derive(Default, Clone, Eq, PartialEq, Store)]

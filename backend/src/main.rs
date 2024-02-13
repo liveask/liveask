@@ -9,7 +9,6 @@ mod eventsdb;
 mod handle;
 mod mail;
 mod payment;
-mod plots;
 mod pubsub;
 mod redis_pool;
 mod ses;
@@ -90,9 +89,7 @@ fn is_prod() -> bool {
 }
 
 fn use_relaxed_cors() -> bool {
-    std::env::var(env::ENV_RELAX_CORS)
-        .map(|var| var == "1")
-        .unwrap_or_default()
+    std::env::var(env::ENV_RELAX_CORS).is_ok_and(|var| var == "1")
 }
 
 fn get_port() -> u16 {
@@ -155,21 +152,22 @@ async fn payment() -> Result<Arc<Payment>> {
     let secret = stripe_secret();
     let mut payment = Payment::new(secret.clone());
 
-    match payment.authenticate().await {
+    match payment.authenticate(!is_test).await {
         Err(e) => {
             tracing::error!(
                 "payment auth error: [secret: {} ({}), test: {is_test}] {}",
-                secret.get(0..6).unwrap_or("utf8 error in secret"),
+                secret.get(0..8).unwrap_or("utf8 error in secret"),
                 secret.len(),
                 e
             );
-        }
-        Ok(live) => {
-            tracing::info!("payment auth ok: [test: {is_test}, live: {live}]");
 
-            if is_test != !live {
-                bail!("expected environment not matching");
+            // panic if this is not working in live
+            if !is_test {
+                bail!("premium not configured")
             }
+        }
+        Ok(premium_id) => {
+            tracing::info!("payment auth ok: [test: {is_test}, product: {premium_id}]");
         }
     }
 
@@ -198,7 +196,7 @@ async fn setup_app(
 
     let tracking = Tracking::new(Some(posthog_key()), server_id.clone(), prod_env.to_string());
 
-    tracking.track_server_start();
+    tracking.track_server_start().await?;
 
     let redis_pool = create_pool(redis_url)?;
     ping_test_redis(&redis_pool).await?;
@@ -279,7 +277,6 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let event_routes = Router::new()
         .route("/:id", get(handle::getevent_handler))
         .route("/:id/pwd", post(handle::set_event_password))
-        .route("/:id/plots/questions", get(handle::get_plots_questions))
         .route("/add", post(handle::addevent_handler))
         .route("/editlike/:id", post(handle::editlike_handler))
         .route("/addquestion/:id", post(handle::addquestion_handler))

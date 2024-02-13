@@ -5,7 +5,6 @@ members = [
     "backend-e2e",
     "frontend",
     "frontend/events",
-    "frontend/worker",
     "shared",
 ]
 resolver = "2"

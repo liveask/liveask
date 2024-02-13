@@ -96,7 +96,6 @@ impl Upgrade {
                     <li>{"Unlimited access to your event"}</li>
                     <li>{"Realtime statistics (participants, likes ..)"}</li>
                     <li>{"Export your event data"}</li>
-                    <li>{"Word-Cloud"}</li>
                     <li>{"Prescreen questions before they appear"}</li>
                     <li>{"Automatically tag questions"}</li>
                     <li>{"Plus much more .."}</li>

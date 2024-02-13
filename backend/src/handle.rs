@@ -158,16 +158,6 @@ pub async fn get_question(
 }
 
 #[instrument(skip(app))]
-pub async fn get_plots_questions(
-    Path(id): Path<String>,
-    State(app): State<SharedApp>,
-) -> std::result::Result<impl IntoResponse, InternalError> {
-    tracing::info!("get_plots_questions");
-
-    Ok(Html(app.plot_questions(id).await?))
-}
-
-#[instrument(skip(app))]
 pub async fn mod_edit_question(
     Path((id, secret, question_id)): Path<(String, String, i64)>,
     State(app): State<SharedApp>,
