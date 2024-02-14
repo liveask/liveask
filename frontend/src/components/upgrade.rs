@@ -58,13 +58,18 @@ impl Component for Upgrade {
             <div class="premium-banner">
                 <div class="rectangle">
                     <div class="toprow" onclick={ctx.link().callback(|_| Msg::ToggleExpansion)}>
-                        <span>{"Upgrade now to "}<strong>{"PREMIUM EVENT"}</strong></span>
-                        <img alt="dropdown" class={classes!("dropdown",not(collapsed).then_some("rotated"))} src="/assets/dropdown.svg" />
+                        <span>
+                            { "Upgrade now to " }
+                            <strong>{ "PREMIUM EVENT" }</strong>
+                        </span>
+                        <img
+                            alt="dropdown"
+                            class={classes!("dropdown",not(collapsed).then_some("rotated"))}
+                            src="/assets/dropdown.svg"
+                        />
                     </div>
-
-                    {self.view_expanded(ctx)}
-
-                    {Self::view_pending(ctx.props().pending)}
+                    { self.view_expanded(ctx) }
+                    { Self::view_pending(ctx.props().pending) }
                 </div>
             </div>
         }
@@ -77,9 +82,7 @@ impl Upgrade {
             return html! {};
         }
 
-        html! {
-            <Spinner />
-        }
+        html! { <Spinner /> }
     }
     fn view_expanded(&self, ctx: &Context<Self>) -> Html {
         let pending = ctx.props().pending;
@@ -91,30 +94,29 @@ impl Upgrade {
         html! {
             <div class="expanded">
                 <div class="features">
-                {"To unlock the following features:"}
-                <ul>
-                    <li>{"Unlimited access to your event"}</li>
-                    <li>{"Realtime statistics (participants, likes ..)"}</li>
-                    <li>{"Export your event data"}</li>
-                    <li>{"Prescreen questions before they appear"}</li>
-                    <li>{"Automatically tag questions"}</li>
-                    <li>{"Plus much more .."}</li>
-                </ul>
+                    { "To unlock the following features:" }
+                    <ul>
+                        <li>{ "Unlimited access to your event" }</li>
+                        <li>{ "Realtime statistics (participants, likes ..)" }</li>
+                        <li>{ "Export your event data" }</li>
+                        <li>{ "Prescreen questions before they appear" }</li>
+                        <li>{ "Automatically tag questions" }</li>
+                        <li>{ "Plus much more .." }</li>
+                    </ul>
                 </div>
-
                 <div class="tmp-subscription">
-                    {"Are you planning to host multiple events? "}
-                    <a href="mailto:mail@live-ask.com">
-                        {"Contact us"}
-                    </a>
-                    {" for special discounts."}
+                    { "Are you planning to host multiple events? " }
+                    <a href="mailto:mail@live-ask.com">{ "Contact us" }</a>
+                    { " for special discounts." }
                 </div>
-
-                <button class="button" hidden={pending} onclick={ctx.link().callback(|_| Msg::UpgradeClicked)}>
-                    {"upgrade for \u{20AC}7"}
+                <button
+                    class="button"
+                    hidden={pending}
+                    onclick={ctx.link().callback(|_| Msg::UpgradeClicked)}
+                >
+                    { "upgrade for \u{20AC}7" }
                 </button>
-
-                <PaymentPopup tokens={self.data.tokens.clone()}/>
+                <PaymentPopup tokens={self.data.tokens.clone()} />
             </div>
         }
     }

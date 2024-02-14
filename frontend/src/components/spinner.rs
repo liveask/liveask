@@ -11,7 +11,16 @@ impl Component for Spinner {
 
     fn view(&self, _ctx: &Context<Self>) -> Html {
         html! {
-            <div class="lds-roller"><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>
+            <div class="lds-roller">
+                <div />
+                <div />
+                <div />
+                <div />
+                <div />
+                <div />
+                <div />
+                <div />
+            </div>
         }
     }
 }

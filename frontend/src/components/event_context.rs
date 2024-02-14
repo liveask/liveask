@@ -21,13 +21,7 @@ impl Component for EventContext {
         if items.is_empty() {
             html! {}
         } else {
-            html! {
-                <div class="context">
-                    {
-                        for items.iter().map(Self::view_item)
-                    }
-                </div>
-            }
+            html! { <div class="context">{ for items.iter().map(Self::view_item) }</div> }
         }
     }
 }
@@ -35,11 +29,9 @@ impl Component for EventContext {
 impl EventContext {
     fn view_item(item: &ContextItem) -> Html {
         html! {
-            <a href={item.url.clone()} target="_blank" >
+            <a href={item.url.clone()} target="_blank">
                 <img src="assets/context.svg" />
-                <div class="label">
-                    {item.label.clone()}
-                </div>
+                <div class="label">{ item.label.clone() }</div>
             </a>
         }
     }

@@ -112,13 +112,12 @@ impl Component for AppRoot {
             <BrowserRouter>
                 <div class="app-host">
                     <ContextProvider<Events<GlobalEvent>> context={self.events.clone()}>
-                    <div class={classes!("main",not(self.connected).then_some("offline"))}>
-                        <IconBar/>
-
-                        <div class="router">
-                            <Switch<Route> render={switch} />
+                        <div class={classes!("main",not(self.connected).then_some("offline"))}>
+                            <IconBar />
+                            <div class="router">
+                                <Switch<Route> render={switch} />
+                            </div>
                         </div>
-                    </div>
                     </ContextProvider<Events<GlobalEvent>>>
                 </div>
             </BrowserRouter>

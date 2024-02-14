@@ -41,8 +41,6 @@ impl Component for Qr {
 
         let qr_svg = Html::VRef(div.into());
 
-        html! {
-            {qr_svg}
-        }
+        html! { { qr_svg } }
     }
 }

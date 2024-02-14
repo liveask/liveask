@@ -61,8 +61,8 @@ impl Component for TextArea {
                 value={props.value}
                 maxlength={props.maxlength}
                 required={props.required}
-                oninput={ctx.link().callback(Msg::Input)}>
-            </textarea>
+                oninput={ctx.link().callback(Msg::Input)}
+            />
         }
     }
 }
