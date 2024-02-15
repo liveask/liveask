@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
 
 env:
-  TRUNK_VERSION: v0.18.3
+  TRUNK_VERSION: v0.18.8
 
 jobs:
   deploy_backend_prod:
