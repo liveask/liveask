@@ -1,5 +1,5 @@
 use wasm_bindgen::UnwrapThrowExt;
-use yew::{prelude::*, virtual_dom::AttrValue};
+use yew::prelude::*;
 
 #[derive(Clone, Debug, Eq, PartialEq, Properties)]
 pub struct QrProps {
@@ -41,8 +41,6 @@ impl Component for Qr {
 
         let qr_svg = Html::VRef(div.into());
 
-        html! {
-            {qr_svg}
-        }
+        html! { { qr_svg } }
     }
 }

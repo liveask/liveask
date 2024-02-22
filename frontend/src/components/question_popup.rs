@@ -9,7 +9,7 @@ use events::{event_context, EventBridge};
 use shared::{AddQuestionError, AddQuestionValidation, ValidationState};
 use wasm_bindgen::UnwrapThrowExt;
 use web_sys::HtmlTextAreaElement;
-use yew::{prelude::*, virtual_dom::AttrValue};
+use yew::prelude::*;
 
 pub enum Msg {
     GlobalEvent(GlobalEvent),
@@ -111,53 +111,51 @@ impl Component for QuestionPopup {
                 || html! {},
                 |tag| {
                     html! {
-                        <div class="tag">{"current tag:"}<div class="name">{tag.clone()}</div></div>
+                        <div class="tag">
+                            { "current tag:" }
+                            <div class="name">{ tag.clone() }</div>
+                        </div>
                     }
                 },
             );
 
             html! {
-            <Popup class="share-popup" {on_close}>
-                <div class="newquestion">
-                <div class="add-question">
-                    <TextArea
-                        id="questiontext"
-                        name="questiontext"
-                        maxlength="200"
-                        value={self.text.clone()}
-                        placeholder="What’s your question?"
-                        required=true
-                        oninput={ctx.link().callback(Msg::InputChanged)}
-                        autosize=true
-                        >
-                    </TextArea>
-
-                    <div class="more-info">
-                        <div class="chars-info">
-                            <code>
-                                {format!("{}",200 - self.text.len())}
-                            </code>
-                        </div>
-                        {
-                            html!{
+                <Popup class="share-popup" {on_close}>
+                    <div class="newquestion">
+                        <div class="add-question">
+                            <TextArea
+                                id="questiontext"
+                                name="questiontext"
+                                maxlength="200"
+                                value={self.text.clone()}
+                                placeholder="What’s your question?"
+                                required=true
+                                oninput={ctx.link().callback(Msg::InputChanged)}
+                                autosize=true
+                            />
+                            <div class="more-info">
+                                <div class="chars-info">
+                                    <code>{ format!("{}",200 - self.text.len()) }</code>
+                                </div>
+                                { html!{
                                 <div hidden={!self.errors.has_any()} class="invalid">
                                     <div>
                                     {self.error_text().unwrap_or_default()}
                                     </div>
                                 </div>
-                            }
-                        }
+                            } }
+                            </div>
+                            { tag }
+                        </div>
+                        <button
+                            class="dlg-button"
+                            onclick={on_click_ask}
+                            disabled={self.errors.has_any()}
+                        >
+                            { "Ask!" }
+                        </button>
                     </div>
-                    {tag}
-                </div>
-                <button class="dlg-button"
-                    onclick={on_click_ask}
-                    disabled={self.errors.has_any()}
-                    >
-                    {"Ask!"}
-                </button>
-                </div>
-            </Popup>
+                </Popup>
             }
         } else {
             html! {}

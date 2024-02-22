@@ -56,35 +56,31 @@ impl Component for Footer {
 
         html! {
             <div id="footer">
-
                 <a class="usingrust" href="https://github.com/liveask/liveask" target="_blank">
                     <svg viewBox="0 0 400 18">
-                        <text x="0" y="15">{"🦀 Written entirely in rust for your safety and security 🦀"}</text>
+                        <text x="0" y="15">
+                            { "🦀 Written entirely in rust for your safety and security 🦀" }
+                        </text>
                     </svg>
                 </a>
-
-                <div class="copyright">
-                    {"© 2024 Live-Ask. All right reserved."}
-                </div>
-
-                {Self::view_social()}
-
+                <div class="copyright">{ "© 2024 Rustunit B.V. All right reserved." }</div>
+                { Self::view_social() }
                 <a class="about" href="https://github.com/liveask/liveask" target="_blank">
-                    {"About"}
+                    { "About" }
                 </a>
-
                 <div class="link about" onclick={ctx.link().callback(|_| Msg::Privacy)}>
-                    {"Privacy Policy"}
+                    { "Privacy Policy" }
                 </div>
-
                 <a class="status" href="https://liveask.instatus.com" target="_blank">
-                    {"Status"}
+                    { "Status" }
                 </a>
-
-                <a class="version" href="https://github.com/liveask/liveask/blob/main/CHANGELOG.md" target="_blank">
+                <a
+                    class="version"
+                    href="https://github.com/liveask/liveask/blob/main/CHANGELOG.md"
+                    target="_blank"
+                >
                     { format!("v{VERSION_STR}-{git_sha} {branch} {api_version}") }
                 </a>
-
                 <div id="admin">
                     <div class="inner" onclick={ctx.link().callback(|_| Msg::Admin)}>
                         <img alt="admin-button" src="/assets/admin.svg" />
@@ -151,23 +147,15 @@ impl Footer {
 
         html! {
             <div id="socials">
-                <a href="https://github.com/liveask/liveask" target="_blank">
-                    {github_svg}
-                </a>
-                <a href="https://twitter.com/liveaskapp" target="_blank">
-                    {twitter_svg}
-                </a>
-                <a href="https://www.instagram.com/liveaskapp/" target="_blank">
-                    {insta_svg}
-                </a>
-                <a href="https://mastodon.social/@liveask" target="_blank">
-                    {mastodon_svg}
-                </a>
+                <a href="https://github.com/liveask/liveask" target="_blank">{ github_svg }</a>
+                <a href="https://twitter.com/liveaskapp" target="_blank">{ twitter_svg }</a>
+                <a href="https://www.instagram.com/liveaskapp/" target="_blank">{ insta_svg }</a>
+                <a href="https://mastodon.social/@liveask" target="_blank">{ mastodon_svg }</a>
                 <a href="https://www.linkedin.com/company/live-ask" target="_blank">
-                    {linkedin_svg}
+                    { linkedin_svg }
                 </a>
                 <a href="https://www.producthunt.com/products/live-ask" target="_blank">
-                    {producthunt_svg}
+                    { producthunt_svg }
                 </a>
             </div>
         }

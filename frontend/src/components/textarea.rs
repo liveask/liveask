@@ -1,6 +1,6 @@
 use wasm_bindgen::UnwrapThrowExt;
 use web_sys::HtmlTextAreaElement;
-use yew::{prelude::*, virtual_dom::AttrValue};
+use yew::prelude::*;
 
 #[derive(Clone, Debug, PartialEq, Properties)]
 pub struct TextAreaProps {
@@ -61,8 +61,8 @@ impl Component for TextArea {
                 value={props.value}
                 maxlength={props.maxlength}
                 required={props.required}
-                oninput={ctx.link().callback(Msg::Input)}>
-            </textarea>
+                oninput={ctx.link().callback(Msg::Input)}
+            />
         }
     }
 }

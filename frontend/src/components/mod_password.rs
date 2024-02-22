@@ -101,19 +101,18 @@ impl Component for ModPassword {
             State::Confirmed(_) => Self::view_confirmed(ctx),
         };
 
-        html! {
-            <div class="password">
-                {content}
-            </div>
-        }
+        html! { <div class="password">{ content }</div> }
     }
 }
 
 impl ModPassword {
     fn view_disabled(ctx: &Context<Self>) -> Html {
         html! {
-            <button class="button-white" onclick={ctx.link().callback(|_|Msg::EnablePasswordInput)} >
-                {"Password"}
+            <button
+                class="button-white"
+                onclick={ctx.link().callback(|_|Msg::EnablePasswordInput)}
+            >
+                { "Password" }
             </button>
         }
     }
@@ -130,8 +129,9 @@ impl ModPassword {
                     {value}
                     oninput={ctx.link().callback(Msg::InputChange)}
                     onkeydown={ctx.link().callback(Msg::KeyDown)}
-                    onblur={ctx.link().callback(|_|Msg::InputExit)} />
-                <img id="edit" src="/assets/pwd/pwd-edit.svg"/>
+                    onblur={ctx.link().callback(|_|Msg::InputExit)}
+                />
+                <img id="edit" src="/assets/pwd/pwd-edit.svg" />
             </>
         }
     }
@@ -140,9 +140,13 @@ impl ModPassword {
         html! {
             <>
                 <div class="confirmed" onclick={ctx.link().callback(|_|Msg::EditPassword)}>
-                    {"*****"}
+                    { "*****" }
                 </div>
-                <img id="delete" src="/assets/pwd/pwd-remove.svg" onmousedown={ctx.link().callback(|_|Msg::DisablePassword)} />
+                <img
+                    id="delete"
+                    src="/assets/pwd/pwd-remove.svg"
+                    onmousedown={ctx.link().callback(|_|Msg::DisablePassword)}
+                />
             </>
         }
     }

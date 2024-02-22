@@ -22,8 +22,6 @@ impl Component for Privacy {
         div.set_inner_html(twitter_svg);
         let node = Html::VRef(div.into());
 
-        html! {
-            {node}
-        }
+        html! { { node } }
     }
 }

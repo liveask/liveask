@@ -8,7 +8,7 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
-  TRUNK_VERSION: v0.18.3
+  TRUNK_VERSION: v0.18.8
 
 jobs:
 
@@ -23,7 +23,7 @@ jobs:
       fe: ${{ steps.filter.outputs.fe }}
     steps:
       - uses: actions/checkout@v4
-      - uses: dorny/paths-filter@v2
+      - uses: dorny/paths-filter@v3
         id: filter
         with:
           filters: |

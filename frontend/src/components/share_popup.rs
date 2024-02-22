@@ -129,25 +129,13 @@ impl Component for SharePopup {
 
             html! {
                 <Popup class="share-popup" {on_close}>
-                    <div class="title">
-                        {
-                            "Share this Link"
-                        }
-                    </div>
-
+                    <div class="title">{ "Share this Link" }</div>
                     <div class="link-box" onclick={on_click_copy}>
-                        <div class="link">
-                            {
-                                self.url.clone()
-                            }
-                        </div>
+                        <div class="link">{ self.url.clone() }</div>
                         <div class="copy">
-                            {
-                                if self.copied_to_clipboard {"Copied"} else {"Copy"}
-                            }
+                            { if self.copied_to_clipboard {"Copied"} else {"Copy"} }
                         </div>
                     </div>
-
                     <div class="sharebuttons">
                         <div onclick={on_click_share_twitter}>
                             <img alt="share via twitter" src="/assets/share/share-twitter.svg" />
@@ -162,14 +150,10 @@ impl Component for SharePopup {
                             <img alt="share via whatsapp" src="/assets/share/share-whatsapp.svg" />
                         </div>
                     </div>
-
                     <div class="qr">
-                        <Qr url={self.url.clone()} dimensions={100} />
+                        <Qr url={self.url.clone()} dimensions=100 />
                     </div>
-
-                    <div class="print" onclick={on_click_print}>
-                        {"Show print version"}
-                    </div>
+                    <div class="print" onclick={on_click_print}>{ "Show print version" }</div>
                 </Popup>
             }
         } else {

@@ -2,7 +2,7 @@ use crate::{components::Popup, fetch, pages::BASE_API};
 use shared::PasswordValidation;
 use wasm_bindgen::UnwrapThrowExt;
 use web_sys::HtmlInputElement;
-use yew::{prelude::*, virtual_dom::AttrValue};
+use yew::prelude::*;
 
 pub enum Msg {
     Send,
@@ -97,30 +97,30 @@ impl Component for PasswordPopup {
             let on_click_send = ctx.link().callback(|_| Msg::Send);
 
             html! {
-            <Popup class="share-popup">
-                <div class="pwd-popup">
-                    <div class="">
-                        <input class="passwordtext"
-                            ref={self.input.clone()}
-                            maxlength="30"
-                            value={self.text.clone()}
-                            placeholder="Enter password"
-                            required=true
-                            oninput={ctx.link().callback(Msg::InputChanged)}
-                            onkeydown={ctx.link().callback(Msg::KeyDown)}
+                <Popup class="share-popup">
+                    <div class="pwd-popup">
+                        <div class="">
+                            <input
+                                class="passwordtext"
+                                ref={self.input.clone()}
+                                maxlength="30"
+                                value={self.text.clone()}
+                                placeholder="Enter password"
+                                required=true
+                                oninput={ctx.link().callback(Msg::InputChanged)}
+                                onkeydown={ctx.link().callback(Msg::KeyDown)}
                             />
-
-                        <div class="more-info">
-                            {self.view_error()}
+                            <div class="more-info">{ self.view_error() }</div>
                         </div>
+                        <button
+                            class="dlg-button"
+                            onclick={on_click_send}
+                            disabled={self.errors.has_any() || self.try_again}
+                        >
+                            { "Ok" }
+                        </button>
                     </div>
-                    <button class="dlg-button"
-                        onclick={on_click_send}
-                        disabled={self.errors.has_any() || self.try_again}>
-                        {"Ok"}
-                    </button>
-                </div>
-            </Popup>
+                </Popup>
             }
         } else {
             html! {}
@@ -133,17 +133,13 @@ impl PasswordPopup {
         if self.try_again {
             html! {
                 <div class="invalid">
-                    <div>
-                    {"try again"}
-                    </div>
+                    <div>{ "try again" }</div>
                 </div>
             }
         } else if self.errors.content.is_invalid() {
             html! {
                 <div class="invalid">
-                    <div>
-                    {"invalid password"}
-                    </div>
+                    <div>{ "invalid password" }</div>
                 </div>
             }
         } else {

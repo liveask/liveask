@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * text explainer if moderator has `screening` enabled
 
 ### Fixes
+* empty questions list if no screened question approved yet even though i have local questions i know are in the queue
 * show my local unscreened questions if not other questions in event
 
 ## [2.7.1] - 2024-02-05

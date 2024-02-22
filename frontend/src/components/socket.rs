@@ -2,7 +2,7 @@ use chrono::Duration;
 use gloo_timers::callback::Interval;
 use wasm_bindgen::UnwrapThrowExt;
 use web_sys::CloseEvent;
-use yew::{html::Scope, prelude::*, virtual_dom::AttrValue};
+use yew::{html::Scope, prelude::*};
 
 #[derive(Clone, Debug)]
 pub enum SocketResponse {

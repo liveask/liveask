@@ -117,9 +117,7 @@ impl Component for NewEvent {
     fn view(&self, ctx: &Context<Self>) -> Html {
         html! {
             <div class="newevent-bg">
-                <div class="title">
-                    {"Create Event"}
-                </div>
+                <div class="title">{ "Create Event" }</div>
                 <div class="form">
                     <div class="newevent">
                         <div class="input-box">
@@ -131,10 +129,11 @@ impl Component for NewEvent {
                                 value={self.name.clone()}
                                 maxlength="30"
                                 required=true
-                                oninput={ctx.link().callback(|input| Msg::InputChange(Input::Name,input))}/>
+                                oninput={ctx.link().callback(|input| Msg::InputChange(Input::Name,input))}
+                            />
                         </div>
                         <div hidden={self.errors.name.is_none()} class="invalid">
-                            {self.name_error().unwrap_or_default()}
+                            { self.name_error().unwrap_or_default() }
                         </div>
                         <div class="input-box">
                             <input
@@ -143,7 +142,8 @@ impl Component for NewEvent {
                                 placeholder="email (optional)"
                                 value={self.email.clone()}
                                 maxlength="100"
-                                oninput={ctx.link().callback(|input| Msg::InputChange(Input::Email,input))}/>
+                                oninput={ctx.link().callback(|input| Msg::InputChange(Input::Email,input))}
+                            />
                         </div>
                         <div class="input-box">
                             <TextArea
@@ -154,18 +154,19 @@ impl Component for NewEvent {
                                 maxlength="1000"
                                 required=true
                                 autosize=true
-                                oninput={ctx.link().callback(|input| Msg::InputChange(Input::Desc,input))}>
-                            </TextArea>
+                                oninput={ctx.link().callback(|input| Msg::InputChange(Input::Desc,input))}
+                            />
                         </div>
                         <div hidden={self.errors.desc.is_none()} class="invalid">
-                            {self.desc_error().unwrap_or_default()}
+                            { self.desc_error().unwrap_or_default() }
                         </div>
                     </div>
                     <button
                         class="button-finish"
                         disabled={!self.can_create()}
-                        onclick={ctx.link().callback(|_| Msg::Create)}>
-                        {"finish"}
+                        onclick={ctx.link().callback(|_| Msg::Create)}
+                    >
+                        { "finish" }
                     </button>
                 </div>
             </div>

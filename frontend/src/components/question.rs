@@ -274,27 +274,19 @@ impl Component for Question {
         let tag = ctx.props().tag.as_ref().map_or_else(
             || html! {},
             |tag| {
-                html! {
-                    <div class="tag">
-                        {tag.clone()}
-                    </div>
-                }
+                html! { <div class="tag">{ tag.clone() }</div> }
             },
         );
 
         html! {
-            <div class={main_classes} ref={self.node_ref.clone()} >
-                <div class={classes!("questionanchor",self.highlighted.then_some("highlighted"),)}
-                    onclick={ctx.link().callback(|_| Msg::QuestionClick(QuestionClickType::Like))}>
-
-                    <div class="time-since">
-                        {self.get_age()}
-                    </div>
-
-                    {tag}
-
-                    {
-                        if screened {
+            <div class={main_classes} ref={self.node_ref.clone()}>
+                <div
+                    class={classes!("questionanchor",self.highlighted.then_some("highlighted"),)}
+                    onclick={ctx.link().callback(|_| Msg::QuestionClick(QuestionClickType::Like))}
+                >
+                    <div class="time-since">{ self.get_age() }</div>
+                    { tag }
+                    { if screened {
                             if liked {
                                 Self::get_bubble_liked(self.data.item.likes,self.wiggle)
                             }
@@ -302,26 +294,20 @@ impl Component for Question {
                             {
                                 Self::get_bubble_not_liked(self.data.item.likes,self.wiggle)
                             }
-                        } else { html!() }
-                    }
-
-                    <div class={classes!("text",self.data.item.answered.then_some("answered"),blurred.then_some("blurr"))}>
-                        {&self.data.item.text}
+                        } else { html!() } }
+                    <div
+                        class={classes!("text",self.data.item.answered.then_some("answered"),blurred.then_some("blurr"))}
+                    >
+                        { &self.data.item.text }
                     </div>
-
-                    {self.view_like(can_vote,liked,mod_view)}
-
-                    {self.view_checkmark(mod_view)}
+                    { self.view_like(can_vote,liked,mod_view) }
+                    { self.view_checkmark(mod_view) }
                 </div>
-
-                {
-                    if mod_view{
+                { if mod_view{
                         self.view_mod(ctx)
                     } else {
                         html!{}
-                    }
-                }
-
+                    } }
             </div>
         }
     }
@@ -355,46 +341,44 @@ impl Question {
         if screened {
             html! {
                 <div class="options">
-                    <button class={classes!("button-hide",hidden.then_some("reverse"))}
+                    <button
+                        class={classes!("button-hide",hidden.then_some("reverse"))}
                         onclick={ctx.link().callback(|_| Msg::QuestionClick(QuestionClickType::Hide))}
                         hidden={answered}
-                        >
-                        {
-                            if hidden {
+                    >
+                        { if hidden {
                                 html!{"unhide"}
                             }else{
                                 html!{"hide"}
-                            }
-                        }
+                            } }
                     </button>
-
-                    <button class={classes!("button-answered",answered.then_some("reverse"))}
+                    <button
+                        class={classes!("button-answered",answered.then_some("reverse"))}
                         onclick={ctx.link().callback(|_| Msg::QuestionClick(QuestionClickType::Answer))}
                         hidden={hidden}
-                        >
-                        {
-                            if answered {
+                    >
+                        { if answered {
                                 html!{"not answered"}
                             }else{
                                 html!{"answered"}
-                            }
-                        }
+                            } }
                     </button>
                 </div>
             }
         } else {
             html! {
                 <div class="options">
-                    <button class={classes!("button-hide",hidden.then_some("reverse"))}
+                    <button
+                        class={classes!("button-hide",hidden.then_some("reverse"))}
                         onclick={ctx.link().callback(|_| Msg::QuestionClick(QuestionClickType::Hide))}
-                        >
-                        {"hide"}
+                    >
+                        { "hide" }
                     </button>
-
-                    <button class="button-answered"
+                    <button
+                        class="button-answered"
                         onclick={ctx.link().callback(|_| Msg::QuestionClick(QuestionClickType::Approve))}
-                        >
-                        {"approve"}
+                    >
+                        { "approve" }
                     </button>
                 </div>
             }
@@ -423,66 +407,137 @@ impl Question {
 
     fn get_bubble_liked(likes: i32, wiggle: bool) -> Html {
         html! {
-        <span class={classes!("bubble",wiggle.then_some("wiggle"))}>
-            <svg width="29px" height="19px" viewBox="0 0 29 19">
-                <g id="Mobile" stroke="none" stroke-width="1" fill-rule="evenodd">
-                    <g id="Audience-Page-Questions" transform="translate(-327.000000, -493.000000)">
-                        <g id="Frage" transform="translate(10.000000, 482.000000)">
-                            <g id="Group-2-Copy-4" transform="translate(317.000000, 11.000000)">
-                                <rect id="Rectangle-Copy-10" fill="#FF2C5E" x="4" y="0" width="25" height="15" rx="7.5"></rect>
-                                <text id="23" font-size="10" letter-spacing="0.15625" fill="#FFFFFF">
-                                    <tspan class="like-count-text" x="16" y="11">
-                                        {likes}
-                                    </tspan>
-                                </text>
-                                <circle id="Oval-Copy-50" fill="#FF2C5E" cx="1.5" cy="17.5" r="1.5"></circle>
-                                <circle id="Oval-Copy-51" fill="#FF2C5E" cx="5.5" cy="12.5" r="2.5"></circle>
+            <span class={classes!("bubble",wiggle.then_some("wiggle"))}>
+                <svg width="29px" height="19px" viewBox="0 0 29 19">
+                    <g id="Mobile" stroke="none" stroke-width="1" fill-rule="evenodd">
+                        <g
+                            id="Audience-Page-Questions"
+                            transform="translate(-327.000000, -493.000000)"
+                        >
+                            <g id="Frage" transform="translate(10.000000, 482.000000)">
+                                <g
+                                    id="Group-2-Copy-4"
+                                    transform="translate(317.000000, 11.000000)"
+                                >
+                                    <rect
+                                        id="Rectangle-Copy-10"
+                                        fill="#FF2C5E"
+                                        x="4"
+                                        y="0"
+                                        width="25"
+                                        height="15"
+                                        rx="7.5"
+                                    />
+                                    <text
+                                        id="23"
+                                        font-size="10"
+                                        letter-spacing="0.15625"
+                                        fill="#FFFFFF"
+                                    >
+                                        <tspan class="like-count-text" x="16" y="11">
+                                            { likes }
+                                        </tspan>
+                                    </text>
+                                    <circle
+                                        id="Oval-Copy-50"
+                                        fill="#FF2C5E"
+                                        cx="1.5"
+                                        cy="17.5"
+                                        r="1.5"
+                                    />
+                                    <circle
+                                        id="Oval-Copy-51"
+                                        fill="#FF2C5E"
+                                        cx="5.5"
+                                        cy="12.5"
+                                        r="2.5"
+                                    />
+                                </g>
                             </g>
                         </g>
                     </g>
-                </g>
-            </svg>
-        </span>
+                </svg>
+            </span>
         }
     }
 
     fn get_bubble_not_liked(likes: i32, wiggle: bool) -> Html {
         html! {
-        <span class={classes!("bubble",wiggle.then_some("wiggle"))}>
-            <svg width="29px" height="19px" viewBox="0 0 29 19">
-                <g id="Mobile" stroke="none" stroke-width="1" fill-rule="evenodd">
-                    <g id="Audience-Page-Questions" transform="translate(-327.000000, -493.000000)">
-                        <g id="Frage" transform="translate(10.000000, 482.000000)">
-                            <g id="Group-2-Copy-4" transform="translate(317.000000, 11.000000)">
-                                <rect id="Rectangle-Copy-10" fill="#D4D4D4" x="4" y="0" width="25" height="15" rx="7.5"></rect>
-                                <text id="23" font-size="10" letter-spacing="0.15625" fill="#FFFFFF">
-                                    <tspan class="like-count-text" x="16" y="11">
-                                        {likes}
-                                    </tspan>
-                                </text>
-                                <circle id="Oval-Copy-50" fill="#D4D4D4" cx="1.5" cy="17.5" r="1.5"></circle>
-                                <circle id="Oval-Copy-51" fill="#D4D4D4" cx="5.5" cy="12.5" r="2.5"></circle>
+            <span class={classes!("bubble",wiggle.then_some("wiggle"))}>
+                <svg width="29px" height="19px" viewBox="0 0 29 19">
+                    <g id="Mobile" stroke="none" stroke-width="1" fill-rule="evenodd">
+                        <g
+                            id="Audience-Page-Questions"
+                            transform="translate(-327.000000, -493.000000)"
+                        >
+                            <g id="Frage" transform="translate(10.000000, 482.000000)">
+                                <g
+                                    id="Group-2-Copy-4"
+                                    transform="translate(317.000000, 11.000000)"
+                                >
+                                    <rect
+                                        id="Rectangle-Copy-10"
+                                        fill="#D4D4D4"
+                                        x="4"
+                                        y="0"
+                                        width="25"
+                                        height="15"
+                                        rx="7.5"
+                                    />
+                                    <text
+                                        id="23"
+                                        font-size="10"
+                                        letter-spacing="0.15625"
+                                        fill="#FFFFFF"
+                                    >
+                                        <tspan class="like-count-text" x="16" y="11">
+                                            { likes }
+                                        </tspan>
+                                    </text>
+                                    <circle
+                                        id="Oval-Copy-50"
+                                        fill="#D4D4D4"
+                                        cx="1.5"
+                                        cy="17.5"
+                                        r="1.5"
+                                    />
+                                    <circle
+                                        id="Oval-Copy-51"
+                                        fill="#D4D4D4"
+                                        cx="5.5"
+                                        cy="12.5"
+                                        r="2.5"
+                                    />
+                                </g>
                             </g>
                         </g>
                     </g>
-                </g>
-            </svg>
-        </span>
+                </svg>
+            </span>
         }
     }
 
     fn view_checkmark(&self, mod_view: bool) -> Html {
         if !mod_view && self.data.item.answered {
             return html! {
-            <div class="checkmark">
-                <svg width="12px" height="8px" viewBox="0 0 12 8">
-                    <g id="Symbols" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
-                        <g id="tick" stroke-width="2" stroke="#8CC63F">
-                            <polyline id="Path-2" points="0 3.6977267 4.02613665 7.72386335 11.75 -1.13686838e-13"></polyline>
+                <div class="checkmark">
+                    <svg width="12px" height="8px" viewBox="0 0 12 8">
+                        <g
+                            id="Symbols"
+                            stroke="none"
+                            stroke-width="1"
+                            fill="none"
+                            fill-rule="evenodd"
+                        >
+                            <g id="tick" stroke-width="2" stroke="#8CC63F">
+                                <polyline
+                                    id="Path-2"
+                                    points="0 3.6977267 4.02613665 7.72386335 11.75 -1.13686838e-13"
+                                />
+                            </g>
                         </g>
-                    </g>
-                </svg>
-            </div>
+                    </svg>
+                </div>
             };
         }
 
@@ -493,13 +548,11 @@ impl Question {
         if can_like && !self.data.item.answered && !mod_view {
             return html! {
                 <div class="like-action">
-                    {
-                        if liked {
+                    { if liked {
                             "Unlike!"
                         }else{
                             "I like!"
-                        }
-                    }
+                        } }
                 </div>
             };
         }
