@@ -30,6 +30,13 @@ pub struct EventTokens {
     pub moderator_token: Option<String>,
 }
 
+impl EventTokens {
+    #[must_use]
+    pub fn is_mod(&self) -> bool {
+        self.moderator_token.as_ref().is_some_and(|t| !t.is_empty())
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug, Default, Clone, Eq, PartialEq)]
 pub struct EventData {
     pub name: String,
