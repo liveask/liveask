@@ -1,19 +1,42 @@
 use shared::ContextItem;
 use yew::prelude::*;
 
+use crate::components::ContextPopup;
+
 #[derive(Clone, Debug, Eq, PartialEq, Properties)]
 pub struct EventContextProps {
     pub context: Vec<ContextItem>,
     pub tokens: shared::EventTokens,
 }
 
-pub struct EventContext;
+pub enum Msg {
+    EditClick,
+    ClosePopup,
+}
+
+pub struct EventContext {
+    show_popup: bool,
+}
+
 impl Component for EventContext {
-    type Message = ();
+    type Message = Msg;
     type Properties = EventContextProps;
 
     fn create(_ctx: &Context<Self>) -> Self {
-        Self {}
+        Self { show_popup: false }
+    }
+
+    fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
+        match msg {
+            Msg::EditClick => {
+                self.show_popup = true;
+                true
+            }
+            Msg::ClosePopup => {
+                self.show_popup = false;
+                true
+            }
+        }
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
@@ -45,12 +68,19 @@ impl EventContext {
     #[allow(clippy::unused_self)]
     fn view_mod(&self, ctx: &Context<Self>) -> Html {
         let is_mod = ctx.props().tokens.moderator_token.is_some();
+        let tokens = ctx.props().tokens.clone();
+
+        let on_click_edit = ctx.link().callback(|_| Msg::EditClick);
+        let on_close_popup = ctx.link().callback(|()| Msg::ClosePopup);
 
         if is_mod {
             html! {
-                <div>
-                    {"edit"}
-                </div>
+                <>
+                    <ContextPopup {tokens} on_close={on_close_popup} show={self.show_popup}/>
+                    <button onclick={on_click_edit}>
+                        {"edit"}
+                    </button>
+                </>
             }
         } else {
             html! {}
