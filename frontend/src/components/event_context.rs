@@ -68,6 +68,7 @@ impl EventContext {
     fn view_mod(&self, ctx: &Context<Self>) -> Html {
         let is_mod = ctx.props().tokens.is_mod();
         let tokens = ctx.props().tokens.clone();
+        let context = ctx.props().context.clone();
 
         let on_click_edit = ctx.link().callback(|_| Msg::EditClick);
         let on_close_popup = ctx.link().callback(|()| Msg::ClosePopup);
@@ -75,7 +76,7 @@ impl EventContext {
         if is_mod {
             html! {
                 <>
-                    <ContextPopup {tokens} on_close={on_close_popup} show={self.show_popup}/>
+                    <ContextPopup {tokens} on_close={on_close_popup} show={self.show_popup} {context} />
                     <button onclick={on_click_edit}>
                         {"edit"}
                     </button>

@@ -30,6 +30,7 @@ pub struct ContextPopupProps {
     #[prop_or_default]
     pub on_close: Callback<()>,
     pub show: bool,
+    pub context: Vec<ContextItem>,
 }
 
 impl Component for ContextPopup {
@@ -45,7 +46,12 @@ impl Component for ContextPopup {
     }
 
     fn changed(&mut self, ctx: &Context<Self>, _old_props: &Self::Properties) -> bool {
-        if !ctx.props().show {
+        if ctx.props().show {
+            if let Some(item) = ctx.props().context.first() {
+                self.label = item.label.clone();
+                self.url = item.url.clone();
+            }
+        } else {
             self.label = String::new();
             self.url = String::new();
         }
