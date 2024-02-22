@@ -9,7 +9,7 @@ use events::{event_context, EventBridge};
 use shared::{AddQuestionError, AddQuestionValidation, ValidationState};
 use wasm_bindgen::UnwrapThrowExt;
 use web_sys::HtmlTextAreaElement;
-use yew::{prelude::*, virtual_dom::AttrValue};
+use yew::prelude::*;
 
 pub enum Msg {
     GlobalEvent(GlobalEvent),

@@ -2,7 +2,7 @@ use crate::{components::Popup, fetch, pages::BASE_API};
 use shared::PasswordValidation;
 use wasm_bindgen::UnwrapThrowExt;
 use web_sys::HtmlInputElement;
-use yew::{prelude::*, virtual_dom::AttrValue};
+use yew::prelude::*;
 
 pub enum Msg {
     Send,

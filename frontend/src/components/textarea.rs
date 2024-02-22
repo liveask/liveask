@@ -1,6 +1,6 @@
 use wasm_bindgen::UnwrapThrowExt;
 use web_sys::HtmlTextAreaElement;
-use yew::{prelude::*, virtual_dom::AttrValue};
+use yew::prelude::*;
 
 #[derive(Clone, Debug, PartialEq, Properties)]
 pub struct TextAreaProps {

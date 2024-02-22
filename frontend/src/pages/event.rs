@@ -8,7 +8,7 @@ use shared::{
 use std::{collections::HashMap, rc::Rc, str::FromStr};
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 use web_sys::HtmlAnchorElement;
-use yew::{prelude::*, virtual_dom::AttrValue};
+use yew::prelude::*;
 use yew_router::scope_ext::RouterScopeExt;
 use yewdux::prelude::*;
 

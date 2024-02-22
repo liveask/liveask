@@ -1,7 +1,7 @@
 use super::LoadingState;
 use crate::{components::Qr, fetch, pages::BASE_API};
 use shared::GetEventResponse;
-use yew::{prelude::*, virtual_dom::AttrValue};
+use yew::prelude::*;
 
 #[derive(Clone, Debug, Eq, PartialEq, Properties)]
 pub struct Props {
