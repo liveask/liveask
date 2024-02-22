@@ -94,17 +94,6 @@ impl Upgrade {
         html! {
             <div class="expanded">
                 <div class="features">
-<<<<<<< main
-                    { "To unlock the following features:" }
-                    <ul>
-                        <li>{ "Unlimited access to your event" }</li>
-                        <li>{ "Realtime statistics (participants, likes ..)" }</li>
-                        <li>{ "Export your event data" }</li>
-                        <li>{ "Prescreen questions before they appear" }</li>
-                        <li>{ "Automatically tag questions" }</li>
-                        <li>{ "Plus much more .." }</li>
-                    </ul>
-=======
                 {"To unlock the following features:"}
                 <ul>
                     <li>{"Unlimited access to your event"}</li>
@@ -115,7 +104,6 @@ impl Upgrade {
                     <li>{"Add context link to your event"}</li>
                     <li>{"Plus much more .."}</li>
                 </ul>
->>>>>>> backend impl for context changing
                 </div>
                 <div class="tmp-subscription">
                     { "Are you planning to host multiple events? " }

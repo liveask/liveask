@@ -42,6 +42,7 @@ impl EventContext {
         }
     }
 
+    #[allow(clippy::unused_self)]
     fn view_mod(&self, ctx: &Context<Self>) -> Html {
         let is_mod = ctx.props().tokens.moderator_token.is_some();
 

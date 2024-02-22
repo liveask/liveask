@@ -618,7 +618,7 @@ impl App {
         self.notify_subscribers(&event, Notification::Event).await;
 
         self.tracking
-            .track_event_upgrade(&event, name, long_url, age)
+            .track_event_upgrade(event.clone(), name, long_url, age)
             .await?;
 
         Ok(true)
@@ -938,7 +938,7 @@ impl App {
 
         if let Some(edit_type) = edit_type {
             self.tracking
-                .track_event_tag_set(e.tokens.public_token.clone(), edit_type)
+                .track_event_tag_set(e.tokens.public_token.clone(), edit_type, e.age_in_seconds())
                 .await?;
         }
 
