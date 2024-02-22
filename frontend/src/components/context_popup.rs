@@ -70,7 +70,7 @@ impl Component for ContextPopup {
                     fetch::mod_edit_event(
                         BASE_API,
                         tokens.public_token.clone(),
-                        tokens.moderator_token.unwrap_or_default(),
+                        tokens.moderator_token.unwrap_throw(),
                         ModEvent {
                             context: Some(shared::EditContextLink::Disabled),
                             ..Default::default()
@@ -97,7 +97,7 @@ impl Component for ContextPopup {
                     fetch::mod_edit_event(
                         BASE_API,
                         tokens.public_token.clone(),
-                        tokens.moderator_token.unwrap_or_default(),
+                        tokens.moderator_token.unwrap_throw(),
                         ModEvent {
                             context: Some(shared::EditContextLink::Enabled(item)),
                             ..Default::default()
