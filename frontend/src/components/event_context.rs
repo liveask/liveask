@@ -7,6 +7,7 @@ use crate::components::ContextPopup;
 pub struct EventContextProps {
     pub context: Vec<ContextItem>,
     pub tokens: shared::EventTokens,
+    pub is_premium: bool,
 }
 
 pub enum Msg {
@@ -66,14 +67,14 @@ impl EventContext {
     }
 
     fn view_mod(&self, ctx: &Context<Self>) -> Html {
-        let is_mod = ctx.props().tokens.is_mod();
+        let is_mod_and_premium = ctx.props().tokens.is_mod() && ctx.props().is_premium;
         let tokens = ctx.props().tokens.clone();
         let context = ctx.props().context.clone();
 
         let on_click_edit = ctx.link().callback(|_| Msg::EditClick);
         let on_close_popup = ctx.link().callback(|()| Msg::ClosePopup);
 
-        if is_mod {
+        if is_mod_and_premium {
             html! {
                 <>
                     <ContextPopup {tokens} on_close={on_close_popup} show={self.show_popup} {context} />

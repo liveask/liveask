@@ -498,6 +498,7 @@ impl Event {
 
             let mod_view = matches!(self.mode, Mode::Moderator);
             let admin = e.admin;
+            let is_premium = e.info.is_premium();
 
             let tag = e.info.tags.get_current_tag_label();
             let screening_enabled = e.info.flags.contains(EventFlags::SCREENING);
@@ -515,7 +516,7 @@ impl Event {
                     <div class="event-block">
                         <div class="event-name-label">{"The Event"}</div>
                         <div class="event-name">{&e.info.data.name.clone()}</div>
-                        <EventContext context={e.info.context.clone()} tokens={e.info.tokens.clone()}></EventContext>
+                        <EventContext context={e.info.context.clone()} tokens={e.info.tokens.clone()} {is_premium} />
                         //TODO: collapsable event desc
                         <div
                             class={classes!("event-desc",e.masked.then_some("blurr"))}
