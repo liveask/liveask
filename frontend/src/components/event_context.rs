@@ -31,6 +31,7 @@ impl Component for EventContext {
         match msg {
             Msg::EditClick => {
                 self.show_popup = true;
+                log::info!("CLICK");
                 true
             }
             Msg::ClosePopup => {
@@ -59,7 +60,7 @@ impl Component for EventContext {
 impl EventContext {
     fn view_item(item: &ContextItem) -> Html {
         html! {
-            <a href={item.url.clone()} target="_blank">
+            <a class="item" href={item.url.clone()} target="_blank">
                 <img src="assets/context.svg" />
                 <div class="label">{ item.label.clone() }</div>
             </a>
@@ -75,13 +76,22 @@ impl EventContext {
         let on_close_popup = ctx.link().callback(|()| Msg::ClosePopup);
 
         if is_mod_and_premium {
-            html! {
-                <>
-                    <ContextPopup {tokens} on_close={on_close_popup} show={self.show_popup} {context} />
-                    <button onclick={on_click_edit}>
-                        {"edit"}
-                    </button>
-                </>
+            if context.is_empty() && !self.show_popup {
+                html! {
+                    <div class="item" onclick={on_click_edit}>
+                        <img src="assets/context.svg" />
+                        <div class="label">{ "add link.." }</div>
+                    </div>
+                }
+            } else {
+                html! {
+                    <>
+                        <ContextPopup {tokens} on_close={on_close_popup} show={self.show_popup} {context} />
+                        <button class="button-icon" onclick={on_click_edit}>
+                            <img src="assets/edit.svg" alt="edit"/>
+                        </button>
+                    </>
+                }
             }
         } else {
             html! {}

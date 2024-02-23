@@ -29,6 +29,13 @@
     border-color: transparent;
 }
 
+.button-icon {
+    cursor: pointer;
+
+    background-color: transparent;
+    border-width: 0px;
+}
+
 $button-border-color: rgba(255, 255, 255, 0.1);
 
 .button-dark {
