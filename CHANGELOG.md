@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Unreleased
 
 ### Changed
-* premium: moderators can set event context link
+* premium: moderators can set event context link ([#67](https://github.com/liveask/liveask/issues/67))
 
 ## [2.7.2] - 2024-02-15
 
