@@ -1,9 +1,9 @@
 use async_trait::async_trait;
 use axum::extract::ws::{close_code::RESTART, CloseFrame, Message, WebSocket};
 use shared::{
-    AddEvent, EventInfo, EventResponseFlags, EventState, EventTags, EventTokens, EventUpgrade,
-    GetEventResponse, ModEvent, ModInfo, ModQuestion, PasswordValidation, PaymentCapture,
-    QuestionItem, States, TagValidation,
+    AddEvent, ContextValidation, EventInfo, EventResponseFlags, EventState, EventTags, EventTokens,
+    EventUpgrade, GetEventResponse, ModEvent, ModInfo, ModQuestion, PasswordValidation,
+    PaymentCapture, QuestionItem, States, TagValidation,
 };
 use std::{
     collections::HashMap,
@@ -974,7 +974,13 @@ impl App {
         match context_link {
             shared::EditContextLink::Disabled => e.context = vec![],
             shared::EditContextLink::Enabled(item) => {
-                //TODO: verify url/label
+                let mut validation = ContextValidation::default();
+
+                validation.check(&item.label, &item.url);
+                if validation.has_any() {
+                    return Err(InternalError::ContextValidation(validation));
+                }
+
                 e.context = vec![item.clone()];
 
                 self.tracking

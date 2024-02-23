@@ -9,6 +9,7 @@ use serde_repr::{Deserialize_repr, Serialize_repr};
 pub use flags::{EventFlags, EventResponseFlags};
 pub use validation::{
     add_question::{AddQuestionError, AddQuestionValidation},
+    context_validation::{ContextLabelError, ContextUrlError, ContextValidation},
     create_event::{CreateEventError, CreateEventValidation},
     pwd_validation::{PasswordError, PasswordValidation},
     tag_validation::{TagError, TagValidation},

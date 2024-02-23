@@ -1,5 +1,7 @@
 use crate::{components::Popup, fetch, pages::BASE_API};
-use shared::{ContextItem, ModEvent};
+use shared::{
+    ContextItem, ContextLabelError, ContextUrlError, ContextValidation, ModEvent, ValidationState,
+};
 use wasm_bindgen::UnwrapThrowExt;
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
@@ -22,6 +24,7 @@ pub struct ContextPopup {
     label: String,
     url: String,
     send_pending: bool,
+    errors: ContextValidation,
 }
 
 #[derive(Clone, Debug, PartialEq, Properties)]
@@ -42,6 +45,7 @@ impl Component for ContextPopup {
             label: String::new(),
             url: String::new(),
             send_pending: false,
+            errors: ContextValidation::default(),
         }
     }
 
@@ -50,6 +54,7 @@ impl Component for ContextPopup {
             if let Some(item) = ctx.props().context.first() {
                 self.label = item.label.clone();
                 self.url = item.url.clone();
+                self.errors.check(&self.label, &self.url);
             }
         } else {
             self.label = String::new();
@@ -122,10 +127,12 @@ impl Component for ContextPopup {
                     Input::Label => {
                         let target: HtmlInputElement = c.target_dyn_into().unwrap_throw();
                         self.label = target.value();
+                        self.errors.check(&self.label, &self.url);
                     }
                     Input::Url => {
                         let target: HtmlInputElement = c.target_dyn_into().unwrap_throw();
                         self.url = target.value();
+                        self.errors.check(&self.label, &self.url);
                     }
                 };
                 true
@@ -146,6 +153,8 @@ impl Component for ContextPopup {
             let on_click_delete = ctx.link().callback(|_| Msg::ConfirmedDelete);
             let on_click_ok = ctx.link().callback(|_| Msg::ConfirmEdit);
 
+            let has_errors = self.errors.has_any();
+
             html! {
                 <Popup class="context-popup" {on_close}>
                     <div class="title">{ "Add or Edit context link" }</div>
@@ -158,6 +167,9 @@ impl Component for ContextPopup {
                         required=true
                         oninput={ctx.link().callback(|input| Msg::InputChange(Input::Label,input))}
                     />
+                    <div hidden={self.errors.label.is_valid()} class="invalid">
+                        { self.label_err().unwrap_or_default() }
+                    </div>
                     <input
                         type="text"
                         name="url"
@@ -167,14 +179,38 @@ impl Component for ContextPopup {
                         required=true
                         oninput={ctx.link().callback(|input| Msg::InputChange(Input::Url,input))}
                     />
+                    <div hidden={self.errors.url.is_valid()} class="invalid">
+                        { self.url_error().unwrap_or_default() }
+                    </div>
                     <div class="buttons">
-                        <button disabled={self.send_pending} class="btn-yes" onclick={on_click_ok}>{ "confirm" }</button>
+                        <button disabled={self.send_pending || has_errors} class="btn-yes" onclick={on_click_ok}>{ "confirm" }</button>
                         <button disabled={self.send_pending} class="btn-yes" onclick={on_click_delete}>{ "delete" }</button>
                     </div>
                 </Popup>
             }
         } else {
             html! {}
+        }
+    }
+}
+
+impl ContextPopup {
+    fn label_err(&self) -> Option<String> {
+        match self.errors.label {
+            ValidationState::Invalid(ContextLabelError::MinLength(len, max)) => Some(format!(
+                "Label must be at least {max} characters long. ({len}/{max})",
+            )),
+            ValidationState::Invalid(ContextLabelError::MaxLength(_, max)) => {
+                Some(format!("Label cannot be longer than {max} characters.",))
+            }
+            _ => None,
+        }
+    }
+
+    fn url_error(&self) -> Option<String> {
+        match self.errors.url {
+            ValidationState::Invalid(ContextUrlError::Invalid) => Some("Invalid URL.".to_string()),
+            _ => None,
         }
     }
 }
