@@ -174,7 +174,7 @@ impl Component for ContextPopup {
                         <input
                             type="text"
                             name="label"
-                            placeholder="label"
+                            placeholder="Link Title"
                             value={self.label.clone()}
                             maxlength="20"
                             required=true
@@ -188,7 +188,7 @@ impl Component for ContextPopup {
                         <input
                             type="text"
                             name="url"
-                            placeholder="url"
+                            placeholder="URL - https://"
                             value={self.url.clone()}
                             maxlength="100"
                             required=true
@@ -222,10 +222,10 @@ impl ContextPopup {
     fn label_err(&self) -> Option<String> {
         match self.errors.label {
             ValidationState::Invalid(ContextLabelError::MinLength(len, max)) => Some(format!(
-                "Label must be at least {max} characters long. ({len}/{max})",
+                "Title must be at least {max} characters long. ({len}/{max})",
             )),
             ValidationState::Invalid(ContextLabelError::MaxLength(_, max)) => {
-                Some(format!("Label cannot be longer than {max} characters.",))
+                Some(format!("Title cannot be longer than {max} characters.",))
             }
             _ => None,
         }
@@ -233,7 +233,12 @@ impl ContextPopup {
 
     fn url_error(&self) -> Option<String> {
         match self.errors.url {
-            ValidationState::Invalid(ContextUrlError::Invalid) => Some("Invalid URL.".to_string()),
+            ValidationState::Invalid(ContextUrlError::Invalid(
+                url::ParseError::RelativeUrlWithoutBase,
+            )) => Some("Base missing (like http://)".to_string()),
+            ValidationState::Invalid(ContextUrlError::Invalid(_)) => {
+                Some("Invalid URL".to_string())
+            }
             _ => None,
         }
     }

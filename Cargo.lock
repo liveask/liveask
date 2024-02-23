@@ -1488,6 +1488,7 @@ dependencies = [
  "sha2 0.10.8",
  "shared",
  "split-iter",
+ "url",
  "urlencoding",
  "vergen",
  "wasm-bindgen",

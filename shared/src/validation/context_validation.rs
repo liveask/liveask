@@ -10,7 +10,7 @@ pub enum ContextLabelError {
 ///
 #[derive(Debug)]
 pub enum ContextUrlError {
-    Invalid,
+    Invalid(url::ParseError),
 }
 
 const LABEL_TRIMMED_MIN_LEN: usize = 4;
@@ -48,7 +48,7 @@ impl ContextValidation {
 
     fn check_url(v: &str) -> ValidationState<ContextUrlError> {
         match url::Url::parse(v) {
-            Err(_) => ValidationState::Invalid(ContextUrlError::Invalid),
+            Err(e) => ValidationState::Invalid(ContextUrlError::Invalid(e)),
             Ok(_) => ValidationState::Valid,
         }
     }
