@@ -20,11 +20,17 @@ pub enum Msg {
     InputChange(Input, InputEvent),
 }
 
+enum State {
+    Create,
+    Edit,
+}
+
 pub struct ContextPopup {
     label: String,
     url: String,
     send_pending: bool,
     errors: ContextValidation,
+    state: State,
 }
 
 #[derive(Clone, Debug, PartialEq, Properties)]
@@ -46,20 +52,25 @@ impl Component for ContextPopup {
             url: String::new(),
             send_pending: false,
             errors: ContextValidation::default(),
+            state: State::Create,
         }
     }
 
     fn changed(&mut self, ctx: &Context<Self>, _old_props: &Self::Properties) -> bool {
         if ctx.props().show {
+            self.state = State::Create;
             if let Some(item) = ctx.props().context.first() {
                 self.label = item.label.clone();
                 self.url = item.url.clone();
                 self.errors.check(&self.label, &self.url);
+                self.state = State::Edit;
             }
         } else {
             self.label = String::new();
             self.url = String::new();
+            self.state = State::Create;
         }
+
         true
     }
 
@@ -147,6 +158,7 @@ impl Component for ContextPopup {
 
     fn view(&self, ctx: &Context<Self>) -> Html {
         let show = ctx.props().show;
+        let is_create = matches!(self.state, State::Create);
 
         if show {
             let on_close = ctx.link().callback(|()| Msg::Close);
@@ -157,34 +169,46 @@ impl Component for ContextPopup {
 
             html! {
                 <Popup class="context-popup" {on_close}>
-                    <div class="title">{ "Add or Edit context link" }</div>
-                    <input
-                        type="text"
-                        name="label"
-                        placeholder="label"
-                        value={self.label.clone()}
-                        maxlength="20"
-                        required=true
-                        oninput={ctx.link().callback(|input| Msg::InputChange(Input::Label,input))}
-                    />
+                    <div class="title">{ if is_create { "Add context link" } else { "Edit context link" } }</div>
+                    <div class="input-box">
+                        <input
+                            type="text"
+                            name="label"
+                            placeholder="label"
+                            value={self.label.clone()}
+                            maxlength="20"
+                            required=true
+                            oninput={ctx.link().callback(|input| Msg::InputChange(Input::Label,input))}
+                        />
+                    </div>
                     <div hidden={self.errors.label.is_valid()} class="invalid">
                         { self.label_err().unwrap_or_default() }
                     </div>
-                    <input
-                        type="text"
-                        name="url"
-                        placeholder="url"
-                        value={self.url.clone()}
-                        maxlength="100"
-                        required=true
-                        oninput={ctx.link().callback(|input| Msg::InputChange(Input::Url,input))}
-                    />
+                    <div class="input-box">
+                        <input
+                            type="text"
+                            name="url"
+                            placeholder="url"
+                            value={self.url.clone()}
+                            maxlength="100"
+                            required=true
+                            oninput={ctx.link().callback(|input| Msg::InputChange(Input::Url,input))}
+                        />
+                    </div>
                     <div hidden={self.errors.url.is_valid()} class="invalid">
                         { self.url_error().unwrap_or_default() }
                     </div>
                     <div class="buttons">
-                        <button disabled={self.send_pending || has_errors} class="btn-yes" onclick={on_click_ok}>{ "confirm" }</button>
-                        <button disabled={self.send_pending} class="btn-yes" onclick={on_click_delete}>{ "delete" }</button>
+                        <button class="button-white"
+                            disabled={self.send_pending}
+                            onclick={on_click_delete}>
+                            { if is_create { "cancel" } else { "remove" } }
+                        </button>
+                        <button class="button-red"
+                            disabled={self.send_pending || has_errors}
+                            onclick={on_click_ok}>
+                            { if is_create { "create" } else { "change" } }
+                        </button>
                     </div>
                 </Popup>
             }

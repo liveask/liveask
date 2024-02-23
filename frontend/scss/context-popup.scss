@@ -14,6 +14,7 @@
 	}
 
 	.buttons {
+		display: flex;
 
 		.btn-yes {
 			display: inline-block;
@@ -32,5 +33,18 @@
 			color: $pink-button;
 			cursor: pointer;
 		}
+
+		button {
+			margin-top: 20px;
+			margin-left: 2px;
+			margin-right: 2px;
+		}
+	}
+
+	.invalid {
+		color: red;
+		font-size: 70%;
+		margin-left: 48px;
+		margin-right: 48px;
 	}
 }
