@@ -1,9 +1,9 @@
 use async_trait::async_trait;
 use axum::extract::ws::{close_code::RESTART, CloseFrame, Message, WebSocket};
 use shared::{
-    AddEvent, EventInfo, EventResponseFlags, EventState, EventTags, EventTokens, EventUpgrade,
-    GetEventResponse, ModEvent, ModInfo, ModQuestion, PasswordValidation, PaymentCapture,
-    QuestionItem, States, TagValidation,
+    AddEvent, ContextValidation, EventInfo, EventResponseFlags, EventState, EventTags, EventTokens,
+    EventUpgrade, GetEventResponse, ModEvent, ModInfo, ModQuestion, PasswordValidation,
+    PaymentCapture, QuestionItem, States, TagValidation,
 };
 use std::{
     collections::HashMap,
@@ -471,6 +471,9 @@ impl App {
         }
         if let Some(current_tag) = &changes.current_tag {
             self.mod_edit_tag(e, current_tag).await?;
+        }
+        if let Some(context_link) = &changes.context {
+            self.mod_context(e, context_link).await?;
         }
         if let Some(description) = changes.description {
             //TODO: desc
@@ -952,6 +955,38 @@ impl App {
             }
         } else {
             e.tags.current_tag = None;
+        }
+
+        Ok(())
+    }
+
+    async fn mod_context(
+        &self,
+        e: &mut ApiEventInfo,
+        context_link: &shared::EditContextLink,
+    ) -> Result<()> {
+        if e.premium_id.is_none() {
+            return Err(InternalError::PremiumOnlyFeature(
+                e.tokens.public_token.clone(),
+            ));
+        }
+
+        match context_link {
+            shared::EditContextLink::Disabled => e.context = vec![],
+            shared::EditContextLink::Enabled(item) => {
+                let mut validation = ContextValidation::default();
+
+                validation.check(&item.label, &item.url);
+                if validation.has_any() {
+                    return Err(InternalError::ContextValidation(validation));
+                }
+
+                e.context = vec![item.clone()];
+
+                self.tracking
+                    .track_event_context_set(e.tokens.public_token.clone(), &item.label, &item.url)
+                    .await?;
+            }
         }
 
         Ok(())

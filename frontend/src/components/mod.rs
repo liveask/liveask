@@ -1,3 +1,4 @@
+mod context_popup;
 mod delete_popup;
 mod event_context;
 mod footer;
@@ -16,6 +17,7 @@ mod spinner;
 mod textarea;
 mod upgrade;
 
+pub use context_popup::ContextPopup;
 pub use delete_popup::DeletePopup;
 pub use event_context::EventContext;
 pub use footer::Footer;

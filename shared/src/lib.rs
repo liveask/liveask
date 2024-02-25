@@ -9,6 +9,7 @@ use serde_repr::{Deserialize_repr, Serialize_repr};
 pub use flags::{EventFlags, EventResponseFlags};
 pub use validation::{
     add_question::{AddQuestionError, AddQuestionValidation},
+    context_validation::{ContextLabelError, ContextUrlError, ContextValidation},
     create_event::{CreateEventError, CreateEventValidation},
     pwd_validation::{PasswordError, PasswordValidation},
     tag_validation::{TagError, TagValidation},
@@ -28,6 +29,13 @@ pub struct EventTokens {
     pub public_token: String,
     #[serde(rename = "moderatorToken")]
     pub moderator_token: Option<String>,
+}
+
+impl EventTokens {
+    #[must_use]
+    pub fn is_mod(&self) -> bool {
+        self.moderator_token.as_ref().is_some_and(|t| !t.is_empty())
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug, Default, Clone, Eq, PartialEq)]
@@ -294,6 +302,12 @@ pub enum CurrentTag {
     Enabled(String),
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq)]
+pub enum EditContextLink {
+    Disabled,
+    Enabled(ContextItem),
+}
+
 impl CurrentTag {
     #[must_use]
     pub const fn is_enabled(&self) -> bool {
@@ -342,6 +356,7 @@ pub struct ModEvent {
     pub state: Option<EventState>,
     pub description: Option<String>,
     pub screening: Option<bool>,
+    pub context: Option<EditContextLink>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Copy, Clone, Eq, PartialEq, Default)]
