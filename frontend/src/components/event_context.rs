@@ -31,7 +31,6 @@ impl Component for EventContext {
         match msg {
             Msg::EditClick => {
                 self.show_popup = true;
-                log::info!("CLICK");
                 true
             }
             Msg::ClosePopup => {

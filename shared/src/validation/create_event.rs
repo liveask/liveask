@@ -1,5 +1,5 @@
 ///
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum CreateEventError {
     Empty,
     MaxLength(usize, usize),
@@ -12,7 +12,7 @@ const NAME_TRIMMED_MIN_LEN: usize = 8;
 const NAME_TRIMMED_MAX_LEN: usize = 30;
 const NAME_TRIMMED_MAX_WORDS: usize = 13;
 
-#[derive(Default, Debug)]
+#[derive(Default, Debug, Clone, Copy)]
 pub struct CreateEventValidation {
     pub name: Option<CreateEventError>,
     pub desc: Option<CreateEventError>,

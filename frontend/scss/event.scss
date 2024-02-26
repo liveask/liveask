@@ -45,6 +45,11 @@
 
   padding-top: 55px;
   margin-left: 54px;
+
+  button {
+    height: 18px;
+    display: inline-flex;
+  }
 }
 
 .event-name {
@@ -455,7 +460,7 @@
   margin-bottom: 2px;
 
   .button-icon {
-    height: 20px;
+    height: 18px;
     display: flex;
   }
 
