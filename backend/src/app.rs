@@ -159,12 +159,13 @@ impl App {
 
     #[instrument(skip(self, request))]
     pub async fn create_event(&self, request: AddEvent) -> Result<EventInfo> {
-        let mut validation = shared::CreateEventValidation::default();
-
-        validation.check(&request.data.name, &request.data.description);
-
+        let validation = shared::CreateEventValidation::default()
+            .check(&request.data.name, &request.data.description);
         if validation.has_any() {
-            bail!("request validation failed: {:?}", validation);
+            return Err(InternalError::MetaValidation(shared::EditMetaData {
+                title: request.data.name.clone(),
+                description: request.data.description.clone(),
+            }));
         }
 
         let now = timestamp_now();
@@ -475,9 +476,8 @@ impl App {
         if let Some(context_link) = &changes.context {
             self.mod_context(e, context_link).await?;
         }
-        if let Some(description) = changes.description {
-            //TODO: desc
-            tracing::warn!(desc=%description,"TBD");
+        if let Some(meta) = &changes.meta {
+            self.mod_meta(e, meta).await?;
         }
 
         let result = e.clone();
@@ -988,6 +988,27 @@ impl App {
                     .await?;
             }
         }
+
+        Ok(())
+    }
+
+    async fn mod_meta(&self, e: &mut ApiEventInfo, edit: &shared::EditMetaData) -> Result<()> {
+        if !shared::EventInfo::during_first_day(e.create_time_unix) {
+            bail!("event meta can only be changed during first 24h")
+        }
+
+        let validation =
+            shared::CreateEventValidation::default().check(&edit.title, &edit.description);
+        if validation.has_any() {
+            return Err(InternalError::MetaValidation(edit.clone()));
+        }
+
+        e.data.name = edit.title.clone();
+        e.data.description = edit.description.clone();
+
+        self.tracking
+            .track_event_meta_change(e.tokens.public_token.clone(), edit)
+            .await?;
 
         Ok(())
     }

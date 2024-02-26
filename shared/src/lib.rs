@@ -3,6 +3,7 @@ mod validation;
 
 use std::{str::FromStr, time::Duration};
 
+use chrono::{DateTime, TimeZone as _, Utc};
 use serde::{Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
 
@@ -170,6 +171,24 @@ impl EventInfo {
     #[must_use]
     pub const fn has_password(&self) -> bool {
         self.flags.contains(EventFlags::PASSWORD)
+    }
+
+    #[must_use]
+    pub fn timestamp_to_datetime(timestamp: i64) -> Option<DateTime<Utc>> {
+        Utc.timestamp_opt(timestamp, 0).latest()
+    }
+
+    #[must_use]
+    pub fn age_in_seconds(create_time_unix: i64) -> i64 {
+        Self::timestamp_to_datetime(create_time_unix)
+            .map(|create| Utc::now() - create)
+            .map(|age| age.num_seconds())
+            .unwrap_or_default()
+    }
+
+    #[must_use]
+    pub fn during_first_day(create_time_unix: i64) -> bool {
+        Self::age_in_seconds(create_time_unix) <= (60 * 60 * 24)
     }
 }
 
@@ -349,12 +368,18 @@ impl EventPassword {
     }
 }
 
+#[derive(Serialize, Deserialize, Clone, Eq, PartialEq, Debug)]
+pub struct EditMetaData {
+    pub title: String,
+    pub description: String,
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Default)]
 pub struct ModEvent {
     pub current_tag: Option<CurrentTag>,
     pub password: Option<EventPassword>,
     pub state: Option<EventState>,
-    pub description: Option<String>,
+    pub meta: Option<EditMetaData>,
     pub screening: Option<bool>,
     pub context: Option<EditContextLink>,
 }

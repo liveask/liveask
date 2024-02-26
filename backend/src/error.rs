@@ -2,7 +2,9 @@ use axum::response::{IntoResponse, Response};
 use deadpool_redis::{CreatePoolError, PoolError};
 use redis::RedisError;
 use reqwest::StatusCode;
-use shared::{AddQuestionValidation, ContextValidation, PasswordValidation, TagValidation};
+use shared::{
+    AddQuestionValidation, ContextValidation, EditMetaData, PasswordValidation, TagValidation,
+};
 use thiserror::Error;
 
 use crate::{eventsdb, payment::PaymentError, tracking};
@@ -41,6 +43,9 @@ pub enum InternalError {
 
     #[error("Context Validation")]
     ContextValidation(ContextValidation),
+
+    #[error("Meta Validation")]
+    MetaValidation(EditMetaData),
 
     #[error("Events DB Error: {0}")]
     EventsDB(#[from] eventsdb::Error),
@@ -113,6 +118,10 @@ impl IntoResponse for InternalError {
                 (StatusCode::BAD_REQUEST, "").into_response()
             }
 
+            Self::MetaValidation(e) => {
+                tracing::warn!("meta validation: {:?}", e);
+                (StatusCode::BAD_REQUEST, "").into_response()
+            }
             Self::AddQuestionValidation(e) => {
                 tracing::warn!("add question validation: {:?}", e);
                 (StatusCode::BAD_REQUEST, "").into_response()

@@ -19,9 +19,11 @@ pub struct CreateEventValidation {
 }
 
 impl CreateEventValidation {
-    pub fn check(&mut self, name: &str, desc: &str) {
+    #[must_use]
+    pub fn check(mut self, name: &str, desc: &str) -> Self {
         self.name = Self::check_name(name);
         self.desc = Self::check_desc(desc);
+        self
     }
 
     #[must_use]
