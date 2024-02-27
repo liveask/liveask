@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## [2.9.0] - 2024-02-27
+
 ### Changed
 * allow changing event title/desc in first 24h ([#65](https://github.com/liveask/liveask/issues/65))
 
