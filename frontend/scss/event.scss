@@ -35,42 +35,6 @@
   }
 }
 
-.event-name-label {
-  font-size: 12px;
-  letter-spacing: 0.19px;
-  line-height: 14px;
-  text-transform: uppercase;
-
-  color: rgba(255, 255, 255, 0.6);
-
-  padding-top: 55px;
-  margin-left: 54px;
-
-  button {
-    height: 18px;
-    display: inline-flex;
-  }
-}
-
-.event-name {
-  font-size: 34px;
-  letter-spacing: 0.53px;
-  line-height: 38px;
-
-  color: white;
-
-  margin-left: 52px;
-  margin-right: 52px;
-  margin-top: 4px;
-
-  overflow: hidden;
-}
-
-.event-name.printable {
-  color: #1E1E1E;
-  margin-top: 100px;
-}
-
 .not-open {
   font-size: 75%;
   color: white;
@@ -136,28 +100,6 @@
   &.print {
     width: 350px;
     height: 350px;
-  }
-}
-
-.event-desc {
-  font-size: 16px;
-  letter-spacing: 0.25px;
-  line-height: 20px;
-
-  color: white;
-
-  margin-left: 54px;
-  margin-right: 54px;
-  margin-top: 4px;
-
-  &.blurr {
-    user-select: none;
-    filter: blur(5px);
-    -webkit-filter: blur(5px);
-  }
-
-  &.printable {
-    color: #1E1E1E;
   }
 }
 
@@ -450,44 +392,5 @@
   &.hidden {
     top: -30px;
     background-color: white;
-  }
-}
-
-.context {
-  display: flex;
-  margin-left: 52px;
-  margin-top: 2px;
-  margin-bottom: 2px;
-
-  .button-icon {
-    height: 18px;
-    display: flex;
-  }
-
-  .item {
-    cursor: pointer;
-
-    display: flex;
-    height: 18px;
-
-    margin-right: 10px;
-    padding-top: 3px;
-    padding-bottom: 3px;
-    border-radius: 14px;
-    background-color: black;
-
-    img {
-      width: 15px;
-      margin-right: 2px;
-      margin-left: 6px;
-    }
-
-    .label {
-      color: $pink-button;
-      font-size: 12px;
-      margin-top: 2px;
-      margin-right: 8px;
-      margin-bottom: 1px;
-    }
   }
 }
