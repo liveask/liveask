@@ -1,5 +1,5 @@
 ///
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum CreateEventError {
     Empty,
     MaxLength(usize, usize),
@@ -12,16 +12,18 @@ const NAME_TRIMMED_MIN_LEN: usize = 8;
 const NAME_TRIMMED_MAX_LEN: usize = 30;
 const NAME_TRIMMED_MAX_WORDS: usize = 13;
 
-#[derive(Default, Debug)]
+#[derive(Default, Debug, Clone, Copy)]
 pub struct CreateEventValidation {
     pub name: Option<CreateEventError>,
     pub desc: Option<CreateEventError>,
 }
 
 impl CreateEventValidation {
-    pub fn check(&mut self, name: &str, desc: &str) {
+    #[must_use]
+    pub fn check(mut self, name: &str, desc: &str) -> Self {
         self.name = Self::check_name(name);
         self.desc = Self::check_desc(desc);
+        self
     }
 
     #[must_use]
