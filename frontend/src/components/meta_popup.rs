@@ -178,29 +178,3 @@ impl Component for MetaPopup {
         }
     }
 }
-
-impl MetaPopup {
-    // fn label_err(&self) -> Option<String> {
-    //     match self.errors.label {
-    //         ValidationState::Invalid(ContextLabelError::MinLength(len, max)) => Some(format!(
-    //             "Title must be at least {max} characters long. ({len}/{max})",
-    //         )),
-    //         ValidationState::Invalid(ContextLabelError::MaxLength(_, max)) => {
-    //             Some(format!("Title cannot be longer than {max} characters.",))
-    //         }
-    //         _ => None,
-    //     }
-    // }
-
-    // fn url_error(&self) -> Option<String> {
-    //     match self.errors.url {
-    //         ValidationState::Invalid(ContextUrlError::Invalid(
-    //             url::ParseError::RelativeUrlWithoutBase,
-    //         )) => Some("Base missing (like http://)".to_string()),
-    //         ValidationState::Invalid(ContextUrlError::Invalid(_)) => {
-    //             Some("Invalid URL".to_string())
-    //         }
-    //         _ => None,
-    //     }
-    // }
-}
