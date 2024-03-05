@@ -160,7 +160,7 @@ impl App {
     #[instrument(skip(self, request))]
     pub async fn create_event(&self, request: AddEvent) -> Result<EventInfo> {
         let validation = shared::CreateEventValidation::default()
-            .check(&request.data.name, &request.data.description);
+            .check(&request.data.name, &request.data.description, "");
         if validation.has_any() {
             return Err(InternalError::MetaValidation(shared::EditMetaData {
                 title: request.data.name.clone(),
@@ -998,7 +998,7 @@ impl App {
         }
 
         let validation =
-            shared::CreateEventValidation::default().check(&edit.title, &edit.description);
+            shared::CreateEventValidation::default().check(&edit.title, &edit.description, "");
         if validation.has_any() {
             return Err(InternalError::MetaValidation(edit.clone()));
         }
