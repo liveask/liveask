@@ -2,9 +2,11 @@
 #[derive(Debug, Clone, Copy)]
 pub enum CreateEventError {
     Empty,
+    InvalidEmail,
     MaxLength(usize, usize),
     MinLength(usize, usize),
     MaxWords(usize, usize),
+
 }
 
 const DESC_TRIMMED_MIN_LEN: usize = 30;
@@ -16,19 +18,21 @@ const NAME_TRIMMED_MAX_WORDS: usize = 13;
 pub struct CreateEventValidation {
     pub name: Option<CreateEventError>,
     pub desc: Option<CreateEventError>,
+    pub email: Option<CreateEventError>
 }
 
 impl CreateEventValidation {
     #[must_use]
-    pub fn check(mut self, name: &str, desc: &str) -> Self {
+    pub fn check(mut self, name: &str, desc: &str, email: &str) -> Self {
         self.name = Self::check_name(name);
         self.desc = Self::check_desc(desc);
+        self.email = Self::check_email(email);
         self
     }
 
     #[must_use]
     pub const fn has_any(&self) -> bool {
-        self.name.is_some() || self.desc.is_some()
+        self.name.is_some() || self.desc.is_some() || self.email.is_some()
     }
 
     fn check_name(v: &str) -> Option<CreateEventError> {
@@ -69,4 +73,21 @@ impl CreateEventValidation {
             None
         }
     }
+
+    #[must_use]
+    pub fn check_email(v: &str) -> Option<CreateEventError> {
+        let trimmed_len = v.trim().len();
+
+        if trimmed_len > 0 {
+            if !email_address::EmailAddress::is_valid(v) {
+                Some(CreateEventError::InvalidEmail)
+            } else {
+                None
+            }
+        }
+        else {
+            None
+        }
+    }
+
 }

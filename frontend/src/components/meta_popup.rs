@@ -54,7 +54,9 @@ impl Component for MetaPopup {
     fn changed(&mut self, ctx: &Context<Self>, _old_props: &Self::Properties) -> bool {
         if ctx.props().show {
             self.meta = ctx.props().meta.clone();
-            self.errors = self.errors.check(&self.meta.title, &self.meta.description);
+            self.errors = self
+                .errors
+                .check(&self.meta.title, &self.meta.description, "");
         }
 
         true
@@ -99,12 +101,16 @@ impl Component for MetaPopup {
                     Input::Title => {
                         let target: HtmlInputElement = c.target_dyn_into().unwrap_throw();
                         self.meta.title = target.value();
-                        self.errors = self.errors.check(&self.meta.title, &self.meta.description);
+                        self.errors =
+                            self.errors
+                                .check(&self.meta.title, &self.meta.description, "");
                     }
                     Input::Desc => {
                         let target: HtmlTextAreaElement = c.target_dyn_into().unwrap_throw();
                         self.meta.description = target.value();
-                        self.errors = self.errors.check(&self.meta.title, &self.meta.description);
+                        self.errors =
+                            self.errors
+                                .check(&self.meta.title, &self.meta.description, "");
                     }
                 };
                 true
