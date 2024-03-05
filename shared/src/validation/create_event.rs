@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 ///
 #[derive(Debug, Clone, Copy)]
 pub enum CreateEventError {
@@ -79,7 +81,7 @@ impl CreateEventValidation {
         let trimmed_len = v.trim().len();
 
         if trimmed_len > 0 {
-            if !email_address::EmailAddress::is_valid(v) {
+            if !email_address::EmailAddress::from_str(v).is_ok() {
                 Some(CreateEventError::InvalidEmail)
             } else {
                 None
