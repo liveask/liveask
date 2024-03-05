@@ -81,10 +81,16 @@ impl CreateEventValidation {
         let trimmed_len = v.trim().len();
 
         if trimmed_len > 0 {
-            if !email_address::EmailAddress::from_str(v).is_ok() {
+            let email = email_address::EmailAddress::from_str(v);
+            if !email.is_ok() {
                 Some(CreateEventError::InvalidEmail)
             } else {
-                None
+                if !email.ok().unwrap().domain().contains(".") {
+                    Some(CreateEventError::InvalidEmail)
+                }
+                else {
+                    None
+                }
             }
         }
         else {
