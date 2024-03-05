@@ -148,7 +148,7 @@ impl Component for NewEvent {
                             />
                         </div>
                         <div hidden={self.errors.email.is_none()} class="invalid">
-                            { Self::name_error(&self.errors.name).unwrap_or_default() }
+                            { Self::email_error(&self.errors.email).unwrap_or_default() }
                         </div>
                         <div class="input-box">
                             <TextArea
