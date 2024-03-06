@@ -1085,6 +1085,34 @@ mod test {
 
     #[tokio::test]
     #[tracing_test::traced_test]
+    async fn test_event_create_email_fail_validation() {
+        let app = App::new(
+            Arc::new(InMemoryEventsDB::default()),
+            Arc::new(PubSubInMemory::default()),
+            Arc::new(MockViewers::new()),
+            Arc::new(Payment::default()),
+            Tracking::default(),
+            String::new(),
+        );
+
+        let res = app
+            .create_event(AddEvent {
+                data: EventData {
+                    name: String::from("123456789"),
+                    description: String::from("123456789 123456789 123456789 !"),
+                    short_url: String::new(),
+                    long_url: None,
+                },
+                moderator_email: "a@a",
+                test: false,
+            })
+            .await;
+
+        assert!(res.is_err());
+    }
+
+    #[tokio::test]
+    #[tracing_test::traced_test]
     async fn test_event_create() {
         let eventdb = Arc::new(InMemoryEventsDB::default());
         let app = App::new(
