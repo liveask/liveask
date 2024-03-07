@@ -76,26 +76,12 @@ The to load the frontend
 cd frontend
 make serve
 ```
-
 ### Configuration
-To configure the application first copy the default.env to local.env
+To configure the application copy the default.env to local.env & edit local.env
 ```
 cd backend/env
 cp default.env local.env
 ```
-While locally developing to relax CORS policy set `RELAX_CORS` to `"1"` in production leave as `""`
-#### Default Configuration
-```env
-RUST_LOG=warn
-RELAX_CORS=""
-TINY_URL_TOKEN=""
-LA_SENTRY_DSN
-LA_ADMIN_PWD_HASH
-LA_POSTHOG_KEY
-LA_STRIPE_SECRET
-LA_STRIPE_HOOK_SECRET
-```
-
 
 ## Support
 
