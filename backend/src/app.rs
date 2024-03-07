@@ -1052,7 +1052,7 @@ mod test {
         viewers::MockViewers,
     };
     use pretty_assertions::{assert_eq, assert_ne};
-    use shared::{AddQuestion, CurrentTag, EventData, TagId, TEST_VALID_QUESTION};
+    use shared::{AddQuestion, CurrentTag, EventData, TagId, TEST_EVENT_DESC, TEST_EVENT_NAME, TEST_VALID_QUESTION};
     use std::sync::Arc;
 
     #[tokio::test]
@@ -1098,8 +1098,8 @@ mod test {
         let res = app
             .create_event(AddEvent {
                 data: EventData {
-                    name: String::from("123456789"),
-                    description: String::from("123456789 123456789 123456789 !"),
+                    name: TEST_EVENT_NAME,
+                    description: TEST_EVENT_DESC,
                     short_url: String::new(),
                     long_url: None,
                 },
@@ -1126,8 +1126,8 @@ mod test {
         let res = app
             .create_event(AddEvent {
                 data: EventData {
-                    name: String::from("123456789"),
-                    description: String::from("123456789 123456789 123456789 !"),
+                    name: TEST_EVENT_NAME,
+                    description: TEST_EVENT_DESC,
                     short_url: String::new(),
                     long_url: None,
                 },
