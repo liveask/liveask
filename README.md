@@ -41,6 +41,13 @@ See detailed [changelog](CHANGELOG.md).
 ### Initial Setup
 #### Pre-requisites 
 ```
+How to install Rust
+https://www.rust-lang.org/tools/install
+
+How to install Docker
+https://docs.docker.com/engine/install
+
+Commands To Run
 rustup update
 rustup target add wasm32-unknown-unknown
 cargo install cargo-make
