@@ -8,7 +8,6 @@ pub enum CreateEventError {
     MaxLength(usize, usize),
     MinLength(usize, usize),
     MaxWords(usize, usize),
-
 }
 
 const DESC_TRIMMED_MIN_LEN: usize = 30;
@@ -20,7 +19,7 @@ const NAME_TRIMMED_MAX_WORDS: usize = 13;
 pub struct CreateEventValidation {
     pub name: Option<CreateEventError>,
     pub desc: Option<CreateEventError>,
-    pub email: Option<CreateEventError>
+    pub email: Option<CreateEventError>,
 }
 
 impl CreateEventValidation {
@@ -82,20 +81,15 @@ impl CreateEventValidation {
 
         if trimmed_len > 0 {
             let email = email_address::EmailAddress::from_str(v);
-            if !email.is_ok() {
+            if email.is_err() {
                 Some(CreateEventError::InvalidEmail)
+            } else if email.ok()?.domain().contains('.') {
+                None
             } else {
-                if !email.ok().unwrap().domain().contains(".") {
-                    Some(CreateEventError::InvalidEmail)
-                }
-                else {
-                    None
-                }
+                Some(CreateEventError::InvalidEmail)
             }
-        }
-        else {
+        } else {
             None
         }
     }
-
 }
