@@ -14,6 +14,9 @@ https://www.rust-lang.org/tools/install
 
 How to install Docker
 https://docs.docker.com/engine/install
+
+How to install Make
+sudo apt-get install build-essential
 ```
 
 ### Installation
