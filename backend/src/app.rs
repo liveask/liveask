@@ -1131,7 +1131,7 @@ mod test {
                     short_url: String::new(),
                     long_url: None,
                 },
-                moderator_email: Option::Some("testuser@live-ask.com"),
+                moderator_email: Option::Some("testuser@live-ask.com".to_string()),
                 test: false,
             })
             .await;
