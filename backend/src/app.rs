@@ -159,8 +159,11 @@ impl App {
 
     #[instrument(skip(self, request))]
     pub async fn create_event(&self, request: AddEvent) -> Result<EventInfo> {
-        let validation = shared::CreateEventValidation::default()
-            .check(&request.data.name, &request.data.description, request.moderator_email.clone().unwrap_or_default().as_str());
+        let validation = shared::CreateEventValidation::default().check(
+            &request.data.name,
+            &request.data.description,
+            request.moderator_email.clone().unwrap_or_default().as_str(),
+        );
 
         if validation.has_any() {
             return Err(InternalError::MetaValidation(shared::EditMetaData {
@@ -1052,7 +1055,10 @@ mod test {
         viewers::MockViewers,
     };
     use pretty_assertions::{assert_eq, assert_ne};
-    use shared::{AddQuestion, CurrentTag, EventData, TagId, TEST_EVENT_DESC, TEST_EVENT_NAME, TEST_VALID_QUESTION};
+    use shared::{
+        AddQuestion, CurrentTag, EventData, TagId, TEST_EVENT_DESC, TEST_EVENT_NAME,
+        TEST_VALID_QUESTION,
+    };
     use std::sync::Arc;
 
     #[tokio::test]
