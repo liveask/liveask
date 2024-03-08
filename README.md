@@ -37,8 +37,7 @@ Live-Ask is a product developed and maintained by [Rustunit.com](https://rustuni
 See detailed [changelog](CHANGELOG.md).
 
 ## Build & Usages Details
-For instructions on how to build & contribute please follow the link below
-![Link](./CONTRIBUTION.md)
+For instructions on how to build & contribute please follow the ![link](./CONTRIBUTION.md) to the documentation.
 
 ## Support
 
