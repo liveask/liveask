@@ -160,7 +160,7 @@ impl App {
     #[instrument(skip(self, request))]
     pub async fn create_event(&self, request: AddEvent) -> Result<EventInfo> {
         let validation = shared::CreateEventValidation::default()
-            .check(&request.data.name, &request.data.description, request.moderator_email.unwrap_or_default().as_str());
+            .check(&request.data.name, &request.data.description, request.moderator_email.clone().unwrap_or_default().as_str());
 
         if validation.has_any() {
             return Err(InternalError::MetaValidation(shared::EditMetaData {
@@ -1098,12 +1098,12 @@ mod test {
         let res = app
             .create_event(AddEvent {
                 data: EventData {
-                    name: TEST_EVENT_NAME,
-                    description: TEST_EVENT_DESC,
+                    name: TEST_EVENT_NAME.to_string(),
+                    description: TEST_EVENT_DESC.to_string(),
                     short_url: String::new(),
                     long_url: None,
                 },
-                moderator_email: "a@a",
+                moderator_email: Option::Some("a@a".to_string()),
                 test: false,
             })
             .await;
@@ -1126,12 +1126,12 @@ mod test {
         let res = app
             .create_event(AddEvent {
                 data: EventData {
-                    name: TEST_EVENT_NAME,
-                    description: TEST_EVENT_DESC,
+                    name: TEST_EVENT_NAME.to_string(),
+                    description: TEST_EVENT_DESC.to_string(),
                     short_url: String::new(),
                     long_url: None,
                 },
-                moderator_email: "testuser@live-ask.com",
+                moderator_email: Option::Some("testuser@live-ask.com"),
                 test: false,
             })
             .await;
@@ -1154,7 +1154,7 @@ mod test {
 
         app.create_event(AddEvent {
             data: EventData {
-                name: TEST_V,
+                name: String::from("123456789"),
                 description: String::from("123456789 123456789 123456789 !"),
                 short_url: String::new(),
                 long_url: None,
