@@ -210,8 +210,7 @@ impl NewEvent {
             Some(CreateEventError::MaxWords(_, max)) => {
                 Some(format!("Name must not contain more than {max} words."))
             }
-            Some(CreateEventError::InvalidEmail) => None,
-            None => None,
+            Some(CreateEventError::InvalidEmail) | None => None,
         }
     }
 
