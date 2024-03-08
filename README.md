@@ -38,7 +38,7 @@ See detailed [changelog](CHANGELOG.md).
 
 ## Build & Usages Details
 For instructions on how to build & contribute please follow the link below
-![Link](./CONTRIBUTION.MD)
+![Link](./CONTRIBUTION.md)
 
 ## Support
 
