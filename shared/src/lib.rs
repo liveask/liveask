@@ -1,5 +1,3 @@
-#![allow(clippy::empty_docs)]
-
 mod flags;
 mod validation;
 
