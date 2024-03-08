@@ -37,51 +37,8 @@ Live-Ask is a product developed and maintained by [Rustunit.com](https://rustuni
 See detailed [changelog](CHANGELOG.md).
 
 ## Build & Usages Details
-**Requires Three Terminal Tabs/Instances**
-### Initial Setup
-#### Pre-requisites 
-```
-How to install Rust
-https://www.rust-lang.org/tools/install
-
-How to install Docker
-https://docs.docker.com/engine/install
-
-Commands To Run
-rustup update
-rustup target add wasm32-unknown-unknown
-cargo install cargo-make
-git clone https://github.com/liveask/liveask.git
-cd liveask
-```
-#### Back End
-**First Terminal**
-This is required to run up all dependencies for the application 
-```
-cd backend
-make docker-compose
-```
-
-**Second Terminal**
-This will load up the backend and connect to the dependencies
-```
-cd backend
-make run
-```
-#### Front End
-
-**Third Terminal**
-The to load the frontend
-```
-cd frontend
-make serve
-```
-### Configuration
-To configure the application copy the default.env to local.env & edit local.env
-```
-cd backend/env
-cp default.env local.env
-```
+For instructions on how to build & contribute please follow the link below
+![Link](./CONTRIBUTION.MD)
 
 ## Support
 
