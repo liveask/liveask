@@ -94,17 +94,19 @@ impl Component for NewEvent {
                         let target: HtmlInputElement = c.target_dyn_into().unwrap_throw();
                         self.name = target.value();
 
-                        self.errors = self.errors.check(&self.name, &self.desc);
+                        self.errors = self.errors.check(&self.name, &self.desc, &self.email);
                     }
                     Input::Email => {
                         let target: HtmlInputElement = c.target_dyn_into().unwrap_throw();
                         self.email = target.value();
+
+                        self.errors = self.errors.check(&self.name, &self.desc, &self.email);
                     }
                     Input::Desc => {
                         let target: HtmlTextAreaElement = c.target_dyn_into().unwrap_throw();
                         self.desc = target.value();
 
-                        self.errors = self.errors.check(&self.name, &self.desc);
+                        self.errors = self.errors.check(&self.name, &self.desc, &self.email);
                     }
                 }
 
@@ -144,6 +146,9 @@ impl Component for NewEvent {
                                 maxlength="100"
                                 oninput={ctx.link().callback(|input| Msg::InputChange(Input::Email,input))}
                             />
+                        </div>
+                        <div hidden={self.errors.email.is_none()} class="invalid">
+                            { Self::email_error(&self.errors.email).unwrap_or_default() }
                         </div>
                         <div class="input-box">
                             <TextArea
@@ -205,7 +210,14 @@ impl NewEvent {
             Some(CreateEventError::MaxWords(_, max)) => {
                 Some(format!("Name must not contain more than {max} words."))
             }
-            None => None,
+            Some(CreateEventError::InvalidEmail) | None => None,
+        }
+    }
+
+    pub fn email_error(state: &Option<CreateEventError>) -> Option<String> {
+        match state {
+            Some(CreateEventError::InvalidEmail) => Some("Invalid Email Provided".to_string()),
+            _ => None,
         }
     }
 }

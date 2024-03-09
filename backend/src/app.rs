@@ -159,8 +159,12 @@ impl App {
 
     #[instrument(skip(self, request))]
     pub async fn create_event(&self, request: AddEvent) -> Result<EventInfo> {
-        let validation = shared::CreateEventValidation::default()
-            .check(&request.data.name, &request.data.description);
+        let validation = shared::CreateEventValidation::default().check(
+            &request.data.name,
+            &request.data.description,
+            request.moderator_email.clone().unwrap_or_default().as_str(),
+        );
+
         if validation.has_any() {
             return Err(InternalError::MetaValidation(shared::EditMetaData {
                 title: request.data.name.clone(),
@@ -998,7 +1002,7 @@ impl App {
         }
 
         let validation =
-            shared::CreateEventValidation::default().check(&edit.title, &edit.description);
+            shared::CreateEventValidation::default().check(&edit.title, &edit.description, "");
         if validation.has_any() {
             return Err(InternalError::MetaValidation(edit.clone()));
         }
@@ -1051,7 +1055,10 @@ mod test {
         viewers::MockViewers,
     };
     use pretty_assertions::{assert_eq, assert_ne};
-    use shared::{AddQuestion, CurrentTag, EventData, TagId, TEST_VALID_QUESTION};
+    use shared::{
+        AddQuestion, CurrentTag, EventData, TagId, TEST_EVENT_DESC, TEST_EVENT_NAME,
+        TEST_VALID_QUESTION,
+    };
     use std::sync::Arc;
 
     #[tokio::test]
@@ -1080,6 +1087,62 @@ mod test {
             .await;
 
         assert!(res.is_err());
+    }
+
+    #[tokio::test]
+    #[tracing_test::traced_test]
+    async fn test_event_create_email_fail_validation() {
+        let app = App::new(
+            Arc::new(InMemoryEventsDB::default()),
+            Arc::new(PubSubInMemory::default()),
+            Arc::new(MockViewers::new()),
+            Arc::new(Payment::default()),
+            Tracking::default(),
+            String::new(),
+        );
+
+        let res = app
+            .create_event(AddEvent {
+                data: EventData {
+                    name: TEST_EVENT_NAME.to_string(),
+                    description: TEST_EVENT_DESC.to_string(),
+                    short_url: String::new(),
+                    long_url: None,
+                },
+                moderator_email: Option::Some("a@a".to_string()),
+                test: false,
+            })
+            .await;
+
+        assert!(res.is_err());
+    }
+
+    #[tokio::test]
+    #[tracing_test::traced_test]
+    async fn test_event_create_email_pass_validation() {
+        let app = App::new(
+            Arc::new(InMemoryEventsDB::default()),
+            Arc::new(PubSubInMemory::default()),
+            Arc::new(MockViewers::new()),
+            Arc::new(Payment::default()),
+            Tracking::default(),
+            String::new(),
+        );
+
+        let res = app
+            .create_event(AddEvent {
+                data: EventData {
+                    name: TEST_EVENT_NAME.to_string(),
+                    description: TEST_EVENT_DESC.to_string(),
+                    short_url: String::new(),
+                    long_url: None,
+                },
+                moderator_email: Option::Some("testuser@live-ask.com".to_string()),
+                test: false,
+            })
+            .await;
+
+        assert!(res.is_ok());
     }
 
     #[tokio::test]
