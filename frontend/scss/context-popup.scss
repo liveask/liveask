@@ -1,0 +1,54 @@
+@import 'colors';
+@import 'text-macros';
+
+.context-popup {
+	text-align: center;
+	max-width: 260px;
+
+	.title {
+		@extend %popup-title;
+	}
+
+	.text {
+		margin-top: 40px;
+	}
+
+	.buttons {
+		display: flex;
+
+		.btn-yes {
+			display: inline-block;
+			margin-top: 40px;
+			margin-left: 20px;
+			margin-right: 20px;
+
+			font-style: normal;
+			font-weight: 500;
+			line-height: normal;
+			font-size: 14px;
+			// text-align: center;
+			letter-spacing: 0.21875px;
+			text-transform: uppercase;
+
+			color: $pink-button;
+			cursor: pointer;
+		}
+
+		button {
+			margin-top: 20px;
+			margin-left: 2px;
+			margin-right: 2px;
+		}
+
+		.button-white {
+			box-shadow: 0px 0px 0px 0 rgba(0, 0, 0, 0.07);
+		}
+	}
+
+	.invalid {
+		color: red;
+		font-size: 70%;
+		margin-left: 48px;
+		margin-right: 48px;
+	}
+}

@@ -42,7 +42,14 @@ toolchain = "nightly"
 args = ["udeps"]
 
 [tasks.checks]
-dependencies = ["cargo-sort", "format", "tests", "clippy", "udeps"]
+dependencies = [
+    "cargo-sort",
+    "format",
+    "tests",
+    "clippy",
+    # cannot succeed as nightly is broken right now: #72
+    # "udeps"
+]
 
 [tasks.checks_ci]
 dependencies = ["cargo-sort", "format", "tests", "clippy"]

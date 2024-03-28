@@ -207,7 +207,7 @@ impl ModPassword {
             let props = ctx.props();
             Self::request_edit(
                 props.tokens.public_token.clone(),
-                props.tokens.moderator_token.clone().unwrap_or_default(),
+                props.tokens.moderator_token.clone().unwrap_throw(),
                 ctx.link(),
                 EventPassword::Enabled(current.clone()),
             );

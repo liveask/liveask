@@ -14,9 +14,9 @@ use yewdux::prelude::*;
 
 use crate::{
     components::{
-        DeletePopup, EventContext, EventSocket, Footer, ModPassword, ModTag, PasswordPopup,
-        Question, QuestionClickType, QuestionFlags, QuestionPopup, SharableTags, SharePopup,
-        SocketResponse, Upgrade,
+        DeletePopup, EventMeta, EventSocket, Footer, ModPassword, ModTag, PasswordPopup, Question,
+        QuestionClickType, QuestionFlags, QuestionPopup, SharableTags, SharePopup, SocketResponse,
+        Upgrade,
     },
     environment::{la_env, LiveAskEnv},
     fetch,
@@ -498,6 +498,9 @@ impl Event {
 
             let mod_view = matches!(self.mode, Mode::Moderator);
             let admin = e.admin;
+            let is_premium = e.info.is_premium();
+            let is_masked = e.masked;
+            let is_first_24h = EventInfo::during_first_day(e.info.create_time_unix);
 
             let tag = e.info.tags.get_current_tag_label();
             let screening_enabled = e.info.flags.contains(EventFlags::SCREENING);
@@ -513,15 +516,14 @@ impl Event {
                     <QuestionPopup event_id={e.info.tokens.public_token.clone()} {tag} />
                     <SharePopup url={share_url} event_id={e.info.tokens.public_token.clone()} />
                     <div class="event-block">
-                        <div class="event-name-label">{ "The Event" }</div>
-                        <div class="event-name">{ &e.info.data.name.clone() }</div>
-                        <EventContext context={e.info.context.clone()} />
-                        //TODO: collapsable event desc
-                        <div
-                            class={classes!("event-desc",e.masked.then_some("blurr"))}
-                        >
-                            { {&e.info.data.description.clone()} }
-                        </div>
+                        <EventMeta
+                            context={e.info.context.clone()}
+                            tokens={e.info.tokens.clone()}
+                            data={e.info.data.clone()}
+                            {is_premium}
+                            {is_masked}
+                            {is_first_24h}
+                             />
                         { self.mod_view(ctx,e) }
                         <div class="not-open" hidden={!e.info.state.is_closed()}>
                             { "This event was closed by the moderator. You cannot add or vote questions anymore." }
@@ -538,7 +540,7 @@ impl Event {
                     { self.mod_urls(ctx,admin) }
                     { self.view_stats() }
                     <div class="review-note" hidden={!screening_enabled || mod_view}>
-                        { "Moderator enabled question reviewing. New questions have to be approved first." }
+                    { "Moderator enabled question reviewing. New questions have to be approved first." }
                     </div>
                     { self.view_questions(ctx,e) }
                     { Self::view_ask_question(mod_view,ctx,e) }

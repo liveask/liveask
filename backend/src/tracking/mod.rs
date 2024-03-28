@@ -100,6 +100,39 @@ impl Tracking {
         Ok(())
     }
 
+    pub async fn track_event_context_set(
+        &self,
+        event: String,
+        label: &str,
+        url: &str,
+    ) -> TrackingResult<()> {
+        let mut e = Event::new("event-context", &self.server);
+
+        e.insert_prop("event", event)?;
+        e.insert_prop("context-label", label)?;
+        e.insert_prop("context-url", url)?;
+
+        self.log(e).await?;
+
+        Ok(())
+    }
+
+    pub async fn track_event_meta_change(
+        &self,
+        event: String,
+        meta: &shared::EditMetaData,
+    ) -> TrackingResult<()> {
+        let mut e = Event::new("event-meta-changed", &self.server);
+
+        e.insert_prop("event", event)?;
+        e.insert_prop("title", &meta.title)?;
+        e.insert_prop("desc", &meta.description)?;
+
+        self.log(e).await?;
+
+        Ok(())
+    }
+
     async fn log(&self, event: Event) -> TrackingResult<()> {
         if let Some(key) = &self.key {
             let mut client = ClientOptions::new(key);

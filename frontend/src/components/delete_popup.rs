@@ -52,12 +52,7 @@ impl Component for DeletePopup {
             Msg::ConfirmedDelete => {
                 self.show = false;
                 let event_id = ctx.props().tokens.public_token.clone();
-                let secret = ctx
-                    .props()
-                    .tokens
-                    .moderator_token
-                    .clone()
-                    .unwrap_or_default();
+                let secret = ctx.props().tokens.moderator_token.clone().unwrap_throw();
 
                 tracking::track_event(tracking::EVNT_EVENT_DELETE);
 
