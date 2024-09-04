@@ -1,10 +1,12 @@
+use std::ops::Not;
+
 use events::event_context;
 use shared::EventTokens;
 use wasm_bindgen::UnwrapThrowExt;
 use yew::prelude::*;
 
 use crate::tracking;
-use crate::{components::Spinner, not, Events, GlobalEvent};
+use crate::{components::Spinner, Events, GlobalEvent};
 
 use super::payment_popup::PaymentPopup;
 
@@ -47,7 +49,7 @@ impl Component for Upgrade {
             Msg::UpgradeClicked => {
                 tracking::track_event(tracking::EVNT_PREMIUM_UPGRADE);
                 self.events.emit(GlobalEvent::PayForUpgrade);
-                false
+                false.not()
             }
         }
     }
@@ -64,7 +66,7 @@ impl Component for Upgrade {
                         </span>
                         <img
                             alt="dropdown"
-                            class={classes!("dropdown",not(collapsed).then_some("rotated"))}
+                            class={classes!("dropdown",collapsed.not().then_some("rotated"))}
                             src="/assets/dropdown.svg"
                         />
                     </div>

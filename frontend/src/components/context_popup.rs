@@ -15,7 +15,7 @@ pub enum Input {
 pub enum Msg {
     ConfirmedDelete,
     ConfirmEdit,
-    ServerResponed(bool),
+    ServerResponed,
     Close,
     InputChange(Input, InputEvent),
 }
@@ -60,8 +60,8 @@ impl Component for ContextPopup {
         if ctx.props().show {
             self.state = State::Create;
             if let Some(item) = ctx.props().context.first() {
-                self.label = item.label.clone();
-                self.url = item.url.clone();
+                self.label.clone_from(&item.label);
+                self.url.clone_from(&item.url);
                 self.errors.check(&self.label, &self.url);
                 self.state = State::Edit;
             }
@@ -100,8 +100,11 @@ impl Component for ContextPopup {
                     )
                     .await
                     .map_or_else(
-                        |_| Msg::ServerResponed(false),
-                        |_| Msg::ServerResponed(true),
+                        |e| {
+                            log::error!("mod_edit_event error: {e}");
+                            Msg::ServerResponed
+                        },
+                        |_| Msg::ServerResponed,
                     )
                 });
                 true
@@ -127,8 +130,11 @@ impl Component for ContextPopup {
                     )
                     .await
                     .map_or_else(
-                        |_| Msg::ServerResponed(false),
-                        |_| Msg::ServerResponed(true),
+                        |e| {
+                            log::error!("mod_edit_event error: {e}");
+                            Msg::ServerResponed
+                        },
+                        |_| Msg::ServerResponed,
                     )
                 });
                 true
@@ -148,7 +154,7 @@ impl Component for ContextPopup {
                 };
                 true
             }
-            Msg::ServerResponed(_) => {
+            Msg::ServerResponed => {
                 self.send_pending = false;
                 ctx.props().on_close.emit(());
                 true

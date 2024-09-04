@@ -286,7 +286,6 @@ pub struct ModQuestion {
     pub screened: bool,
 }
 
-///
 #[derive(Serialize_repr, Deserialize_repr, Debug, Copy, Clone, Eq, PartialEq, Default)]
 #[repr(u8)]
 pub enum States {

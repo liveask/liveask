@@ -1,13 +1,11 @@
 use super::ValidationState;
 
-///
 #[derive(Debug)]
 pub enum ContextLabelError {
     MaxLength(usize, usize),
     MinLength(usize, usize),
 }
 
-///
 #[derive(Debug)]
 pub enum ContextUrlError {
     Invalid(url::ParseError),

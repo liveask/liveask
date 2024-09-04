@@ -1,13 +1,13 @@
 use chrono::{Duration, Utc};
 use events::{event_context, EventBridge};
 use gloo_timers::callback::Interval;
-use std::rc::Rc;
+use std::{ops::Not, rc::Rc};
 use wasm_bindgen::UnwrapThrowExt;
 use yew::prelude::*;
 use yew_router::prelude::*;
 use yewdux::prelude::*;
 
-use crate::{not, routes::Route, GlobalEvent, State};
+use crate::{routes::Route, GlobalEvent, State};
 
 pub enum Msg {
     State(Rc<State>),
@@ -136,7 +136,7 @@ impl Component for IconBar {
 
         html! {
             <div
-                class={classes!(vec!["topbar", "shrink"],not(self.connected).then_some("offline"))}
+                class={classes!(vec!["topbar", "shrink"],self.connected.not().then_some("offline"))}
             >
                 { self.view_offline_bar(ctx) }
                 <div class="innerbox">

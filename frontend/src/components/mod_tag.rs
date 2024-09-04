@@ -23,7 +23,7 @@ pub enum Msg {
     InputChange(InputEvent),
     KeyDown(KeyboardEvent),
     InputExit,
-    Edited(bool),
+    Edited,
 }
 
 enum State {
@@ -80,7 +80,7 @@ impl Component for ModTag {
                 self.set_pwd(ctx);
                 true
             }
-            Msg::Edited(_) => true,
+            Msg::Edited => true,
         }
     }
 
@@ -175,9 +175,9 @@ impl ModTag {
             {
                 Err(e) => {
                     log::error!("mod_edit_event error: {e}");
-                    Msg::Edited(false)
+                    Msg::Edited
                 }
-                Ok(_) => Msg::Edited(true),
+                Ok(_) => Msg::Edited,
             }
         });
     }

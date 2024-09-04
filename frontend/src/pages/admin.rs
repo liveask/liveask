@@ -33,7 +33,7 @@ pub enum Msg {
     Login,
     LogOut,
     UserInfoResult(GetUserInfo),
-    LoginResult(bool),
+    LoginResult,
     InputChange(Input, InputEvent),
 }
 impl Component for AdminLogin {
@@ -74,13 +74,10 @@ impl Component for AdminLogin {
                     let res = fetch::admin_login(BASE_API, name, pwd_hash(&pwd)).await;
 
                     match res {
-                        Ok(()) => {
-                            log::info!("login ok");
-                            Msg::LoginResult(true)
-                        }
+                        Ok(()) => Msg::LoginResult,
                         Err(e) => {
                             log::error!("login error: {e}");
-                            Msg::LoginResult(false)
+                            Msg::LoginResult
                         }
                     }
                 });
@@ -93,7 +90,7 @@ impl Component for AdminLogin {
                 request_logout(ctx.link());
                 true
             }
-            Msg::LoginResult(_) => {
+            Msg::LoginResult => {
                 self.name.clear();
                 self.pwd.clear();
 

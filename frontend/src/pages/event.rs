@@ -938,7 +938,7 @@ impl Event {
         }
     }
 
-    fn on_question_click(&mut self, kind: &QuestionClickType, id: i64, ctx: &Context<Self>) {
+    fn on_question_click(&self, kind: &QuestionClickType, id: i64, ctx: &Context<Self>) {
         match kind {
             QuestionClickType::Like => {
                 let liked = LocalCache::is_liked(&self.current_event_id, id);

@@ -15,7 +15,7 @@ use global_events::GlobalEvent;
 use pages::AdminLogin;
 use routes::Route;
 use shared::GetEventResponse;
-use std::rc::Rc;
+use std::{ops::Not, rc::Rc};
 use yew::prelude::*;
 use yew_router::prelude::*;
 use yewdux::{prelude::Dispatch, store::Store};
@@ -112,7 +112,7 @@ impl Component for AppRoot {
             <BrowserRouter>
                 <div class="app-host">
                     <ContextProvider<Events<GlobalEvent>> context={self.events.clone()}>
-                        <div class={classes!("main",not(self.connected).then_some("offline"))}>
+                        <div class={classes!("main",self.connected.not().then_some("offline"))}>
                             <IconBar />
                             <div class="router">
                                 <Switch<Route> render={switch} />
@@ -123,11 +123,6 @@ impl Component for AppRoot {
             </BrowserRouter>
         }
     }
-}
-
-#[must_use]
-pub const fn not(b: bool) -> bool {
-    !b
 }
 
 fn switch(switch: Route) -> Html {

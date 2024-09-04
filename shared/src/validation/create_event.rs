@@ -1,6 +1,5 @@
 use std::str::FromStr;
 
-///
 #[derive(Debug, Clone, Copy)]
 pub enum CreateEventError {
     Empty,

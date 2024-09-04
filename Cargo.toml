@@ -24,13 +24,13 @@ unused_mut = "deny"
 dead_code = "deny"
 
 [workspace.lints.clippy]
-all = "deny"
-perf = "deny"
-correctness = "deny"
-complexity = "deny"
-style = "deny"
-nursery = "deny"
-pedantic = "deny"
+all = { level = "deny", priority = -1 }
+perf = { level = "deny", priority = -1 }
+correctness = { level = "deny", priority = -1 }
+complexity = { level = "deny", priority = -1 }
+style = { level = "deny", priority = -1 }
+nursery = { level = "deny", priority = -1 }
+pedantic = { level = "deny", priority = -1 }
 # selected clippy::restriction (see https://rust-lang.github.io/rust-clippy/master/index.html#/?groups=restriction)
 # it is recommended to enable individually based on style and requirements
 as_underscore = "deny"
