@@ -2,7 +2,7 @@ mod conversion;
 
 use crate::utils::timestamp_now;
 use aws_sdk_dynamodb::types::AttributeValue;
-use chrono::{DateTime, Duration, TimeZone, Utc};
+use chrono::{Duration, Utc};
 use serde::{Deserialize, Serialize};
 use serde_dynamo::from_item;
 use shared::{
@@ -64,7 +64,7 @@ pub fn mask_string(s: &str) -> &str {
 
 impl ApiEventInfo {
     fn is_timed_out(&self) -> bool {
-        Self::timestamp_to_datetime(self.create_time_unix).map_or_else(
+        shared::EventInfo::timestamp_to_datetime(self.create_time_unix).map_or_else(
             || {
                 tracing::warn!("timeout calc error: {}", self.create_time_unix);
                 true
@@ -96,15 +96,8 @@ impl ApiEventInfo {
         self.data.description = mask_string(&self.data.description).to_string();
     }
 
-    fn timestamp_to_datetime(timestamp: i64) -> Option<DateTime<Utc>> {
-        Utc.timestamp_opt(timestamp, 0).latest()
-    }
-
     pub fn age_in_seconds(&self) -> i64 {
-        Self::timestamp_to_datetime(self.create_time_unix)
-            .map(|create| Utc::now() - create)
-            .map(|age| age.num_seconds())
-            .unwrap_or_default()
+        shared::EventInfo::age_in_seconds(self.create_time_unix)
     }
 }
 

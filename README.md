@@ -12,6 +12,8 @@ Live-Ask.com provides a simple, free, and real-time service for the audience to 
 * Works on **all platforms** – use it on your phone, tablet, or laptop
 * Is **free** to use with premium features available
 
+Live-Ask is a product developed and maintained by [Rustunit.com](https://rustunit.com)
+
 ### Socials
 [![Instagram](https://img.shields.io/badge/Instagram-%23E4405F.svg?style=for-the-badge&logo=Instagram&logoColor=white)](https://www.instagram.com/liveaskapp/?igshid=OGQ5ZDc2ODk2ZA%3D%3D&utm_source=qr)
 [![LinkedIn](https://img.shields.io/badge/linkedin-%230077B5.svg?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/company/live-ask/)
@@ -35,7 +37,7 @@ Live-Ask.com provides a simple, free, and real-time service for the audience to 
 See detailed [changelog](CHANGELOG.md).
 
 ## Build & Usages Details
-(coming soon)
+For instructions on how to build & contribute please follow the [link](./CONTRIBUTION.md) to the documentation.
 
 ## Support
 

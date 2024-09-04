@@ -33,7 +33,7 @@ pub enum Msg {
     Login,
     LogOut,
     UserInfoResult(GetUserInfo),
-    LoginResult(bool),
+    LoginResult,
     InputChange(Input, InputEvent),
 }
 impl Component for AdminLogin {
@@ -74,13 +74,10 @@ impl Component for AdminLogin {
                     let res = fetch::admin_login(BASE_API, name, pwd_hash(&pwd)).await;
 
                     match res {
-                        Ok(()) => {
-                            log::info!("login ok");
-                            Msg::LoginResult(true)
-                        }
+                        Ok(()) => Msg::LoginResult,
                         Err(e) => {
                             log::error!("login error: {e}");
-                            Msg::LoginResult(false)
+                            Msg::LoginResult
                         }
                     }
                 });
@@ -93,7 +90,7 @@ impl Component for AdminLogin {
                 request_logout(ctx.link());
                 true
             }
-            Msg::LoginResult(_) => {
+            Msg::LoginResult => {
                 self.name.clear();
                 self.pwd.clear();
 
@@ -129,40 +126,39 @@ impl AdminLogin {
     fn view_login(&self, ctx: &Context<Self>) -> Html {
         html! {
             <div class="newevent-bg">
-                <div class="title">
-                    {"Admin Login"}
-                </div>
+                <div class="title">{ "Admin Login" }</div>
                 <div class="form">
                     <div class="newevent">
                         <div class="input-box">
                             <input
                                 type="text"
                                 // name="eventname"
-                                placeholder="user name"
+                                 placeholder="user name"
                                 value={self.name.clone()}
                                 maxlength="30"
                                 // autocomplete="off"
-                                required=true
-                                oninput={ctx.link().callback(|input| Msg::InputChange(Input::Name,input))}/>
+                                 required=true
+                                oninput={ctx.link().callback(|input| Msg::InputChange(Input::Name,input))}
+                            />
                         </div>
-
                         <div class="input-box">
                             <input
                                 type="password"
                                 name="pwd"
                                 placeholder="password"
                                 value={self.pwd.clone()}
-                                oninput={ctx.link().callback(|input| Msg::InputChange(Input::Pwd,input))}/>
+                                oninput={ctx.link().callback(|input| Msg::InputChange(Input::Pwd,input))}
+                            />
                         </div>
                     </div>
                     <button
                         class="button-finish"
                         // disabled={!self.can_create()}
-                        onclick={ctx.link().callback(|_| Msg::Login)}>
-                        {"login"}
+                         onclick={ctx.link().callback(|_| Msg::Login)}
+                    >
+                        { "login" }
                     </button>
                 </div>
-
             </div>
         }
     }
@@ -170,18 +166,12 @@ impl AdminLogin {
     fn view_logged_in(ctx: &Context<Self>, user: &UserInfo) -> Html {
         html! {
             <div class="newevent-bg">
-                <div class="title">
-                    {"Admin Login"}
-                </div>
-
+                <div class="title">{ "Admin Login" }</div>
                 <div class="form">
-                    <p>{format!("Logged in as: '{}'",user.name)}</p>
-                    <p>{format!("expires: {} min",user.expires.as_secs().saturating_div(60))}</p>
-
-                    <button
-                        class="button-finish"
-                        onclick={ctx.link().callback(|_| Msg::LogOut)}>
-                        {"logout"}
+                    <p>{ format!("Logged in as: '{}'",user.name) }</p>
+                    <p>{ format!("expires: {} min",user.expires.as_secs().saturating_div(60)) }</p>
+                    <button class="button-finish" onclick={ctx.link().callback(|_| Msg::LogOut)}>
+                        { "logout" }
                     </button>
                 </div>
             </div>
@@ -191,12 +181,8 @@ impl AdminLogin {
     fn view_waiting() -> Html {
         html! {
             <div class="newevent-bg">
-                <div class="title">
-                    {"Admin Login"}
-                </div>
-                <div class="form">
-                    {"Waiting..."}
-                </div>
+                <div class="title">{ "Admin Login" }</div>
+                <div class="form">{ "Waiting..." }</div>
             </div>
         }
     }

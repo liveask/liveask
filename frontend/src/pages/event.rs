@@ -2,19 +2,21 @@ use chrono::{DateTime, Duration, NaiveDateTime, Utc};
 use const_format::formatcp;
 use events::{event_context, EventBridge};
 use serde::Deserialize;
-use shared::{EventInfo, GetEventResponse, ModEvent, ModQuestion, QuestionItem, States};
+use shared::{
+    EventFlags, EventInfo, GetEventResponse, ModEvent, ModQuestion, QuestionItem, States,
+};
 use std::{collections::HashMap, rc::Rc, str::FromStr};
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 use web_sys::HtmlAnchorElement;
-use yew::{prelude::*, virtual_dom::AttrValue};
+use yew::prelude::*;
 use yew_router::scope_ext::RouterScopeExt;
 use yewdux::prelude::*;
 
 use crate::{
     components::{
-        DeletePopup, EventContext, EventSocket, Footer, ModPassword, ModTag, PasswordPopup,
-        Question, QuestionClickType, QuestionFlags, QuestionPopup, SharableTags, SharePopup,
-        SocketResponse, Upgrade,
+        DeletePopup, EventMeta, EventSocket, Footer, ModPassword, ModTag, PasswordPopup, Question,
+        QuestionClickType, QuestionFlags, QuestionPopup, SharableTags, SharePopup, SocketResponse,
+        Upgrade,
     },
     environment::{la_env, LiveAskEnv},
     fetch,
@@ -253,10 +255,14 @@ impl Component for Event {
         html! {
             <>
                 <div class="event">
-                    <EventSocket reconnect={self.manual_reconnect} url={self.socket_url.clone()} {msg}/>
-                    {self.view_internal(ctx)}
+                    <EventSocket
+                        reconnect={self.manual_reconnect}
+                        url={self.socket_url.clone()}
+                        {msg}
+                    />
+                    { self.view_internal(ctx) }
                 </div>
-                <Footer></Footer>
+                <Footer />
             </>
         }
     }
@@ -455,21 +461,21 @@ impl Event {
             LoadingState::Loading => {
                 html! {
                     <div class="noevent">
-                        <h2>{"loading event..."}</h2>
+                        <h2>{ "loading event..." }</h2>
                     </div>
                 }
             }
             LoadingState::NotFound => {
                 html! {
                     <div class="noevent">
-                        <h2>{"event not found"}</h2>
+                        <h2>{ "event not found" }</h2>
                     </div>
                 }
             }
             LoadingState::Deleted => {
                 html! {
                     <div class="noevent">
-                        <h2>{"event deleted"}</h2>
+                        <h2>{ "event deleted" }</h2>
                     </div>
                 }
             }
@@ -492,49 +498,52 @@ impl Event {
 
             let mod_view = matches!(self.mode, Mode::Moderator);
             let admin = e.admin;
+            let is_premium = e.info.is_premium();
+            let is_masked = e.masked;
+            let is_first_24h = EventInfo::during_first_day(e.info.create_time_unix);
 
             let tag = e.info.tags.get_current_tag_label();
+            let screening_enabled = e.info.flags.contains(EventFlags::SCREENING);
 
             html! {
                 <div class="some-event">
-                    <div class={background}>
-                    </div>
-
-                    <PasswordPopup event={e.info.tokens.public_token.clone()} show={e.is_wrong_pwd()} onconfirmed={ctx.link().callback(|()|Msg::PasswordSet)}/>
-                    <QuestionPopup event_id={e.info.tokens.public_token.clone()} {tag}/>
-                    <SharePopup url={share_url} event_id={e.info.tokens.public_token.clone()}/>
-
+                    <div class={background} />
+                    <PasswordPopup
+                        event={e.info.tokens.public_token.clone()}
+                        show={e.is_wrong_pwd()}
+                        onconfirmed={ctx.link().callback(|()|Msg::PasswordSet)}
+                    />
+                    <QuestionPopup event_id={e.info.tokens.public_token.clone()} {tag} />
+                    <SharePopup url={share_url} event_id={e.info.tokens.public_token.clone()} />
                     <div class="event-block">
-                        <div class="event-name-label">{"The Event"}</div>
-                        <div class="event-name">{&e.info.data.name.clone()}</div>
-                        <EventContext context={e.info.context.clone()}></EventContext>
-                        //TODO: collapsable event desc
-                        <div class={classes!("event-desc",e.masked.then_some("blurr"))}>
-                            {{&e.info.data.description.clone()}}
-                        </div>
-
-                        {self.mod_view(ctx,e)}
-
+                        <EventMeta
+                            context={e.info.context.clone()}
+                            tokens={e.info.tokens.clone()}
+                            data={e.info.data.clone()}
+                            {is_premium}
+                            {is_masked}
+                            {is_first_24h}
+                             />
+                        { self.mod_view(ctx,e) }
                         <div class="not-open" hidden={!e.info.state.is_closed()}>
-                            {"This event was closed by the moderator. You cannot add or vote questions anymore."}
-                            <br/>
-                            {"Updates by the moderator are still seen in real-time."}
+                            { "This event was closed by the moderator. You cannot add or vote questions anymore." }
+                            <br />
+                            { "Updates by the moderator are still seen in real-time." }
                         </div>
                         <div class="not-open" hidden={!e.info.state.is_vote_only()}>
-                            {"This event is set to vote-only by the moderator. You cannot add new questions. You can still vote though."}
+                            { "This event is set to vote-only by the moderator. You cannot add new questions. You can still vote though." }
                         </div>
                         <div class="not-open" hidden={!e.is_timed_out()}>
-                            {"This free event timed out. Only the moderator can upgrade it to be accessible again."}
+                            { "This free event timed out. Only the moderator can upgrade it to be accessible again." }
                         </div>
                     </div>
-
-                    {self.mod_urls(ctx,admin)}
-
-                    {self.view_viewers()}
-
-                    {self.view_questions(ctx,e)}
-
-                    {Self::view_ask_question(mod_view,ctx,e)}
+                    { self.mod_urls(ctx,admin) }
+                    { self.view_stats() }
+                    <div class="review-note" hidden={!screening_enabled || mod_view}>
+                    { "Moderator enabled question reviewing. New questions have to be approved first." }
+                    </div>
+                    { self.view_questions(ctx,e) }
+                    { Self::view_ask_question(mod_view,ctx,e) }
                 </div>
             }
         })
@@ -547,8 +556,11 @@ impl Event {
         } else {
             html! {
                 <div class="addquestion" hidden={!e.info.state.is_open()}>
-                    <button class="button-red" onclick={ctx.link().callback(|_| Msg::AskQuestionClick)}>
-                        {"Ask a Question"}
+                    <button
+                        class="button-red"
+                        onclick={ctx.link().callback(|_| Msg::AskQuestionClick)}
+                    >
+                        { "Ask a Question" }
                     </button>
                 </div>
             }
@@ -567,26 +579,22 @@ impl Event {
     }
 
     fn view_questions(&self, ctx: &Context<Self>, e: &GetEventResponse) -> Html {
-        if e.info.questions.is_empty() {
+        if e.info.questions.is_empty() && self.unscreened.is_empty() {
             let no_questions_classes = classes!(match self.mode {
                 Mode::Moderator => "noquestions modview",
                 Mode::Viewer => "noquestions",
             });
 
-            html! {
-                <div class={no_questions_classes}>
-                    {"no questions yet"}
-                </div>
-            }
+            html! { <div class={no_questions_classes}>{ "no questions yet" }</div> }
         } else {
             let can_vote = !e.is_closed();
             let is_mod = self.is_mod();
             html! {
                 <>
-                    {self.view_items(ctx,&self.unscreened,if is_mod {"For review"} else {"Your Questions in review by host"},can_vote)}
-                    {self.view_items(ctx,&self.unanswered,"Hot Questions",can_vote)}
-                    {self.view_items(ctx,&self.answered,"Answered",can_vote)}
-                    {self.view_items(ctx,&self.hidden,"Hidden",can_vote)}
+                    { self.view_items(ctx,&self.unscreened,if is_mod {"For review"} else {"Your Questions in review by host"},can_vote) }
+                    { self.view_items(ctx,&self.unanswered,"Hot Questions",can_vote) }
+                    { self.view_items(ctx,&self.answered,"Answered",can_vote) }
+                    { self.view_items(ctx,&self.hidden,"Hidden",can_vote) }
                 </>
             }
         }
@@ -606,13 +614,9 @@ impl Event {
 
             return html! {
                 <div>
-                    <div class={title_classes}>
-                        {title}
-                    </div>
+                    <div class={title_classes}>{ title }</div>
                     <div class="questions">
-                        {
-                            for items.iter().enumerate().map(|(e,i)|self.view_item(ctx,can_vote,masked,e,i))
-                        }
+                        { for items.iter().enumerate().map(|(e,i)|self.view_item(ctx,can_vote,masked,e,i)) }
                     </div>
                 </div>
             };
@@ -655,7 +659,7 @@ impl Event {
                 {flags}
                 {tag}
                 on_click={ctx.link().callback(Msg::QuestionClick)}
-                />
+            />
         }
     }
 
@@ -677,11 +681,9 @@ impl Event {
 
         html! {
             <>
-                <div class="mod-panel" >
+                <div class="mod-panel">
                     <DeletePopup tokens={e.info.tokens.clone()} />
-
-                    {
-                        if timed_out {html!{}}else {html!{
+                    { if timed_out {html!{}}else {html!{
                         <div class="state">
                             <select onchange={ctx.link().callback(Msg::ModStateChange)} >
                                 <option value="0" selected={e.info.state.is_open()}>{"Event open"}</option>
@@ -689,33 +691,21 @@ impl Event {
                                 <option value="2" selected={e.info.state.is_closed()}>{"Event closed"}</option>
                             </select>
                         </div>
-                        }}
-                    }
-
-                    <button class="button-white" onclick={ctx.link().callback(|_|Msg::ModDelete)} >
-                        {"Delete Event"}
+                        }} }
+                    <button class="button-white" onclick={ctx.link().callback(|_|Msg::ModDelete)}>
+                        { "Delete Event" }
                     </button>
-
                     <ModPassword tokens={e.info.tokens.clone()} {pwd} />
-
-                    {
-                        if e.info.is_premium() {
+                    { if e.info.is_premium() {
                             self.mod_view_premium(ctx,e)
-                        } else { html!{} }
-                    }
+                        } else { html!{} } }
                 </div>
-
-                {
-                    if payment_allowed {
+                { if payment_allowed {
                         html!{
                             <Upgrade pending={pending_payment} tokens={e.info.tokens.clone()} />
                         }
-                    } else { html!{} }
-                }
-
-                {
-                    Self::mod_view_deadline(e)
-                }
+                    } else { html!{} } }
+                { Self::mod_view_deadline(e) }
             </>
         }
     }
@@ -726,24 +716,30 @@ impl Event {
 
         html! {
             <div class="premium">
-                <div class="title">
-                    {"This is a premium event"}
-                </div>
+                <div class="title">{ "This is a premium event" }</div>
                 <div class="button-box">
-                    <div class="screening-option" onclick={ctx.link().callback(|_| Msg::ModEditScreening)}>
-                        <input type="checkbox" id="vehicle1" name="vehicle1" checked={e.info.is_screening()} />
-                        {"Screening"}
+                    <div
+                        class="screening-option"
+                        onclick={ctx.link().callback(|_| Msg::ModEditScreening)}
+                    >
+                        <input
+                            type="checkbox"
+                            id="vehicle1"
+                            name="vehicle1"
+                            checked={e.info.is_screening()}
+                        />
+                        { "Screening" }
                     </div>
-                    <button class="button-white" onclick={ctx.link().callback(|_|Msg::ModExport)} >
-                        {"Export"}
+                    <button class="button-white" onclick={ctx.link().callback(|_|Msg::ModExport)}>
+                        { "Export" }
                     </button>
-                    <ModTag tokens={e.info.tokens.clone()} {tag} {tags}/>
+                    <ModTag tokens={e.info.tokens.clone()} {tag} {tags} />
                 </div>
             </div>
         }
     }
 
-    fn view_viewers(&self) -> Html {
+    fn view_stats(&self) -> Html {
         if !self.is_premium() {
             return html! {};
         }
@@ -768,13 +764,19 @@ impl Event {
             .unwrap_or_default();
 
         html! {
-            <div class="statistics" >
-                <abbr title="current viewers" tabindex="0"><img alt="viewers" src="/assets/symbols/viewers.svg"/></abbr>
-                <div class="count">{{viewers}}</div>
-                <abbr title="all questions" tabindex="0"><img alt="questions" src="/assets/symbols/questions.svg"/></abbr>
-                <div class="count">{{questions}}</div>
-                <abbr title="all likes" tabindex="0"><img alt="likes" src="/assets/symbols/likes.svg"/></abbr>
-                <div class="count">{{likes}}</div>
+            <div class="statistics">
+                <abbr title="current viewers" tabindex="0">
+                    <img alt="viewers" src="/assets/symbols/viewers.svg" />
+                </abbr>
+                <div class="count">{ {viewers} }</div>
+                <abbr title="all questions" tabindex="0">
+                    <img alt="questions" src="/assets/symbols/questions.svg" />
+                </abbr>
+                <div class="count">{ {questions} }</div>
+                <abbr title="all likes" tabindex="0">
+                    <img alt="likes" src="/assets/symbols/likes.svg" />
+                </abbr>
+                <div class="count">{ {likes} }</div>
             </div>
         }
     }
@@ -782,16 +784,20 @@ impl Event {
     fn mod_view_deadline(e: &GetEventResponse) -> Html {
         if e.info.is_premium() {
             html! {
-                <div class="deadline">
-                {"This is a premium event and will not time out!"}
-                </div>
+                <div class="deadline">{ "This is a premium event and will not time out!" }</div>
             }
         } else {
             html! {
                 <div class="deadline">
-                {"Currently a "}<strong>{"free"}</strong>{format!(" event is valid for {FREE_EVENT_DURATION_DAYS} days. Your event will be accessible until ")}
-                <span>{Self::get_event_timeout(&e.info)}</span>
-                {". Please upgrade to a "}<strong>{"premium"}</strong>{" event to make it "}<strong>{"permanent"}</strong>{"."}
+                    { "Currently a " }
+                    <strong>{ "free" }</strong>
+                    { format!(" event is valid for {FREE_EVENT_DURATION_DAYS} days. Your event will be accessible until ") }
+                    <span>{ Self::get_event_timeout(&e.info) }</span>
+                    { ". Please upgrade to a " }
+                    <strong>{ "premium" }</strong>
+                    { " event to make it " }
+                    <strong>{ "permanent" }</strong>
+                    { "." }
                 </div>
             }
         }
@@ -801,30 +807,33 @@ impl Event {
         if matches!(self.mode, Mode::Moderator) || (matches!(self.mode, Mode::Viewer) && admin) {
             html! {
                 <div id="moderator-urls">
-                    <div class="linkbox-title">{"This is your moderation link"}</div>
+                    <div class="linkbox-title">{ "This is your moderation link" }</div>
                     <div class="linkbox-box">
                         <div class="linkbox-url">
-                            <div>{self.moderator_url()}</div>
+                            <div>{ self.moderator_url() }</div>
                         </div>
                         <div class="linkbox-copy" onclick={ctx.link().callback(|_| Msg::CopyLink)}>
-                            {if self.copied_to_clipboard {"Copied"}else{"Copy"}}
+                            { if self.copied_to_clipboard {"Copied"}else{"Copy"} }
                         </div>
                     </div>
-
                     <div class="floating-share">
-                        <button class="button-dark" onclick={ctx.link().callback(|_| Msg::ShareEventClick)}>
-                            {"Share my event"}
+                        <button
+                            class="button-dark"
+                            onclick={ctx.link().callback(|_| Msg::ShareEventClick)}
+                        >
+                            { "Share my event" }
                         </button>
                         <button class="button-blue">
-                            <a class="feedback-anchor"
+                            <a
+                                class="feedback-anchor"
                                 href="https://noteforms.com/forms/user-feedback-wlfknf"
                                 target="_blank"
-                                onclick={ctx.link().callback(|_| Msg::FeedbackClick)}>
-                                <div class="feedback-text">{"Give us feedback"}</div>
+                                onclick={ctx.link().callback(|_| Msg::FeedbackClick)}
+                            >
+                                <div class="feedback-text">{ "Give us feedback" }</div>
                             </a>
                         </button>
                     </div>
-
                 </div>
             }
         } else {
@@ -856,7 +865,7 @@ impl Event {
         );
         let end_time = create_time + event_duration;
 
-        html! {end_time.format("%F")}
+        html! { end_time.format("%F") }
     }
 
     fn init_event(&mut self) {
@@ -929,7 +938,7 @@ impl Event {
         }
     }
 
-    fn on_question_click(&mut self, kind: &QuestionClickType, id: i64, ctx: &Context<Self>) {
+    fn on_question_click(&self, kind: &QuestionClickType, id: i64, ctx: &Context<Self>) {
         match kind {
             QuestionClickType::Like => {
                 let liked = LocalCache::is_liked(&self.current_event_id, id);

@@ -1,9 +1,9 @@
 use async_trait::async_trait;
 use axum::extract::ws::{close_code::RESTART, CloseFrame, Message, WebSocket};
 use shared::{
-    AddEvent, EventInfo, EventResponseFlags, EventState, EventTags, EventTokens, EventUpgrade,
-    GetEventResponse, ModEvent, ModInfo, ModQuestion, PasswordValidation, PaymentCapture,
-    QuestionItem, States, TagValidation,
+    AddEvent, ContextValidation, EventInfo, EventResponseFlags, EventState, EventTags, EventTokens,
+    EventUpgrade, GetEventResponse, ModEvent, ModInfo, ModQuestion, PasswordValidation,
+    PaymentCapture, QuestionItem, States, TagValidation,
 };
 use std::{
     collections::HashMap,
@@ -159,12 +159,17 @@ impl App {
 
     #[instrument(skip(self, request))]
     pub async fn create_event(&self, request: AddEvent) -> Result<EventInfo> {
-        let mut validation = shared::CreateEventValidation::default();
-
-        validation.check(&request.data.name, &request.data.description);
+        let validation = shared::CreateEventValidation::default().check(
+            &request.data.name,
+            &request.data.description,
+            request.moderator_email.clone().unwrap_or_default().as_str(),
+        );
 
         if validation.has_any() {
-            bail!("request validation failed: {:?}", validation);
+            return Err(InternalError::MetaValidation(shared::EditMetaData {
+                title: request.data.name.clone(),
+                description: request.data.description.clone(),
+            }));
         }
 
         let now = timestamp_now();
@@ -220,11 +225,13 @@ impl App {
         }
 
         if !request.test {
-            self.tracking.track_event_create(
-                result.tokens.public_token.clone(),
-                url,
-                result.data.name.clone(),
-            );
+            self.tracking
+                .track_event_create(
+                    result.tokens.public_token.clone(),
+                    url,
+                    result.data.name.clone(),
+                )
+                .await?;
         }
 
         Ok(result.into())
@@ -465,14 +472,16 @@ impl App {
             e.do_screening = screening;
         }
         if let Some(password) = changes.password {
-            self.mod_edit_password(e, password);
+            self.mod_edit_password(e, password).await?;
         }
         if let Some(current_tag) = &changes.current_tag {
-            self.mod_edit_tag(e, current_tag)?;
+            self.mod_edit_tag(e, current_tag).await?;
         }
-        if let Some(description) = changes.description {
-            //TODO: desc
-            tracing::warn!(desc=%description,"TBD");
+        if let Some(context_link) = &changes.context {
+            self.mod_context(e, context_link).await?;
+        }
+        if let Some(meta) = &changes.meta {
+            self.mod_meta(e, meta).await?;
         }
 
         let result = e.clone();
@@ -613,7 +622,8 @@ impl App {
         self.notify_subscribers(&event, Notification::Event).await;
 
         self.tracking
-            .track_event_upgrade(&event, name, long_url, age);
+            .track_event_upgrade(event.clone(), name, long_url, age)
+            .await?;
 
         Ok(true)
     }
@@ -889,7 +899,11 @@ impl App {
         });
     }
 
-    fn mod_edit_password(&self, e: &mut ApiEventInfo, password: shared::EventPassword) {
+    async fn mod_edit_password(
+        &self,
+        e: &mut ApiEventInfo,
+        password: shared::EventPassword,
+    ) -> Result<()> {
         let edit_type = match (e.password.is_enabled(), password.is_enabled()) {
             (false, true) => Some(EditEvent::Enabled),
             (true, false) => Some(EditEvent::Disabled),
@@ -899,13 +913,20 @@ impl App {
 
         if let Some(edit_type) = edit_type {
             self.tracking
-                .track_event_password_set(e.tokens.public_token.clone(), edit_type);
+                .track_event_password_set(e.tokens.public_token.clone(), edit_type)
+                .await?;
         }
 
         e.password = password;
+
+        Ok(())
     }
 
-    fn mod_edit_tag(&self, e: &mut ApiEventInfo, current_tag: &shared::CurrentTag) -> Result<()> {
+    async fn mod_edit_tag(
+        &self,
+        e: &mut ApiEventInfo,
+        current_tag: &shared::CurrentTag,
+    ) -> Result<()> {
         if e.premium_id.is_none() {
             return Err(InternalError::PremiumOnlyFeature(
                 e.tokens.public_token.clone(),
@@ -921,7 +942,8 @@ impl App {
 
         if let Some(edit_type) = edit_type {
             self.tracking
-                .track_event_tag_set(e.tokens.public_token.clone(), edit_type);
+                .track_event_tag_set(e.tokens.public_token.clone(), edit_type, e.age_in_seconds())
+                .await?;
         }
 
         if let shared::CurrentTag::Enabled(tag) = &current_tag {
@@ -938,6 +960,59 @@ impl App {
         } else {
             e.tags.current_tag = None;
         }
+
+        Ok(())
+    }
+
+    async fn mod_context(
+        &self,
+        e: &mut ApiEventInfo,
+        context_link: &shared::EditContextLink,
+    ) -> Result<()> {
+        if e.premium_id.is_none() {
+            return Err(InternalError::PremiumOnlyFeature(
+                e.tokens.public_token.clone(),
+            ));
+        }
+
+        match context_link {
+            shared::EditContextLink::Disabled => e.context = vec![],
+            shared::EditContextLink::Enabled(item) => {
+                let mut validation = ContextValidation::default();
+
+                validation.check(&item.label, &item.url);
+                if validation.has_any() {
+                    return Err(InternalError::ContextValidation(validation));
+                }
+
+                e.context = vec![item.clone()];
+
+                self.tracking
+                    .track_event_context_set(e.tokens.public_token.clone(), &item.label, &item.url)
+                    .await?;
+            }
+        }
+
+        Ok(())
+    }
+
+    async fn mod_meta(&self, e: &mut ApiEventInfo, edit: &shared::EditMetaData) -> Result<()> {
+        if !shared::EventInfo::during_first_day(e.create_time_unix) {
+            bail!("event meta can only be changed during first 24h")
+        }
+
+        let validation =
+            shared::CreateEventValidation::default().check(&edit.title, &edit.description, "");
+        if validation.has_any() {
+            return Err(InternalError::MetaValidation(edit.clone()));
+        }
+
+        e.data.name = edit.title.clone();
+        e.data.description = edit.description.clone();
+
+        self.tracking
+            .track_event_meta_change(e.tokens.public_token.clone(), edit)
+            .await?;
 
         Ok(())
     }
@@ -980,7 +1055,10 @@ mod test {
         viewers::MockViewers,
     };
     use pretty_assertions::{assert_eq, assert_ne};
-    use shared::{AddQuestion, CurrentTag, EventData, TagId, TEST_VALID_QUESTION};
+    use shared::{
+        AddQuestion, CurrentTag, EventData, TagId, TEST_EVENT_DESC, TEST_EVENT_NAME,
+        TEST_VALID_QUESTION,
+    };
     use std::sync::Arc;
 
     #[tokio::test]
@@ -1009,6 +1087,62 @@ mod test {
             .await;
 
         assert!(res.is_err());
+    }
+
+    #[tokio::test]
+    #[tracing_test::traced_test]
+    async fn test_event_create_email_fail_validation() {
+        let app = App::new(
+            Arc::new(InMemoryEventsDB::default()),
+            Arc::new(PubSubInMemory::default()),
+            Arc::new(MockViewers::new()),
+            Arc::new(Payment::default()),
+            Tracking::default(),
+            String::new(),
+        );
+
+        let res = app
+            .create_event(AddEvent {
+                data: EventData {
+                    name: TEST_EVENT_NAME.to_string(),
+                    description: TEST_EVENT_DESC.to_string(),
+                    short_url: String::new(),
+                    long_url: None,
+                },
+                moderator_email: Option::Some("a@a".to_string()),
+                test: false,
+            })
+            .await;
+
+        assert!(res.is_err());
+    }
+
+    #[tokio::test]
+    #[tracing_test::traced_test]
+    async fn test_event_create_email_pass_validation() {
+        let app = App::new(
+            Arc::new(InMemoryEventsDB::default()),
+            Arc::new(PubSubInMemory::default()),
+            Arc::new(MockViewers::new()),
+            Arc::new(Payment::default()),
+            Tracking::default(),
+            String::new(),
+        );
+
+        let res = app
+            .create_event(AddEvent {
+                data: EventData {
+                    name: TEST_EVENT_NAME.to_string(),
+                    description: TEST_EVENT_DESC.to_string(),
+                    short_url: String::new(),
+                    long_url: None,
+                },
+                moderator_email: Option::Some("testuser@live-ask.com".to_string()),
+                test: false,
+            })
+            .await;
+
+        assert!(res.is_ok());
     }
 
     #[tokio::test]

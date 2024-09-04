@@ -52,12 +52,7 @@ impl Component for DeletePopup {
             Msg::ConfirmedDelete => {
                 self.show = false;
                 let event_id = ctx.props().tokens.public_token.clone();
-                let secret = ctx
-                    .props()
-                    .tokens
-                    .moderator_token
-                    .clone()
-                    .unwrap_or_default();
+                let secret = ctx.props().tokens.moderator_token.clone().unwrap_throw();
 
                 tracking::track_event(tracking::EVNT_EVENT_DELETE);
 
@@ -82,25 +77,17 @@ impl Component for DeletePopup {
             let on_click_no = ctx.link().callback(|_| Msg::Close);
 
             html! {
-            <Popup class="delete-popup" {on_close}>
-                <div class="title">
-                    {"Delete event permanently"}
-                </div>
-
-                <div class="text">
-                    {"This action is irreversible. Only you as the moderator can delete an event. Users you shared this event with will not be
-                      able to see it anymore."}
-                </div>
-
-                <div class="buttons">
-                    <div class="btn-yes" onclick={on_click_ok}>
-                         {"yes"}
+                <Popup class="delete-popup" {on_close}>
+                    <div class="title">{ "Delete event permanently" }</div>
+                    <div class="text">
+                        { "This action is irreversible. Only you as the moderator can delete an event. Users you shared this event with will not be
+                      able to see it anymore." }
                     </div>
-                    <div class="btn-yes" onclick={on_click_no}>
-                         {"no"}
+                    <div class="buttons">
+                        <div class="btn-yes" onclick={on_click_ok}>{ "yes" }</div>
+                        <div class="btn-yes" onclick={on_click_no}>{ "no" }</div>
                     </div>
-                </div>
-            </Popup>
+                </Popup>
             }
         } else {
             html! {}

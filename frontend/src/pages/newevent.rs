@@ -94,17 +94,19 @@ impl Component for NewEvent {
                         let target: HtmlInputElement = c.target_dyn_into().unwrap_throw();
                         self.name = target.value();
 
-                        self.errors.check(&self.name, &self.desc);
+                        self.errors = self.errors.check(&self.name, &self.desc, &self.email);
                     }
                     Input::Email => {
                         let target: HtmlInputElement = c.target_dyn_into().unwrap_throw();
                         self.email = target.value();
+
+                        self.errors = self.errors.check(&self.name, &self.desc, &self.email);
                     }
                     Input::Desc => {
                         let target: HtmlTextAreaElement = c.target_dyn_into().unwrap_throw();
                         self.desc = target.value();
 
-                        self.errors.check(&self.name, &self.desc);
+                        self.errors = self.errors.check(&self.name, &self.desc, &self.email);
                     }
                 }
 
@@ -117,9 +119,7 @@ impl Component for NewEvent {
     fn view(&self, ctx: &Context<Self>) -> Html {
         html! {
             <div class="newevent-bg">
-                <div class="title">
-                    {"Create Event"}
-                </div>
+                <div class="title">{ "Create Event" }</div>
                 <div class="form">
                     <div class="newevent">
                         <div class="input-box">
@@ -131,10 +131,11 @@ impl Component for NewEvent {
                                 value={self.name.clone()}
                                 maxlength="30"
                                 required=true
-                                oninput={ctx.link().callback(|input| Msg::InputChange(Input::Name,input))}/>
+                                oninput={ctx.link().callback(|input| Msg::InputChange(Input::Name,input))}
+                            />
                         </div>
                         <div hidden={self.errors.name.is_none()} class="invalid">
-                            {self.name_error().unwrap_or_default()}
+                            { Self::name_error(&self.errors.name).unwrap_or_default() }
                         </div>
                         <div class="input-box">
                             <input
@@ -143,7 +144,11 @@ impl Component for NewEvent {
                                 placeholder="email (optional)"
                                 value={self.email.clone()}
                                 maxlength="100"
-                                oninput={ctx.link().callback(|input| Msg::InputChange(Input::Email,input))}/>
+                                oninput={ctx.link().callback(|input| Msg::InputChange(Input::Email,input))}
+                            />
+                        </div>
+                        <div hidden={self.errors.email.is_none()} class="invalid">
+                            { Self::email_error(&self.errors.email).unwrap_or_default() }
                         </div>
                         <div class="input-box">
                             <TextArea
@@ -154,18 +159,19 @@ impl Component for NewEvent {
                                 maxlength="1000"
                                 required=true
                                 autosize=true
-                                oninput={ctx.link().callback(|input| Msg::InputChange(Input::Desc,input))}>
-                            </TextArea>
+                                oninput={ctx.link().callback(|input| Msg::InputChange(Input::Desc,input))}
+                            />
                         </div>
                         <div hidden={self.errors.desc.is_none()} class="invalid">
-                            {self.desc_error().unwrap_or_default()}
+                            { Self::desc_error(&self.errors.desc).unwrap_or_default() }
                         </div>
                     </div>
                     <button
                         class="button-finish"
                         disabled={!self.can_create()}
-                        onclick={ctx.link().callback(|_| Msg::Create)}>
-                        {"finish"}
+                        onclick={ctx.link().callback(|_| Msg::Create)}
+                    >
+                        { "finish" }
                     </button>
                 </div>
             </div>
@@ -178,8 +184,8 @@ impl NewEvent {
         !self.errors.has_any() && !self.name.is_empty() && !self.desc.is_empty()
     }
 
-    fn desc_error(&self) -> Option<String> {
-        match self.errors.desc {
+    pub fn desc_error(state: &Option<CreateEventError>) -> Option<String> {
+        match state {
             Some(CreateEventError::Empty) => Some("Description cannot be empty".to_string()),
             Some(CreateEventError::MinLength(len, max)) => Some(format!(
                 "Description must be at least {max} characters long. ({len}/{max})",
@@ -192,8 +198,8 @@ impl NewEvent {
         }
     }
 
-    fn name_error(&self) -> Option<String> {
-        match self.errors.name {
+    pub fn name_error(state: &Option<CreateEventError>) -> Option<String> {
+        match state {
             Some(CreateEventError::Empty) => Some("Name is required.".to_string()),
             Some(CreateEventError::MinLength(len, max)) => Some(format!(
                 "Name must be at least {max} characters long. ({len}/{max})"
@@ -204,7 +210,14 @@ impl NewEvent {
             Some(CreateEventError::MaxWords(_, max)) => {
                 Some(format!("Name must not contain more than {max} words."))
             }
-            None => None,
+            Some(CreateEventError::InvalidEmail) | None => None,
+        }
+    }
+
+    pub fn email_error(state: &Option<CreateEventError>) -> Option<String> {
+        match state {
+            Some(CreateEventError::InvalidEmail) => Some("Invalid Email Provided".to_string()),
+            _ => None,
         }
     }
 }

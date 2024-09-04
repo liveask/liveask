@@ -1,7 +1,9 @@
-///
-#[derive(Debug)]
+use std::str::FromStr;
+
+#[derive(Debug, Clone, Copy)]
 pub enum CreateEventError {
     Empty,
+    InvalidEmail,
     MaxLength(usize, usize),
     MinLength(usize, usize),
     MaxWords(usize, usize),
@@ -12,21 +14,25 @@ const NAME_TRIMMED_MIN_LEN: usize = 8;
 const NAME_TRIMMED_MAX_LEN: usize = 30;
 const NAME_TRIMMED_MAX_WORDS: usize = 13;
 
-#[derive(Default, Debug)]
+#[derive(Default, Debug, Clone, Copy)]
 pub struct CreateEventValidation {
     pub name: Option<CreateEventError>,
     pub desc: Option<CreateEventError>,
+    pub email: Option<CreateEventError>,
 }
 
 impl CreateEventValidation {
-    pub fn check(&mut self, name: &str, desc: &str) {
+    #[must_use]
+    pub fn check(mut self, name: &str, desc: &str, email: &str) -> Self {
         self.name = Self::check_name(name);
         self.desc = Self::check_desc(desc);
+        self.email = Self::check_email(email);
+        self
     }
 
     #[must_use]
     pub const fn has_any(&self) -> bool {
-        self.name.is_some() || self.desc.is_some()
+        self.name.is_some() || self.desc.is_some() || self.email.is_some()
     }
 
     fn check_name(v: &str) -> Option<CreateEventError> {
@@ -63,6 +69,24 @@ impl CreateEventValidation {
                 trimmed_len,
                 DESC_TRIMMED_MIN_LEN,
             ))
+        } else {
+            None
+        }
+    }
+
+    #[must_use]
+    pub fn check_email(v: &str) -> Option<CreateEventError> {
+        let trimmed_len = v.trim().len();
+
+        if trimmed_len > 0 {
+            let email = email_address::EmailAddress::from_str(v);
+            if email.is_err() {
+                Some(CreateEventError::InvalidEmail)
+            } else if email.ok()?.domain().contains('.') {
+                None
+            } else {
+                Some(CreateEventError::InvalidEmail)
+            }
         } else {
             None
         }

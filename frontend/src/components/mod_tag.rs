@@ -23,7 +23,7 @@ pub enum Msg {
     InputChange(InputEvent),
     KeyDown(KeyboardEvent),
     InputExit,
-    Edited(bool),
+    Edited,
 }
 
 enum State {
@@ -80,7 +80,7 @@ impl Component for ModTag {
                 self.set_pwd(ctx);
                 true
             }
-            Msg::Edited(_) => true,
+            Msg::Edited => true,
         }
     }
 
@@ -106,19 +106,15 @@ impl Component for ModTag {
             State::Confirmed(value) => Self::view_confirmed(value, ctx),
         };
 
-        html! {
-            <div class="password">
-                {content}
-            </div>
-        }
+        html! { <div class="password">{ content }</div> }
     }
 }
 
 impl ModTag {
     fn view_disabled(ctx: &Context<Self>) -> Html {
         html! {
-            <button class="button-white" onclick={ctx.link().callback(|_|Msg::EnableInput)} >
-                {"Tag new questions"}
+            <button class="button-white" onclick={ctx.link().callback(|_|Msg::EnableInput)}>
+                { "Tag new questions" }
             </button>
         }
     }
@@ -135,8 +131,9 @@ impl ModTag {
                     {value}
                     oninput={ctx.link().callback(Msg::InputChange)}
                     onkeydown={ctx.link().callback(Msg::KeyDown)}
-                    onblur={ctx.link().callback(|_|Msg::InputExit)} />
-                <img id="edit" src="/assets/pwd/pwd-edit.svg"/>
+                    onblur={ctx.link().callback(|_|Msg::InputExit)}
+                />
+                <img id="edit" src="/assets/pwd/pwd-edit.svg" />
             </>
         }
     }
@@ -145,9 +142,13 @@ impl ModTag {
         html! {
             <>
                 <div class="confirmed" onclick={ctx.link().callback(|_|Msg::Edit)}>
-                    {value.to_string()}
+                    { value.to_string() }
                 </div>
-                <img id="delete" src="/assets/pwd/pwd-remove.svg" onmousedown={ctx.link().callback(|_|Msg::Disable)} />
+                <img
+                    id="delete"
+                    src="/assets/pwd/pwd-remove.svg"
+                    onmousedown={ctx.link().callback(|_|Msg::Disable)}
+                />
             </>
         }
     }
@@ -174,9 +175,9 @@ impl ModTag {
             {
                 Err(e) => {
                     log::error!("mod_edit_event error: {e}");
-                    Msg::Edited(false)
+                    Msg::Edited
                 }
-                Ok(_) => Msg::Edited(true),
+                Ok(_) => Msg::Edited,
             }
         });
     }
@@ -206,7 +207,7 @@ impl ModTag {
             let props = ctx.props();
             Self::request_edit(
                 props.tokens.public_token.clone(),
-                props.tokens.moderator_token.clone().unwrap_or_default(),
+                props.tokens.moderator_token.clone().unwrap_throw(),
                 ctx.link(),
                 CurrentTag::Enabled(current.clone()),
             );

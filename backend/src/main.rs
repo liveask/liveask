@@ -104,15 +104,15 @@ fn base_url() -> String {
 }
 
 fn get_redis_url() -> String {
-    std::env::var(env::ENV_REDIS_URL).map_or_else(|_| "redis://localhost:6379".into(), |env| env)
+    std::env::var(env::ENV_REDIS_URL).unwrap_or_else(|_| "redis://localhost:6379".into())
 }
 
 fn posthog_key() -> String {
-    std::env::var(env::ENV_POSTHOG_KEY).map_or_else(|_| String::new(), |env| env)
+    std::env::var(env::ENV_POSTHOG_KEY).unwrap_or_else(|_| String::new())
 }
 
 fn stripe_secret() -> String {
-    std::env::var(env::ENV_STRIPE_SECRET).map_or_else(|_| String::new(), |env| env)
+    std::env::var(env::ENV_STRIPE_SECRET).unwrap_or_else(|_| String::new())
 }
 
 async fn aws_ses_client() -> Result<aws_sdk_ses::Client> {
@@ -129,8 +129,7 @@ async fn dynamo_client() -> Result<aws_sdk_dynamodb::Client> {
     let config = aws_config::defaults(BehaviorVersion::v2023_11_09());
 
     let config = if use_local_db() {
-        let url = std::env::var(env::ENV_DB_URL)
-            .map_or_else(|_| "http://localhost:8000".into(), |env| env);
+        let url = std::env::var(env::ENV_DB_URL).unwrap_or_else(|_| "http://localhost:8000".into());
 
         tracing::info!("ddb local url: {url}");
 
@@ -161,7 +160,10 @@ async fn payment() -> Result<Arc<Payment>> {
                 e
             );
 
-            bail!("premium not configured")
+            // panic if this is not working in live
+            if !is_test {
+                bail!("premium not configured")
+            }
         }
         Ok(premium_id) => {
             tracing::info!("payment auth ok: [test: {is_test}, product: {premium_id}]");
@@ -193,7 +195,7 @@ async fn setup_app(
 
     let tracking = Tracking::new(Some(posthog_key()), server_id.clone(), prod_env.to_string());
 
-    tracking.track_server_start();
+    tracking.track_server_start().await?;
 
     let redis_pool = create_pool(redis_url)?;
     ping_test_redis(&redis_pool).await?;

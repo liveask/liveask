@@ -1,13 +1,13 @@
 use chrono::{Duration, Utc};
 use events::{event_context, EventBridge};
 use gloo_timers::callback::Interval;
-use std::rc::Rc;
+use std::{ops::Not, rc::Rc};
 use wasm_bindgen::UnwrapThrowExt;
 use yew::prelude::*;
 use yew_router::prelude::*;
 use yewdux::prelude::*;
 
-use crate::{not, routes::Route, GlobalEvent, State};
+use crate::{routes::Route, GlobalEvent, State};
 
 pub enum Msg {
     State(Rc<State>),
@@ -135,39 +135,35 @@ impl Component for IconBar {
             .is_some_and(|route| route == &Route::NewEvent);
 
         html! {
-            <div class={classes!(vec!["topbar", "shrink"],not(self.connected).then_some("offline"))}>
-                {
-                    self.view_offline_bar(ctx)
-                }
-
+            <div
+                class={classes!(vec!["topbar", "shrink"],self.connected.not().then_some("offline"))}
+            >
+                { self.view_offline_bar(ctx) }
                 <div class="innerbox">
                     <div class="logo">
-                        <div class="link clickable-logo" onclick={ctx.link().callback(|_| Msg::Home)}>
-                            {logo_svg}
+                        <div
+                            class="link clickable-logo"
+                            onclick={ctx.link().callback(|_| Msg::Home)}
+                        >
+                            { logo_svg }
                         </div>
-                        {logo_text_svg}
+                        { logo_text_svg }
                     </div>
-
-                    {
-                        if self.state.event.is_some() {
+                    { if self.state.event.is_some() {
                             html! {
                                 <div class="link share"
                                     onclick={ctx.link().callback(|_| Msg::Share)}>
                                     {"Share"}
                                 </div>
                             }
-                        }else{html! {}}
-                    }
-
+                        }else{html! {}} }
                     <div class="admin" hidden={!self.state.admin}>
                         <Link<Route> to={Route::Login}>
                             <img alt="admin" src="/assets/admin.svg" />
                         </Link<Route>>
                     </div>
-
                     <div class="iconbar">
-                        {
-                            if has_event {
+                        { if has_event {
                                 self.view_ask_question(ctx)
                             }
                             else if !is_newevent_page {html!{
@@ -177,8 +173,7 @@ impl Component for IconBar {
                                 </div>
                             </Link<Route>>
                             }}
-                            else{html!()}
-                        }
+                            else{html!()} }
                     </div>
                 </div>
             </div>
@@ -197,7 +192,7 @@ impl IconBar {
         if is_open {
             return html! {
                 <div class="link createevent" onclick={ctx.link().callback(|_| Msg::Ask)}>
-                    {"Ask a question"}
+                    { "Ask a question" }
                 </div>
             };
         }
@@ -214,12 +209,15 @@ impl IconBar {
             .max(0);
 
         html! {
-            <div id="ico-offline"
+            <div
+                id="ico-offline"
                 class={classes!(is_online.then_some("hidden"))}
                 onclick={ctx.link().callback(|_| Msg::Reconnect)}
-                >
+            >
                 <img alt="offline" hidden={is_online} src="/assets/offline.svg" />
-                <div hidden={is_online} class="timeout">{format!("{seconds_till_reconnect}s")}</div>
+                <div hidden={is_online} class="timeout">
+                    { format!("{seconds_till_reconnect}s") }
+                </div>
             </div>
         }
     }

@@ -1,6 +1,5 @@
 use super::ValidationState;
 
-///
 #[derive(Debug)]
 pub enum TagError {
     MaxLength(usize, usize),

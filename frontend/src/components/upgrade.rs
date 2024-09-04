@@ -1,10 +1,12 @@
+use std::ops::Not;
+
 use events::event_context;
 use shared::EventTokens;
 use wasm_bindgen::UnwrapThrowExt;
 use yew::prelude::*;
 
 use crate::tracking;
-use crate::{components::Spinner, not, Events, GlobalEvent};
+use crate::{components::Spinner, Events, GlobalEvent};
 
 use super::payment_popup::PaymentPopup;
 
@@ -47,7 +49,7 @@ impl Component for Upgrade {
             Msg::UpgradeClicked => {
                 tracking::track_event(tracking::EVNT_PREMIUM_UPGRADE);
                 self.events.emit(GlobalEvent::PayForUpgrade);
-                false
+                false.not()
             }
         }
     }
@@ -58,13 +60,18 @@ impl Component for Upgrade {
             <div class="premium-banner">
                 <div class="rectangle">
                     <div class="toprow" onclick={ctx.link().callback(|_| Msg::ToggleExpansion)}>
-                        <span>{"Upgrade now to "}<strong>{"PREMIUM EVENT"}</strong></span>
-                        <img alt="dropdown" class={classes!("dropdown",not(collapsed).then_some("rotated"))} src="/assets/dropdown.svg" />
+                        <span>
+                            { "Upgrade now to " }
+                            <strong>{ "PREMIUM EVENT" }</strong>
+                        </span>
+                        <img
+                            alt="dropdown"
+                            class={classes!("dropdown",collapsed.not().then_some("rotated"))}
+                            src="/assets/dropdown.svg"
+                        />
                     </div>
-
-                    {self.view_expanded(ctx)}
-
-                    {Self::view_pending(ctx.props().pending)}
+                    { self.view_expanded(ctx) }
+                    { Self::view_pending(ctx.props().pending) }
                 </div>
             </div>
         }
@@ -77,9 +84,7 @@ impl Upgrade {
             return html! {};
         }
 
-        html! {
-            <Spinner />
-        }
+        html! { <Spinner /> }
     }
     fn view_expanded(&self, ctx: &Context<Self>) -> Html {
         let pending = ctx.props().pending;
@@ -98,23 +103,23 @@ impl Upgrade {
                     <li>{"Export your event data"}</li>
                     <li>{"Prescreen questions before they appear"}</li>
                     <li>{"Automatically tag questions"}</li>
+                    <li>{"Add context link to your event"}</li>
                     <li>{"Plus much more .."}</li>
                 </ul>
                 </div>
-
                 <div class="tmp-subscription">
-                    {"Are you planning to host multiple events? "}
-                    <a href="mailto:mail@live-ask.com">
-                        {"Contact us"}
-                    </a>
-                    {" for special discounts."}
+                    { "Are you planning to host multiple events? " }
+                    <a href="mailto:mail@live-ask.com">{ "Contact us" }</a>
+                    { " for special discounts." }
                 </div>
-
-                <button class="button" hidden={pending} onclick={ctx.link().callback(|_| Msg::UpgradeClicked)}>
-                    {"upgrade for \u{20AC}7"}
+                <button
+                    class="button"
+                    hidden={pending}
+                    onclick={ctx.link().callback(|_| Msg::UpgradeClicked)}
+                >
+                    { "upgrade for \u{20AC}7" }
                 </button>
-
-                <PaymentPopup tokens={self.data.tokens.clone()}/>
+                <PaymentPopup tokens={self.data.tokens.clone()} />
             </div>
         }
     }

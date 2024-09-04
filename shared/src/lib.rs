@@ -3,12 +3,14 @@ mod validation;
 
 use std::{str::FromStr, time::Duration};
 
+use chrono::{DateTime, TimeZone as _, Utc};
 use serde::{Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
 
 pub use flags::{EventFlags, EventResponseFlags};
 pub use validation::{
     add_question::{AddQuestionError, AddQuestionValidation},
+    context_validation::{ContextLabelError, ContextUrlError, ContextValidation},
     create_event::{CreateEventError, CreateEventValidation},
     pwd_validation::{PasswordError, PasswordValidation},
     tag_validation::{TagError, TagValidation},
@@ -28,6 +30,13 @@ pub struct EventTokens {
     pub public_token: String,
     #[serde(rename = "moderatorToken")]
     pub moderator_token: Option<String>,
+}
+
+impl EventTokens {
+    #[must_use]
+    pub fn is_mod(&self) -> bool {
+        self.moderator_token.as_ref().is_some_and(|t| !t.is_empty())
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug, Default, Clone, Eq, PartialEq)]
@@ -163,6 +172,24 @@ impl EventInfo {
     pub const fn has_password(&self) -> bool {
         self.flags.contains(EventFlags::PASSWORD)
     }
+
+    #[must_use]
+    pub fn timestamp_to_datetime(timestamp: i64) -> Option<DateTime<Utc>> {
+        Utc.timestamp_opt(timestamp, 0).latest()
+    }
+
+    #[must_use]
+    pub fn age_in_seconds(create_time_unix: i64) -> i64 {
+        Self::timestamp_to_datetime(create_time_unix)
+            .map(|create| Utc::now() - create)
+            .map(|age| age.num_seconds())
+            .unwrap_or_default()
+    }
+
+    #[must_use]
+    pub fn during_first_day(create_time_unix: i64) -> bool {
+        Self::age_in_seconds(create_time_unix) <= (60 * 60 * 24)
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, Default)]
@@ -259,7 +286,6 @@ pub struct ModQuestion {
     pub screened: bool,
 }
 
-///
 #[derive(Serialize_repr, Deserialize_repr, Debug, Copy, Clone, Eq, PartialEq, Default)]
 #[repr(u8)]
 pub enum States {
@@ -292,6 +318,12 @@ pub enum EventPassword {
 pub enum CurrentTag {
     Disabled,
     Enabled(String),
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq)]
+pub enum EditContextLink {
+    Disabled,
+    Enabled(ContextItem),
 }
 
 impl CurrentTag {
@@ -335,13 +367,20 @@ impl EventPassword {
     }
 }
 
+#[derive(Serialize, Deserialize, Clone, Eq, PartialEq, Debug)]
+pub struct EditMetaData {
+    pub title: String,
+    pub description: String,
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Default)]
 pub struct ModEvent {
     pub current_tag: Option<CurrentTag>,
     pub password: Option<EventPassword>,
     pub state: Option<EventState>,
-    pub description: Option<String>,
+    pub meta: Option<EditMetaData>,
     pub screening: Option<bool>,
+    pub context: Option<EditContextLink>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Copy, Clone, Eq, PartialEq, Default)]

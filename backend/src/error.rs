@@ -2,10 +2,12 @@ use axum::response::{IntoResponse, Response};
 use deadpool_redis::{CreatePoolError, PoolError};
 use redis::RedisError;
 use reqwest::StatusCode;
-use shared::{AddQuestionValidation, PasswordValidation, TagValidation};
+use shared::{
+    AddQuestionValidation, ContextValidation, EditMetaData, PasswordValidation, TagValidation,
+};
 use thiserror::Error;
 
-use crate::{eventsdb, payment::PaymentError};
+use crate::{eventsdb, payment::PaymentError, tracking};
 
 #[derive(Error, Debug)]
 pub enum InternalError {
@@ -39,6 +41,12 @@ pub enum InternalError {
     #[error("Tag Validation")]
     TagValidation(TagValidation),
 
+    #[error("Context Validation")]
+    ContextValidation(ContextValidation),
+
+    #[error("Meta Validation")]
+    MetaValidation(EditMetaData),
+
     #[error("Events DB Error: {0}")]
     EventsDB(#[from] eventsdb::Error),
 
@@ -59,6 +67,9 @@ pub enum InternalError {
 
     #[error("Uri Error: {0}")]
     Uri(#[from] axum::http::uri::InvalidUri),
+
+    #[error("Tracking Error: {0}")]
+    Tracking(#[from] tracking::TrackingError),
 }
 
 impl IntoResponse for InternalError {
@@ -107,18 +118,24 @@ impl IntoResponse for InternalError {
                 (StatusCode::BAD_REQUEST, "").into_response()
             }
 
+            Self::MetaValidation(e) => {
+                tracing::warn!("meta validation: {:?}", e);
+                (StatusCode::BAD_REQUEST, "").into_response()
+            }
             Self::AddQuestionValidation(e) => {
                 tracing::warn!("add question validation: {:?}", e);
                 (StatusCode::BAD_REQUEST, "").into_response()
             }
-
             Self::PasswordValidation(e) => {
                 tracing::warn!("password validation: {:?}", e);
                 (StatusCode::BAD_REQUEST, "").into_response()
             }
-
             Self::TagValidation(e) => {
                 tracing::warn!("tag validation: {:?}", e);
+                (StatusCode::BAD_REQUEST, "").into_response()
+            }
+            Self::ContextValidation(e) => {
+                tracing::warn!("context validation: {:?}", e);
                 (StatusCode::BAD_REQUEST, "").into_response()
             }
 
@@ -143,6 +160,7 @@ impl IntoResponse for InternalError {
             Self::Uri(e) => convert_error(e),
             Self::DeadPoolCreatePool(e) => convert_error(e),
             Self::DeadPoolRedis(e) => convert_error(e),
+            Self::Tracking(e) => convert_error(e),
         }
     }
 }

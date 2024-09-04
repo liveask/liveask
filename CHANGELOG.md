@@ -7,12 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
-## [2.7.2] - 2024-02-09
+## [2.9.0] - 2024-02-27
+
+### Changed
+* allow changing event title/desc in first 24h ([#65](https://github.com/liveask/liveask/issues/65))
+
+## [2.8.0] - 2024-02-25
+
+### Changed
+* premium: moderators can set event context link ([#67](https://github.com/liveask/liveask/issues/67))
+
+## [2.7.2] - 2024-02-15
 
 ### Changed
 * remove wordcloud, value did not justify effort and can be manuall generated from export data
 * allow promo codes for discounts
 * add mod url as stripe checkout metadata
+* allow tracking non-string data
+* text explainer if moderator has `screening` enabled
+
+### Fixes
+* empty questions list if no screened question approved yet even though i have local questions i know are in the queue
+* show my local unscreened questions if not other questions in event
 
 ## [2.7.1] - 2024-02-05
 

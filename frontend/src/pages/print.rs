@@ -1,7 +1,7 @@
 use super::LoadingState;
 use crate::{components::Qr, fetch, pages::BASE_API};
 use shared::GetEventResponse;
-use yew::{prelude::*, virtual_dom::AttrValue};
+use yew::prelude::*;
 
 #[derive(Clone, Debug, Eq, PartialEq, Properties)]
 pub struct Props {
@@ -52,11 +52,7 @@ impl Component for Print {
     fn destroy(&mut self, _ctx: &Context<Self>) {}
 
     fn view(&self, ctx: &Context<Self>) -> Html {
-        html! {
-            <div class="event">
-                {self.view_internal(ctx)}
-            </div>
-        }
+        html! { <div class="event">{ self.view_internal(ctx) }</div> }
     }
 }
 
@@ -76,21 +72,21 @@ impl Print {
             LoadingState::Loading => {
                 html! {
                     <div class="noevent">
-                        <h2>{"loading event..."}</h2>
+                        <h2>{ "loading event..." }</h2>
                     </div>
                 }
             }
             LoadingState::NotFound => {
                 html! {
                     <div class="noevent">
-                        <h2>{"event not found"}</h2>
+                        <h2>{ "event not found" }</h2>
                     </div>
                 }
             }
             LoadingState::Deleted => {
                 html! {
                     <div class="noevent">
-                        <h2>{"event deleted"}</h2>
+                        <h2>{ "event deleted" }</h2>
                     </div>
                 }
             }
@@ -109,21 +105,16 @@ impl Print {
 
                 html! {
                     <div>
-                        <div class="bg-print">
-                        </div>
-
+                        <div class="bg-print" />
                         <div class="event-block">
-
-                            <div class="event-name printable">{&e.info.data.name.clone()}</div>
-
+                            <div class="event-name printable">{ &e.info.data.name.clone() }</div>
                             <div class="event-desc printable" hidden={e.masked}>
-                                {{&e.info.data.description.clone()}}
+                                { {&e.info.data.description.clone()} }
                             </div>
                         </div>
-
                         <div class="qrbox print">
                             <div class="qr print">
-                                <Qr url={share_url} dimensions={300} />
+                                <Qr url={share_url} dimensions=300 />
                             </div>
                         </div>
                     </div>
