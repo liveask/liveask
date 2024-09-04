@@ -1007,8 +1007,8 @@ impl App {
             return Err(InternalError::MetaValidation(edit.clone()));
         }
 
-        e.data.name = edit.title.clone();
-        e.data.description = edit.description.clone();
+        e.data.name.clone_from(&edit.title);
+        e.data.description.clone_from(&edit.description);
 
         self.tracking
             .track_event_meta_change(e.tokens.public_token.clone(), edit)

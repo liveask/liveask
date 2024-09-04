@@ -1,7 +1,7 @@
-#[cfg(not(target = "windows"))]
+#[cfg(target_os = "linux")]
 use tokio::signal::unix::{signal, SignalKind};
 
-#[cfg(not(target = "windows"))]
+#[cfg(target_os = "linux")]
 pub fn create_term_signal_handler(sender: tokio::sync::oneshot::Sender<()>) {
     tokio::spawn(async move {
         match signal(SignalKind::terminate()) {
@@ -21,5 +21,6 @@ pub fn create_term_signal_handler(sender: tokio::sync::oneshot::Sender<()>) {
     });
 }
 
-#[cfg(target = "windows")]
+#[allow(clippy::needless_pass_by_value)]
+#[cfg(not(target_os = "linux"))]
 pub fn create_term_signal_handler(_sender: tokio::sync::oneshot::Sender<()>) {}
