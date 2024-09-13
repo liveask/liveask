@@ -32,6 +32,7 @@ enum Mode {
 #[derive(Clone, Debug, Eq, PartialEq, Properties)]
 pub struct Props {
     pub id: AttrValue,
+    #[prop_or_default]
     pub secret: Option<String>,
 }
 
@@ -126,7 +127,7 @@ impl Component for Event {
             .unwrap_throw()
             .subscribe(ctx.link().callback(Msg::GlobalEvent));
 
-        let dispatch = Dispatch::<State>::subscribe(Callback::noop());
+        let dispatch = Dispatch::global().subscribe(Callback::noop());
 
         Self {
             current_event_id: event_id,

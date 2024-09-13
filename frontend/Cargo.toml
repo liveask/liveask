@@ -21,9 +21,9 @@ const_format = "0.2"
 csv = "1.2"
 easy-cast = "0.5"
 events = { path = "events" }
-gloo-storage = "0.2"
-gloo-timers = "0.2"
-gloo-utils = "0.1"
+gloo-storage = "0.3"
+gloo-timers = "0.3"
+gloo-utils = "0.2"
 konst = "0.3"
 log = "0.4"
 qrcode = "0.13"
@@ -34,13 +34,13 @@ shared = { path = "../shared" }
 split-iter = "0.1"
 url = "2.5"
 urlencoding = "2.1"
-wasm-bindgen = "=0.2.91"
+wasm-bindgen = "=0.2.93"
 wasm-bindgen-futures = "0.4"
 wasm-logger = "0.2"
 wasm-sockets = "1.0"
-yew = { version = "0.20", features = ["csr"] }
-yew-router = "0.17"
-yewdux = "0.9"
+yew = { version = "0.21", features = ["csr"] }
+yew-router = "0.18"
+yewdux = "0.10"
 
 [dependencies.web-sys]
 version = "0.3"

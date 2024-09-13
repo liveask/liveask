@@ -7,6 +7,8 @@ clean:
 
 serve:
 	cargo make serve --disable-check-for-updates
+serve-prod:
+	LA_ENV="prod" cargo make serve-release --disable-check-for-updates
 
 serve-release:
 	cargo make serve-release --disable-check-for-updates

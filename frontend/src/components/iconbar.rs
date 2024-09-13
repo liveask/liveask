@@ -49,7 +49,7 @@ impl Component for IconBar {
             .subscribe(ctx.link().callback(Msg::Event));
 
         Self {
-            _dispatch: Dispatch::<State>::subscribe(ctx.link().callback(Msg::State)),
+            _dispatch: Dispatch::global().subscribe(ctx.link().callback(Msg::State)),
             state: Rc::default(),
             connected: true,
             events,
