@@ -911,18 +911,15 @@ impl Event {
             self.loading_state,
             LoadingState::Loading | LoadingState::NotFound
         ) {
-            match res {
-                Some(ev) => {
-                    if ev.is_deleted() && !ev.admin {
-                        self.loading_state = LoadingState::Deleted;
-                        return;
-                    }
-                    self.loading_state = LoadingState::Loaded;
-                }
-                None => {
-                    self.loading_state = LoadingState::NotFound;
+            if let Some(ev) = res {
+                if ev.is_deleted() && !ev.admin {
+                    self.loading_state = LoadingState::Deleted;
                     return;
                 }
+                self.loading_state = LoadingState::Loaded;
+            } else {
+                self.loading_state = LoadingState::NotFound;
+                return;
             }
         }
 
