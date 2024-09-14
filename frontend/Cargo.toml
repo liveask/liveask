@@ -64,6 +64,7 @@ features = [
     "ScrollIntoViewOptions",
     "ScrollLogicalPosition",
     "ScrollBehavior",
+    "KeyboardEvent",
 ]
 
 [dev-dependencies]
