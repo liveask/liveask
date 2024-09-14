@@ -49,7 +49,7 @@ impl Component for Upgrade {
             Msg::UpgradeClicked => {
                 tracking::track_event(tracking::EVNT_PREMIUM_UPGRADE);
                 self.events.emit(GlobalEvent::PayForUpgrade);
-                false.not()
+                false
             }
         }
     }
