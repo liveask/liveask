@@ -14,12 +14,14 @@ use wasm_bindgen::{JsCast, JsValue};
 use wasm_bindgen_futures::JsFuture;
 use web_sys::{Request, RequestCredentials, RequestInit, Response};
 
+//TODO: switch to `thiserror`
 /// Something wrong has occurred while fetching an external resource.
 #[derive(Debug)]
 pub enum FetchError {
     Generic(String),
     JsonError(JsValue),
     SerdeError(serde_json::error::Error),
+    Gloo(gloo_net::Error),
 }
 impl Display for FetchError {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
@@ -27,6 +29,7 @@ impl Display for FetchError {
             Self::JsonError(e) => Debug::fmt(e, f),
             Self::SerdeError(e) => Debug::fmt(e, f),
             Self::Generic(e) => Debug::fmt(e, f),
+            Self::Gloo(e) => Debug::fmt(e, f),
         }
     }
 }
@@ -42,22 +45,20 @@ impl From<serde_json::error::Error> for FetchError {
         Self::SerdeError(v)
     }
 }
+impl From<gloo_net::Error> for FetchError {
+    fn from(v: gloo_net::Error) -> Self {
+        Self::Gloo(v)
+    }
+}
 
 pub async fn fetch_version(base_api: &str) -> Result<String, FetchError> {
     let url = format!("{base_api}/api/version");
 
-    let mut opts = RequestInit::new();
-    opts.method("GET");
-
-    let request = Request::new_with_str_and_init(&url, &opts)?;
-
-    let window = gloo_utils::window();
-    let resp_value = JsFuture::from(window.fetch_with_request(&request)).await?;
-    let resp: Response = resp_value.dyn_into()?;
-    let resp = JsFuture::from(resp.text()?).await?;
-
-    resp.as_string()
-        .ok_or_else(|| FetchError::Generic(String::from("string error")))
+    Ok(gloo_net::http::Request::get(&url)
+        .send()
+        .await?
+        .text()
+        .await?)
 }
 
 pub async fn fetch_event(
@@ -70,20 +71,12 @@ pub async fn fetch_event(
         |secret| format!("{base_api}/api/mod/event/{id}/{secret}"),
     );
 
-    let mut opts = RequestInit::new();
-    opts.method("GET");
-    opts.credentials(RequestCredentials::Include);
-
-    let request = Request::new_with_str_and_init(&url, &opts)?;
-
-    let window = gloo_utils::window();
-    let resp_value = JsFuture::from(window.fetch_with_request(&request)).await?;
-    let resp: Response = resp_value.dyn_into()?;
-
-    let json = JsFuture::from(resp.json()?).await?;
-    let res = JsValueSerdeExt::into_serde::<GetEventResponse>(&json)?;
-
-    Ok(res)
+    Ok(gloo_net::http::Request::get(&url)
+        .credentials(RequestCredentials::Include)
+        .send()
+        .await?
+        .json::<GetEventResponse>()
+        .await?)
 }
 
 pub async fn mod_edit_event(
@@ -97,9 +90,9 @@ pub async fn mod_edit_event(
 
     let url = format!("{base_api}/api/mod/event/{id}/{secret}");
 
-    let mut opts = RequestInit::new();
-    opts.method("POST");
-    opts.body(Some(&body));
+    let opts = RequestInit::new();
+    opts.set_method("POST");
+    opts.set_body(&body);
 
     let request = Request::new_with_str_and_init(&url, &opts)?;
     request.headers().set("content-type", "application/json")?;
@@ -124,10 +117,10 @@ pub async fn event_set_password(
 
     let url = format!("{base_api}/api/event/{id}/pwd");
 
-    let mut opts = RequestInit::new();
-    opts.method("POST");
-    opts.body(Some(&body));
-    opts.credentials(RequestCredentials::Include);
+    let opts = RequestInit::new();
+    opts.set_method("POST");
+    opts.set_body(&body);
+    opts.set_credentials(RequestCredentials::Include);
 
     let request = Request::new_with_str_and_init(&url, &opts)?;
     request.headers().set("content-type", "application/json")?;
@@ -149,8 +142,8 @@ pub async fn mod_upgrade(
 ) -> Result<EventUpgrade, FetchError> {
     let url = format!("{base_api}/api/mod/event/upgrade/{id}/{secret}");
 
-    let mut opts = RequestInit::new();
-    opts.method("GET");
+    let opts = RequestInit::new();
+    opts.set_method("GET");
 
     let request = Request::new_with_str_and_init(&url, &opts)?;
 
@@ -171,8 +164,8 @@ pub async fn mod_premium_capture(
 ) -> Result<PaymentCapture, FetchError> {
     let url = format!("{base_api}/api/mod/event/capture/{id}/{order_id}");
 
-    let mut opts = RequestInit::new();
-    opts.method("GET");
+    let opts = RequestInit::new();
+    opts.set_method("GET");
 
     let request = Request::new_with_str_and_init(&url, &opts)?;
 
@@ -198,9 +191,9 @@ pub async fn like_question(
 
     let url = format!("{base_api}/api/event/editlike/{event_id}");
 
-    let mut opts = RequestInit::new();
-    opts.method("POST");
-    opts.body(Some(&body));
+    let opts = RequestInit::new();
+    opts.set_method("POST");
+    opts.set_body(&body);
 
     let request = Request::new_with_str_and_init(&url, &opts)?;
     request.headers().set("content-type", "application/json")?;
@@ -228,9 +221,9 @@ pub async fn mod_question(
     let url =
         format!("{base_api}/api/mod/event/questionmod/{event_id}/{event_secret}/{question_id}");
 
-    let mut opts = RequestInit::new();
-    opts.method("POST");
-    opts.body(Some(&body));
+    let opts = RequestInit::new();
+    opts.set_method("POST");
+    opts.set_body(&body);
 
     let request = Request::new_with_str_and_init(&url, &opts)?;
     request.headers().set("content-type", "application/json")?;
@@ -252,9 +245,9 @@ pub async fn add_question(
 
     let url = format!("{base_api}/api/event/addquestion/{event_id}");
 
-    let mut opts = RequestInit::new();
-    opts.method("POST");
-    opts.body(Some(&body));
+    let opts = RequestInit::new();
+    opts.set_method("POST");
+    opts.set_body(&body);
 
     let request = Request::new_with_str_and_init(&url, &opts)?;
     request.headers().set("content-type", "application/json")?;
@@ -288,9 +281,9 @@ pub async fn create_event(
     let body = serde_json::to_string(&body)?;
     let body = JsValue::from_str(&body);
 
-    let mut opts = RequestInit::new();
-    opts.method("POST");
-    opts.body(Some(&body));
+    let opts = RequestInit::new();
+    opts.set_method("POST");
+    opts.set_body(&body);
 
     let request = Request::new_with_str_and_init(&format!("{base_api}/api/event/add"), &opts)?;
     request.headers().set("content-type", "application/json")?;
@@ -310,10 +303,10 @@ pub async fn admin_login(base_api: &str, name: String, pwd_hash: String) -> Resu
     let body = serde_json::to_string(&body)?;
     let body = JsValue::from_str(&body);
 
-    let mut opts = RequestInit::new();
-    opts.method("POST");
-    opts.body(Some(&body));
-    opts.credentials(RequestCredentials::Include);
+    let opts = RequestInit::new();
+    opts.set_method("POST");
+    opts.set_body(&body);
+    opts.set_credentials(RequestCredentials::Include);
 
     let request = Request::new_with_str_and_init(&format!("{base_api}/api/admin/login"), &opts)?;
     request.headers().set("content-type", "application/json")?;
@@ -333,9 +326,9 @@ pub async fn admin_login(base_api: &str, name: String, pwd_hash: String) -> Resu
 pub async fn fetch_user(base_api: &str) -> Result<GetUserInfo, FetchError> {
     let url = format!("{base_api}/api/admin/user");
 
-    let mut opts = RequestInit::new();
-    opts.method("GET");
-    opts.credentials(RequestCredentials::Include);
+    let opts = RequestInit::new();
+    opts.set_method("GET");
+    opts.set_credentials(RequestCredentials::Include);
 
     let request = Request::new_with_str_and_init(&url, &opts)?;
 
@@ -352,9 +345,9 @@ pub async fn fetch_user(base_api: &str) -> Result<GetUserInfo, FetchError> {
 pub async fn admin_logout(base_api: &str) -> Result<(), FetchError> {
     let url = format!("{base_api}/api/admin/logout");
 
-    let mut opts = RequestInit::new();
-    opts.method("GET");
-    opts.credentials(RequestCredentials::Include);
+    let opts = RequestInit::new();
+    opts.set_method("GET");
+    opts.set_credentials(RequestCredentials::Include);
 
     let request = Request::new_with_str_and_init(&url, &opts)?;
 
@@ -377,8 +370,8 @@ pub async fn delete_event(
     let url = format!("{base_api}/api/mod/event/delete/{event_id}/{secret}");
 
     let opts = {
-        let mut opts = RequestInit::new();
-        opts.method("GET");
+        let opts = RequestInit::new();
+        opts.set_method("GET");
         opts
     };
 

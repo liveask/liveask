@@ -116,7 +116,7 @@ fn stripe_secret() -> String {
 }
 
 async fn aws_ses_client() -> Result<aws_sdk_ses::Client> {
-    let config = aws_config::defaults(BehaviorVersion::v2023_11_09());
+    let config = aws_config::defaults(BehaviorVersion::v2024_03_28());
 
     let config = config.load().await;
 
@@ -126,7 +126,7 @@ async fn aws_ses_client() -> Result<aws_sdk_ses::Client> {
 async fn dynamo_client() -> Result<aws_sdk_dynamodb::Client> {
     use aws_sdk_dynamodb::Client;
 
-    let config = aws_config::defaults(BehaviorVersion::v2023_11_09());
+    let config = aws_config::defaults(BehaviorVersion::v2024_03_28());
 
     let config = if use_local_db() {
         let url = std::env::var(env::ENV_DB_URL).unwrap_or_else(|_| "http://localhost:8000".into());

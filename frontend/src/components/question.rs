@@ -251,11 +251,10 @@ impl Component for Question {
         }
 
         if first_render && self.data.is_new() {
-            elem.scroll_into_view_with_scroll_into_view_options(
-                ScrollIntoViewOptions::new()
-                    .block(ScrollLogicalPosition::Center)
-                    .behavior(ScrollBehavior::Smooth),
-            );
+            let options = ScrollIntoViewOptions::new();
+            options.set_block(ScrollLogicalPosition::Center);
+            options.set_behavior(ScrollBehavior::Smooth);
+            elem.scroll_into_view_with_scroll_into_view_options(&options);
         }
     }
 

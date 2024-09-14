@@ -1,4 +1,4 @@
-use chrono::{DateTime, Duration, NaiveDateTime, Utc};
+use chrono::{DateTime, Duration, Utc};
 use const_format::formatcp;
 use events::{event_context, EventBridge};
 use serde::Deserialize;
@@ -168,10 +168,10 @@ impl Component for Event {
             }
             Msg::CopyLink => {
                 self.copied_to_clipboard = true;
-                gloo_utils::window()
+                let _ = gloo_utils::window()
                     .navigator()
                     .clipboard()
-                    .map(|c| c.write_text(&self.moderator_url()));
+                    .write_text(&self.moderator_url());
                 true
             }
             Msg::Socket(msg) => self.handle_socket(msg, ctx),
@@ -441,7 +441,9 @@ impl Event {
             .unwrap_throw();
         for q in questions {
             let create_time = DateTime::<Utc>::from_naive_utc_and_offset(
-                NaiveDateTime::from_timestamp_opt(q.create_time_unix, 0).unwrap_throw(),
+                DateTime::from_timestamp(q.create_time_unix, 0)
+                    .unwrap_throw()
+                    .naive_utc(),
                 Utc,
             );
             let state = question_state(&q).to_string();
@@ -861,7 +863,9 @@ impl Event {
         let event_duration = Duration::days(FREE_EVENT_DURATION_DAYS);
 
         let create_time = DateTime::<Utc>::from_naive_utc_and_offset(
-            NaiveDateTime::from_timestamp_opt(e.create_time_unix, 0).unwrap_throw(),
+            DateTime::from_timestamp(e.create_time_unix, 0)
+                .unwrap_throw()
+                .naive_utc(),
             Utc,
         );
         let end_time = create_time + event_duration;
