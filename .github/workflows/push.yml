@@ -98,26 +98,26 @@ jobs:
         docker push liveask/server:beta
 
     # comment when disabling beta (1/3)
-    # - uses: ./.github/actions/deploy_ecs
-    #   with:
-    #     cluster: la-ecs-cluster-beta
-    #     aws_key_id: ${{ secrets.AWS_KEY_ID }}
-    #     aws_key_secret: ${{ secrets.AWS_KEY_SECRET }}
-    #     aws_region: ${{ secrets.AWS_DEFAULT_REGION }}
+    - uses: ./.github/actions/deploy_ecs
+      with:
+        cluster: la-ecs-cluster-beta
+        aws_key_id: ${{ secrets.AWS_KEY_ID }}
+        aws_key_secret: ${{ secrets.AWS_KEY_SECRET }}
+        aws_region: ${{ secrets.AWS_DEFAULT_REGION }}
 
-    # - name: Set short git SHA
-    #   id: vars
-    #   run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
-    # - name: Create Sentry release
-    #   uses: getsentry/action-release@v1
-    #   env:
-    #     SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
-    #     SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
-    #     SENTRY_PROJECT: la-server
-    #   with:
-    #     environment: beta
-    #     set_commits: skip
-    #     version: ${{ steps.vars.outputs.sha_short }}
+    - name: Set short git SHA
+      id: vars
+      run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+    - name: Create Sentry release
+      uses: getsentry/action-release@v1
+      env:
+        SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+        SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+        SENTRY_PROJECT: la-server
+      with:
+        environment: beta
+        set_commits: skip
+        version: ${{ steps.vars.outputs.sha_short }}
 
   backend-e2e:
     runs-on: ubuntu-latest
@@ -133,10 +133,10 @@ jobs:
         cd backend-e2e
         make e2e-test-remote
     # comment when disabling beta (2/3)
-    # - name: Test Beta
-    #   run: |
-    #     cd backend-e2e
-    #     make e2e-test-beta
+    - name: Test Beta
+      run: |
+        cd backend-e2e
+        make e2e-test-beta
 
 # FRONTEND
 
@@ -171,17 +171,17 @@ jobs:
         cargo make build-and-check
 
     # comment when disabling beta (3/3)
-    # - name: Deploy
-    #   env:
-    #     AWS_ACCESS_KEY_ID: ${{ secrets.AWS_KEY_ID }}
-    #     AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_KEY_SECRET }}
-    #     AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
-    #     AWS_CLOUDFRONT_DISTRO: 'EJFNBPSNYQSP9'
-    #   run: |
-    #     cd frontend/dist
-    #     aws s3 sync . s3://beta.live-ask.com --acl public-read --no-progress --delete --cache-control "public, max-age=86400" --exclude "index.html"
-    #     aws s3 cp ./index.html s3://beta.live-ask.com --acl public-read --no-progress --cache-control "public, max-age=120"
-    #     aws cloudfront create-invalidation --distribution-id ${AWS_CLOUDFRONT_DISTRO} --paths "/*"
+    - name: Deploy
+      env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_KEY_SECRET }}
+        AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
+        AWS_CLOUDFRONT_DISTRO: 'EJFNBPSNYQSP9'
+      run: |
+        cd frontend/dist
+        aws s3 sync . s3://beta.live-ask.com --acl public-read --no-progress --delete --cache-control "public, max-age=86400" --exclude "index.html"
+        aws s3 cp ./index.html s3://beta.live-ask.com --acl public-read --no-progress --cache-control "public, max-age=120"
+        aws cloudfront create-invalidation --distribution-id ${AWS_CLOUDFRONT_DISTRO} --paths "/*"
 
     - name: Set short SHA
       id: vars
