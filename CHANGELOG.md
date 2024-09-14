@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Added
+* simple email validation ([#69](https://github.com/liveask/liveask/issues/69))
+
 ### Changed
 * upgrade to yew `0.21`
 
