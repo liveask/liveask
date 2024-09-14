@@ -1,3 +1,6 @@
+default:
+    just --list
+    
 run-server:
     cd backend && just run
 

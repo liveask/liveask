@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Fixes
+* exceptions calling across wasm-bindgen bridge do not break the entire FE anymore ([#74](https://github.com/liveask/liveask/issues/74))
+
 ## [2.9.0] - 2024-02-27
 
 ### Changed
