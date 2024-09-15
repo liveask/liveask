@@ -67,9 +67,10 @@ pub struct QuestionItem {
     pub tag: Option<TagId>,
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, Eq, PartialEq)]
-pub struct EventUpgrade {
-    pub url: String,
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq)]
+pub enum EventUpgradeResponse {
+    Redirect { url: String },
+    AdminUpgrade,
 }
 
 #[derive(Serialize, Deserialize, Default, Debug, Clone, Eq, PartialEq)]
