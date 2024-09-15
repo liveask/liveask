@@ -16,7 +16,7 @@ pub enum Input {
 
 pub enum Msg {
     ConfirmEdit,
-    ServerResponed(bool),
+    ServerResponed,
     Close,
     InputChange(Input, InputEvent),
 }
@@ -76,7 +76,7 @@ impl Component for MetaPopup {
                 self.send_pending = true;
 
                 let tokens = ctx.props().tokens.clone();
-                let meta = self.meta.clone();
+                let meta: EditMetaData = self.meta.clone();
 
                 ctx.link().send_future(async move {
                     fetch::mod_edit_event(
@@ -90,8 +90,11 @@ impl Component for MetaPopup {
                     )
                     .await
                     .map_or_else(
-                        |_| Msg::ServerResponed(false),
-                        |_| Msg::ServerResponed(true),
+                        |e| {
+                            log::error!("mod_edit_event error: {e}");
+                            Msg::ServerResponed
+                        },
+                        |_| Msg::ServerResponed,
                     )
                 });
                 true
@@ -115,7 +118,7 @@ impl Component for MetaPopup {
                 };
                 true
             }
-            Msg::ServerResponed(_) => {
+            Msg::ServerResponed => {
                 self.send_pending = false;
                 ctx.props().on_close.emit(());
                 true

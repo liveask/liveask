@@ -1,16 +1,18 @@
-use wasm_bindgen::prelude::wasm_bindgen;
+use wasm_bindgen::{prelude::wasm_bindgen, JsValue};
 
 use crate::environment::{la_env, LiveAskEnv};
 
 #[wasm_bindgen]
 extern "C" {
-    #[wasm_bindgen(js_namespace = window)]
-    fn track_event_js(fathom: &str);
+    #[wasm_bindgen(js_namespace = window,catch)]
+    fn track_event_js(fathom: &str) -> Result<(), JsValue>;
 }
 
 pub fn track_event(fathom_idx: usize) {
     if !matches!(la_env(Some(env!("LA_ENV"))), LiveAskEnv::Local) {
-        track_event_js(EVNT_FATHOM_IDS[fathom_idx]);
+        if let Err(e) = track_event_js(EVNT_FATHOM_IDS[fathom_idx]) {
+            log::error!("track_event_js error: {:?}", e);
+        }
     }
 }
 

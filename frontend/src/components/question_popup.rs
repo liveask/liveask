@@ -8,7 +8,7 @@ use crate::{
 use events::{event_context, EventBridge};
 use shared::{AddQuestionError, AddQuestionValidation, ValidationState};
 use wasm_bindgen::UnwrapThrowExt;
-use web_sys::HtmlTextAreaElement;
+use web_sys::{HtmlTextAreaElement, KeyboardEvent};
 use yew::prelude::*;
 
 pub enum Msg {
@@ -17,6 +17,7 @@ pub enum Msg {
     QuestionCreated(Option<i64>),
     Close,
     InputChanged(InputEvent),
+    KeyEvent(KeyboardEvent),
 }
 
 pub struct QuestionPopup {
@@ -98,6 +99,12 @@ impl Component for QuestionPopup {
                 self.errors.check(&self.text);
                 true
             }
+            Msg::KeyEvent(e) => {
+                if &e.key() == "Enter" && e.meta_key() && !self.errors.has_any() {
+                    ctx.link().callback(|()| Msg::Send).emit(());
+                }
+                true
+            }
         }
     }
 
@@ -106,6 +113,7 @@ impl Component for QuestionPopup {
         if self.show {
             let on_close = ctx.link().callback(|()| Msg::Close);
             let on_click_ask = ctx.link().callback(|_| Msg::Send);
+            let on_key = ctx.link().callback(Msg::KeyEvent);
 
             let tag = ctx.props().tag.as_ref().map_or_else(
                 || html! {},
@@ -122,7 +130,7 @@ impl Component for QuestionPopup {
             html! {
                 <Popup class="share-popup" {on_close}>
                     <div class="newquestion">
-                        <div class="add-question">
+                        <div class="add-question" onkeydown={on_key}>
                             <TextArea
                                 id="questiontext"
                                 name="questiontext"

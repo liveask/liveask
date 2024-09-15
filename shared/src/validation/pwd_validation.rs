@@ -1,6 +1,5 @@
 use super::ValidationState;
 
-///
 #[derive(Debug)]
 pub enum PasswordError {
     MaxLength(usize, usize),

@@ -1,4 +1,4 @@
-use chrono::{DateTime, Duration, NaiveDateTime, Utc};
+use chrono::{DateTime, Duration, Utc};
 use const_format::formatcp;
 use events::{event_context, EventBridge};
 use serde::Deserialize;
@@ -32,6 +32,7 @@ enum Mode {
 #[derive(Clone, Debug, Eq, PartialEq, Properties)]
 pub struct Props {
     pub id: AttrValue,
+    #[prop_or_default]
     pub secret: Option<String>,
 }
 
@@ -126,7 +127,7 @@ impl Component for Event {
             .unwrap_throw()
             .subscribe(ctx.link().callback(Msg::GlobalEvent));
 
-        let dispatch = Dispatch::<State>::subscribe(Callback::noop());
+        let dispatch = Dispatch::global().subscribe(Callback::noop());
 
         Self {
             current_event_id: event_id,
@@ -167,10 +168,10 @@ impl Component for Event {
             }
             Msg::CopyLink => {
                 self.copied_to_clipboard = true;
-                gloo_utils::window()
+                let _ = gloo_utils::window()
                     .navigator()
                     .clipboard()
-                    .map(|c| c.write_text(&self.moderator_url()));
+                    .write_text(&self.moderator_url());
                 true
             }
             Msg::Socket(msg) => self.handle_socket(msg, ctx),
@@ -440,7 +441,9 @@ impl Event {
             .unwrap_throw();
         for q in questions {
             let create_time = DateTime::<Utc>::from_naive_utc_and_offset(
-                NaiveDateTime::from_timestamp_opt(q.create_time_unix, 0).unwrap_throw(),
+                DateTime::from_timestamp(q.create_time_unix, 0)
+                    .unwrap_throw()
+                    .naive_utc(),
                 Utc,
             );
             let state = question_state(&q).to_string();
@@ -860,7 +863,9 @@ impl Event {
         let event_duration = Duration::days(FREE_EVENT_DURATION_DAYS);
 
         let create_time = DateTime::<Utc>::from_naive_utc_and_offset(
-            NaiveDateTime::from_timestamp_opt(e.create_time_unix, 0).unwrap_throw(),
+            DateTime::from_timestamp(e.create_time_unix, 0)
+                .unwrap_throw()
+                .naive_utc(),
             Utc,
         );
         let end_time = create_time + event_duration;
@@ -910,18 +915,15 @@ impl Event {
             self.loading_state,
             LoadingState::Loading | LoadingState::NotFound
         ) {
-            match res {
-                Some(ev) => {
-                    if ev.is_deleted() && !ev.admin {
-                        self.loading_state = LoadingState::Deleted;
-                        return;
-                    }
-                    self.loading_state = LoadingState::Loaded;
-                }
-                None => {
-                    self.loading_state = LoadingState::NotFound;
+            if let Some(ev) = res {
+                if ev.is_deleted() && !ev.admin {
+                    self.loading_state = LoadingState::Deleted;
                     return;
                 }
+                self.loading_state = LoadingState::Loaded;
+            } else {
+                self.loading_state = LoadingState::NotFound;
+                return;
             }
         }
 
@@ -938,7 +940,7 @@ impl Event {
         }
     }
 
-    fn on_question_click(&mut self, kind: &QuestionClickType, id: i64, ctx: &Context<Self>) {
+    fn on_question_click(&self, kind: &QuestionClickType, id: i64, ctx: &Context<Self>) {
         match kind {
             QuestionClickType::Like => {
                 let liked = LocalCache::is_liked(&self.current_event_id, id);

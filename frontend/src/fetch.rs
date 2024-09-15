@@ -1,25 +1,26 @@
 #![allow(clippy::future_not_send)]
 
-use gloo_utils::format::JsValueSerdeExt;
+use gloo_net::http::Request;
 use shared::{
     AddEvent, AddQuestion, EditLike, EventData, EventInfo, EventPasswordRequest,
-    EventPasswordResponse, EventUpgrade, GetEventResponse, GetUserInfo, ModEvent, ModQuestion,
-    PaymentCapture, QuestionItem, UserLogin,
+    EventPasswordResponse, EventUpgradeResponse, GetEventResponse, GetUserInfo, ModEvent,
+    ModQuestion, PaymentCapture, QuestionItem, UserLogin,
 };
 use std::{
     error::Error,
     fmt::{self, Debug, Display, Formatter},
 };
-use wasm_bindgen::{JsCast, JsValue};
-use wasm_bindgen_futures::JsFuture;
-use web_sys::{Request, RequestCredentials, RequestInit, Response};
+use wasm_bindgen::JsValue;
+use web_sys::RequestCredentials;
 
+//TODO: switch to `thiserror`
 /// Something wrong has occurred while fetching an external resource.
 #[derive(Debug)]
 pub enum FetchError {
     Generic(String),
     JsonError(JsValue),
     SerdeError(serde_json::error::Error),
+    Gloo(gloo_net::Error),
 }
 impl Display for FetchError {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
@@ -27,6 +28,7 @@ impl Display for FetchError {
             Self::JsonError(e) => Debug::fmt(e, f),
             Self::SerdeError(e) => Debug::fmt(e, f),
             Self::Generic(e) => Debug::fmt(e, f),
+            Self::Gloo(e) => Debug::fmt(e, f),
         }
     }
 }
@@ -42,22 +44,20 @@ impl From<serde_json::error::Error> for FetchError {
         Self::SerdeError(v)
     }
 }
+impl From<gloo_net::Error> for FetchError {
+    fn from(v: gloo_net::Error) -> Self {
+        Self::Gloo(v)
+    }
+}
+
+fn set_content_type_json(request: &Request) {
+    request.headers().set("content-type", "application/json");
+}
 
 pub async fn fetch_version(base_api: &str) -> Result<String, FetchError> {
     let url = format!("{base_api}/api/version");
 
-    let mut opts = RequestInit::new();
-    opts.method("GET");
-
-    let request = Request::new_with_str_and_init(&url, &opts)?;
-
-    let window = gloo_utils::window();
-    let resp_value = JsFuture::from(window.fetch_with_request(&request)).await?;
-    let resp: Response = resp_value.dyn_into()?;
-    let resp = JsFuture::from(resp.text()?).await?;
-
-    resp.as_string()
-        .ok_or_else(|| FetchError::Generic(String::from("string error")))
+    Ok(Request::get(&url).send().await?.text().await?)
 }
 
 pub async fn fetch_event(
@@ -70,20 +70,12 @@ pub async fn fetch_event(
         |secret| format!("{base_api}/api/mod/event/{id}/{secret}"),
     );
 
-    let mut opts = RequestInit::new();
-    opts.method("GET");
-    opts.credentials(RequestCredentials::Include);
-
-    let request = Request::new_with_str_and_init(&url, &opts)?;
-
-    let window = gloo_utils::window();
-    let resp_value = JsFuture::from(window.fetch_with_request(&request)).await?;
-    let resp: Response = resp_value.dyn_into()?;
-
-    let json = JsFuture::from(resp.json()?).await?;
-    let res = JsValueSerdeExt::into_serde::<GetEventResponse>(&json)?;
-
-    Ok(res)
+    Ok(Request::get(&url)
+        .credentials(RequestCredentials::Include)
+        .send()
+        .await?
+        .json()
+        .await?)
 }
 
 pub async fn mod_edit_event(
@@ -92,26 +84,13 @@ pub async fn mod_edit_event(
     secret: String,
     change: ModEvent,
 ) -> Result<EventInfo, FetchError> {
-    let body = serde_json::to_string(&change)?;
-    let body = JsValue::from_str(&body);
-
     let url = format!("{base_api}/api/mod/event/{id}/{secret}");
 
-    let mut opts = RequestInit::new();
-    opts.method("POST");
-    opts.body(Some(&body));
+    let body = JsValue::from_str(&serde_json::to_string(&change)?);
 
-    let request = Request::new_with_str_and_init(&url, &opts)?;
-    request.headers().set("content-type", "application/json")?;
-
-    let window = gloo_utils::window();
-    let resp_value = JsFuture::from(window.fetch_with_request(&request)).await?;
-    let resp: Response = resp_value.dyn_into()?;
-
-    let json = JsFuture::from(resp.json()?).await?;
-    let res = JsValueSerdeExt::into_serde::<EventInfo>(&json)?;
-
-    Ok(res)
+    let request = Request::post(&url).body(body)?;
+    set_content_type_json(&request);
+    Ok(request.send().await?.json().await?)
 }
 
 pub async fn event_set_password(
@@ -119,49 +98,31 @@ pub async fn event_set_password(
     id: String,
     pwd: String,
 ) -> Result<bool, FetchError> {
-    let body = serde_json::to_string(&EventPasswordRequest { pwd })?;
-    let body = JsValue::from_str(&body);
-
     let url = format!("{base_api}/api/event/{id}/pwd");
 
-    let mut opts = RequestInit::new();
-    opts.method("POST");
-    opts.body(Some(&body));
-    opts.credentials(RequestCredentials::Include);
+    let body = JsValue::from_str(&serde_json::to_string(&EventPasswordRequest { pwd })?);
 
-    let request = Request::new_with_str_and_init(&url, &opts)?;
-    request.headers().set("content-type", "application/json")?;
-
-    let window = gloo_utils::window();
-    let resp_value = JsFuture::from(window.fetch_with_request(&request)).await?;
-    let resp: Response = resp_value.dyn_into()?;
-
-    let json = JsFuture::from(resp.json()?).await?;
-    let res = JsValueSerdeExt::into_serde::<EventPasswordResponse>(&json)?;
-
-    Ok(res.ok)
+    let request = Request::post(&url)
+        .credentials(RequestCredentials::Include)
+        .body(body)?;
+    set_content_type_json(&request);
+    let response: EventPasswordResponse = request.send().await?.json().await?;
+    Ok(response.ok)
 }
 
 pub async fn mod_upgrade(
     base_api: &str,
     id: String,
     secret: String,
-) -> Result<EventUpgrade, FetchError> {
+) -> Result<EventUpgradeResponse, FetchError> {
     let url = format!("{base_api}/api/mod/event/upgrade/{id}/{secret}");
 
-    let mut opts = RequestInit::new();
-    opts.method("GET");
-
-    let request = Request::new_with_str_and_init(&url, &opts)?;
-
-    let window = gloo_utils::window();
-    let resp_value = JsFuture::from(window.fetch_with_request(&request)).await?;
-    let resp: Response = resp_value.dyn_into()?;
-
-    let json = JsFuture::from(resp.json()?).await?;
-    let res = JsValueSerdeExt::into_serde::<EventUpgrade>(&json)?;
-
-    Ok(res)
+    Ok(Request::get(&url)
+        .credentials(RequestCredentials::Include)
+        .send()
+        .await?
+        .json()
+        .await?)
 }
 
 pub async fn mod_premium_capture(
@@ -171,19 +132,7 @@ pub async fn mod_premium_capture(
 ) -> Result<PaymentCapture, FetchError> {
     let url = format!("{base_api}/api/mod/event/capture/{id}/{order_id}");
 
-    let mut opts = RequestInit::new();
-    opts.method("GET");
-
-    let request = Request::new_with_str_and_init(&url, &opts)?;
-
-    let window = gloo_utils::window();
-    let resp_value = JsFuture::from(window.fetch_with_request(&request)).await?;
-    let resp: Response = resp_value.dyn_into()?;
-
-    let json = JsFuture::from(resp.json()?).await?;
-    let res = JsValueSerdeExt::into_serde::<PaymentCapture>(&json)?;
-
-    Ok(res)
+    Ok(Request::get(&url).send().await?.json().await?)
 }
 
 pub async fn like_question(
@@ -192,27 +141,13 @@ pub async fn like_question(
     question_id: i64,
     like: bool,
 ) -> Result<QuestionItem, FetchError> {
-    let body = EditLike { question_id, like };
-    let body = serde_json::to_string(&body)?;
-    let body = JsValue::from_str(&body);
-
     let url = format!("{base_api}/api/event/editlike/{event_id}");
 
-    let mut opts = RequestInit::new();
-    opts.method("POST");
-    opts.body(Some(&body));
+    let body = JsValue::from_str(&serde_json::to_string(&EditLike { question_id, like })?);
 
-    let request = Request::new_with_str_and_init(&url, &opts)?;
-    request.headers().set("content-type", "application/json")?;
-
-    let window = gloo_utils::window();
-    let resp_value = JsFuture::from(window.fetch_with_request(&request)).await?;
-    let resp: Response = resp_value.dyn_into()?;
-
-    let json = JsFuture::from(resp.json()?).await?;
-    let res = JsValueSerdeExt::into_serde::<QuestionItem>(&json)?;
-
-    Ok(res)
+    let request = Request::post(&url).body(body)?;
+    set_content_type_json(&request);
+    Ok(request.send().await?.json().await?)
 }
 
 pub async fn mod_question(
@@ -222,22 +157,14 @@ pub async fn mod_question(
     question_id: i64,
     modify: ModQuestion,
 ) -> Result<(), FetchError> {
-    let body = serde_json::to_string(&modify)?;
-    let body = JsValue::from_str(&body);
-
     let url =
         format!("{base_api}/api/mod/event/questionmod/{event_id}/{event_secret}/{question_id}");
 
-    let mut opts = RequestInit::new();
-    opts.method("POST");
-    opts.body(Some(&body));
+    let body = JsValue::from_str(&serde_json::to_string(&modify)?);
 
-    let request = Request::new_with_str_and_init(&url, &opts)?;
-    request.headers().set("content-type", "application/json")?;
-
-    let window = gloo_utils::window();
-    let _resp_value = JsFuture::from(window.fetch_with_request(&request)).await?;
-
+    let request = Request::post(&url).body(body)?;
+    set_content_type_json(&request);
+    let _ = request.send().await?;
     Ok(())
 }
 
@@ -246,27 +173,13 @@ pub async fn add_question(
     event_id: String,
     text: String,
 ) -> Result<QuestionItem, FetchError> {
-    let body = AddQuestion { text };
-    let body = serde_json::to_string(&body)?;
-    let body = JsValue::from_str(&body);
-
     let url = format!("{base_api}/api/event/addquestion/{event_id}");
 
-    let mut opts = RequestInit::new();
-    opts.method("POST");
-    opts.body(Some(&body));
+    let body = JsValue::from_str(&serde_json::to_string(&AddQuestion { text })?);
 
-    let request = Request::new_with_str_and_init(&url, &opts)?;
-    request.headers().set("content-type", "application/json")?;
-
-    let window = gloo_utils::window();
-    let resp_value = JsFuture::from(window.fetch_with_request(&request)).await?;
-    let resp: Response = resp_value.dyn_into()?;
-
-    let json = JsFuture::from(resp.json()?).await?;
-    let res = JsValueSerdeExt::into_serde::<QuestionItem>(&json)?;
-
-    Ok(res)
+    let request = Request::post(&url).body(body)?;
+    set_content_type_json(&request);
+    Ok(request.send().await?.json().await?)
 }
 
 pub async fn create_event(
@@ -275,7 +188,9 @@ pub async fn create_event(
     desc: String,
     email: Option<String>,
 ) -> Result<EventInfo, FetchError> {
-    let body = AddEvent {
+    let url = format!("{base_api}/api/event/add");
+
+    let body = JsValue::from_str(&serde_json::to_string(&AddEvent {
         data: EventData {
             name,
             description: desc,
@@ -284,44 +199,22 @@ pub async fn create_event(
         },
         test: false,
         moderator_email: email,
-    };
-    let body = serde_json::to_string(&body)?;
-    let body = JsValue::from_str(&body);
+    })?);
 
-    let mut opts = RequestInit::new();
-    opts.method("POST");
-    opts.body(Some(&body));
-
-    let request = Request::new_with_str_and_init(&format!("{base_api}/api/event/add"), &opts)?;
-    request.headers().set("content-type", "application/json")?;
-
-    let window = gloo_utils::window();
-    let resp_value = JsFuture::from(window.fetch_with_request(&request)).await?;
-    let resp: Response = resp_value.dyn_into()?;
-
-    let json = JsFuture::from(resp.json()?).await?;
-    let res = JsValueSerdeExt::into_serde::<EventInfo>(&json)?;
-
-    Ok(res)
+    let request = Request::post(&url).body(body)?;
+    set_content_type_json(&request);
+    Ok(request.send().await?.json().await?)
 }
 
 pub async fn admin_login(base_api: &str, name: String, pwd_hash: String) -> Result<(), FetchError> {
-    let body = UserLogin { name, pwd_hash };
-    let body = serde_json::to_string(&body)?;
-    let body = JsValue::from_str(&body);
+    let url = format!("{base_api}/api/admin/login");
+    let body = JsValue::from_str(&serde_json::to_string(&UserLogin { name, pwd_hash })?);
 
-    let mut opts = RequestInit::new();
-    opts.method("POST");
-    opts.body(Some(&body));
-    opts.credentials(RequestCredentials::Include);
-
-    let request = Request::new_with_str_and_init(&format!("{base_api}/api/admin/login"), &opts)?;
-    request.headers().set("content-type", "application/json")?;
-
-    let window = gloo_utils::window();
-
-    let resp = JsFuture::from(window.fetch_with_request(&request)).await?;
-    let resp: Response = resp.dyn_into()?;
+    let request = Request::post(&url)
+        .credentials(RequestCredentials::Include)
+        .body(body)?;
+    set_content_type_json(&request);
+    let resp = request.send().await?;
 
     if resp.ok() {
         Ok(())
@@ -333,34 +226,21 @@ pub async fn admin_login(base_api: &str, name: String, pwd_hash: String) -> Resu
 pub async fn fetch_user(base_api: &str) -> Result<GetUserInfo, FetchError> {
     let url = format!("{base_api}/api/admin/user");
 
-    let mut opts = RequestInit::new();
-    opts.method("GET");
-    opts.credentials(RequestCredentials::Include);
-
-    let request = Request::new_with_str_and_init(&url, &opts)?;
-
-    let window = gloo_utils::window();
-    let resp_value = JsFuture::from(window.fetch_with_request(&request)).await?;
-    let resp: Response = resp_value.dyn_into()?;
-
-    let json = JsFuture::from(resp.json()?).await?;
-    let res = JsValueSerdeExt::into_serde::<GetUserInfo>(&json)?;
-
-    Ok(res)
+    Ok(Request::get(&url)
+        .credentials(RequestCredentials::Include)
+        .send()
+        .await?
+        .json()
+        .await?)
 }
 
 pub async fn admin_logout(base_api: &str) -> Result<(), FetchError> {
     let url = format!("{base_api}/api/admin/logout");
 
-    let mut opts = RequestInit::new();
-    opts.method("GET");
-    opts.credentials(RequestCredentials::Include);
-
-    let request = Request::new_with_str_and_init(&url, &opts)?;
-
-    let window = gloo_utils::window();
-    let resp = JsFuture::from(window.fetch_with_request(&request)).await?;
-    let resp: Response = resp.dyn_into()?;
+    let resp = Request::get(&url)
+        .credentials(RequestCredentials::Include)
+        .send()
+        .await?;
 
     if resp.ok() {
         Ok(())
@@ -376,17 +256,11 @@ pub async fn delete_event(
 ) -> Result<(), FetchError> {
     let url = format!("{base_api}/api/mod/event/delete/{event_id}/{secret}");
 
-    let opts = {
-        let mut opts = RequestInit::new();
-        opts.method("GET");
-        opts
-    };
+    let resp = Request::get(&url).send().await?;
 
-    let request = Request::new_with_str_and_init(&url, &opts)?;
-
-    let window = gloo_utils::window();
-    let req = window.fetch_with_request(&request);
-    let _resp_value = JsFuture::from(req).await?;
-
-    Ok(())
+    if resp.ok() {
+        Ok(())
+    } else {
+        Err(FetchError::Generic("request failed".into()))
+    }
 }

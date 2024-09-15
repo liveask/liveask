@@ -1,6 +1,5 @@
 use super::ValidationState;
 
-///
 #[derive(Debug)]
 pub enum AddQuestionError {
     MaxLength(usize, usize),

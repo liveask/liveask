@@ -19,6 +19,7 @@ use super::{event_key, Error};
 pub enum PremiumOrder {
     PaypalOrderId(String),
     StripeSessionId(String),
+    Admin(String),
 }
 
 /// old db entries had a untyped payment receipt that was only used in the paypal implmentation.

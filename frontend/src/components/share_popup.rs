@@ -75,10 +75,10 @@ impl Component for SharePopup {
             }
             Msg::Copy => {
                 self.copied_to_clipboard = true;
-                gloo_utils::window()
+                let _ = gloo_utils::window()
                     .navigator()
                     .clipboard()
-                    .map(|c| c.write_text(&self.url));
+                    .write_text(&self.url);
                 true
             }
             Msg::Share(share) => {

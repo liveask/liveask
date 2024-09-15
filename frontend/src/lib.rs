@@ -15,7 +15,7 @@ use global_events::GlobalEvent;
 use pages::AdminLogin;
 use routes::Route;
 use shared::GetEventResponse;
-use std::rc::Rc;
+use std::{ops::Not, rc::Rc};
 use yew::prelude::*;
 use yew_router::prelude::*;
 use yewdux::{prelude::Dispatch, store::Store};
@@ -25,7 +25,7 @@ use crate::{
     pages::{Event, Home, NewEvent, Print, Privacy},
 };
 
-pub const VERSION_STR: &str = "2.9.0";
+pub const VERSION_STR: &str = "2.9.1";
 pub const GIT_BRANCH: &str = env!("VERGEN_GIT_BRANCH");
 
 #[derive(Default, Clone, Eq, PartialEq, Store)]
@@ -84,7 +84,7 @@ impl Component for AppRoot {
         let events = context.subscribe(ctx.link().callback(Msg::GlobalEvent));
 
         Self {
-            _dispatch: Dispatch::<State>::subscribe(ctx.link().callback(Msg::State)),
+            _dispatch: Dispatch::global().subscribe(ctx.link().callback(Msg::State)),
             state: Rc::default(),
             connected: true,
             events,
@@ -112,7 +112,7 @@ impl Component for AppRoot {
             <BrowserRouter>
                 <div class="app-host">
                     <ContextProvider<Events<GlobalEvent>> context={self.events.clone()}>
-                        <div class={classes!("main",not(self.connected).then_some("offline"))}>
+                        <div class={classes!("main",self.connected.not().then_some("offline"))}>
                             <IconBar />
                             <div class="router">
                                 <Switch<Route> render={switch} />
@@ -123,11 +123,6 @@ impl Component for AppRoot {
             </BrowserRouter>
         }
     }
-}
-
-#[must_use]
-pub const fn not(b: bool) -> bool {
-    !b
 }
 
 fn switch(switch: Route) -> Html {

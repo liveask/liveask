@@ -6,7 +6,7 @@ use crate::{
 };
 use events::{event_context, EventBridge};
 use gloo_timers::callback::Timeout;
-use shared::{EventTokens, EventUpgrade};
+use shared::{EventTokens, EventUpgradeResponse};
 use wasm_bindgen::UnwrapThrowExt;
 use yew::prelude::*;
 
@@ -17,7 +17,7 @@ pub struct PaymentProps {
 
 pub enum Msg {
     GlobalEvent(GlobalEvent),
-    UpgradeRequested(Option<EventUpgrade>),
+    UpgradeRequested(Option<EventUpgradeResponse>),
     TimerDone(String),
 }
 
@@ -55,7 +55,6 @@ impl Component for PaymentPopup {
                         tokens.moderator_token,
                         ctx.link(),
                     );
-                    self.show = true;
                     return true;
                 }
                 false
@@ -68,17 +67,22 @@ impl Component for PaymentPopup {
             }
             Msg::UpgradeRequested(u) => {
                 if let Some(u) = u {
-                    let handle = {
-                        let link = ctx.link().clone();
+                    if let EventUpgradeResponse::Redirect { url } = u {
+                        let handle = {
+                            let link = ctx.link().clone();
 
-                        Timeout::new(1000, move || link.send_message(Msg::TimerDone(u.url)))
-                    };
+                            Timeout::new(1000, move || link.send_message(Msg::TimerDone(url)))
+                        };
 
-                    self.timeout = Some(handle);
+                        self.timeout = Some(handle);
+                        self.show = true;
+                    } else {
+                        log::info!("admin upgrade");
+                    }
                 } else {
                     self.show = false;
                 }
-                false
+                true
             }
         }
     }
