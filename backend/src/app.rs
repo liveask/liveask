@@ -2,7 +2,7 @@ use async_trait::async_trait;
 use axum::extract::ws::{close_code::RESTART, CloseFrame, Message, WebSocket};
 use shared::{
     AddEvent, ContextValidation, EventInfo, EventResponseFlags, EventState, EventTags, EventTokens,
-    EventUpgrade, GetEventResponse, ModEvent, ModInfo, ModQuestion, PasswordValidation,
+    EventUpgradeResponse, GetEventResponse, ModEvent, ModInfo, ModQuestion, PasswordValidation,
     PaymentCapture, QuestionItem, States, TagValidation,
 };
 use std::{
@@ -524,34 +524,47 @@ impl App {
         &self,
         id: String,
         secret: String,
-    ) -> Result<EventUpgrade> {
+        admin: bool,
+    ) -> Result<EventUpgradeResponse> {
         let mut entry = self.eventsdb.get(&id).await?;
 
         let e = &mut entry.event;
-
-        if e.tokens
-            .moderator_token
-            .as_ref()
-            .is_some_and(|mod_token| mod_token != &secret)
-        {
-            return Err(InternalError::WrongModeratorToken(id));
-        }
 
         if e.deleted {
             return Err(InternalError::AccessingDeletedEvent(id));
         }
 
-        let mod_url = self.mod_link(&e.tokens);
-        let approve_url = self
-            .payment
-            .create_order(
-                &e.tokens.public_token,
-                &mod_url,
-                &format!("{mod_url}?payment=true&token={{CHECKOUT_SESSION_ID}}"),
-            )
-            .await?;
+        let response = if admin {
+            let upgraded = self
+                .upgrade_event(id, PremiumOrder::Admin("unknown".into()))
+                .await?;
+            if !upgraded {
+                tracing::error!("admin upgrade failed");
+            }
+            EventUpgradeResponse::AdminUpgrade
+        } else {
+            if e.tokens
+                .moderator_token
+                .as_ref()
+                .is_some_and(|mod_token| mod_token != &secret)
+            {
+                return Err(InternalError::WrongModeratorToken(id));
+            }
 
-        Ok(EventUpgrade { url: approve_url })
+            let mod_url = self.mod_link(&e.tokens);
+            let approve_url = self
+                .payment
+                .create_order(
+                    &e.tokens.public_token,
+                    &mod_url,
+                    &format!("{mod_url}?payment=true&token={{CHECKOUT_SESSION_ID}}"),
+                )
+                .await?;
+
+            EventUpgradeResponse::Redirect { url: approve_url }
+        };
+
+        Ok(response)
     }
 
     #[instrument(skip(self))]
@@ -574,7 +587,7 @@ impl App {
         let order_captured = complete;
 
         if order_captured {
-            self.capture_payment_and_upgrade(id, stripe_order_id)
+            self.upgrade_event(id, PremiumOrder::StripeSessionId(stripe_order_id))
                 .await?;
         }
 
@@ -586,7 +599,7 @@ impl App {
         tracing::info!("order processing");
 
         if !self
-            .capture_payment_and_upgrade(event_id, stripe_session_id)
+            .upgrade_event(event_id, PremiumOrder::StripeSessionId(stripe_session_id))
             .await?
         {
             tracing::warn!("webhook failed");
@@ -595,11 +608,10 @@ impl App {
         Ok(())
     }
 
-    async fn capture_payment_and_upgrade(
-        &self,
-        event: String,
-        stripe_session_id: String,
-    ) -> Result<bool> {
+    #[instrument(skip(self))]
+    async fn upgrade_event(&self, event: String, order_id: PremiumOrder) -> Result<bool> {
+        tracing::warn!("upgrade_event");
+
         let mut entry = self.eventsdb.get(&event).await?;
 
         if entry.event.premium_id.is_some() {
@@ -607,7 +619,7 @@ impl App {
             return Ok(true);
         }
 
-        entry.event.premium_id = Some(PremiumOrder::StripeSessionId(stripe_session_id));
+        entry.event.premium_id = Some(order_id);
 
         entry.bump();
 

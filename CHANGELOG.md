@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 * upgrade to yew `0.21`
+* make premium upgrade implicitly free for admin
 
 ### Fixes
 * exceptions calling across wasm-bindgen bridge do not break the entire FE anymore ([#74](https://github.com/liveask/liveask/issues/74))
