@@ -82,7 +82,11 @@ pub fn event_to_attributes(value: ApiEventInfo) -> AttributeMap {
     if let Some(premium) = value.premium_id {
         map.insert(
             ATTR_EVENT_INFO_PREMIUM.into(),
-            AttributeValue::M(to_item(premium).expect("error serializing premium")),
+            AttributeValue::M(
+                to_item(premium)
+                    .map_err(|e| tracing::error!("[conv] error with premium: {e:?}"))
+                    .unwrap_or_default(),
+            ),
         );
     }
 
