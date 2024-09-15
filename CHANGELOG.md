@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## [2.9.1] - 2024-09-15
+
 ### Added
 * simple email validation ([#69](https://github.com/liveask/liveask/issues/69))
 * allow sending question by pressing `CMD+Enter`
