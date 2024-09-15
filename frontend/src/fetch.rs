@@ -2,8 +2,9 @@
 
 use gloo_net::http::Request;
 use shared::{
-    AddEvent, AddQuestion, EditLike, EventData, EventInfo, EventPasswordRequest, EventUpgrade,
-    GetEventResponse, GetUserInfo, ModEvent, ModQuestion, PaymentCapture, QuestionItem, UserLogin,
+    AddEvent, AddQuestion, EditLike, EventData, EventInfo, EventPasswordRequest,
+    EventPasswordResponse, EventUpgrade, GetEventResponse, GetUserInfo, ModEvent, ModQuestion,
+    PaymentCapture, QuestionItem, UserLogin,
 };
 use std::{
     error::Error,
@@ -105,7 +106,8 @@ pub async fn event_set_password(
         .credentials(RequestCredentials::Include)
         .body(body)?;
     set_content_type_json(&request);
-    Ok(request.send().await?.json().await?)
+    let response: EventPasswordResponse = request.send().await?.json().await?;
+    Ok(response.ok)
 }
 
 pub async fn mod_upgrade(
