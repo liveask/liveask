@@ -7,8 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
-### Fixes
+## [2.9.2] - 2024-09-19
+
+### Changed
 * do not warn on payment
+* forward `order_type` into tracking
 
 ## [2.9.1] - 2024-09-15
 
