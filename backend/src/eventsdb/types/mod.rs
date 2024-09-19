@@ -10,12 +10,13 @@ use shared::{
     EventTokens, QuestionItem,
 };
 use std::collections::HashMap;
+use strum::IntoStaticStr;
 
 use self::conversion::{attributes_to_event, event_to_attributes};
 
 use super::{event_key, Error};
 
-#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq)]
+#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, IntoStaticStr)]
 pub enum PremiumOrder {
     PaypalOrderId(String),
     StripeSessionId(String),
