@@ -266,6 +266,7 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let (session_layer, auth_layer) = auth::setup(
         secret.as_ref(),
         RedisSessionStore::new(redis_url)?.with_prefix("session/"),
+        is_prod(),
     );
 
     let admin_routes = Router::new()
