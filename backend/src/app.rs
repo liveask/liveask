@@ -610,7 +610,7 @@ impl App {
 
     #[instrument(skip(self))]
     async fn upgrade_event(&self, event: String, order_id: PremiumOrder) -> Result<bool> {
-        tracing::warn!("upgrade_event");
+        tracing::info!("upgrade_event");
 
         let mut entry = self.eventsdb.get(&event).await?;
 
