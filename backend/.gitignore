@@ -1,2 +1,3 @@
 db/shared-local-instance.db
+db/redis/*
 env/local.env
