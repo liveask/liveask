@@ -14,6 +14,9 @@ https://docs.docker.com/engine/install
 
 How to install Make
 sudo apt-get install build-essential
+
+How to install `just`
+cargo install just
 ```
 
 ### Installation
@@ -32,28 +35,32 @@ cd liveask
 This is required to run up all dependencies for the application
 ```
 cd backend
-make docker-compose
+just docker-compose
 ```
+
 ### Backend
 **Second Terminal**
 This will load up the backend and connect to the dependencies
 ```
 cd backend
-make run
+just run
 ```
+
 ### Front End
 **Third Terminal**
 The to load the frontend
 ```
 cd frontend
-make serve
+just serve
 ```
+
 ## Configuration
 To configure the application copy the default.env to local.env & edit local.env
 ```
 cd backend/env
 cp default.env local.env
 ```
+
 ## Notes
 - When doing local development set `RELAX_CORS` to `"1"` otherwise the backend will not get requests
 - Do not commit the index.html if only the release id has changed.
