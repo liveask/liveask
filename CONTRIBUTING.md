@@ -1,5 +1,9 @@
 # Contributions
-For contributions please makes changes on a local development version, make sure the changes pass all the tests & do not break anything then, create a pull request.
+
+For contributions please:
+1. Make changes on a local development version.
+2. Make sure the changes pass all the tests & do not break anything.
+3. Then, create a pull request.
 
 # Local Setup
 **Requires Three Terminal Tabs/Instances**
@@ -15,7 +19,7 @@ https://docs.docker.com/engine/install
 How to install Make
 sudo apt-get install build-essential
 
-How to install `just`
+How to install just
 cargo install just
 ```
 
@@ -48,14 +52,14 @@ just run
 
 ### Front End
 **Third Terminal**
-The to load the frontend
+Then to load the frontend
 ```
 cd frontend
 just serve
 ```
 
 ## Configuration
-To configure the application copy the default.env to local.env & edit local.env
+To configure the application copy the `default.env` to `local.env` & edit `local.env`
 ```
 cd backend/env
 cp default.env local.env
@@ -63,4 +67,4 @@ cp default.env local.env
 
 ## Notes
 - When doing local development set `RELAX_CORS` to `"1"` otherwise the backend will not get requests
-- Do not commit the index.html if only the release id has changed.
+- Do not commit the `index.html` if only the release id has changed.
