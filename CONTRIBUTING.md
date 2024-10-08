@@ -1,9 +1,10 @@
 # Contributions
 
 For contributions please:
-1. Make changes on a local development version.
+1. Make sure your fork (fork it if it's the first time) is in sync with the parent repository.
+2. Make your changes in a topic branch in your fork.
 2. Make sure the changes pass all the tests & do not break anything.
-3. Then, create a pull request.
+3. When ready create a pull request from your fork to the parent repository.
 
 # Local Setup
 
