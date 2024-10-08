@@ -35,7 +35,8 @@ cd liveask
 
 ## Running The Local Instance
 
-**Requires Three Terminal Tabs/Instances**
+> [!IMPORTANT]
+> You need to open three terminal tabs/instances and run the following commands in each of them.
 
 ### Terminal 1: Dependencies
 This is required to run up all dependencies for the application
