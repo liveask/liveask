@@ -6,7 +6,7 @@ For contributions please:
 3. Then, create a pull request.
 
 # Local Setup
-**Requires Three Terminal Tabs/Instances**
+
 ## Initial Setup
 ### Pre-requisites
 ```
@@ -34,24 +34,24 @@ cd liveask
 ```
 
 ## Running The Local Instance
-### Dependencies
-**First Terminal**
+
+**Requires Three Terminal Tabs/Instances**
+
+### Terminal 1: Dependencies
 This is required to run up all dependencies for the application
 ```
 cd backend
 just docker-compose
 ```
 
-### Backend
-**Second Terminal**
+### Terminal 2: Backend
 This will load up the backend and connect to the dependencies
 ```
 cd backend
 just run
 ```
 
-### Front End
-**Third Terminal**
+### Terminal 3: Front End
 Then to load the frontend
 ```
 cd frontend
