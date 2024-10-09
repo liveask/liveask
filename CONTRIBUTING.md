@@ -48,7 +48,7 @@ cd liveask
 ## Running The Local Instance
 
 > [!IMPORTANT]
-> You need to open three terminal tabs/instances and run the following commands in each of them.
+> You need to open two terminal tabs/instances and run the following commands in each of them.
 
 ### Terminal 1: Dependencies
 This is required to run up all dependencies for the application
@@ -57,18 +57,11 @@ cd backend
 just docker-compose
 ```
 
-### Terminal 2: Backend
-This will load up the backend and connect to the dependencies
+### Terminal 2: Backend & Frontend
+This will load up the backend and connect to the dependencies, and also run the frontend (need to run in the root directory of the repository):
 ```
-cd backend
+cd ..
 just run
-```
-
-### Terminal 3: Front End
-Then to load the frontend
-```
-cd frontend
-just serve
 ```
 
 ## Configuration
