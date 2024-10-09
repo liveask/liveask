@@ -9,24 +9,35 @@ For contributions please:
 # Local Setup
 
 ## Initial Setup
+
 ### Pre-requisites
-```
-How to install Rust
-https://www.rust-lang.org/tools/install
 
-How to install Docker
-https://docs.docker.com/engine/install
+1. Install Rust: https://www.rust-lang.org/tools/install
+2. Install Docker: https://docs.docker.com/engine/install
 
-How to install Make
+Install Make:
+
+```bash
 sudo apt-get install build-essential
+```
 
-How to install just
+Install `parallelrun` to run commands in parallel:
+
+```
+cargo install parallelrun
+```
+
+Install `just` to run project specific commands:
+
+```
 cargo install just
 ```
 
 ### Installation
+
+Run the following commands to finish the installation:
+
 ```
-Commands To Run
 rustup update
 rustup target add wasm32-unknown-unknown
 cargo install cargo-make
