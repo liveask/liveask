@@ -72,5 +72,5 @@ cp default.env local.env
 ```
 
 ## Notes
-- When doing local development set `RELAX_CORS` to `"1"` otherwise the backend will not get requests
+- When doing local development set `RELAX_CORS` to `"1"` in `local.env`, otherwise the backend will not get requests
 - Do not commit the `index.html` if only the release id has changed.
