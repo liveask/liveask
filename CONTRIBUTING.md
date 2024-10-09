@@ -17,19 +17,19 @@ For contributions please:
 
 Install Make:
 
-```bash
+```shell
 sudo apt-get install build-essential
 ```
 
 Install `parallelrun` to run commands in parallel:
 
-```
+```shell
 cargo install parallelrun
 ```
 
 Install `just` to run project specific commands:
 
-```
+```shell
 cargo install just
 ```
 
@@ -37,7 +37,7 @@ cargo install just
 
 Run the following commands to finish the installation:
 
-```
+```shell
 rustup update
 rustup target add wasm32-unknown-unknown
 cargo install cargo-make
@@ -52,21 +52,21 @@ cd liveask
 
 ### Terminal 1: Dependencies
 This is required to run up all dependencies for the application
-```
+```shell
 cd backend
 just docker-compose
 ```
 
 ### Terminal 2: Backend & Frontend
 This will load up the backend and connect to the dependencies, and also run the frontend (need to run in the root directory of the repository):
-```
+```shell
 cd ..
 just run
 ```
 
 ## Configuration
 To configure the application copy the `default.env` to `local.env` & edit `local.env`
-```
+```shell
 cd backend/env
 cp default.env local.env
 ```
