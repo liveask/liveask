@@ -31,7 +31,7 @@ impl Component for Upgrade {
     type Properties = Props;
 
     fn create(ctx: &Context<Self>) -> Self {
-        let event_id: &String = ctx.props().tokens.moderator_token.as_ref().unwrap();
+        let event_id: &String = &ctx.props().tokens.public_token;
         let collapsed = LocalCache::is_premium_banner_collapsed(&event_id);
 
         Self {
@@ -44,7 +44,7 @@ impl Component for Upgrade {
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
             Msg::ToggleExpansion => {
-                let event_id: &String = ctx.props().tokens.moderator_token.as_ref().unwrap();
+                let event_id: &String = &ctx.props().tokens.public_token;
                 self.collapsed =
                     LocalCache::toggle_premium_banner_collapsed(&event_id);
                 if !self.collapsed {
