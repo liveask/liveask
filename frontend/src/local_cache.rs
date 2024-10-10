@@ -8,6 +8,7 @@ use wasm_bindgen::UnwrapThrowExt;
 struct EventStore {
     likes: HashSet<i64>,
     unscreened: Vec<QuestionItem>,
+    premium_banner_collapsed: bool,
 }
 
 pub struct LocalCache;
@@ -15,6 +16,10 @@ pub struct LocalCache;
 impl LocalCache {
     pub fn is_liked(event: &str, id: i64) -> bool {
         Self::get_state(event).likes.contains(&id)
+    }
+
+    pub fn is_premium_banner_collapsed(event: &str) -> bool {
+        Self::get_state(event).premium_banner_collapsed
     }
 
     pub fn set_like_state(event: &str, id: i64, like: bool) {
@@ -25,6 +30,14 @@ impl LocalCache {
             store.likes.remove(&id);
         }
         Self::set_state(event, store);
+    }
+
+    pub fn toggle_premium_banner_collapsed(event: &str) -> bool {
+        let mut state = Self::get_state(event);
+        state.premium_banner_collapsed = !state.premium_banner_collapsed;
+        let result = state.premium_banner_collapsed;
+        Self::set_state(event, state);
+        result
     }
 
     pub fn add_unscreened_question(event: &str, q: &QuestionItem) {
