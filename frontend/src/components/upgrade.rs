@@ -32,7 +32,7 @@ impl Component for Upgrade {
 
     fn create(ctx: &Context<Self>) -> Self {
         let event_id: &String = &ctx.props().tokens.public_token;
-        let collapsed = LocalCache::is_premium_banner_collapsed(&event_id);
+        let collapsed = LocalCache::is_premium_banner_collapsed(event_id);
 
         Self {
             data: ctx.props().clone(),
@@ -45,7 +45,7 @@ impl Component for Upgrade {
         match msg {
             Msg::ToggleExpansion => {
                 let event_id: &String = &ctx.props().tokens.public_token;
-                self.collapsed = LocalCache::toggle_premium_banner_collapsed(&event_id);
+                self.collapsed = LocalCache::toggle_premium_banner_collapsed(event_id);
                 if !self.collapsed {
                     tracking::track_event(tracking::EVNT_PREMIUM_EXPAND);
                 }
