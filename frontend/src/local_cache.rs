@@ -8,6 +8,7 @@ use wasm_bindgen::UnwrapThrowExt;
 struct EventStore {
     likes: HashSet<i64>,
     unscreened: Vec<QuestionItem>,
+    #[serde(default)]
     premium_banner_collapsed: bool,
 }
 
