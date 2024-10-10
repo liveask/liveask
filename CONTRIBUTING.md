@@ -27,6 +27,10 @@ Install `parallelrun` to run commands in parallel:
 cargo install parallelrun
 ```
 
+> !TIP
+> You can also use `cargo binstall parallelrun` if you want to avoid building from source.
+
+
 Install `just` to run project specific commands:
 
 ```shell
