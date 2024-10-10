@@ -13,7 +13,7 @@ For contributions please:
 ### Pre-requisites
 
 1. Install Rust: https://www.rust-lang.org/tools/install
-2. Install Docker: https://docs.docker.com/engine/install
+2. Install Docker: https://docs.docker.com/engine/install (or any compatible alternative like [Podman](https://podman.io) or [OrbStack](https://orbstack.dev))
 
 Install Make:
 
