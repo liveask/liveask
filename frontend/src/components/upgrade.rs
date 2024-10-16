@@ -5,6 +5,7 @@ use shared::EventTokens;
 use wasm_bindgen::UnwrapThrowExt;
 use yew::prelude::*;
 
+use crate::local_cache::LocalCache;
 use crate::tracking;
 use crate::{components::Spinner, Events, GlobalEvent};
 
@@ -30,17 +31,21 @@ impl Component for Upgrade {
     type Properties = Props;
 
     fn create(ctx: &Context<Self>) -> Self {
+        let event_id: &String = &ctx.props().tokens.public_token;
+        let collapsed = LocalCache::is_premium_banner_collapsed(event_id);
+
         Self {
             data: ctx.props().clone(),
-            collapsed: false,
+            collapsed,
             events: event_context(ctx).unwrap_throw(),
         }
     }
 
-    fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
+    fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
             Msg::ToggleExpansion => {
-                self.collapsed = !self.collapsed;
+                let event_id: &String = &ctx.props().tokens.public_token;
+                self.collapsed = LocalCache::toggle_premium_banner_collapsed(event_id);
                 if !self.collapsed {
                     tracking::track_event(tracking::EVNT_PREMIUM_EXPAND);
                 }
@@ -101,7 +106,7 @@ impl Upgrade {
                     <li>{"Unlimited access to your event"}</li>
                     <li>{"Realtime statistics (participants, likes ..)"}</li>
                     <li>{"Export your event data"}</li>
-                    <li>{"Prescreen questions before they appear"}</li>
+                    <li>{"Pre-screen questions before they appear"}</li>
                     <li>{"Automatically tag questions"}</li>
                     <li>{"Add context link to your event"}</li>
                     <li>{"Plus much more .."}</li>
