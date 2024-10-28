@@ -151,7 +151,7 @@ impl Component for MetaPopup {
                         />
                     </div>
                     <div hidden={self.errors.name.is_none()} class="invalid">
-                        { NewEvent::name_error(&self.errors.name).unwrap_or_default() }
+                        { NewEvent::name_error(self.errors.name.as_ref()).unwrap_or_default() }
                     </div>
                     <div class="input-box">
                         <TextArea
@@ -166,7 +166,7 @@ impl Component for MetaPopup {
                             />
                     </div>
                     <div hidden={self.errors.desc.is_none()} class="invalid">
-                        { NewEvent::desc_error(&self.errors.desc).unwrap_or_default() }
+                        { NewEvent::desc_error(self.errors.desc.as_ref()).unwrap_or_default() }
                     </div>
                     <div class="buttons">
                         <button class="button-white"
