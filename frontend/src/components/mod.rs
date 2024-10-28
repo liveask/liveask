@@ -17,6 +17,7 @@ mod share_popup;
 mod socket;
 mod spinner;
 mod textarea;
+mod trusted_by;
 mod upgrade;
 
 pub use context_popup::ContextPopup;
@@ -37,4 +38,5 @@ pub use share_popup::SharePopup;
 pub use socket::{EventSocket, SocketResponse};
 pub use spinner::Spinner;
 pub use textarea::TextArea;
+pub use trusted_by::TrustedBy;
 pub use upgrade::Upgrade;
