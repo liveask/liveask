@@ -1,22 +1,28 @@
 @import 'colors';
 
 .trustedby {
-    width: 400px;
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    margin-left: auto;
-    margin-right: auto;
-    margin-top: 30px;
-
-    .item {
-        width: 200px;
-        height: 90px;
-        flex-grow: 1;
-
-        img {
-            text-align: center;
-        }
+    h2 {
+        color: $col-button-disabled;
+        margin: 40px;
     }
 
+    .items {
+        width: 400px;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        margin-left: auto;
+        margin-right: auto;
+        margin-top: 30px;
+
+        .item {
+            width: 200px;
+            height: 90px;
+            flex-grow: 1;
+
+            img {
+                text-align: center;
+            }
+        }
+    }
 }
