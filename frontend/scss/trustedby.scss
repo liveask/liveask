@@ -3,11 +3,11 @@
 .trustedby {
     h2 {
         color: $col-button-disabled;
-        margin: 40px;
+        margin: 50px;
     }
 
     .items {
-        width: 400px;
+        max-width: 460px;
         display: flex;
         flex-wrap: wrap;
         align-items: center;
@@ -16,12 +16,18 @@
         margin-top: 30px;
 
         .item {
-            width: 200px;
+            width: 150px;
             height: 90px;
+            margin: 4px;
             flex-grow: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
 
             img {
-                text-align: center;
+                scale: 1.5;
+                width: 100px;
+                height: 60px;
             }
         }
     }

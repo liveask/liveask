@@ -7,12 +7,12 @@ pub fn TrustedBy() -> Html {
             <div class="trustedby">
                 <h2>{ "Trusted by" }</h2>
                 <div class="items">
-                    <div class="item"><img src="assets/trustedby/ms.png" /></div>
+                    <div class="item"><img src="assets/trustedby/microsoft.svg" /></div>
                     <div class="item"><img src="assets/trustedby/un.svg" /></div>
-                    <div class="item"><img src="assets/trustedby/worldbank.png" /></div>
-                    <div class="item"><img src="assets/trustedby/canada.png" /></div>
-                    <div class="item"><img src="assets/trustedby/lifescience.png" /></div>
-                    <div class="item"><img src="assets/trustedby/alibaba.png" /></div>
+                    <div class="item"><img src="assets/trustedby/worldbank.svg" /></div>
+                    <div class="item"><img src="assets/trustedby/canada.svg" /></div>
+                    <div class="item"><img src="assets/trustedby/l2s.svg" /></div>
+                    <div class="item"><img src="assets/trustedby/alibaba.svg" /></div>
                 </div>
             </div>
         </>
