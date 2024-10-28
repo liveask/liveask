@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## [2.9.3] - 2024-09-28
+
+* "trusted by" on homepage
+* preserve premium collapsed state in local storage ([#79](https://github.com/liveask/liveask/issues/79))
+
 ## [2.9.2] - 2024-09-19
 
 ### Changed
