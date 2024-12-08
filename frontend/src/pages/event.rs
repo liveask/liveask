@@ -908,7 +908,7 @@ impl Event {
         }
     }
 
-    fn on_fetched(&mut self, res: &Option<GetEventResponse>) {
+    fn on_fetched(&mut self, res: Option<&GetEventResponse>) {
         //TODO: in subsequent fetches only update data if successfully fetched
 
         if matches!(
@@ -1078,7 +1078,7 @@ impl Event {
     }
 
     fn handle_fetched(&mut self, res: Option<GetEventResponse>, ctx: &Context<Self>) -> bool {
-        self.on_fetched(&res);
+        self.on_fetched(res.as_ref());
         if let Some(e) = res {
             if !e.info.is_premium() && self.query_params.paypal_token.is_some() {
                 request_capture(
