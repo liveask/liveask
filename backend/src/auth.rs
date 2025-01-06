@@ -8,6 +8,7 @@ use axum::{
 };
 use axum_login::{axum_sessions::SessionLayer, secrecy::SecretVec, AuthLayer, AuthUser, UserStore};
 use shared::{GetUserInfo, UserInfo};
+use tracing::instrument;
 
 use crate::{env::admin_pwd_hash, error::InternalError};
 
@@ -29,6 +30,7 @@ impl AuthUser<String> for User {
 
 type AuthContext = axum_login::extractors::AuthContext<String, User, DumbAdminUserStore>;
 
+#[instrument(skip(auth), err)]
 pub async fn login_handler(
     mut auth: AuthContext,
     Json(payload): Json<shared::UserLogin>,
@@ -56,16 +58,19 @@ fn admin_user() -> User {
     }
 }
 
+#[instrument(skip(auth))]
 pub async fn logout_handler(mut auth: AuthContext) {
     tracing::info!("log out: {:?}", &auth.current_user);
     auth.logout().await;
 }
 
+#[instrument(skip(session), err)]
 #[allow(clippy::unused_async)]
 pub async fn admin_user_handler(
     session: axum_sessions::extractors::ReadableSession,
     OptionalUser(user): OptionalUser,
 ) -> std::result::Result<impl IntoResponse, InternalError> {
+    tracing::info!("[admin] user handler {user:?}");
     Ok(Json(GetUserInfo {
         user: user.map(|user| UserInfo {
             name: user.id,
@@ -126,13 +131,20 @@ const COOKIE_TTL: std::time::Duration = std::time::Duration::from_secs(60 * 60 *
 pub fn setup(
     secret: &[u8],
     session_store: RedisSessionStore,
+    is_prod: bool,
 ) -> (
     SessionLayer<RedisSessionStore>,
     AuthLayer<DumbAdminUserStore, String, User>,
 ) {
+    let same_site_policy = if is_prod {
+        axum_sessions::SameSite::Strict
+    } else {
+        axum_sessions::SameSite::None
+    };
     let session_layer = SessionLayer::new(session_store, secret)
         .with_cookie_name("sid")
         .with_persistence_policy(axum_login::axum_sessions::PersistencePolicy::ExistingOnly)
+        .with_same_site_policy(same_site_policy)
         .with_session_ttl(Some(COOKIE_TTL));
 
     let auth_layer = AuthLayer::new(DumbAdminUserStore {}, secret);

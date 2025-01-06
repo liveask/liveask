@@ -135,7 +135,7 @@ impl Component for NewEvent {
                             />
                         </div>
                         <div hidden={self.errors.name.is_none()} class="invalid">
-                            { Self::name_error(&self.errors.name).unwrap_or_default() }
+                            { Self::name_error(self.errors.name.as_ref()).unwrap_or_default() }
                         </div>
                         <div class="input-box">
                             <input
@@ -148,7 +148,7 @@ impl Component for NewEvent {
                             />
                         </div>
                         <div hidden={self.errors.email.is_none()} class="invalid">
-                            { Self::email_error(&self.errors.email).unwrap_or_default() }
+                            { Self::email_error(self.errors.email.as_ref()).unwrap_or_default() }
                         </div>
                         <div class="input-box">
                             <TextArea
@@ -163,7 +163,7 @@ impl Component for NewEvent {
                             />
                         </div>
                         <div hidden={self.errors.desc.is_none()} class="invalid">
-                            { Self::desc_error(&self.errors.desc).unwrap_or_default() }
+                            { Self::desc_error(self.errors.desc.as_ref()).unwrap_or_default() }
                         </div>
                     </div>
                     <button
@@ -184,7 +184,7 @@ impl NewEvent {
         !self.errors.has_any() && !self.name.is_empty() && !self.desc.is_empty()
     }
 
-    pub fn desc_error(state: &Option<CreateEventError>) -> Option<String> {
+    pub fn desc_error(state: Option<&CreateEventError>) -> Option<String> {
         match state {
             Some(CreateEventError::Empty) => Some("Description cannot be empty".to_string()),
             Some(CreateEventError::MinLength(len, max)) => Some(format!(
@@ -198,7 +198,7 @@ impl NewEvent {
         }
     }
 
-    pub fn name_error(state: &Option<CreateEventError>) -> Option<String> {
+    pub fn name_error(state: Option<&CreateEventError>) -> Option<String> {
         match state {
             Some(CreateEventError::Empty) => Some("Name is required.".to_string()),
             Some(CreateEventError::MinLength(len, max)) => Some(format!(
@@ -214,7 +214,7 @@ impl NewEvent {
         }
     }
 
-    pub fn email_error(state: &Option<CreateEventError>) -> Option<String> {
+    pub fn email_error(state: Option<&CreateEventError>) -> Option<String> {
         match state {
             Some(CreateEventError::InvalidEmail) => Some("Invalid Email Provided".to_string()),
             _ => None,

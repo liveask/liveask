@@ -87,6 +87,7 @@ impl Tracking {
         name: String,
         long_url: String,
         age: i64,
+        order_type: &str,
     ) -> TrackingResult<()> {
         let mut e = Event::new("event-upgraded", &self.server);
 
@@ -94,6 +95,7 @@ impl Tracking {
         e.insert_prop("name", name)?;
         e.insert_prop("url", long_url)?;
         e.insert_prop("age", age)?;
+        e.insert_prop("order_type", order_type)?;
 
         self.log(e).await?;
 

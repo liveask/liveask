@@ -610,7 +610,7 @@ impl App {
 
     #[instrument(skip(self))]
     async fn upgrade_event(&self, event: String, order_id: PremiumOrder) -> Result<bool> {
-        tracing::warn!("upgrade_event");
+        tracing::info!("upgrade_event");
 
         let mut entry = self.eventsdb.get(&event).await?;
 
@@ -619,7 +619,7 @@ impl App {
             return Ok(true);
         }
 
-        entry.event.premium_id = Some(order_id);
+        entry.event.premium_id = Some(order_id.clone());
 
         entry.bump();
 
@@ -634,7 +634,7 @@ impl App {
         self.notify_subscribers(&event, Notification::Event).await;
 
         self.tracking
-            .track_event_upgrade(event.clone(), name, long_url, age)
+            .track_event_upgrade(event.clone(), name, long_url, age, order_id.into())
             .await?;
 
         Ok(true)

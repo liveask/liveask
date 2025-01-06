@@ -43,7 +43,7 @@ impl Component for ModTag {
 
     fn create(ctx: &Context<Self>) -> Self {
         Self {
-            state: Self::derive_state(&ctx.props().tag),
+            state: Self::derive_state(ctx.props().tag.as_ref()),
             input: NodeRef::default(),
             errors: TagValidation::default(),
         }
@@ -85,7 +85,7 @@ impl Component for ModTag {
     }
 
     fn changed(&mut self, ctx: &Context<Self>, _old_props: &Self::Properties) -> bool {
-        self.state = Self::derive_state(&ctx.props().tag);
+        self.state = Self::derive_state(ctx.props().tag.as_ref());
         true
     }
 
@@ -193,9 +193,8 @@ impl ModTag {
         self.state = State::Disabled;
     }
 
-    fn derive_state(tag: &Option<String>) -> State {
-        tag.as_ref()
-            .map_or(State::Disabled, |tag| State::Confirmed(tag.clone()))
+    fn derive_state(tag: Option<&String>) -> State {
+        tag.map_or(State::Disabled, |tag| State::Confirmed(tag.clone()))
     }
 
     fn set_pwd(&mut self, ctx: &Context<Self>) {

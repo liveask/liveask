@@ -28,7 +28,9 @@ services:
     restart: unless-stopped
     ports:
       - 6379:6379
-    command: redis-server --appendonly yes
+    volumes:
+      - ./db/redis:/data:Z
+    command: redis-server --save 60 1 --appendonly yes
 
   redis-commander:
     image: rediscommander/redis-commander:latest

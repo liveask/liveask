@@ -2,7 +2,10 @@ use wasm_bindgen::UnwrapThrowExt;
 use yew::prelude::*;
 use yew_router::prelude::*;
 
-use crate::{components::Footer, routes::Route};
+use crate::{
+    components::{Footer, TrustedBy},
+    routes::Route,
+};
 
 #[allow(clippy::empty_structs_with_brackets)]
 #[derive(Clone, Debug, Eq, PartialEq, Properties)]
@@ -51,6 +54,8 @@ impl Component for Home {
                     <button class="button-dark" onclick={ctx.link().callback(|_| Msg::Example)}>
                         { "View Example" }
                     </button>
+
+                    <TrustedBy />
                 </div>
                 <div class="feature-bright">
                     <h1>{ "Incognito" }</h1>
