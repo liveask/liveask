@@ -35,7 +35,7 @@ shared = { path = "../shared" }
 split-iter = "0.1"
 url = "2.5"
 urlencoding = "2.1"
-wasm-bindgen = "=0.2.93"
+wasm-bindgen = "=0.2.99"
 wasm-bindgen-futures = "0.4"
 wasm-logger = "0.2"
 wasm-sockets = "1.0"

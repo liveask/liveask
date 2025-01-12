@@ -30,7 +30,7 @@ pub async fn server_id() -> Option<String> {
         parsed
             .task_arn
             .split('/')
-            .last()
+            .next_back()
             .unwrap_or_default()
             .to_string(),
     )
