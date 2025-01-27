@@ -26,18 +26,18 @@ aws-smithy-http = "0.60"
 axum = { version = "0.6", features = ["ws"] }
 axum-login = "0.6"
 axum-sessions = "0.5"
-chrono = { version = "0.4", default-features = false }
+chrono = { workspace = true, default-features = false }
 futures-util = "0.3"
-handlebars = "4.4"
+handlebars = { workspace = true }
 posthog-core = { git = "https://github.com/rivet-gg/posthog-rs.git", rev = "fa4d39a" }
 rand = { version = "0.8", features = ["min_const_gen"] }
 reqwest = { version = "0.11", features = ["json"] }
 sentry = { version = "0.31", features = ["tracing", "tower", "tower-http"] }
-serde = "1"
+serde = { workspace = true }
 serde_dynamo = { version = "4.2", default-features = false, features = [
     "aws-sdk-dynamodb+1",
 ] }
-serde_json = "1"
+serde_json = { workspace = true }
 shared = { path = "../shared" }
 strum = { version = "0.26", features = ["derive"] }
 thiserror = "1.0"
@@ -73,5 +73,5 @@ tracing-test = "0.2"
 # ############################
 
 [build-dependencies]
-anyhow = "1"
+anyhow = { workspace = true }
 vergen = { version = "8", features = ["git", "gitcl"] }
