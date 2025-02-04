@@ -1,7 +1,6 @@
-FROM debian
+FROM ubuntu
 LABEL maintainer="extrawurst"
-RUN apt-get update \
-    && apt-get install -y pkg-config libssl-dev ca-certificates curl libfontconfig
+RUN apt-get update && apt-get install -y openssl
 
 ADD linux_bin/server /app/server
 
