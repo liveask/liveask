@@ -1,7 +1,7 @@
 FROM debian:bookworm-slim
 LABEL maintainer="extrawurst"
 RUN apt-get update \
-    && apt-get install -y pkg-config libssl-dev ca-certificates curl libfontconfig
+    && apt-get install -y pkg-config libssl-dev ca-certificates curl libfontconfig libc6
 
 ADD linux_bin/server /app/server
 
