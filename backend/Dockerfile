@@ -1,6 +1,6 @@
 FROM ubuntu
 LABEL maintainer="extrawurst"
-RUN apt-get update && apt-get install -y openssl
+RUN apt-get update && apt-get install -y openssl ca-certificates curl libfontconfig
 
 ADD linux_bin/server /app/server
 
