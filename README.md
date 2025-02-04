@@ -15,12 +15,14 @@ Live-Ask.com provides a simple, free, and real-time service for the audience to 
 Live-Ask is a product developed and maintained by [Rustunit.com](https://rustunit.com)
 
 ### Socials
+[![Discord](https://img.shields.io/discord/1176858176897953872?style=for-the-badge&logo=Discord)](https://discord.gg/rQNeEnMhus)
 [![Instagram](https://img.shields.io/badge/Instagram-%23E4405F.svg?style=for-the-badge&logo=Instagram&logoColor=white)](https://www.instagram.com/liveaskapp/?igshid=OGQ5ZDc2ODk2ZA%3D%3D&utm_source=qr)
 [![LinkedIn](https://img.shields.io/badge/linkedin-%230077B5.svg?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/company/live-ask/)
 [![Mastodon](https://img.shields.io/badge/-MASTODON-%232B90D9?style=for-the-badge&logo=mastodon&logoColor=white)](https://mastodon.social/@liveask)
 [![TikTok](https://img.shields.io/badge/TikTok-%23000000.svg?style=for-the-badge&logo=TikTok&logoColor=white)](https://www.tiktok.com/@liveaskapp)
 [![Twitter](https://img.shields.io/badge/Twitter-%231DA1F2.svg?style=for-the-badge&logo=Twitter&logoColor=white)](https://twitter.com/liveaskapp)
 [![ProductHunt](https://img.shields.io/badge/Product%20Hunt-DA552F.svg?style=for-the-badge&logo=Product-Hunt&logoColor=white)](https://www.producthunt.com/products/live-ask)
+
 
 ### Links
 * Original Pitch Blogpost for the Project (2018): [Blog Post](https://blog.extrawurst.org/general/webdev/2018/04/02/liveask.html)

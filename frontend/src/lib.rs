@@ -25,7 +25,7 @@ use crate::{
     pages::{Event, Home, NewEvent, Print, Privacy},
 };
 
-pub const VERSION_STR: &str = "2.9.3";
+pub const VERSION_STR: &str = "2.9.4";
 pub const GIT_BRANCH: &str = env!("VERGEN_GIT_BRANCH");
 
 #[derive(Default, Clone, Eq, PartialEq, Store)]
@@ -41,6 +41,7 @@ impl State {
         self.new_question = v;
         self
     }
+
     #[must_use]
     #[allow(clippy::missing_const_for_fn)]
     pub fn set_event(mut self, v: Option<GetEventResponse>) -> Self {
