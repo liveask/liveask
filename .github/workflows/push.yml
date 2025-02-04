@@ -105,8 +105,8 @@ jobs:
         chmod 600 ~/.kube/config
     - name: Update deployment
       run: |
-        kubectl -n tiny patch deployment server \
-          --patch '{"spec":{"template":{"spec":{"containers":[{"name":"server","image":"ghcr.io/rustunit/tt/server:'${GITHUB_SHA:0:7}'"}]}}}}'
+        kubectl -n labeta patch deployment server \
+          --patch '{"spec":{"template":{"spec":{"containers":[{"name":"server","image":"liveask/server:'${GITHUB_SHA:0:7}'"}]}}}}'
     - name: Set short git SHA
       id: vars
       run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
