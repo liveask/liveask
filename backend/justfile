@@ -12,7 +12,8 @@ check:
 	cargo make clippy-nightly
 
 # URL := "http://127.0.0.1:8090"
-URL := "https://prod.www.live-ask.com"
+# URL := "https://prod.www.live-ask.com"
+URL := "https://beta.www.live-ask.com"
 
 test-version:
 	xh {{URL}}/api/version
