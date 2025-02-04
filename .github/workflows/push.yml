@@ -98,18 +98,15 @@ jobs:
         docker tag liveask/server:beta liveask/server:${GITHUB_SHA:0:7}
         docker push liveask/server:beta
         docker push liveask/server:${GITHUB_SHA:0:7}
-
-      - name: Setup kubeconfig
-        run: |
-          mkdir -p ~/.kube
-          echo "${{ secrets.KUBE_CONFIG }}" | base64 -d > ~/.kube/config
-          chmod 600 ~/.kube/config
-      
-      - name: Update deployment
-        run: |
-          kubectl -n tiny patch deployment server \
-            --patch '{"spec":{"template":{"spec":{"containers":[{"name":"server","image":"ghcr.io/rustunit/tt/server:'${GITHUB_SHA:0:7}'"}]}}}}'
-
+    - name: Setup kubeconfig
+      run: |
+        mkdir -p ~/.kube
+        echo "${{ secrets.KUBE_CONFIG }}" | base64 -d > ~/.kube/config
+        chmod 600 ~/.kube/config
+    - name: Update deployment
+      run: |
+        kubectl -n tiny patch deployment server \
+          --patch '{"spec":{"template":{"spec":{"containers":[{"name":"server","image":"ghcr.io/rustunit/tt/server:'${GITHUB_SHA:0:7}'"}]}}}}'
     - name: Set short git SHA
       id: vars
       run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
