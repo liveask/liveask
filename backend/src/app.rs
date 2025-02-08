@@ -703,7 +703,7 @@ impl App {
             .await;
 
         self.tracking
-            .track_event_question_added(id.clone(), question_id)
+            .track_event_question_added(id.clone(), question_id.saturating_add(1))
             .await?;
 
         Ok(question)
