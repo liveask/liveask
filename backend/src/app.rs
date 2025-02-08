@@ -702,6 +702,10 @@ impl App {
         self.notify_subscribers(&id, Notification::Question(question_id))
             .await;
 
+        self.tracking
+            .track_event_question_added(id.clone(), question_id)
+            .await?;
+
         Ok(question)
     }
 

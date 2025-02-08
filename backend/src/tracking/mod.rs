@@ -135,6 +135,21 @@ impl Tracking {
         Ok(())
     }
 
+    pub async fn track_event_question_added(
+        &self,
+        event: String,
+        count: i64,
+    ) -> TrackingResult<()> {
+        let mut e = Event::new("event-question-added", &self.server);
+
+        e.insert_prop("event", event)?;
+        e.insert_prop("count", count)?;
+
+        self.log(e).await?;
+
+        Ok(())
+    }
+
     async fn log(&self, event: Event) -> TrackingResult<()> {
         if let Some(key) = &self.key {
             let mut client = ClientOptions::new(key);
