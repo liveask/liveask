@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## [2.9.5] - 2025-02-08
+
+* added new posthog event `question-added`
+
 ## [2.9.4] - 2025-01-27
 
 * new servey link
