@@ -64,7 +64,7 @@ pub async fn handle_webhook(
         _ => {
             tracing::warn!("[hooks] unknown stripe hook: {:?}", event.type_);
         }
-    };
+    }
 
     Ok(Html(""))
 }
