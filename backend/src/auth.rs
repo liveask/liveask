@@ -1,12 +1,12 @@
 use async_redis_session::RedisSessionStore;
 use async_trait::async_trait;
 use axum::{
-    extract::FromRequestParts,
-    http::{request::Parts, StatusCode},
-    response::IntoResponse,
     Json,
+    extract::FromRequestParts,
+    http::{StatusCode, request::Parts},
+    response::IntoResponse,
 };
-use axum_login::{axum_sessions::SessionLayer, secrecy::SecretVec, AuthLayer, AuthUser, UserStore};
+use axum_login::{AuthLayer, AuthUser, UserStore, axum_sessions::SessionLayer, secrecy::SecretVec};
 use shared::{GetUserInfo, UserInfo};
 use tracing::instrument;
 

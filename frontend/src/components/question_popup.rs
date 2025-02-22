@@ -1,11 +1,12 @@
 use crate::{
+    GlobalEvent,
     components::{Popup, TextArea},
     fetch,
     local_cache::LocalCache,
     pages::BASE_API,
-    tracking, GlobalEvent,
+    tracking,
 };
-use events::{event_context, EventBridge};
+use events::{EventBridge, event_context};
 use shared::{AddQuestionError, AddQuestionValidation, ValidationState};
 use wasm_bindgen::UnwrapThrowExt;
 use web_sys::{HtmlTextAreaElement, KeyboardEvent};

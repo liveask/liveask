@@ -1,5 +1,5 @@
 use chrono::{Duration, Utc};
-use events::{event_context, EventBridge};
+use events::{EventBridge, event_context};
 use gloo_timers::callback::Interval;
 use std::{ops::Not, rc::Rc};
 use wasm_bindgen::UnwrapThrowExt;
@@ -7,7 +7,7 @@ use yew::prelude::*;
 use yew_router::prelude::*;
 use yewdux::prelude::*;
 
-use crate::{routes::Route, GlobalEvent, State};
+use crate::{GlobalEvent, State, routes::Route};
 
 pub enum Msg {
     State(Rc<State>),

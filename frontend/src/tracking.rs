@@ -1,6 +1,6 @@
-use wasm_bindgen::{prelude::wasm_bindgen, JsValue};
+use wasm_bindgen::{JsValue, prelude::wasm_bindgen};
 
-use crate::environment::{la_env, LiveAskEnv};
+use crate::environment::{LiveAskEnv, la_env};
 
 #[wasm_bindgen]
 extern "C" {

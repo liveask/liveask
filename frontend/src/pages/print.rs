@@ -109,7 +109,7 @@ impl Print {
                         <div class="event-block">
                             <div class="event-name printable">{ &e.info.data.name.clone() }</div>
                             <div class="event-desc printable" hidden={e.masked}>
-                                { {&e.info.data.description.clone()} }
+                                { e.info.data.description.clone() }
                             </div>
                         </div>
                         <div class="qrbox print">

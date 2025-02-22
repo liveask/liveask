@@ -1,13 +1,13 @@
 use axum::{
-    extract::{ws::WebSocket, Path, State, WebSocketUpgrade},
-    response::{Html, IntoResponse},
     Json,
+    extract::{Path, State, WebSocketUpgrade, ws::WebSocket},
+    response::{Html, IntoResponse},
 };
 use axum_sessions::extractors::{ReadableSession, WritableSession};
 use shared::EventPasswordResponse;
 use tracing::instrument;
 
-use crate::{app::SharedApp, auth::OptionalUser, error::InternalError, GIT_HASH};
+use crate::{GIT_HASH, app::SharedApp, auth::OptionalUser, error::InternalError};
 
 async fn socket_handler(ws: WebSocket, id: String, app: SharedApp) {
     app.push_subscriber(ws, id).await;
@@ -213,10 +213,10 @@ mod test_db_conflicts {
     use crate::{app::App, pubsub::PubSubInMemory};
     use async_trait::async_trait;
     use axum::{
+        Router,
         body::Body,
         http::{self, Request, StatusCode},
         routing::post,
-        Router,
     };
     use pretty_assertions::assert_eq;
     use shared::QuestionItem;
@@ -306,10 +306,10 @@ mod test_db_item_not_found {
     };
     use async_trait::async_trait;
     use axum::{
+        Router,
         body::Body,
         http::{self, Request, StatusCode},
         routing::{get, post},
-        Router,
     };
     use axum_test::{TestServer, TestServerConfig};
     use pretty_assertions::assert_eq;

@@ -6,7 +6,7 @@ mod print;
 mod privacy;
 
 pub use admin::AdminLogin;
-pub use event::{Event, LoadingState, BASE_API};
+pub use event::{BASE_API, Event, LoadingState};
 pub use home::Home;
 pub use newevent::NewEvent;
 pub use print::Print;

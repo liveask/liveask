@@ -14,7 +14,7 @@ use strum::IntoStaticStr;
 
 use self::conversion::{attributes_to_event, event_to_attributes};
 
-use super::{event_key, Error};
+use super::{Error, event_key};
 
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, IntoStaticStr)]
 pub enum PremiumOrder {
@@ -55,7 +55,7 @@ pub struct ApiEventInfo {
     pub tags: EventTags,
 }
 
-const LOREM_IPSUM:&str = "Lorem ipsum dolor sit amet. Et adipisci repellendus id dolore molestiae sed quidem ratione! Aut itaque magnam eos corporis dolores ut repudiandae consequuntur et maiores accusantium. 33 quas illum vel cumque quisquam et possimus quaerat et nostrum galisum et similique dolorum quo earum earum et accusantium dignissimos!";
+const LOREM_IPSUM: &str = "Lorem ipsum dolor sit amet. Et adipisci repellendus id dolore molestiae sed quidem ratione! Aut itaque magnam eos corporis dolores ut repudiandae consequuntur et maiores accusantium. 33 quas illum vel cumque quisquam et possimus quaerat et nostrum galisum et similique dolorum quo earum earum et accusantium dignissimos!";
 
 #[allow(clippy::string_slice)]
 pub fn mask_string(s: &str) -> &str {

@@ -1,10 +1,10 @@
 use crate::{
+    GlobalEvent,
     components::{Popup, Spinner},
     fetch,
     pages::BASE_API,
-    GlobalEvent,
 };
-use events::{event_context, EventBridge};
+use events::{EventBridge, event_context};
 use gloo_timers::callback::Timeout;
 use shared::{EventTokens, EventUpgradeResponse};
 use wasm_bindgen::UnwrapThrowExt;
