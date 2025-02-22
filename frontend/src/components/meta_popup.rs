@@ -1,7 +1,7 @@
 use crate::{
     components::{Popup, TextArea},
     fetch,
-    pages::{NewEvent, BASE_API},
+    pages::{BASE_API, NewEvent},
 };
 use shared::{CreateEventValidation, EditMetaData, ModEvent};
 use wasm_bindgen::UnwrapThrowExt;

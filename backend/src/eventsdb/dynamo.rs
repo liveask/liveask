@@ -14,9 +14,9 @@ use tracing::instrument;
 use crate::eventsdb::event_key;
 
 use super::{
+    EventEntry, EventsDB,
     error::{Error, Result},
     types::{ApiEventInfo, AttributeMap},
-    EventEntry, EventsDB,
 };
 
 const DB_TABLE_NAME: &str = "liveask";

@@ -1,9 +1,9 @@
 [package]
 name = "frontend"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
 build = "build.rs"
-rust-version = "1.74"
+rust-version = "1.85"
 
 [lints]
 workspace = true
@@ -12,10 +12,7 @@ workspace = true
 anyhow = { workspace = true }
 base64 = "0.21"
 bitflags = "2.4"
-chrono = { workspace = true, default-features = false, features = [
-    "clock",
-    "wasmbind",
-] }
+chrono = { workspace = true, features = ["clock", "wasmbind"] }
 console_error_panic_hook = "0.1"
 const_format = "0.2"
 csv = "1.2"

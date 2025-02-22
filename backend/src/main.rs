@@ -22,9 +22,9 @@ use async_redis_session::RedisSessionStore;
 use aws_config::BehaviorVersion;
 use aws_sdk_dynamodb::config::Credentials;
 use axum::{
+    Router,
     http::header,
     routing::{get, post},
-    Router,
 };
 use sentry::integrations::{
     tower::{NewSentryLayer, SentryHttpLayer},

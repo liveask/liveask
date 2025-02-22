@@ -1,5 +1,5 @@
-use crate::{components::Popup, components::Qr, routes::Route, tracking, GlobalEvent};
-use events::{event_context, EventBridge};
+use crate::{GlobalEvent, components::Popup, components::Qr, routes::Route, tracking};
+use events::{EventBridge, event_context};
 use wasm_bindgen::UnwrapThrowExt;
 
 use yew::prelude::*;

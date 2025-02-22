@@ -2,7 +2,7 @@ use wasm_bindgen::UnwrapThrowExt;
 use yew::prelude::*;
 use yew_router::prelude::*;
 
-use crate::{fetch, routes::Route, GIT_BRANCH, VERSION_STR};
+use crate::{GIT_BRANCH, VERSION_STR, fetch, routes::Route};
 
 pub struct Footer {
     api_version: Option<String>,

@@ -12,8 +12,7 @@ env:
 
 jobs:
 
-# CHANGE DETECTION FOR CONDITIONAL NEXT STEPS
-
+  # CHANGE DETECTION FOR CONDITIONAL NEXT STEPS
   changes:
     runs-on: ubuntu-latest
     permissions:

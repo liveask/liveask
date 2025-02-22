@@ -7,7 +7,7 @@ use yew::prelude::*;
 
 use crate::local_cache::LocalCache;
 use crate::tracking;
-use crate::{components::Spinner, Events, GlobalEvent};
+use crate::{Events, GlobalEvent, components::Spinner};
 
 use super::payment_popup::PaymentPopup;
 

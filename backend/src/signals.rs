@@ -1,5 +1,5 @@
 #[cfg(target_family = "unix")]
-use tokio::signal::unix::{signal, SignalKind};
+use tokio::signal::unix::{SignalKind, signal};
 
 #[cfg(target_family = "unix")]
 pub fn create_term_signal_handler(sender: tokio::sync::oneshot::Sender<()>) {

@@ -1,8 +1,9 @@
 #![allow(renamed_and_removed_lints, clippy::blocks_in_if_conditions)]
 
 use super::{
+    EventEntry, EventsDB,
     error::{Error, Result},
-    event_key, EventEntry, EventsDB,
+    event_key,
 };
 use async_trait::async_trait;
 use std::{collections::HashMap, sync::Arc};

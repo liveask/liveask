@@ -210,7 +210,7 @@ mod test {
         TagId,
     };
 
-    use crate::eventsdb::{types::AttributeMap, ApiEventInfo};
+    use crate::eventsdb::{ApiEventInfo, types::AttributeMap};
 
     #[test]
     #[tracing_test::traced_test]

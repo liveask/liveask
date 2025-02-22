@@ -1,5 +1,5 @@
 use async_trait::async_trait;
-use axum::extract::ws::{close_code::RESTART, CloseFrame, Message, WebSocket};
+use axum::extract::ws::{CloseFrame, Message, WebSocket, close_code::RESTART};
 use shared::{
     AddEvent, ContextValidation, EventInfo, EventResponseFlags, EventState, EventTags, EventTokens,
     EventUpgradeResponse, GetEventResponse, ModEvent, ModInfo, ModQuestion, PasswordValidation,
@@ -8,14 +8,14 @@ use shared::{
 use std::{
     collections::HashMap,
     sync::{
-        atomic::{AtomicBool, AtomicUsize, Ordering},
         Arc,
+        atomic::{AtomicBool, AtomicUsize, Ordering},
     },
     time::{Duration, Instant},
 };
 use tinyurl_rs::{CreateRequest, TinyUrlAPI, TinyUrlOpenAPI};
 use tokio::{
-    sync::{mpsc, RwLock},
+    sync::{RwLock, mpsc},
     time::sleep,
 };
 use tracing::instrument;
@@ -1066,14 +1066,14 @@ impl PubSubReceiver for App {
 mod test {
     use super::*;
     use crate::{
-        eventsdb::{event_key, InMemoryEventsDB, PremiumOrder},
+        eventsdb::{InMemoryEventsDB, PremiumOrder, event_key},
         pubsub::{PubSubInMemory, PubSubReceiverInMemory},
         viewers::MockViewers,
     };
     use pretty_assertions::{assert_eq, assert_ne};
     use shared::{
-        AddQuestion, CurrentTag, EventData, TagId, TEST_EVENT_DESC, TEST_EVENT_NAME,
-        TEST_VALID_QUESTION,
+        AddQuestion, CurrentTag, EventData, TEST_EVENT_DESC, TEST_EVENT_NAME, TEST_VALID_QUESTION,
+        TagId,
     };
     use std::sync::Arc;
 
