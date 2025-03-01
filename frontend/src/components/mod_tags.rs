@@ -12,7 +12,7 @@ use yew::{prelude::*, suspense::use_future_with};
 
 pub type SharableTags = Rc<HashMap<TagId, String>>;
 
-#[derive(PartialEq, Properties)]
+#[derive(Eq, PartialEq, Properties)]
 pub struct ModTagsProps {
     pub tokens: EventTokens,
     pub tags: SharableTags,
@@ -25,7 +25,7 @@ pub fn ModTags(props: &ModTagsProps) -> Html {
 
     let on_click: Callback<()> = Callback::from({
         let add_popup_open = add_popup_open.clone();
-        move |_| {
+        move |()| {
             add_popup_open.set(true);
         }
     });
@@ -44,7 +44,7 @@ pub fn ModTags(props: &ModTagsProps) -> Html {
     });
 
     //TODO: make hook and reuse in add-tag
-    let _ = use_future_with(set_current_tag.clone(), {
+    let _ = use_future_with(set_current_tag, {
         let tokens = props.tokens.clone();
 
         |set_current_tag| async move {
@@ -74,7 +74,7 @@ pub fn ModTags(props: &ModTagsProps) -> Html {
 
             <div class="questions-seperator">{"TAGS"}</div>
 
-            <Tags tags={props.tags.clone()} tag={props.tag.clone()} {tag_click} />
+            <Tags tags={SharableTags::clone(&props.tags)} tag={props.tag.clone()} {tag_click} />
 
             <DarkButton label="add tag" {on_click}/>
         </div>
@@ -91,17 +91,17 @@ pub struct TagsProps {
 #[function_component]
 fn Tags(props: &TagsProps) -> Html {
     //TODO: use_effect
-    let mut tags = props.tags.values().into_iter().cloned().collect::<Vec<_>>();
+    let mut tags = props.tags.values().cloned().collect::<Vec<_>>();
     tags.sort();
 
     html! {
         <div class="tags-container">
             {for tags.iter().map(|tag|
-                if props.tag.as_ref().map(|current| tag == current).unwrap_or_default() {
+                if props.tag.as_ref().is_some_and(|current| tag == current) {
                     html! {
                         <BlueButton label={tag.clone()} on_click={
                             let click = props.tag_click.clone();
-                            move |_| {
+                            move |()| {
                                 click.emit(None);
                             }
                         }/>
@@ -111,7 +111,7 @@ fn Tags(props: &TagsProps) -> Html {
                         <WhiteButton label={tag.clone()} on_click={{
                             let tag = tag.clone();
                             let click = props.tag_click.clone();
-                            move |_| {
+                            move |()| {
                                 click.emit(Some(tag.clone()));
                             }
                         }}/>
@@ -156,7 +156,7 @@ fn AddTag(props: &AddTagProps) -> Html {
         let open = props.open.clone();
         let input_ref = input_ref.clone();
         let tag_to_add = tag_to_add.clone();
-        move |_| {
+        move |()| {
             let input = input_ref
                 .cast::<HtmlInputElement>()
                 .expect_throw("div_ref not attached to div element");
@@ -173,7 +173,7 @@ fn AddTag(props: &AddTagProps) -> Html {
         }
     });
 
-    let _ = use_future_with(tag_to_add.clone(), {
+    let _ = use_future_with(tag_to_add, {
         let tokens = props.tokens.clone();
 
         |tag_to_add| async move {
@@ -197,9 +197,7 @@ fn AddTag(props: &AddTagProps) -> Html {
         }
     });
 
-    if !*props.open {
-        html! {}
-    } else {
+    if *props.open {
         html! {
             <div class="popup-bg" ref={bg_ref} onclick={click_bg}>
                 <div class="add-tag-popup">
@@ -215,5 +213,7 @@ fn AddTag(props: &AddTagProps) -> Html {
                 </div>
             </div>
         }
+    } else {
+        html! {}
     }
 }

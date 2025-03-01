@@ -4,7 +4,7 @@ use gloo_net::http::Request;
 use shared::{
     AddEvent, AddQuestion, EditLike, EventData, EventInfo, EventPasswordRequest,
     EventPasswordResponse, EventUpgradeResponse, GetEventResponse, GetUserInfo, ModEvent,
-    ModQuestion, PaymentCapture, QuestionItem, UserLogin,
+    ModQuestion, PaymentCapture, QuestionItem, TagId, UserLogin,
 };
 use std::{
     error::Error,
@@ -172,10 +172,11 @@ pub async fn add_question(
     base_api: &str,
     event_id: String,
     text: String,
+    tag: Option<TagId>,
 ) -> Result<QuestionItem, FetchError> {
     let url = format!("{base_api}/api/event/addquestion/{event_id}");
 
-    let body = JsValue::from_str(&serde_json::to_string(&AddQuestion { text })?);
+    let body = JsValue::from_str(&serde_json::to_string(&AddQuestion { text, tag })?);
 
     let request = Request::post(&url).body(body)?;
     set_content_type_json(&request);

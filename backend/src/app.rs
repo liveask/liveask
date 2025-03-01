@@ -690,7 +690,7 @@ impl App {
             screening: e.do_screening,
             id: question_id,
             likes: 1,
-            tag: e.tags.current_tag,
+            tag: question.tag.or(e.tags.current_tag),
         };
 
         e.questions.push(question.clone());
@@ -1224,6 +1224,7 @@ mod test {
                 res.tokens.public_token.clone(),
                 AddQuestion {
                     text: String::from(TEST_VALID_QUESTION),
+                    tag: None,
                 },
             )
             .await
@@ -1297,6 +1298,7 @@ mod test {
                 res.tokens.public_token.clone(),
                 AddQuestion {
                     text: String::from(TEST_VALID_QUESTION),
+                    tag: None,
                 },
             )
             .await
@@ -1388,6 +1390,7 @@ mod test {
                 res.tokens.public_token.clone(),
                 AddQuestion {
                     text: String::from(TEST_VALID_QUESTION),
+                    tag: None,
                 },
             )
             .await
@@ -1507,6 +1510,7 @@ mod test {
             res.tokens.public_token.clone(),
             AddQuestion {
                 text: String::from(TEST_VALID_QUESTION),
+                tag: None,
             },
         )
         .await
@@ -1517,6 +1521,7 @@ mod test {
                 res.tokens.public_token.clone(),
                 AddQuestion {
                     text: String::from(TEST_VALID_QUESTION),
+                    tag: None,
                 },
             )
             .await;
@@ -1565,6 +1570,7 @@ mod test {
             event_id.clone(),
             AddQuestion {
                 text: String::from(question_text),
+                tag: None,
             },
         )
         .await
@@ -1659,6 +1665,7 @@ mod test {
                 res.tokens.public_token.clone(),
                 AddQuestion {
                     text: String::from(TEST_VALID_QUESTION),
+                    tag: None,
                 },
             )
             .await

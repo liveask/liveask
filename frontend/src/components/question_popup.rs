@@ -1,13 +1,14 @@
+use super::SharableTags;
 use crate::{
     GlobalEvent,
-    components::{Popup, TextArea},
+    components::{Popup, TagSelect, TextArea},
     fetch,
     local_cache::LocalCache,
     pages::BASE_API,
     tracking,
 };
 use events::{EventBridge, event_context};
-use shared::{AddQuestionError, AddQuestionValidation, ValidationState};
+use shared::{AddQuestionError, AddQuestionValidation, TagId, ValidationState};
 use wasm_bindgen::UnwrapThrowExt;
 use web_sys::{HtmlTextAreaElement, KeyboardEvent};
 use yew::prelude::*;
@@ -19,11 +20,13 @@ pub enum Msg {
     Close,
     InputChanged(InputEvent),
     KeyEvent(KeyboardEvent),
+    Tag(TagId),
 }
 
 pub struct QuestionPopup {
     show: bool,
     text: String,
+    tag: Option<TagId>,
     errors: AddQuestionValidation,
     events: EventBridge<GlobalEvent>,
 }
@@ -31,7 +34,8 @@ pub struct QuestionPopup {
 #[derive(Clone, Debug, Eq, PartialEq, Properties)]
 pub struct AddQuestionProps {
     pub event_id: AttrValue,
-    pub tag: Option<String>,
+    pub current_tag: Option<TagId>,
+    pub tags: SharableTags,
 }
 
 impl Component for QuestionPopup {
@@ -46,6 +50,7 @@ impl Component for QuestionPopup {
         Self {
             show: false,
             events,
+            tag: None,
             errors: AddQuestionValidation::default(),
             text: String::new(),
         }
@@ -56,7 +61,9 @@ impl Component for QuestionPopup {
             Msg::GlobalEvent(e) => {
                 if matches!(e, GlobalEvent::OpenQuestionPopup) {
                     tracking::track_event(tracking::EVNT_ASK_OPEN);
+                    self.tag = ctx.props().current_tag;
                     self.show = true;
+                    self.errors = AddQuestionValidation::default();
                     return true;
                 }
                 false
@@ -68,11 +75,14 @@ impl Component for QuestionPopup {
             Msg::Send => {
                 let event_id: String = ctx.props().event_id.to_string();
                 let text = self.text.clone();
+                let tag = self.tag;
 
                 tracking::track_event(tracking::EVNT_ASK_SENT);
 
                 ctx.link().send_future(async move {
-                    if let Ok(item) = fetch::add_question(BASE_API, event_id.clone(), text).await {
+                    if let Ok(item) =
+                        fetch::add_question(BASE_API, event_id.clone(), text, tag).await
+                    {
                         LocalCache::set_like_state(&event_id, item.id, true);
                         if item.screening {
                             LocalCache::add_unscreened_question(&event_id, &item);
@@ -106,27 +116,22 @@ impl Component for QuestionPopup {
                 }
                 true
             }
+            Msg::Tag(id) => {
+                self.tag = Some(id);
+                true
+            }
         }
     }
 
     #[allow(clippy::if_not_else)]
     fn view(&self, ctx: &Context<Self>) -> Html {
         if self.show {
+            let tags = SharableTags::clone(&ctx.props().tags);
+
             let on_close = ctx.link().callback(|()| Msg::Close);
             let on_click_ask = ctx.link().callback(|_| Msg::Send);
             let on_key = ctx.link().callback(Msg::KeyEvent);
-
-            let tag = ctx.props().tag.as_ref().map_or_else(
-                || html! {},
-                |tag| {
-                    html! {
-                        <div class="tag">
-                            { "current tag:" }
-                            <div class="name">{ tag.clone() }</div>
-                        </div>
-                    }
-                },
-            );
+            let on_tag = ctx.link().callback(|id: TagId| Msg::Tag(id));
 
             html! {
                 <Popup class="share-popup" {on_close}>
@@ -154,7 +159,7 @@ impl Component for QuestionPopup {
                                 </div>
                             } }
                             </div>
-                            { tag }
+                            <TagSelect {tags} tag_selected={on_tag} tag={self.tag}/>
                         </div>
                         <button
                             class="dlg-button"

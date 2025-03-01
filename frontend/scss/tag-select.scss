@@ -1,0 +1,28 @@
+@import 'colors';
+
+.tag-select {
+    margin-top: 12px;
+
+    .header {
+        color: $col-button-disabled;
+    }
+
+    .tags {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+
+        .tag {
+            color: white;
+            background-color: $col-button-disabled;
+            margin: 2px;
+            border-radius: 10px;
+            padding: 3px;
+            cursor: pointer;
+
+            &.current {
+                background-color: $pink-bg;
+            }
+        }
+    }
+}
