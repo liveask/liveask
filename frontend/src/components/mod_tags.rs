@@ -90,9 +90,13 @@ pub struct TagsProps {
 
 #[function_component]
 fn Tags(props: &TagsProps) -> Html {
+    //TODO: use_effect
+    let mut tags = props.tags.values().into_iter().cloned().collect::<Vec<_>>();
+    tags.sort();
+
     html! {
         <div class="tags-container">
-            {for props.tags.iter().map(|(_id, tag)|
+            {for tags.iter().map(|tag|
                 if props.tag.as_ref().map(|current| tag == current).unwrap_or_default() {
                     html! {
                         <BlueButton label={tag.clone()} on_click={
