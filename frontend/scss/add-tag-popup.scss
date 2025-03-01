@@ -7,6 +7,21 @@
     border-radius: 4px;
     margin-top: auto;
     text-align: center;
+
+    input {
+        border: 0;
+        border-bottom: 1px solid #D4D4D4;
+        line-height: 25px;
+        font-size: 20px;
+
+        &:focus {
+            border-bottom: 2px solid $pink-bg;
+        }
+
+        &::placeholder {
+            color: $col-button-disabled;
+        }
+    }
 }
 
 .tags-container {
