@@ -11,7 +11,7 @@ services:
     command: -port 8000 -sharedDb -dbPath /var/lib/db
 
   dbadmin:
-    image: aaronshaf/dynamodb-admin
+    image: aaronshaf/dynamodb-admin:4.5.1
     ports:
       - 8800:8800
     command:
