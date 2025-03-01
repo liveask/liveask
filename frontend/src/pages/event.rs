@@ -15,7 +15,7 @@ use yewdux::prelude::*;
 use crate::{
     GlobalEvent, State,
     components::{
-        DeletePopup, EventMeta, EventSocket, Footer, ModPassword, ModTag, PasswordPopup, Question,
+        DeletePopup, EventMeta, EventSocket, Footer, ModPassword, ModTags, PasswordPopup, Question,
         QuestionClickType, QuestionFlags, QuestionPopup, SharableTags, SharePopup, SocketResponse,
         Upgrade,
     },
@@ -728,8 +728,8 @@ impl Event {
                     <button class="button-white" onclick={ctx.link().callback(|_|Msg::ModExport)}>
                         { "Export" }
                     </button>
-                    <ModTag tokens={e.info.tokens.clone()} {tag} {tags} />
                 </div>
+                <ModTags tokens={e.info.tokens.clone()} {tag} {tags} />
             </div>
         }
     }

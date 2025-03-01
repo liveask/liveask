@@ -1,0 +1,34 @@
+@import 'colors';
+
+.add-tag-popup {
+    background-color: white;
+    margin-bottom: auto;
+    padding: 40px;
+    border-radius: 4px;
+    margin-top: auto;
+    text-align: center;
+}
+
+.tags-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: 2px;
+
+    .tag {
+        margin-left: 8px;
+        margin-top: 10px;
+        float: left;
+        font-size: 15px;
+        letter-spacing: 0.16px;
+        line-height: 11px;
+        border-radius: 10px;
+        padding: 3px;
+        background-color: #D4D4D4;
+        color: black;
+    }
+
+    .tag.current {
+        background-color: $col-button-blue;
+    }
+}

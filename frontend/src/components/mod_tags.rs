@@ -1,0 +1,156 @@
+use std::{collections::HashMap, rc::Rc};
+
+use crate::{
+    components::{DarkButton, RedButton},
+    fetch,
+    pages::BASE_API,
+};
+use shared::{EventTokens, ModEvent, TagId, TagValidation};
+use wasm_bindgen::{JsCast, UnwrapThrowExt};
+use web_sys::{HtmlElement, HtmlInputElement};
+use yew::{prelude::*, suspense::use_future_with};
+
+pub type SharableTags = Rc<HashMap<TagId, String>>;
+
+#[derive(PartialEq, Properties)]
+pub struct ModTagsProps {
+    pub tokens: EventTokens,
+    pub tags: SharableTags,
+    pub tag: Option<String>,
+}
+
+#[function_component]
+pub fn ModTags(props: &ModTagsProps) -> Html {
+    let add_popup_open = use_state(|| false);
+
+    let on_click: Callback<()> = Callback::from({
+        let add_popup_open = add_popup_open.clone();
+        move |_| {
+            add_popup_open.set(true);
+        }
+    });
+
+    html! {
+        <div class="tags">
+            <AddTag open={add_popup_open.clone()} tokens={props.tokens.clone()} />
+
+            <div class="questions-seperator">{"TAGS"}</div>
+
+            <div class="tags-container">
+                {for props.tags.iter().map(|(_id, tag)|
+                    if props.tag.as_ref().map(|current| tag == current).unwrap_or_default() {
+                        html! {
+                            <div class="tag current">
+                                {tag.clone()}
+                            </div>
+                        }
+                    } else {
+                        html! {
+                            <div class="tag">
+                                {tag.clone()}
+                            </div>
+                        }
+                    }
+                )}
+            </div>
+
+            <DarkButton label="add tag" {on_click}/>
+        </div>
+    }
+}
+
+#[derive(PartialEq, Properties)]
+pub struct AddTagProps {
+    pub open: UseStateHandle<bool>,
+    pub tokens: EventTokens,
+}
+
+#[function_component]
+fn AddTag(props: &AddTagProps) -> Html {
+    let bg_ref = use_node_ref();
+    let input_ref = use_node_ref();
+
+    let click_bg = Callback::from({
+        let open = props.open.clone();
+        let bg_ref = bg_ref.clone();
+        move |e: MouseEvent| {
+            let div = bg_ref
+                .cast::<HtmlElement>()
+                .expect_throw("div_ref not attached to div element");
+
+            let target = e.target().unwrap_throw();
+            let target: HtmlElement = target.dyn_into().unwrap_throw();
+
+            if div == target {
+                open.set(false);
+            }
+        }
+    });
+
+    let tag_to_add = use_state(|| None::<String>);
+
+    let on_click: Callback<()> = Callback::from({
+        let open = props.open.clone();
+        let input_ref = input_ref.clone();
+        let tag_to_add = tag_to_add.clone();
+        move |_| {
+            let input = input_ref
+                .cast::<HtmlInputElement>()
+                .expect_throw("div_ref not attached to div element");
+
+            let value = input.value();
+
+            let mut valid = TagValidation::default();
+            valid.check(&value);
+
+            if !valid.has_any() {
+                tag_to_add.set(Some(value));
+                open.set(false);
+            }
+        }
+    });
+
+    let _ = use_future_with(tag_to_add.clone(), {
+        let tokens = props.tokens.clone();
+
+        |tag_to_add| async move {
+            if let Some(tag) = &**tag_to_add {
+                tag_to_add.set(None);
+
+                if let Err(e) = fetch::mod_edit_event(
+                    BASE_API,
+                    tokens.public_token.clone(),
+                    tokens.moderator_token.clone().unwrap_throw(),
+                    ModEvent {
+                        current_tag: Some(shared::CurrentTag::Enabled(tag.clone())),
+                        ..Default::default()
+                    },
+                )
+                .await
+                {
+                    log::error!("mod_edit_event error: {e}");
+                }
+            }
+        }
+    });
+
+    if !*props.open {
+        html! {}
+    } else {
+        html! {
+            <div class="popup-bg" ref={bg_ref} onclick={click_bg}>
+                <div class="add-tag-popup">
+                    <div class="">
+                        <input
+                            ref={input_ref}
+                            type="text"
+                            placeholder="tag"
+                            maxlength="30"
+                        />
+                    </div>
+                    <RedButton label="Add" {on_click} />
+                </div>
+            </div>
+        }
+    }
+}
