@@ -1,7 +1,7 @@
 use std::{collections::HashMap, rc::Rc};
 
 use crate::{
-    components::{DarkButton, RedButton},
+    components::{BlueButton, DarkButton, RedButton, WhiteButton},
     fetch,
     pages::BASE_API,
 };
@@ -30,31 +30,90 @@ pub fn ModTags(props: &ModTagsProps) -> Html {
         }
     });
 
+    let set_current_tag = use_state(|| None::<shared::CurrentTag>);
+
+    let tag_click: Callback<Option<String>> = Callback::from({
+        let set_current_tag = set_current_tag.clone();
+        move |tag| {
+            if let Some(tag) = tag {
+                set_current_tag.set(Some(shared::CurrentTag::Enabled(tag)));
+            } else {
+                set_current_tag.set(Some(shared::CurrentTag::Disabled));
+            }
+        }
+    });
+
+    //TODO: make hook and reuse in add-tag
+    let _ = use_future_with(set_current_tag.clone(), {
+        let tokens = props.tokens.clone();
+
+        |set_current_tag| async move {
+            if let Some(tag) = &**set_current_tag {
+                set_current_tag.set(None);
+
+                if let Err(e) = fetch::mod_edit_event(
+                    BASE_API,
+                    tokens.public_token.clone(),
+                    tokens.moderator_token.clone().unwrap_throw(),
+                    ModEvent {
+                        current_tag: Some(tag.clone()),
+                        ..Default::default()
+                    },
+                )
+                .await
+                {
+                    log::error!("mod_edit_event error: {e}");
+                }
+            }
+        }
+    });
+
     html! {
         <div class="tags">
             <AddTag open={add_popup_open.clone()} tokens={props.tokens.clone()} />
 
             <div class="questions-seperator">{"TAGS"}</div>
 
-            <div class="tags-container">
-                {for props.tags.iter().map(|(_id, tag)|
-                    if props.tag.as_ref().map(|current| tag == current).unwrap_or_default() {
-                        html! {
-                            <div class="tag current">
-                                {tag.clone()}
-                            </div>
-                        }
-                    } else {
-                        html! {
-                            <div class="tag">
-                                {tag.clone()}
-                            </div>
-                        }
-                    }
-                )}
-            </div>
+            <Tags tags={props.tags.clone()} tag={props.tag.clone()} {tag_click} />
 
             <DarkButton label="add tag" {on_click}/>
+        </div>
+    }
+}
+
+#[derive(PartialEq, Properties)]
+pub struct TagsProps {
+    pub tags: SharableTags,
+    pub tag: Option<String>,
+    pub tag_click: Callback<Option<String>>,
+}
+
+#[function_component]
+fn Tags(props: &TagsProps) -> Html {
+    html! {
+        <div class="tags-container">
+            {for props.tags.iter().map(|(_id, tag)|
+                if props.tag.as_ref().map(|current| tag == current).unwrap_or_default() {
+                    html! {
+                        <BlueButton label={tag.clone()} on_click={
+                            let click = props.tag_click.clone();
+                            move |_| {
+                                click.emit(None);
+                            }
+                        }/>
+                    }
+                } else {
+                    html! {
+                        <WhiteButton label={tag.clone()} on_click={{
+                            let tag = tag.clone();
+                            let click = props.tag_click.clone();
+                            move |_| {
+                                click.emit(Some(tag.clone()));
+                            }
+                        }}/>
+                    }
+                }
+            )}
         </div>
     }
 }

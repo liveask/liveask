@@ -21,7 +21,7 @@ mod textarea;
 mod trusted_by;
 mod upgrade;
 
-pub use buttons::{DarkButton, RedButton};
+pub use buttons::{BlueButton, DarkButton, RedButton, WhiteButton};
 pub use context_popup::ContextPopup;
 pub use delete_popup::DeletePopup;
 pub use event_context::EventContext;
