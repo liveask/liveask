@@ -571,13 +571,6 @@ impl Event {
         }
     }
 
-    fn question_separator_classes(&self) -> Classes {
-        classes!(match self.mode {
-            Mode::Moderator => "questions-seperator modview",
-            Mode::Viewer => "questions-seperator",
-        })
-    }
-
     const fn is_mod(&self) -> bool {
         matches!(self.mode, Mode::Moderator)
     }
@@ -612,13 +605,11 @@ impl Event {
         can_vote: bool,
     ) -> Html {
         if !items.is_empty() {
-            let title_classes = self.question_separator_classes();
-
             let masked = self.state.event.as_ref().is_some_and(|e| e.masked);
 
             return html! {
                 <div>
-                    <div class={title_classes}>{ title }</div>
+                    <div class="questions-seperator">{ title }</div>
                     <div class="questions">
                         { for items.iter().enumerate().map(|(e,i)|self.view_item(ctx,can_vote,masked,e,i)) }
                     </div>
