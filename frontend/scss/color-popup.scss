@@ -1,0 +1,40 @@
+@import 'colors';
+
+.color-popup {
+    background-color: white;
+    margin-bottom: auto;
+    margin-top: auto;
+    border-radius: 4px;
+    text-align: center;
+
+    .header {
+        padding: 30px;
+    }
+
+    .colors {
+        display: flex;
+        gap: 40px;
+        justify-content: center;
+
+        .color {
+            width: 41px;
+            height: 41px;
+        }
+    }
+
+    .buttons {
+        display: flex;
+        padding-left: 40px;
+        padding-right: 40px;
+        padding-top: 20px;
+        padding-bottom: 30px;
+        margin-top: 25px;
+        gap: 10px;
+
+        button {
+            margin: 1px;
+            height: 40px;
+            width: 113px;
+        }
+    }
+}

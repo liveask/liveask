@@ -1,4 +1,4 @@
-use crate::components::{EventContext, MetaPopup};
+use crate::components::{ColorPopup, EventContext, MetaPopup};
 use shared::{ContextItem, EditMetaData, EventData, EventTokens};
 use yew::prelude::*;
 
@@ -14,10 +14,12 @@ pub struct EventMetaProps {
 
 pub struct EventMeta {
     show_meta_popup: bool,
+    show_color_edit: bool,
 }
 
 pub enum Msg {
     EditClick,
+    EditColorClick,
     ClosePopup,
 }
 
@@ -28,6 +30,7 @@ impl Component for EventMeta {
     fn create(_ctx: &Context<Self>) -> Self {
         Self {
             show_meta_popup: false,
+            show_color_edit: false,
         }
     }
 
@@ -37,8 +40,13 @@ impl Component for EventMeta {
                 self.show_meta_popup = true;
                 true
             }
+            Msg::EditColorClick => {
+                self.show_color_edit = true;
+                true
+            }
             Msg::ClosePopup => {
                 self.show_meta_popup = false;
+                self.show_color_edit = false;
                 true
             }
         }
@@ -54,6 +62,7 @@ impl Component for EventMeta {
             title: name.clone(),
             description: desc.clone(),
         };
+        let color = ctx.props().data.color.clone();
 
         let on_close_popup = ctx.link().callback(|()| Msg::ClosePopup);
 
@@ -62,7 +71,15 @@ impl Component for EventMeta {
                 <div class="event-name-label">{"The Event"}{ Self::mod_view_edit(ctx) }</div>
                 <div class="event-name">{name}</div>
                 <EventContext {context} tokens={ctx.props().tokens.clone()} {is_premium} />
-                <MetaPopup tokens={ctx.props().tokens.clone()} on_close={on_close_popup} show={self.show_meta_popup} {meta} />
+                <MetaPopup tokens={ctx.props().tokens.clone()} on_close={on_close_popup.clone()} show={self.show_meta_popup} {meta} />
+                {
+                    if self.show_color_edit {
+                        html!{
+                            <ColorPopup tokens={ctx.props().tokens.clone()} on_close={on_close_popup} {color} {is_premium} />
+                        }
+                    } else {html!{}}
+                }
+
                 //TODO: collapsable event desc
                 <div
                     class={classes!("event-desc",is_masked.then_some("blurr"))}
@@ -78,15 +95,16 @@ impl EventMeta {
     fn mod_view_edit(ctx: &Context<Self>) -> Html {
         //TODO: show clock icon with tooltip that only in first 24h the text can be edited
         let is_mod = ctx.props().tokens.is_mod() && ctx.props().is_first_24h;
-        let on_click = ctx.link().callback(|_| Msg::EditClick);
+        let on_click_text = ctx.link().callback(|_| Msg::EditClick);
+        let on_click_color = ctx.link().callback(|_| Msg::EditColorClick);
 
         if is_mod {
             html! {
                 <>
-                    <button class="button-icon" onclick={on_click}>
+                    <button class="button-icon" onclick={on_click_text}>
                         <img src="assets/edit.svg" alt="edit"/>
                     </button>
-                    <button class="button-icon">
+                    <button class="button-icon" onclick={on_click_color}>
                         <img src="assets/color-pick.svg" alt="edit"/>
                     </button>
                 </>
