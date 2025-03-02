@@ -76,7 +76,13 @@ pub fn ModTags(props: &ModTagsProps) -> Html {
 
             <Tags tags={SharableTags::clone(&props.tags)} tag={props.tag.clone()} {tag_click} />
 
-            <DarkButton label="add tag" {on_click}/>
+            {
+                if props.tags.len() < shared::MAX_TAGS {
+                    html! {<DarkButton label="add tag" {on_click}/>}
+                } else {
+                    html! {}
+                }
+            }
         </div>
     }
 }
