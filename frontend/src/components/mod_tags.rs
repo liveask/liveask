@@ -70,7 +70,6 @@ pub fn ModTags(props: &ModTagsProps) -> Html {
 
     html! {
         <div class="tags">
-            <AddTag open={add_popup_open.clone()} tokens={props.tokens.clone()} />
 
             <div class="questions-seperator">{"TAGS"}</div>
 
@@ -78,7 +77,12 @@ pub fn ModTags(props: &ModTagsProps) -> Html {
 
             {
                 if props.tags.len() < shared::MAX_TAGS {
-                    html! {<DarkButton label="add tag" {on_click}/>}
+                    html! {
+                        <>
+                        <AddTag open={add_popup_open.clone()} tokens={props.tokens.clone()} />
+                        <DarkButton label="add tag" {on_click}/>
+                        </>
+                    }
                 } else {
                     html! {}
                 }
