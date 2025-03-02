@@ -587,12 +587,7 @@ impl Event {
 
     fn view_questions(&self, ctx: &Context<Self>, e: &GetEventResponse) -> Html {
         if e.info.questions.is_empty() && self.unscreened.is_empty() {
-            let no_questions_classes = classes!(match self.mode {
-                Mode::Moderator => "noquestions modview",
-                Mode::Viewer => "noquestions",
-            });
-
-            html! { <div class={no_questions_classes}>{ "no questions yet" }</div> }
+            html! { <div class="noquestions">{ "no questions yet" }</div> }
         } else {
             let can_vote = !e.is_closed();
             let is_mod = self.is_mod();

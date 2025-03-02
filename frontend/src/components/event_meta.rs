@@ -72,13 +72,7 @@ impl Component for EventMeta {
                 <div class="event-name">{name}</div>
                 <EventContext {context} tokens={ctx.props().tokens.clone()} {is_premium} />
                 <MetaPopup tokens={ctx.props().tokens.clone()} on_close={on_close_popup.clone()} show={self.show_meta_popup} {meta} />
-                {
-                    if self.show_color_edit {
-                        html!{
-                            <ColorPopup tokens={ctx.props().tokens.clone()} on_close={on_close_popup} {color} {is_premium} />
-                        }
-                    } else {html!{}}
-                }
+                <ColorPopup tokens={ctx.props().tokens.clone()} on_close={on_close_popup} open={self.show_color_edit} {color} {is_premium} />
 
                 //TODO: collapsable event desc
                 <div

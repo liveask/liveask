@@ -1,9 +1,9 @@
 use async_trait::async_trait;
 use axum::extract::ws::{CloseFrame, Message, WebSocket, close_code::RESTART};
 use shared::{
-    AddEvent, ContextValidation, EventInfo, EventResponseFlags, EventState, EventTags, EventTokens,
-    EventUpgradeResponse, GetEventResponse, ModEvent, ModInfo, ModQuestion, PasswordValidation,
-    PaymentCapture, QuestionItem, States, TagValidation,
+    AddEvent, Color, ContextValidation, EventInfo, EventResponseFlags, EventState, EventTags,
+    EventTokens, EventUpgradeResponse, GetEventResponse, ModEvent, ModInfo, ModQuestion,
+    PasswordValidation, PaymentCapture, QuestionItem, States, TagValidation,
 };
 use std::{
     collections::HashMap,
@@ -482,6 +482,9 @@ impl App {
         }
         if let Some(meta) = &changes.meta {
             self.mod_meta(e, meta).await?;
+        }
+        if let Some(color) = &changes.color {
+            self.mod_color(e, color).await?;
         }
 
         let result = e.clone();
@@ -1028,6 +1031,16 @@ impl App {
 
         self.tracking
             .track_event_meta_change(e.tokens.public_token.clone(), edit)
+            .await?;
+
+        Ok(())
+    }
+
+    async fn mod_color(&self, e: &mut ApiEventInfo, color: &shared::EditColor) -> Result<()> {
+        e.data.color = Some(Color(color.0.clone()));
+
+        self.tracking
+            .track_event_color_change(e.tokens.public_token.clone(), color)
             .await?;
 
         Ok(())

@@ -334,6 +334,9 @@ pub enum EditContextLink {
     Enabled(ContextItem),
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq)]
+pub struct EditColor(pub String);
+
 impl CurrentTag {
     #[must_use]
     pub const fn is_enabled(&self) -> bool {
@@ -389,6 +392,7 @@ pub struct ModEvent {
     pub meta: Option<EditMetaData>,
     pub screening: Option<bool>,
     pub context: Option<EditContextLink>,
+    pub color: Option<EditColor>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Copy, Clone, Eq, PartialEq, Default)]
