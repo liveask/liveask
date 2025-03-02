@@ -515,8 +515,7 @@ impl Event {
                 .event
                 .as_ref()
                 .and_then(|e| e.info.data.color.clone())
-                .map(|c| c.0)
-                .unwrap_or(String::from("#282828"));
+                .map_or_else(|| String::from("#282828"),|c| c.0);
 
             html! {
                 <div class="some-event">
@@ -551,7 +550,7 @@ impl Event {
                         </div>
                     </div>
                     { self.mod_urls(ctx,admin) }
-                    <div style={format!("background-color: {}",color)}>
+                    <div style={format!("background-color: {color}")}>
                         { self.view_stats() }
                         <div class="review-note" hidden={!screening_enabled || mod_view}>
                         { "Moderator enabled question reviewing. New questions have to be approved first." }

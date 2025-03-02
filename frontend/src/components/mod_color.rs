@@ -74,8 +74,7 @@ pub fn ColorPopup(props: &ColorPopupProps) -> Html {
     let color = props
         .color
         .as_ref()
-        .map(|c| c.0.clone())
-        .unwrap_or(String::from("#282828"));
+        .map_or_else(|| String::from("#282828"), |c| c.0.clone());
 
     html! {
         <div class="popup-bg" ref={bg_ref} onclick={click_bg}>
@@ -88,7 +87,7 @@ pub fn ColorPopup(props: &ColorPopupProps) -> Html {
                     <div class="color" style="background-color: #7BBE31;"></div>
                 </div>
 
-                <div class="buttons" style={format!("background-color: {}",color)}>
+                <div class="buttons" style={format!("background-color: {color}")}>
                     <WhiteButton label="Cancel" on_click={click_cancel} />
                     <RedButton label="Save" on_click={click_save} />
                 </div>
