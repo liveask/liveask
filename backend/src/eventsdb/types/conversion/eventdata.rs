@@ -63,7 +63,7 @@ pub fn attributes_to_eventdata(value: &AttributeMap) -> Result<EventData, super:
         .get(ATTR_EVENT_DATA_COLOR)
         .and_then(|value| value.as_s().ok().cloned());
 
-    let color = color.map(|color| Color(color));
+    let color = color.map(Color);
 
     Ok(EventData {
         name,
