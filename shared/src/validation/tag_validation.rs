@@ -7,7 +7,7 @@ pub enum TagError {
 }
 
 const TRIMMED_MIN_LEN: usize = 3;
-const MAX_LEN: usize = 30;
+const MAX_LEN: usize = 15;
 
 #[derive(Default, Debug)]
 pub struct TagValidation {

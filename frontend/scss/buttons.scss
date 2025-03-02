@@ -59,7 +59,7 @@ $button-border-color: rgba(255, 255, 255, 0.1);
     @extend .button;
 
     margin-top: 10px;
-    background-color: #49BEFF;
+    background-color: $col-button-blue;
     color: $pink-button;
     border-color: $button-border-color;
 }

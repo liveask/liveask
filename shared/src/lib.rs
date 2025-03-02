@@ -278,6 +278,8 @@ pub struct EditLike {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct AddQuestion {
     pub text: String,
+    #[serde(default)]
+    pub tag: Option<TagId>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]

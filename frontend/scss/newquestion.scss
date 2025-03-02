@@ -13,22 +13,8 @@
 			font-size: 70%;
 		}
 
-		.tag {
-			margin-top: 10px;
+		.tags {
 			font-size: 6.5pt;
-			text-transform: uppercase;
-			text-align: left;
-			cursor: default;
-			user-select: none;
-
-			.name {
-				display: inline;
-				margin-left: 6px;
-				border-radius: 10px;
-				padding: 3px;
-				background-color: #D4D4D4;
-				color: white;
-			}
 		}
 	}
 

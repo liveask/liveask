@@ -1,0 +1,10 @@
+@import 'colors';
+
+.tag-select {
+    margin-top: 12px;
+
+    .header {
+        color: $col-button-disabled;
+        margin-bottom: 5px;
+    }
+}

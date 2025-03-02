@@ -15,7 +15,7 @@ use yewdux::prelude::*;
 use crate::{
     GlobalEvent, State,
     components::{
-        DeletePopup, EventMeta, EventSocket, Footer, ModPassword, ModTag, PasswordPopup, Question,
+        DeletePopup, EventMeta, EventSocket, Footer, ModPassword, ModTags, PasswordPopup, Question,
         QuestionClickType, QuestionFlags, QuestionPopup, SharableTags, SharePopup, SocketResponse,
         Upgrade,
     },
@@ -506,7 +506,8 @@ impl Event {
             let is_masked = e.masked;
             let is_first_24h = EventInfo::during_first_day(e.info.create_time_unix);
 
-            let tag = e.info.tags.get_current_tag_label();
+            let tags = SharableTags::clone(&self.tags);
+            let current_tag = e.info.tags.current_tag;
             let screening_enabled = e.info.flags.contains(EventFlags::SCREENING);
 
             html! {
@@ -517,7 +518,7 @@ impl Event {
                         show={e.is_wrong_pwd()}
                         onconfirmed={ctx.link().callback(|()|Msg::PasswordSet)}
                     />
-                    <QuestionPopup event_id={e.info.tokens.public_token.clone()} {tag} />
+                    <QuestionPopup event_id={e.info.tokens.public_token.clone()} {current_tag} tags={SharableTags::clone(&tags)} />
                     <SharePopup url={share_url} event_id={e.info.tokens.public_token.clone()} />
                     <div class="event-block">
                         <EventMeta
@@ -528,7 +529,7 @@ impl Event {
                             {is_masked}
                             {is_first_24h}
                              />
-                        { self.mod_view(ctx,e) }
+                        { self.mod_view(ctx,e,tags) }
                         <div class="not-open" hidden={!e.info.state.is_closed()}>
                             { "This event was closed by the moderator. You cannot add or vote questions anymore." }
                             <br />
@@ -659,7 +660,7 @@ impl Event {
     }
 
     //TODO: make mod component
-    fn mod_view(&self, ctx: &Context<Self>, e: &GetEventResponse) -> Html {
+    fn mod_view(&self, ctx: &Context<Self>, e: &GetEventResponse, tags: SharableTags) -> Html {
         if !matches!(self.mode, Mode::Moderator) {
             return html! {};
         }
@@ -692,7 +693,7 @@ impl Event {
                     </button>
                     <ModPassword tokens={e.info.tokens.clone()} {pwd} />
                     { if e.info.is_premium() {
-                            self.mod_view_premium(ctx,e)
+                            Self::mod_view_premium(ctx,e,tags)
                         } else { html!{} } }
                 </div>
                 { if payment_allowed {
@@ -705,9 +706,8 @@ impl Event {
         }
     }
 
-    fn mod_view_premium(&self, ctx: &Context<Self>, e: &GetEventResponse) -> Html {
+    fn mod_view_premium(ctx: &Context<Self>, e: &GetEventResponse, tags: SharableTags) -> Html {
         let tag = e.info.tags.get_current_tag_label();
-        let tags = SharableTags::clone(&self.tags);
 
         html! {
             <div class="premium">
@@ -728,8 +728,8 @@ impl Event {
                     <button class="button-white" onclick={ctx.link().callback(|_|Msg::ModExport)}>
                         { "Export" }
                     </button>
-                    <ModTag tokens={e.info.tokens.clone()} {tag} {tags} />
                 </div>
+                <ModTags tokens={e.info.tokens.clone()} {tag} {tags} />
             </div>
         }
     }
