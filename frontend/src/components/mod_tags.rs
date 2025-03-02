@@ -206,7 +206,7 @@ fn AddTag(props: &AddTagProps) -> Html {
                             ref={input_ref}
                             type="text"
                             placeholder="tag"
-                            maxlength="30"
+                            maxlength="15"
                         />
                     </div>
                     <RedButton label="Add" {on_click} />
