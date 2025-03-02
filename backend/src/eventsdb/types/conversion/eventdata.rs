@@ -1,12 +1,13 @@
 use super::AttributeMap;
 use crate::eventsdb::Error;
 use aws_sdk_dynamodb::types::AttributeValue;
-use shared::EventData;
+use shared::{Color, EventData};
 
 const ATTR_EVENT_DATA_NAME: &str = "name";
 const ATTR_EVENT_DATA_DESC: &str = "desc";
 const ATTR_EVENT_DATA_URL_SHORT: &str = "short_url";
 const ATTR_EVENT_DATA_URL_LONG: &str = "long_url";
+const ATTR_EVENT_DATA_COLOR: &str = "color";
 
 pub fn eventdata_to_attributes(value: EventData) -> AttributeMap {
     let mut map = AttributeMap::new();
@@ -29,6 +30,10 @@ pub fn eventdata_to_attributes(value: EventData) -> AttributeMap {
         .and_then(|url| if url.is_empty() { None } else { Some(url) })
     {
         map.insert(ATTR_EVENT_DATA_URL_LONG.into(), AttributeValue::S(long_url));
+    }
+
+    if let Some(c) = value.color {
+        map.insert(ATTR_EVENT_DATA_COLOR.into(), AttributeValue::S(c.0));
     }
 
     map
@@ -54,10 +59,17 @@ pub fn attributes_to_eventdata(value: &AttributeMap) -> Result<EventData, super:
         .get(ATTR_EVENT_DATA_URL_LONG)
         .and_then(|value| value.as_s().ok().cloned());
 
+    let color = value
+        .get(ATTR_EVENT_DATA_COLOR)
+        .and_then(|value| value.as_s().ok().cloned());
+
+    let color = color.map(|color| Color(color));
+
     Ok(EventData {
         name,
         description,
         short_url,
         long_url,
+        color,
     })
 }

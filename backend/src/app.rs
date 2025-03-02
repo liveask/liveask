@@ -1093,9 +1093,7 @@ mod test {
             .create_event(AddEvent {
                 data: EventData {
                     name: String::from("too short"),
-                    description: String::new(),
-                    short_url: String::new(),
-                    long_url: None,
+                    ..EventData::default()
                 },
                 moderator_email: None,
                 test: false,
@@ -1122,8 +1120,7 @@ mod test {
                 data: EventData {
                     name: TEST_EVENT_NAME.to_string(),
                     description: TEST_EVENT_DESC.to_string(),
-                    short_url: String::new(),
-                    long_url: None,
+                    ..EventData::default()
                 },
                 moderator_email: Option::Some("a@a".to_string()),
                 test: false,
@@ -1150,8 +1147,7 @@ mod test {
                 data: EventData {
                     name: TEST_EVENT_NAME.to_string(),
                     description: TEST_EVENT_DESC.to_string(),
-                    short_url: String::new(),
-                    long_url: None,
+                    ..EventData::default()
                 },
                 moderator_email: Option::Some("testuser@live-ask.com".to_string()),
                 test: false,
@@ -1178,8 +1174,7 @@ mod test {
             data: EventData {
                 name: String::from("123456789"),
                 description: String::from("123456789 123456789 123456789 !"),
-                short_url: String::new(),
-                long_url: None,
+                ..EventData::default()
             },
             moderator_email: None,
             test: false,
@@ -1210,8 +1205,7 @@ mod test {
                 data: EventData {
                     name: String::from("123456789"),
                     description: String::from("123456789 123456789 123456789 !"),
-                    short_url: String::new(),
-                    long_url: None,
+                    ..EventData::default()
                 },
                 moderator_email: None,
                 test: false,
@@ -1275,8 +1269,7 @@ mod test {
                 data: EventData {
                     name: String::from("123456789"),
                     description: String::from("123456789 123456789 123456789 !"),
-                    short_url: String::new(),
-                    long_url: None,
+                    ..EventData::default()
                 },
                 moderator_email: None,
                 test: false,
@@ -1367,8 +1360,7 @@ mod test {
                 data: EventData {
                     name: String::from("123456789"),
                     description: String::from("123456789 123456789 123456789 !"),
-                    short_url: String::new(),
-                    long_url: None,
+                    ..EventData::default()
                 },
                 moderator_email: None,
                 test: false,
@@ -1443,8 +1435,7 @@ mod test {
                 data: EventData {
                     name: String::from("123456789"),
                     description: String::from("123456789 123456789 123456789 !"),
-                    short_url: String::new(),
-                    long_url: None,
+                    ..EventData::default()
                 },
                 moderator_email: None,
                 test: false,
@@ -1497,8 +1488,7 @@ mod test {
                 data: EventData {
                     name: String::from("123456789"),
                     description: String::from("123456789 123456789 123456789 !"),
-                    short_url: String::new(),
-                    long_url: None,
+                    ..EventData::default()
                 },
                 moderator_email: None,
                 test: false,
@@ -1553,8 +1543,7 @@ mod test {
                 data: EventData {
                     name: String::from("123456789"),
                     description: String::from("123456789 123456789 123456789 !"),
-                    short_url: String::new(),
-                    long_url: None,
+                    ..EventData::default()
                 },
                 moderator_email: None,
                 test: false,
@@ -1625,8 +1614,7 @@ mod test {
                 data: EventData {
                     name: String::from("123456789"),
                     description: String::from("123456789 123456789 123456789 !"),
-                    short_url: String::new(),
-                    long_url: None,
+                    ..EventData::default()
                 },
                 moderator_email: None,
                 test: false,

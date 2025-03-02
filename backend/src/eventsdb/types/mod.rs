@@ -237,8 +237,7 @@ mod test_serialization {
                 data: EventData {
                     name: String::from("name"),
                     description: String::from("desc"),
-                    short_url: String::from(""),
-                    long_url: None,
+                    ..Default::default()
                 },
                 create_time_unix: 1,
                 delete_time_unix: 0,
@@ -286,8 +285,8 @@ mod test_serialization {
                 data: EventData {
                     name: String::from("name"),
                     description: String::from("desc"),
-                    short_url: String::from(""),
                     long_url: Some(String::from("foo")),
+                    ..Default::default()
                 },
                 create_time_unix: 1,
                 delete_time_unix: 0,

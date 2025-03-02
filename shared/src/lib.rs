@@ -40,6 +40,9 @@ impl EventTokens {
 }
 
 #[derive(Serialize, Deserialize, Debug, Default, Clone, Eq, PartialEq)]
+pub struct Color(pub String);
+
+#[derive(Serialize, Deserialize, Debug, Default, Clone, Eq, PartialEq)]
 pub struct EventData {
     pub name: String,
     pub description: String,
@@ -47,6 +50,8 @@ pub struct EventData {
     pub short_url: String,
     #[serde(rename = "longUrl")]
     pub long_url: Option<String>,
+    #[serde(default)]
+    pub color: Option<Color>,
 }
 
 #[derive(Serialize, Deserialize, Default, Debug, Copy, Clone, Eq, PartialEq, Hash)]

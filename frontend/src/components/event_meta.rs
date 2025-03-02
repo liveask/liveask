@@ -82,9 +82,14 @@ impl EventMeta {
 
         if is_mod {
             html! {
-                <button class="button-icon" onclick={on_click}>
-                    <img src="assets/edit.svg" alt="edit"/>
-                </button>
+                <>
+                    <button class="button-icon" onclick={on_click}>
+                        <img src="assets/edit.svg" alt="edit"/>
+                    </button>
+                    <button class="button-icon">
+                        <img src="assets/color-pick.svg" alt="edit"/>
+                    </button>
+                </>
             }
         } else {
             html! {}
