@@ -1,11 +1,10 @@
-use std::{collections::HashMap, rc::Rc};
-
 use crate::{
-    components::{BlueButton, DarkButton, RedButton, WhiteButton},
+    components::{DarkButton, RedButton, Tags},
     fetch,
     pages::BASE_API,
 };
 use shared::{EventTokens, ModEvent, TagId, TagValidation};
+use std::{collections::HashMap, rc::Rc};
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 use web_sys::{HtmlElement, HtmlInputElement};
 use yew::{prelude::*, suspense::use_future_with};
@@ -32,10 +31,12 @@ pub fn ModTags(props: &ModTagsProps) -> Html {
 
     let set_current_tag = use_state(|| None::<shared::CurrentTag>);
 
-    let tag_click: Callback<Option<String>> = Callback::from({
+    let tag_click: Callback<Option<TagId>> = Callback::from({
         let set_current_tag = set_current_tag.clone();
-        move |tag| {
+        let tags = SharableTags::clone(&props.tags);
+        move |tag: Option<TagId>| {
             if let Some(tag) = tag {
+                let tag = tags.get(&tag).unwrap_throw().clone();
                 set_current_tag.set(Some(shared::CurrentTag::Enabled(tag)));
             } else {
                 set_current_tag.set(Some(shared::CurrentTag::Disabled));
@@ -69,7 +70,7 @@ pub fn ModTags(props: &ModTagsProps) -> Html {
     });
 
     html! {
-        <div class="tags">
+        <div class="mod-tags">
 
             <div class="questions-seperator">{"TAGS"}</div>
 
@@ -87,47 +88,6 @@ pub fn ModTags(props: &ModTagsProps) -> Html {
                     html! {}
                 }
             }
-        </div>
-    }
-}
-
-#[derive(PartialEq, Properties)]
-pub struct TagsProps {
-    pub tags: SharableTags,
-    pub tag: Option<String>,
-    pub tag_click: Callback<Option<String>>,
-}
-
-#[function_component]
-fn Tags(props: &TagsProps) -> Html {
-    //TODO: use_effect
-    let mut tags = props.tags.values().cloned().collect::<Vec<_>>();
-    tags.sort();
-
-    html! {
-        <div class="tags-container">
-            {for tags.iter().map(|tag|
-                if props.tag.as_ref().is_some_and(|current| tag == current) {
-                    html! {
-                        <BlueButton label={tag.clone()} on_click={
-                            let click = props.tag_click.clone();
-                            move |()| {
-                                click.emit(None);
-                            }
-                        }/>
-                    }
-                } else {
-                    html! {
-                        <WhiteButton label={tag.clone()} on_click={{
-                            let tag = tag.clone();
-                            let click = props.tag_click.clone();
-                            move |()| {
-                                click.emit(Some(tag.clone()));
-                            }
-                        }}/>
-                    }
-                }
-            )}
         </div>
     }
 }
