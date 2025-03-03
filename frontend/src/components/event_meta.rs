@@ -91,27 +91,37 @@ impl Component for EventMeta {
 impl EventMeta {
     fn mod_view_edit(ctx: &Context<Self>) -> Html {
         //TODO: show clock icon with tooltip that only in first 24h the text can be edited
-        let is_first_24h = ctx.props().tokens.is_mod() && ctx.props().is_first_24h;
+        let is_mod = ctx.props().tokens.is_mod();
+        let is_first_24h = ctx.props().is_first_24h;
+
         let on_click_text = ctx.link().callback(|_| Msg::EditClick);
         let on_click_color = ctx.link().callback(|_| Msg::EditColorClick);
 
-        if is_first_24h {
+        let edit_meta = if is_mod && is_first_24h {
             html! {
-                <>
-                    <button class="button-icon" onclick={on_click_text}>
-                        <img src="assets/edit.svg" alt="edit"/>
-                    </button>
-                    <button class="button-icon" onclick={on_click_color}>
-                        <img src="assets/color-pick.svg" alt="edit"/>
-                    </button>
-                </>
+                <button class="button-icon" onclick={on_click_text}>
+                    <img src="assets/edit.svg" alt="edit"/>
+                </button>
             }
         } else {
+            html! {}
+        };
+
+        let edit_color = if is_mod {
             html! {
                 <button class="button-icon" onclick={on_click_color}>
                     <img src="assets/color-pick.svg" alt="edit"/>
                 </button>
             }
+        } else {
+            html! {}
+        };
+
+        html! {
+            <>
+                {edit_meta}
+                {edit_color}
+            </>
         }
     }
 }
