@@ -517,6 +517,9 @@ impl Event {
                 .and_then(|e| e.info.data.color.clone())
                 .map_or_else(|| String::from("#282828"),|c| c.0);
 
+            let payment_allowed = !e.info.is_premium();
+            let pending_payment = self.query_params.paypal_token.is_some() && payment_allowed;
+
             html! {
                 <div class="some-event">
                     <div class={background} />
@@ -535,8 +538,9 @@ impl Event {
                             {is_premium}
                             {is_masked}
                             {is_first_24h}
+                            pending_payment={pending_payment}
                              />
-                        { self.mod_view(ctx,e,tags) }
+                        { self.mod_view(ctx,e,tags,payment_allowed,pending_payment) }
                         <div class="not-open" hidden={!e.info.state.is_closed()}>
                             { "This event was closed by the moderator. You cannot add or vote questions anymore." }
                             <br />
@@ -664,13 +668,17 @@ impl Event {
     }
 
     //TODO: make mod component
-    fn mod_view(&self, ctx: &Context<Self>, e: &GetEventResponse, tags: SharableTags) -> Html {
+    fn mod_view(
+        &self,
+        ctx: &Context<Self>,
+        e: &GetEventResponse,
+        tags: SharableTags,
+        payment_allowed: bool,
+        pending_payment: bool,
+    ) -> Html {
         if !matches!(self.mode, Mode::Moderator) {
             return html! {};
         }
-
-        let payment_allowed = !e.info.is_premium();
-        let pending_payment = self.query_params.paypal_token.is_some() && payment_allowed;
 
         let timed_out = e.is_timed_out();
         let pwd = e

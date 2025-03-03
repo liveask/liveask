@@ -15,6 +15,7 @@ pub struct ColorPopupProps {
     pub color: Option<Color>,
     pub is_premium: bool,
     pub open: bool,
+    pub pending_payment: bool,
 }
 
 #[allow(unused_braces)]
@@ -121,7 +122,7 @@ pub fn ColorPopup(props: &ColorPopupProps) -> Html {
         html! {
             <div class="premium">
                 <div class="header">{"choose any color freely with premium:"}</div>
-                <UpgradeButton tokens={props.tokens.clone()} />
+                <UpgradeButton tokens={props.tokens.clone()} pending={props.pending_payment} />
             </div>
         }
     };

@@ -10,7 +10,6 @@ mod mod_color;
 mod mod_password;
 mod mod_tags;
 mod password_popup;
-mod payment_popup;
 mod popup;
 mod qr;
 mod question;

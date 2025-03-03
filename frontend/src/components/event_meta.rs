@@ -2,6 +2,7 @@ use crate::components::{ColorPopup, EventContext, MetaPopup};
 use shared::{ContextItem, EditMetaData, EventData, EventTokens};
 use yew::prelude::*;
 
+#[allow(clippy::struct_excessive_bools)]
 #[derive(Clone, Debug, Eq, PartialEq, Properties)]
 pub struct EventMetaProps {
     pub context: Vec<ContextItem>,
@@ -10,6 +11,7 @@ pub struct EventMetaProps {
     pub is_premium: bool,
     pub is_masked: bool,
     pub is_first_24h: bool,
+    pub pending_payment: bool,
 }
 
 pub struct EventMeta {
@@ -63,6 +65,7 @@ impl Component for EventMeta {
             description: desc.clone(),
         };
         let color = ctx.props().data.color.clone();
+        let pending_payment = ctx.props().pending_payment;
 
         let on_close_popup = ctx.link().callback(|()| Msg::ClosePopup);
 
@@ -72,7 +75,7 @@ impl Component for EventMeta {
                 <div class="event-name">{name}</div>
                 <EventContext {context} tokens={ctx.props().tokens.clone()} {is_premium} />
                 <MetaPopup tokens={ctx.props().tokens.clone()} on_close={on_close_popup.clone()} show={self.show_meta_popup} {meta} />
-                <ColorPopup tokens={ctx.props().tokens.clone()} on_close={on_close_popup} open={self.show_color_edit} {color} {is_premium} />
+                <ColorPopup tokens={ctx.props().tokens.clone()} on_close={on_close_popup} open={self.show_color_edit} {color} {is_premium} {pending_payment}/>
 
                 //TODO: collapsable event desc
                 <div
