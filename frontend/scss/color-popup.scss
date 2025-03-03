@@ -10,6 +10,11 @@
 
     .header {
         padding: 30px;
+        display: flex;
+        justify-content: center;
+        gap: 14px;
+        color: black;
+        align-items: center;
     }
 
     .premium {

@@ -130,7 +130,10 @@ pub fn ColorPopup(props: &ColorPopupProps) -> Html {
         html! {
             <div class="popup-bg" ref={bg_ref} onclick={click_bg}>
                 <div class="color-popup">
-                    <div class="header">{"Select Event Color"}</div>
+                    <div class="header">
+                        <img src="assets/color-pick.svg" alt="edit"/>
+                        <div>{"Select Event Color"}</div>
+                    </div>
 
                     <div class="colors">
                         <ColorButton color="#282828" state={color_state.clone()} />
