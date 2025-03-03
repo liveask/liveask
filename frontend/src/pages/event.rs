@@ -550,7 +550,7 @@ impl Event {
                         </div>
                     </div>
                     { self.mod_urls(ctx,admin) }
-                    <div style={format!("background-color: {color}")}>
+                    <div class="event-area" style={format!("background-color: {color}")}>
                         { self.view_stats() }
                         <div class="review-note" hidden={!screening_enabled || mod_view}>
                         { "Moderator enabled question reviewing. New questions have to be approved first." }
