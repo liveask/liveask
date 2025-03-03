@@ -28,11 +28,11 @@
     .colors {
         display: flex;
         gap: 40px;
+        height: 40px;
         justify-content: center;
 
         .color {
-            width: 41px;
-            height: 41px;
+            width: 40px;
             cursor: pointer;
         }
     }
@@ -40,13 +40,16 @@
     .color-picker {
         display: flex;
         justify-content: center;
+        align-items: center;
         gap: 15px;
-        margin: 30px;
+        margin: 40px;
 
         input {
-            width: 40px;
-            height: 20px;
+            width: 50px;
+            height: 50px;
             border: 0;
+            padding: 2px;
+            cursor: pointer;
         }
     }
 

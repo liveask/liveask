@@ -107,6 +107,7 @@ pub fn ColorPopup(props: &ColorPopupProps) -> Html {
     let premium_section = if props.is_premium {
         html! {
             <div class="color-picker">
+                <div>{"Premium"}</div>
                 <input
                     ref={input_ref}
                     type="color"
