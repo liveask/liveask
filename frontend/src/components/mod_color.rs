@@ -5,7 +5,7 @@ use crate::{
 };
 use shared::{Color, EditColor, EventTokens, ModEvent};
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
-use web_sys::HtmlElement;
+use web_sys::{HtmlElement, HtmlInputElement};
 use yew::{prelude::*, suspense::use_future_with};
 
 #[derive(PartialEq, Properties)]
@@ -21,6 +21,7 @@ pub struct ColorPopupProps {
 #[function_component]
 pub fn ColorPopup(props: &ColorPopupProps) -> Html {
     let bg_ref = use_node_ref();
+    let input_ref = use_node_ref();
 
     let click_bg = Callback::from({
         let on_close = props.on_close.clone();
@@ -88,6 +89,20 @@ pub fn ColorPopup(props: &ColorPopupProps) -> Html {
         }
     });
 
+    let input_change = Callback::from({
+        let color_state = color_state.clone();
+        move |e: InputEvent| {
+            let Some(target) = e.target() else {
+                return;
+            };
+            let Ok(target) = target.dyn_into::<HtmlInputElement>() else {
+                return;
+            };
+
+            color_state.set(target.value());
+        }
+    });
+
     if props.open {
         html! {
             <div class="popup-bg" ref={bg_ref} onclick={click_bg}>
@@ -98,6 +113,18 @@ pub fn ColorPopup(props: &ColorPopupProps) -> Html {
                         <ColorButton color="#282828" state={color_state.clone()} />
                         <ColorButton color="#FF2C5E" state={color_state.clone()} />
                         <ColorButton color="#7BBE31" state={color_state.clone()} />
+                    </div>
+
+                    <div class="color-picker">
+                        <input
+                            ref={input_ref}
+                            type="color"
+                            value={(*color_state).clone()}
+                            oninput={input_change.clone()}
+                        />
+                        <div class="color-preview">
+                            {(*color_state).clone()}
+                        </div>
                     </div>
 
                     <div class="buttons" style={format!("background-color: {}",*color_state)}>

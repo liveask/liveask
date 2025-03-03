@@ -24,13 +24,25 @@
         }
     }
 
+    .color-picker {
+        display: flex;
+        justify-content: center;
+        gap: 15px;
+        margin: 30px;
+
+        input {
+            width: 40px;
+            height: 20px;
+            border: 0;
+        }
+    }
+
     .buttons {
         display: flex;
         padding-left: 40px;
         padding-right: 40px;
         padding-top: 20px;
         padding-bottom: 30px;
-        margin-top: 25px;
         gap: 10px;
 
         button {
