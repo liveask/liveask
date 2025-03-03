@@ -10,6 +10,8 @@ struct EventStore {
     unscreened: Vec<QuestionItem>,
     #[serde(default)]
     premium_banner_collapsed: bool,
+    #[serde(default)]
+    mod_color: bool,
 }
 
 pub struct LocalCache;
@@ -21,6 +23,10 @@ impl LocalCache {
 
     pub fn is_premium_banner_collapsed(event: &str) -> bool {
         Self::get_state(event).premium_banner_collapsed
+    }
+
+    pub fn mod_color_picker_shown(event: &str) -> bool {
+        Self::get_state(event).mod_color
     }
 
     pub fn set_like_state(event: &str, id: i64, like: bool) {
@@ -39,6 +45,12 @@ impl LocalCache {
         let result = state.premium_banner_collapsed;
         Self::set_state(event, state);
         result
+    }
+
+    pub fn set_mod_color_picker_shown(event: &str, value: bool) {
+        let mut state = Self::get_state(event);
+        state.mod_color = value;
+        Self::set_state(event, state);
     }
 
     pub fn add_unscreened_question(event: &str, q: &QuestionItem) {

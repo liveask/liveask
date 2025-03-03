@@ -26,7 +26,7 @@
 
     margin-top: 30px;
     background-color: $pink-bg;
-    border-color: transparent;
+    border-color: white;
 }
 
 .button-icon {
@@ -62,4 +62,10 @@ $button-border-color: rgba(255, 255, 255, 0.1);
     background-color: $col-button-blue;
     color: $pink-button;
     border-color: $button-border-color;
+}
+
+.upgrade-button {
+    @extend .button;
+
+    background-color: $event-bg;
 }

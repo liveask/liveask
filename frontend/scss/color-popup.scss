@@ -1,0 +1,74 @@
+@import 'colors';
+
+.color-popup {
+    background-color: white;
+    margin-bottom: auto;
+    margin-top: auto;
+    border-radius: 4px;
+    text-align: center;
+    overflow: hidden;
+
+    .header {
+        padding: 30px;
+        display: flex;
+        justify-content: center;
+        gap: 14px;
+        color: black;
+        align-items: center;
+    }
+
+    .premium {
+        margin: 30px;
+
+        .header {
+            padding: 6px;
+        }
+    }
+
+    .colors {
+        display: flex;
+        gap: 40px;
+        height: 40px;
+        justify-content: center;
+
+        .color {
+            width: 40px;
+            cursor: pointer;
+        }
+    }
+
+    .color-picker {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 15px;
+        margin: 40px;
+
+        input {
+            width: 50px;
+            height: 50px;
+            border: 0;
+            padding: 2px;
+            cursor: pointer;
+        }
+
+        .color-preview {
+            width: 68px;
+        }
+    }
+
+    .buttons {
+        display: flex;
+        padding-left: 40px;
+        padding-right: 40px;
+        padding-top: 20px;
+        padding-bottom: 30px;
+        gap: 10px;
+
+        button {
+            margin: 1px;
+            height: 40px;
+            width: 113px;
+        }
+    }
+}

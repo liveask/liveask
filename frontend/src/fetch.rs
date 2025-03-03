@@ -197,6 +197,7 @@ pub async fn create_event(
             description: desc,
             long_url: None,
             short_url: String::new(),
+            color: None,
         },
         test: false,
         moderator_email: email,

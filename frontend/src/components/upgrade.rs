@@ -1,15 +1,11 @@
-use std::ops::Not;
-
-use events::event_context;
+use crate::{
+    components::{Spinner, UpgradeButton},
+    local_cache::LocalCache,
+    tracking,
+};
 use shared::EventTokens;
-use wasm_bindgen::UnwrapThrowExt;
+use std::ops::Not;
 use yew::prelude::*;
-
-use crate::local_cache::LocalCache;
-use crate::tracking;
-use crate::{Events, GlobalEvent, components::Spinner};
-
-use super::payment_popup::PaymentPopup;
 
 #[derive(Clone, Debug, PartialEq, Eq, Properties)]
 pub struct Props {
@@ -20,11 +16,9 @@ pub struct Props {
 pub struct Upgrade {
     data: Props,
     collapsed: bool,
-    events: Events<GlobalEvent>,
 }
 pub enum Msg {
     ToggleExpansion,
-    UpgradeClicked,
 }
 impl Component for Upgrade {
     type Message = Msg;
@@ -37,7 +31,6 @@ impl Component for Upgrade {
         Self {
             data: ctx.props().clone(),
             collapsed,
-            events: event_context(ctx).unwrap_throw(),
         }
     }
 
@@ -50,11 +43,6 @@ impl Component for Upgrade {
                     tracking::track_event(tracking::EVNT_PREMIUM_EXPAND);
                 }
                 true
-            }
-            Msg::UpgradeClicked => {
-                tracking::track_event(tracking::EVNT_PREMIUM_UPGRADE);
-                self.events.emit(GlobalEvent::PayForUpgrade);
-                false
             }
         }
     }
@@ -117,14 +105,8 @@ impl Upgrade {
                     <a href="mailto:mail@live-ask.com">{ "Contact us" }</a>
                     { " for special discounts." }
                 </div>
-                <button
-                    class="button"
-                    hidden={pending}
-                    onclick={ctx.link().callback(|_| Msg::UpgradeClicked)}
-                >
-                    { "upgrade for \u{20AC}7" }
-                </button>
-                <PaymentPopup tokens={self.data.tokens.clone()} />
+
+                <UpgradeButton tokens={self.data.tokens.clone()} {pending} />
             </div>
         }
     }

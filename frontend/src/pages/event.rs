@@ -510,6 +510,16 @@ impl Event {
             let current_tag = e.info.tags.current_tag;
             let screening_enabled = e.info.flags.contains(EventFlags::SCREENING);
 
+            let color = self
+                .state
+                .event
+                .as_ref()
+                .and_then(|e| e.info.data.color.clone())
+                .map_or_else(|| String::from("#282828"),|c| c.0);
+
+            let payment_allowed = !e.info.is_premium();
+            let pending_payment = self.query_params.paypal_token.is_some() && payment_allowed;
+
             html! {
                 <div class="some-event">
                     <div class={background} />
@@ -528,8 +538,9 @@ impl Event {
                             {is_premium}
                             {is_masked}
                             {is_first_24h}
+                            pending_payment={pending_payment}
                              />
-                        { self.mod_view(ctx,e,tags) }
+                        { self.mod_view(ctx,e,tags,payment_allowed,pending_payment) }
                         <div class="not-open" hidden={!e.info.state.is_closed()}>
                             { "This event was closed by the moderator. You cannot add or vote questions anymore." }
                             <br />
@@ -543,12 +554,14 @@ impl Event {
                         </div>
                     </div>
                     { self.mod_urls(ctx,admin) }
-                    { self.view_stats() }
-                    <div class="review-note" hidden={!screening_enabled || mod_view}>
-                    { "Moderator enabled question reviewing. New questions have to be approved first." }
+                    <div class="event-area" style={format!("background-color: {color}")}>
+                        { self.view_stats() }
+                        <div class="review-note" hidden={!screening_enabled || mod_view}>
+                        { "Moderator enabled question reviewing. New questions have to be approved first." }
+                        </div>
+                        { self.view_questions(ctx,e) }
+                        { Self::view_ask_question(mod_view,ctx,e) }
                     </div>
-                    { self.view_questions(ctx,e) }
-                    { Self::view_ask_question(mod_view,ctx,e) }
                 </div>
             }
         })
@@ -578,12 +591,7 @@ impl Event {
 
     fn view_questions(&self, ctx: &Context<Self>, e: &GetEventResponse) -> Html {
         if e.info.questions.is_empty() && self.unscreened.is_empty() {
-            let no_questions_classes = classes!(match self.mode {
-                Mode::Moderator => "noquestions modview",
-                Mode::Viewer => "noquestions",
-            });
-
-            html! { <div class={no_questions_classes}>{ "no questions yet" }</div> }
+            html! { <div class="noquestions">{ "no questions yet" }</div> }
         } else {
             let can_vote = !e.is_closed();
             let is_mod = self.is_mod();
@@ -660,13 +668,17 @@ impl Event {
     }
 
     //TODO: make mod component
-    fn mod_view(&self, ctx: &Context<Self>, e: &GetEventResponse, tags: SharableTags) -> Html {
+    fn mod_view(
+        &self,
+        ctx: &Context<Self>,
+        e: &GetEventResponse,
+        tags: SharableTags,
+        payment_allowed: bool,
+        pending_payment: bool,
+    ) -> Html {
         if !matches!(self.mode, Mode::Moderator) {
             return html! {};
         }
-
-        let payment_allowed = !e.info.is_premium();
-        let pending_payment = self.query_params.paypal_token.is_some() && payment_allowed;
 
         let timed_out = e.is_timed_out();
         let pwd = e
