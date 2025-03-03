@@ -1,4 +1,7 @@
-use crate::components::{ColorPopup, EventContext, MetaPopup};
+use crate::{
+    components::{ColorPopup, EventContext, MetaPopup},
+    local_cache::LocalCache,
+};
 use shared::{ContextItem, EditMetaData, EventData, EventTokens};
 use yew::prelude::*;
 
@@ -29,10 +32,18 @@ impl Component for EventMeta {
     type Message = Msg;
     type Properties = EventMetaProps;
 
-    fn create(_ctx: &Context<Self>) -> Self {
+    fn create(ctx: &Context<Self>) -> Self {
+        let mut show_color_edit = false;
+
+        let event_id = ctx.props().tokens.public_token.clone();
+        if ctx.props().tokens.is_mod() && !LocalCache::mod_color_picker_shown(&event_id) {
+            show_color_edit = true;
+            LocalCache::set_mod_color_picker_shown(&event_id, true);
+        }
+
         Self {
             show_meta_popup: false,
-            show_color_edit: false,
+            show_color_edit,
         }
     }
 

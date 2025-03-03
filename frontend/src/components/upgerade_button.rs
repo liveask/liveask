@@ -2,7 +2,7 @@ use shared::{EventTokens, EventUpgradeResponse};
 use wasm_bindgen::UnwrapThrowExt;
 use yew::{prelude::*, suspense::use_future_with};
 
-use crate::{components::Spinner, fetch, pages::BASE_API, tracking};
+use crate::{components::Spinner, fetch, local_cache::LocalCache, pages::BASE_API, tracking};
 
 #[derive(Eq, PartialEq, Properties)]
 pub struct UpgradeButtonProps {
@@ -16,8 +16,10 @@ pub fn UpgradeButton(props: &UpgradeButtonProps) -> Html {
 
     let onclick = Callback::from({
         let popup_open = popup_open.clone();
+        let event_id = props.tokens.public_token.clone();
         move |_| {
             tracking::track_event(tracking::EVNT_PREMIUM_UPGRADE);
+            LocalCache::set_mod_color_picker_shown(&event_id, false);
             popup_open.set(true);
         }
     });
