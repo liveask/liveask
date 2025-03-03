@@ -22,6 +22,7 @@ mod tag_select;
 mod tags;
 mod textarea;
 mod trusted_by;
+mod upgerade_button;
 mod upgrade;
 
 pub use buttons::{DarkButton, RedButton};
@@ -47,4 +48,5 @@ pub use tag_select::TagSelect;
 pub use tags::Tags;
 pub use textarea::TextArea;
 pub use trusted_by::TrustedBy;
+pub use upgerade_button::UpgradeButton;
 pub use upgrade::Upgrade;

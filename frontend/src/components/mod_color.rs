@@ -1,5 +1,5 @@
 use crate::{
-    components::{RedButton, buttons::WhiteButton},
+    components::{RedButton, UpgradeButton, buttons::WhiteButton},
     fetch,
     pages::BASE_API,
 };
@@ -103,6 +103,29 @@ pub fn ColorPopup(props: &ColorPopupProps) -> Html {
         }
     });
 
+    let premium_section = if props.is_premium {
+        html! {
+            <div class="color-picker">
+                <input
+                    ref={input_ref}
+                    type="color"
+                    value={(*color_state).clone()}
+                    oninput={input_change.clone()}
+                />
+                <div class="color-preview">
+                    {(*color_state).clone()}
+                </div>
+            </div>
+        }
+    } else {
+        html! {
+            <div class="premium">
+                <div class="header">{"choose any color freely with premium:"}</div>
+                <UpgradeButton tokens={props.tokens.clone()} />
+            </div>
+        }
+    };
+
     if props.open {
         html! {
             <div class="popup-bg" ref={bg_ref} onclick={click_bg}>
@@ -115,17 +138,7 @@ pub fn ColorPopup(props: &ColorPopupProps) -> Html {
                         <ColorButton color="#7BBE31" state={color_state.clone()} />
                     </div>
 
-                    <div class="color-picker">
-                        <input
-                            ref={input_ref}
-                            type="color"
-                            value={(*color_state).clone()}
-                            oninput={input_change.clone()}
-                        />
-                        <div class="color-preview">
-                            {(*color_state).clone()}
-                        </div>
-                    </div>
+                    {premium_section}
 
                     <div class="buttons" style={format!("background-color: {}",*color_state)}>
                         <WhiteButton label="Cancel" on_click={click_cancel} />

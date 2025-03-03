@@ -63,3 +63,9 @@ $button-border-color: rgba(255, 255, 255, 0.1);
     color: $pink-button;
     border-color: $button-border-color;
 }
+
+.upgrade-button {
+    @extend .button;
+
+    background-color: $event-bg;
+}
