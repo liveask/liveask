@@ -135,6 +135,21 @@ impl Tracking {
         Ok(())
     }
 
+    pub async fn track_event_color_change(
+        &self,
+        event: String,
+        value: &shared::EditColor,
+    ) -> TrackingResult<()> {
+        let mut e = Event::new("event-color-changed", &self.server);
+
+        e.insert_prop("event", event)?;
+        e.insert_prop("color", &value.0)?;
+
+        self.log(e).await?;
+
+        Ok(())
+    }
+
     pub async fn track_event_question_added(
         &self,
         event: String,

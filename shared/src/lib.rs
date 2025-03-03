@@ -40,6 +40,9 @@ impl EventTokens {
 }
 
 #[derive(Serialize, Deserialize, Debug, Default, Clone, Eq, PartialEq)]
+pub struct Color(pub String);
+
+#[derive(Serialize, Deserialize, Debug, Default, Clone, Eq, PartialEq)]
 pub struct EventData {
     pub name: String,
     pub description: String,
@@ -47,6 +50,8 @@ pub struct EventData {
     pub short_url: String,
     #[serde(rename = "longUrl")]
     pub long_url: Option<String>,
+    #[serde(default)]
+    pub color: Option<Color>,
 }
 
 #[derive(Serialize, Deserialize, Default, Debug, Copy, Clone, Eq, PartialEq, Hash)]
@@ -329,6 +334,9 @@ pub enum EditContextLink {
     Enabled(ContextItem),
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq)]
+pub struct EditColor(pub String);
+
 impl CurrentTag {
     #[must_use]
     pub const fn is_enabled(&self) -> bool {
@@ -384,6 +392,7 @@ pub struct ModEvent {
     pub meta: Option<EditMetaData>,
     pub screening: Option<bool>,
     pub context: Option<EditContextLink>,
+    pub color: Option<EditColor>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Copy, Clone, Eq, PartialEq, Default)]

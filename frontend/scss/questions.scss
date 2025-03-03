@@ -17,11 +17,9 @@
   font-size: 120%;
   text-align: center;
   margin-top: 24px;
+  padding-top: 10px;
   padding-bottom: 100px;
-
-  &.modview {
-    color: black;
-  }
+  text-shadow: 0px 0px 1px #949494, 0px 0px 1px #949494;
 }
 
 .questions-seperator {
@@ -30,7 +28,7 @@
   line-height: 14px;
   text-transform: uppercase;
 
-  margin-top: 32px;
+  margin-top: 15px;
   margin-bottom: 13px;
 
   text-align: center;

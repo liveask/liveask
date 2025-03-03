@@ -33,6 +33,12 @@
     margin-top: 20px;
     text-align: center;
   }
+
+  .event-area {
+    margin-top: 20px;
+    margin-bottom: 20px;
+    padding-top: 1px;
+  }
 }
 
 .not-open {
@@ -175,7 +181,7 @@
   height: 100%;
   z-index: -1;
 
-  background-color: $event-bg;
+  background-color: white;
 }
 
 .bg-mod {
@@ -231,7 +237,8 @@
 .statistics {
   display: flex;
   justify-content: center;
-  margin-top: 20px;
+  margin-top: 15px;
+  padding-top: 15px;
 
   img {
     width: 30px;
