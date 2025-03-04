@@ -122,11 +122,12 @@ pub async fn mod_premium_upgrade(
     Path((id, secret)): Path<(String, String)>,
     OptionalUser(user): OptionalUser,
     State(app): State<SharedApp>,
+    Json(payload): Json<shared::ModRequestPremium>,
 ) -> std::result::Result<impl IntoResponse, InternalError> {
     tracing::info!("mod_premium_upgrade");
 
     Ok(Json(
-        app.request_premium_upgrade(id, secret, user.is_some())
+        app.request_premium_upgrade(id, secret, user.is_some(), payload)
             .await?,
     ))
 }

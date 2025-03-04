@@ -1,4 +1,4 @@
-use shared::{EventTokens, EventUpgradeResponse};
+use shared::{EventTokens, EventUpgradeResponse, ModRequestPremiumContext};
 use wasm_bindgen::UnwrapThrowExt;
 use yew::{prelude::*, suspense::use_future_with};
 
@@ -8,6 +8,7 @@ use crate::{components::Spinner, fetch, local_cache::LocalCache, pages::BASE_API
 pub struct UpgradeButtonProps {
     pub tokens: EventTokens,
     pub pending: bool,
+    pub context: ModRequestPremiumContext,
 }
 
 #[function_component]
@@ -25,6 +26,7 @@ pub fn UpgradeButton(props: &UpgradeButtonProps) -> Html {
     });
 
     let pending = props.pending;
+    let context = props.context;
 
     html! {
         <>
@@ -36,7 +38,7 @@ pub fn UpgradeButton(props: &UpgradeButtonProps) -> Html {
                 { "upgrade for \u{20AC}7" }
             </button>
 
-            <PaymentOverlay tokens={props.tokens.clone()} open={popup_open} />
+            <PaymentOverlay tokens={props.tokens.clone()} open={popup_open} {context} />
         </>
     }
 }
@@ -45,10 +47,13 @@ pub fn UpgradeButton(props: &UpgradeButtonProps) -> Html {
 pub struct PaymentOverlayProps {
     pub tokens: EventTokens,
     pub open: UseStateHandle<bool>,
+    pub context: ModRequestPremiumContext,
 }
 
 #[function_component]
 fn PaymentOverlay(props: &PaymentOverlayProps) -> Html {
+    let context = props.context;
+
     let _ = use_future_with(props.open.clone(), {
         let tokens = props.tokens.clone();
         let open = props.open.clone();
@@ -59,6 +64,7 @@ fn PaymentOverlay(props: &PaymentOverlayProps) -> Html {
                     BASE_API,
                     tokens.public_token.clone(),
                     tokens.moderator_token.clone().unwrap_throw(),
+                    context,
                 )
                 .await
                 {

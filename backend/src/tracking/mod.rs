@@ -139,11 +139,28 @@ impl Tracking {
         &self,
         event: String,
         value: &shared::EditColor,
+        premium: bool,
     ) -> TrackingResult<()> {
         let mut e = Event::new("event-color-changed", &self.server);
 
         e.insert_prop("event", event)?;
         e.insert_prop("color", &value.0)?;
+        e.insert_prop("premium", premium)?;
+
+        self.log(e).await?;
+
+        Ok(())
+    }
+
+    pub async fn track_event_request_upgrade(
+        &self,
+        event: String,
+        context: String,
+    ) -> TrackingResult<()> {
+        let mut e = Event::new("event-request-upgrade", &self.server);
+
+        e.insert_prop("event", event)?;
+        e.insert_prop("context", context)?;
 
         self.log(e).await?;
 

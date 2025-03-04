@@ -4,7 +4,7 @@ use gloo_net::http::Request;
 use shared::{
     AddEvent, AddQuestion, EditLike, EventData, EventInfo, EventPasswordRequest,
     EventPasswordResponse, EventUpgradeResponse, GetEventResponse, GetUserInfo, ModEvent,
-    ModQuestion, PaymentCapture, QuestionItem, TagId, UserLogin,
+    ModQuestion, ModRequestPremium, PaymentCapture, QuestionItem, TagId, UserLogin,
 };
 use std::{
     error::Error,
@@ -114,15 +114,20 @@ pub async fn mod_upgrade(
     base_api: &str,
     id: String,
     secret: String,
+    context: shared::ModRequestPremiumContext,
 ) -> Result<EventUpgradeResponse, FetchError> {
     let url = format!("{base_api}/api/mod/event/upgrade/{id}/{secret}");
 
-    Ok(Request::get(&url)
+    let body = JsValue::from_str(&serde_json::to_string(&ModRequestPremium { context })?);
+
+    let request = Request::post(&url)
         .credentials(RequestCredentials::Include)
-        .send()
-        .await?
-        .json()
-        .await?)
+        .body(body)?;
+    set_content_type_json(&request);
+
+    let response: EventUpgradeResponse = request.send().await?.json().await?;
+
+    Ok(response)
 }
 
 pub async fn mod_premium_capture(

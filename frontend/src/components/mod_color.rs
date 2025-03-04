@@ -3,7 +3,7 @@ use crate::{
     fetch,
     pages::BASE_API,
 };
-use shared::{Color, EditColor, EventTokens, ModEvent};
+use shared::{Color, EditColor, EventTokens, ModEvent, ModRequestPremiumContext};
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 use web_sys::{HtmlElement, HtmlInputElement};
 use yew::{prelude::*, suspense::use_future_with};
@@ -123,7 +123,7 @@ pub fn ColorPopup(props: &ColorPopupProps) -> Html {
         html! {
             <div class="premium">
                 <div class="header">{"choose any color freely with premium:"}</div>
-                <UpgradeButton tokens={props.tokens.clone()} pending={props.pending_payment} />
+                <UpgradeButton tokens={props.tokens.clone()} pending={props.pending_payment} context={ModRequestPremiumContext::ColorPicker}/>
             </div>
         }
     };

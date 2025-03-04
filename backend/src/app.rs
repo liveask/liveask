@@ -16,6 +16,7 @@ use std::{
 use tinyurl_rs::{CreateRequest, TinyUrlAPI, TinyUrlOpenAPI};
 use tokio::{
     sync::{RwLock, mpsc},
+    task,
     time::sleep,
 };
 use tracing::instrument;
@@ -324,7 +325,7 @@ impl App {
         };
 
         let timed_out = e.is_timed_out_and_free();
-        let viewers = if admin || e.premium_id.is_some() {
+        let viewers = if admin || e.premium() {
             self.viewers.count(&id).await
         } else {
             0
@@ -528,6 +529,7 @@ impl App {
         id: String,
         secret: String,
         admin: bool,
+        payload: shared::ModRequestPremium,
     ) -> Result<EventUpgradeResponse> {
         let mut entry = self.eventsdb.get(&id).await?;
 
@@ -566,6 +568,15 @@ impl App {
 
             EventUpgradeResponse::Redirect { url: approve_url }
         };
+
+        task::spawn({
+            let tracking = self.tracking.clone();
+            let event = e.tokens.public_token.clone();
+            let context = format!("{:?}", payload.context);
+            async move {
+                let _ = tracking.track_event_request_upgrade(event, context).await;
+            }
+        });
 
         Ok(response)
     }
@@ -617,7 +628,7 @@ impl App {
 
         let mut entry = self.eventsdb.get(&event).await?;
 
-        if entry.event.premium_id.is_some() {
+        if entry.event.premium() {
             tracing::info!("event already premium");
             return Ok(true);
         }
@@ -946,7 +957,7 @@ impl App {
         e: &mut ApiEventInfo,
         current_tag: &shared::CurrentTag,
     ) -> Result<()> {
-        if e.premium_id.is_none() {
+        if !e.premium() {
             return Err(InternalError::PremiumOnlyFeature(
                 e.tokens.public_token.clone(),
             ));
@@ -988,7 +999,7 @@ impl App {
         e: &mut ApiEventInfo,
         context_link: &shared::EditContextLink,
     ) -> Result<()> {
-        if e.premium_id.is_none() {
+        if !e.premium() {
             return Err(InternalError::PremiumOnlyFeature(
                 e.tokens.public_token.clone(),
             ));
@@ -1040,7 +1051,7 @@ impl App {
         e.data.color = Some(Color(color.0.clone()));
 
         self.tracking
-            .track_event_color_change(e.tokens.public_token.clone(), color)
+            .track_event_color_change(e.tokens.public_token.clone(), color, e.premium())
             .await?;
 
         Ok(())

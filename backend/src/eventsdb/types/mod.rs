@@ -101,6 +101,10 @@ impl ApiEventInfo {
     pub fn age_in_seconds(&self) -> i64 {
         shared::EventInfo::age_in_seconds(self.create_time_unix)
     }
+
+    pub const fn premium(&self) -> bool {
+        self.premium_id.is_some()
+    }
 }
 
 impl From<ApiEventInfo> for EventInfo {

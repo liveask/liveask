@@ -3,7 +3,7 @@ use crate::{
     local_cache::LocalCache,
     tracking,
 };
-use shared::EventTokens;
+use shared::{EventTokens, ModRequestPremiumContext};
 use std::ops::Not;
 use yew::prelude::*;
 
@@ -106,7 +106,7 @@ impl Upgrade {
                     { " for special discounts." }
                 </div>
 
-                <UpgradeButton tokens={self.data.tokens.clone()} {pending} />
+                <UpgradeButton tokens={self.data.tokens.clone()} {pending} context={ModRequestPremiumContext::Regular} />
             </div>
         }
     }
