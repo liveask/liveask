@@ -13,6 +13,8 @@
         border: 1px solid #BEBEBE;
         padding: 3px;
         cursor: pointer;
+        text-transform: uppercase;
+        font-size: 12px;
 
         &.current {
             background-color: $pink-bg;
