@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## [2.10.0] - 2025-03-04
+
 ### Added
 * tags can be managed now as a moderator and selected as a participant ([#90](https://github.com/liveask/liveask/pull/90))
 * events can be color branded ([#91](https://github.com/liveask/liveask/pull/91))
