@@ -25,7 +25,7 @@ pub fn TagSelect(props: &TagSelectProps) -> Html {
     let tag = props.tag.and_then(|tag| props.tags.get(&tag).cloned());
 
     html! {
-        <div class="tag-select">
+        <div class="tag-select" hidden={props.tags.is_empty()}>
             <div class="header">{"tag your question"}</div>
             <Tags tags={SharableTags::clone(&props.tags)} {tag} {tag_click} />
         </div>

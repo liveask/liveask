@@ -59,11 +59,12 @@
 
     .buttons {
         display: flex;
+        justify-content: center;
         padding-left: 40px;
         padding-right: 40px;
         padding-top: 20px;
         padding-bottom: 30px;
-        gap: 10px;
+        gap: 20px;
 
         button {
             margin: 1px;
