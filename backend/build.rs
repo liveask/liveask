@@ -1,8 +1,17 @@
-use vergen::EmitBuilder;
+#![allow(clippy::unwrap_used)]
+
+use vergen_gitcl::{Emitter, GitclBuilder};
 
 // build.rs main func
-fn main() -> anyhow::Result<()> {
-    EmitBuilder::builder().git_sha(true).git_branch().emit()?;
-
-    Ok(())
+fn main() {
+    let gitcl = GitclBuilder::default()
+        .branch(true)
+        .sha(true)
+        .build()
+        .unwrap();
+    Emitter::default()
+        .add_instructions(&gitcl)
+        .unwrap()
+        .emit()
+        .unwrap();
 }
