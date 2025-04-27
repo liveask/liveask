@@ -151,7 +151,7 @@ impl Component for ContextPopup {
                         self.url = target.value();
                         self.errors.check(&self.label, &self.url);
                     }
-                };
+                }
                 true
             }
             Msg::ServerResponed => {

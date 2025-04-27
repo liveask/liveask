@@ -50,7 +50,7 @@ impl State {
     }
 
     #[must_use]
-    pub fn set_event_viewers(mut self, viewers: i64) -> Self {
+    pub const fn set_event_viewers(mut self, viewers: i64) -> Self {
         if let Some(e) = &mut self.event {
             e.viewers = viewers;
         }

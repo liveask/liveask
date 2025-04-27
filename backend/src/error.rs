@@ -9,6 +9,7 @@ use thiserror::Error;
 
 use crate::{eventsdb, payment::PaymentError, tracking};
 
+#[allow(clippy::large_enum_variant)]
 #[derive(Error, Debug)]
 pub enum InternalError {
     #[error("General Error: {0}")]

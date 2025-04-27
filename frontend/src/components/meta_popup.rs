@@ -115,7 +115,7 @@ impl Component for MetaPopup {
                             self.errors
                                 .check(&self.meta.title, &self.meta.description, "");
                     }
-                };
+                }
                 true
             }
             Msg::ServerResponed => {

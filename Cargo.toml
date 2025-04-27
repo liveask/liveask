@@ -99,3 +99,4 @@ verbose_file_reads = "deny"
 
 # exceptions
 module_name_repetitions = "allow"
+result_large_err = "allow"
