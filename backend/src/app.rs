@@ -758,6 +758,8 @@ impl App {
         }
     }
 
+    // TODO: cleanup
+    #[allow(clippy::cognitive_complexity)]
     pub async fn push_subscriber(&self, ws: WebSocket, id: String) {
         use futures_util::StreamExt;
 

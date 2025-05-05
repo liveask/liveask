@@ -100,7 +100,7 @@ impl EventsDB for DynamoEventsDB {
                 return Err(Error::Concurrency);
             }
 
-            return Err(Error::DynamoPut(e));
+            return Err(e.into());
         }
 
         Ok(())

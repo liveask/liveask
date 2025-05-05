@@ -44,6 +44,8 @@ where
     }
 }
 
+// TODO: cleanup
+#[allow(clippy::cognitive_complexity)]
 pub async fn handle_webhook(
     State(app): State<SharedApp>,
     StripeEvent(event): StripeEvent,

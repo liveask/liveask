@@ -30,16 +30,16 @@ pub enum Error {
     ParseInt(#[from] ParseIntError),
 
     #[error("Dynamo PutItemError: {0}")]
-    DynamoPut(#[from] SdkError<PutItemError>),
+    DynamoPut(Box<SdkError<PutItemError>>),
 
     #[error("Dynamo ListTablesError: {0}")]
-    DynamoListTables(#[from] SdkError<ListTablesError>),
+    DynamoListTables(Box<SdkError<ListTablesError>>),
 
     #[error("Dynamo CreateTableError: {0}")]
-    DynamoCreateTable(#[from] SdkError<CreateTableError>),
+    DynamoCreateTable(Box<SdkError<CreateTableError>>),
 
     #[error("Dynamo GetItemError: {0}")]
-    DynamoGetItem(#[from] SdkError<GetItemError>),
+    DynamoGetItem(Box<SdkError<GetItemError>>),
 
     #[error("Dynamo BuildError: {0}")]
     DynamoBuild(#[from] aws_sdk_dynamodb::error::BuildError),
@@ -49,3 +49,27 @@ pub enum Error {
 }
 
 pub type Result<T> = std::result::Result<T, Error>;
+
+impl From<SdkError<PutItemError>> for Error {
+    fn from(e: SdkError<PutItemError>) -> Self {
+        Self::DynamoPut(Box::new(e))
+    }
+}
+
+impl From<SdkError<ListTablesError>> for Error {
+    fn from(e: SdkError<ListTablesError>) -> Self {
+        Self::DynamoListTables(Box::new(e))
+    }
+}
+
+impl From<SdkError<CreateTableError>> for Error {
+    fn from(e: SdkError<CreateTableError>) -> Self {
+        Self::DynamoCreateTable(Box::new(e))
+    }
+}
+
+impl From<SdkError<GetItemError>> for Error {
+    fn from(e: SdkError<GetItemError>) -> Self {
+        Self::DynamoGetItem(Box::new(e))
+    }
+}
