@@ -151,7 +151,6 @@ impl ModPassword {
         }
     }
 
-    #[expect(clippy::missing_const_for_fn)]
     fn current_value(&self) -> &str {
         match &self.state {
             State::PasswordEditing(value) | State::Confirmed(value) => value,
