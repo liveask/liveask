@@ -3,14 +3,13 @@ name: nightly
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 2 * * *' # run at 2 AM UTC
+    - cron: "0 2 * * *" # run at 2 AM UTC
 
 env:
   CARGO_TERM_COLOR: always
-  TRUNK_VERSION: v0.20.3
+  TRUNK_VERSION: v0.21.14
 
 jobs:
-
   # dont run udeps (see #72)
   # check_udeps:
   #   runs-on: ubuntu-latest
