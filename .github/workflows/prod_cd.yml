@@ -5,66 +5,66 @@ on:
   workflow_dispatch:
 
 env:
-  TRUNK_VERSION: v0.20.3
+  TRUNK_VERSION: v0.21.14
 
 jobs:
   deploy_backend_prod:
     runs-on: ubuntu-latest
     environment: prod
     steps:
-    - uses: actions/checkout@v4
-    - name: Login to Docker Hub
-      run: |
-        docker login \
-        -u liveask \
-        -p ${{ secrets.DOCKER_PASSWORD }}
-    - name: Publish Docker image
-      run: |
-        docker pull liveask/server:beta
-        docker tag liveask/server:beta liveask/server:prod
-        docker push liveask/server:prod
-    - uses: ./.github/actions/deploy_ecs
-      with:
-        cluster: la-ecs-cluster-prod
-        aws_key_id: ${{ secrets.AWS_KEY_ID }}
-        aws_key_secret: ${{ secrets.AWS_KEY_SECRET }}
-        aws_region: ${{ secrets.AWS_DEFAULT_REGION }}
+      - uses: actions/checkout@v4
+      - name: Login to Docker Hub
+        run: |
+          docker login \
+          -u liveask \
+          -p ${{ secrets.DOCKER_PASSWORD }}
+      - name: Publish Docker image
+        run: |
+          docker pull liveask/server:beta
+          docker tag liveask/server:beta liveask/server:prod
+          docker push liveask/server:prod
+      - uses: ./.github/actions/deploy_ecs
+        with:
+          cluster: la-ecs-cluster-prod
+          aws_key_id: ${{ secrets.AWS_KEY_ID }}
+          aws_key_secret: ${{ secrets.AWS_KEY_SECRET }}
+          aws_region: ${{ secrets.AWS_DEFAULT_REGION }}
 
   deploy_frontend_prod:
     runs-on: ubuntu-latest
     environment: prod
     steps:
-    - uses: actions/checkout@v4
-    - name: Restore cargo cache
-      uses: Swatinem/rust-cache@v2
-    - name: Install Rust
-      uses: dtolnay/rust-toolchain@stable
-      with:
-        target: wasm32-unknown-unknown
-    - name: Install cargo-make
-      run: |
-        which cargo-make || cargo install cargo-make
-    - name: Install Trunk
-      run: |
-        wget -qO- https://github.com/thedodd/trunk/releases/download/${TRUNK_VERSION}/trunk-x86_64-unknown-linux-gnu.tar.gz | tar -xzf-
-        mv trunk /usr/local/bin/trunk
-        trunk --version
-    - name: Build
-      env:
-        LA_ENV: "prod"
-      run: |
-        cd frontend
-        #TODO: un-dupe once we have a better solution to change FE configs
-        cargo make cargo-check
-        cargo make build-and-check
-    - name: Deploy
-      env:
-        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_KEY_ID }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_KEY_SECRET }}
-        AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
-        AWS_CLOUDFRONT_DISTRO: 'E3VSL6KHSMRDI2'
-      run: |
-        cd frontend/dist
-        aws s3 sync . s3://www.live-ask.com --no-progress --delete --cache-control "public, max-age=86400" --exclude "index.html"
-        aws s3 cp ./index.html s3://www.live-ask.com --no-progress --cache-control "public, max-age=300"
-        aws cloudfront create-invalidation --distribution-id ${AWS_CLOUDFRONT_DISTRO} --paths "/index.html"
+      - uses: actions/checkout@v4
+      - name: Restore cargo cache
+        uses: Swatinem/rust-cache@v2
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          target: wasm32-unknown-unknown
+      - name: Install cargo-make
+        run: |
+          which cargo-make || cargo install cargo-make
+      - name: Install Trunk
+        run: |
+          wget -qO- https://github.com/thedodd/trunk/releases/download/${TRUNK_VERSION}/trunk-x86_64-unknown-linux-gnu.tar.gz | tar -xzf-
+          mv trunk /usr/local/bin/trunk
+          trunk --version
+      - name: Build
+        env:
+          LA_ENV: "prod"
+        run: |
+          cd frontend
+          #TODO: un-dupe once we have a better solution to change FE configs
+          cargo make cargo-check
+          cargo make build-and-check
+      - name: Deploy
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_KEY_SECRET }}
+          AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
+          AWS_CLOUDFRONT_DISTRO: "E3VSL6KHSMRDI2"
+        run: |
+          cd frontend/dist
+          aws s3 sync . s3://www.live-ask.com --no-progress --delete --cache-control "public, max-age=86400" --exclude "index.html"
+          aws s3 cp ./index.html s3://www.live-ask.com --no-progress --cache-control "public, max-age=300"
+          aws cloudfront create-invalidation --distribution-id ${AWS_CLOUDFRONT_DISTRO} --paths "/index.html"
