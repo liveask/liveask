@@ -5,9 +5,6 @@ edition = "2024"
 build = "build.rs"
 rust-version = "1.85"
 
-[lints]
-workspace = true
-
 [dependencies]
 anyhow = { workspace = true }
 base64 = "0.21"
@@ -64,11 +61,14 @@ features = [
     "KeyboardEvent",
 ]
 
-[dev-dependencies]
-wasm-bindgen-test = "0.3.0"
-
 [build-dependencies]
 anyhow = { workspace = true }
 handlebars = { workspace = true }
 konst = "0.3"
 vergen = { version = "8", features = ["git", "gitcl", "build"] }
+
+[dev-dependencies]
+wasm-bindgen-test = "0.3.0"
+
+[lints]
+workspace = true
