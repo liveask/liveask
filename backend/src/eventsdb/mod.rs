@@ -1,5 +1,6 @@
 mod dynamo;
 mod error;
+#[cfg(test)]
 mod in_memory;
 mod types;
 

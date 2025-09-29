@@ -327,8 +327,9 @@ impl FromStr for States {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Default)]
 pub enum EventPassword {
+    #[default]
     Disabled,
     Enabled(String),
 }
@@ -352,12 +353,6 @@ impl CurrentTag {
     #[must_use]
     pub const fn is_enabled(&self) -> bool {
         matches!(self, Self::Enabled(_))
-    }
-}
-
-impl Default for EventPassword {
-    fn default() -> Self {
-        Self::Disabled
     }
 }
 
