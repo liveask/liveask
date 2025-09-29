@@ -4,17 +4,12 @@ pub mod create_event;
 pub mod pwd_validation;
 pub mod tag_validation;
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub enum ValidationState<T> {
+    #[default]
     Unused,
     Valid,
     Invalid(T),
-}
-
-impl<T> Default for ValidationState<T> {
-    fn default() -> Self {
-        Self::Unused
-    }
 }
 
 impl<T> ValidationState<T> {

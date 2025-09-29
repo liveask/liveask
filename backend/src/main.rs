@@ -220,6 +220,7 @@ async fn setup_app(
     Ok(app)
 }
 
+#[allow(clippy::unwrap_in_result)]
 #[tokio::main]
 async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let log_level = std::env::var("RUST_LOG")
