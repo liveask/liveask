@@ -2532,7 +2532,6 @@ dependencies = [
  "shared",
  "strum",
  "thiserror",
- "tinyurl-rs",
  "tokio",
  "tokio-stream",
  "tower",
@@ -4089,21 +4088,6 @@ checksum = "3526739392ec93fd8b359c8e98514cb3e8e021beb4e5f597b00a0221f8ed8a49"
 dependencies = [
  "num-conv",
  "time-core",
-]
-
-[[package]]
-name = "tinyurl-rs"
-version = "0.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "977a697b9ba2aa193037624a7b0b525f95fa98d3df1be9ffd4efcf6f63e4530c"
-dependencies = [
- "async-trait",
- "reqwest",
- "serde",
- "serde_json",
- "thiserror",
- "tokio",
- "url",
 ]
 
 [[package]]

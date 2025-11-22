@@ -91,6 +91,7 @@ jobs:
           -p ${{ secrets.DOCKER_PASSWORD }}
       - name: Publish Docker image
         run: |
+          echo "${GITHUB_SHA:0:7}"
           docker push liveask/server
           docker tag liveask/server liveask/server:beta
           docker tag liveask/server:beta liveask/server:${GITHUB_SHA:0:7}

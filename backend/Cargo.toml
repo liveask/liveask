@@ -38,7 +38,6 @@ serde_json = { workspace = true }
 shared = { path = "../shared" }
 strum = { version = "0.26", features = ["derive"] }
 thiserror = "1.0"
-tinyurl-rs = "0.1"
 tokio = { version = "1", features = ["full"] }
 tokio-stream = "0.1"
 tower = "0.4"
