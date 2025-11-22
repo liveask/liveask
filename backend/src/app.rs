@@ -140,9 +140,9 @@ impl App {
                         now.elapsed().as_millis()
                     );
                     return shortened_url;
-                } else {
-                    tracing::error!("failed to create short url");
                 }
+
+                tracing::error!("failed to create short url");
             }
         } else {
             tracing::info!("no weeme key");
