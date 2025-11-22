@@ -17,6 +17,7 @@ mod stripe_webhooks;
 mod tracking;
 mod utils;
 mod viewers;
+mod weeme;
 
 use async_redis_session::RedisSessionStore;
 use aws_config::BehaviorVersion;
@@ -107,8 +108,8 @@ fn get_redis_url() -> String {
     std::env::var(env::ENV_REDIS_URL).unwrap_or_else(|_| "redis://localhost:6379".into())
 }
 
-fn posthog_key() -> String {
-    std::env::var(env::ENV_POSTHOG_KEY).unwrap_or_else(|_| String::new())
+fn posthog_key() -> Option<String> {
+    std::env::var(env::ENV_POSTHOG_KEY).ok()
 }
 
 fn stripe_secret() -> String {
@@ -182,10 +183,13 @@ async fn setup_app(
 
     let server_id = server_id().await.unwrap_or_else(|| "server".to_string());
 
+    let posthog_key = posthog_key();
+
     tracing::info!(
         git= %GIT_HASH,
         env= prod_env,
         is_prod= is_prod(),
+        posthog_key = posthog_key.is_some(),
         log_level,
         redis_url,
         base_url,
@@ -193,7 +197,7 @@ async fn setup_app(
         "server-starting",
     );
 
-    let tracking = Tracking::new(Some(posthog_key()), server_id.clone(), prod_env.to_string());
+    let tracking = Tracking::new(posthog_key, server_id.clone(), prod_env.to_string());
 
     tracking.track_server_start().await?;
 

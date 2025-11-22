@@ -13,7 +13,6 @@ use std::{
     },
     time::{Duration, Instant},
 };
-use tinyurl_rs::{CreateRequest, TinyUrlAPI, TinyUrlOpenAPI};
 use tokio::{
     sync::{RwLock, mpsc},
     task,
@@ -32,6 +31,7 @@ use crate::{
     tracking::{EditEvent, Tracking},
     utils::timestamp_now,
     viewers::Viewers,
+    weeme,
 };
 
 pub type SharedApp = Arc<App>;
@@ -53,7 +53,7 @@ pub struct App {
     payment: Arc<Payment>,
     tracking: Tracking,
     base_url: String,
-    tiny_url_token: Option<String>,
+    weeme_key: Option<String>,
     mail_config: MailConfig,
 }
 
@@ -71,7 +71,7 @@ impl App {
         tracking: Tracking,
         base_url: String,
     ) -> Self {
-        let tiny_url_token = Self::tinyurl_token();
+        let weeme_key = Self::weeme_key();
 
         let mail_config = MailConfig::new();
 
@@ -80,7 +80,7 @@ impl App {
             pubsub_publish,
             channels: Arc::default(),
             base_url,
-            tiny_url_token,
+            weeme_key,
             mail_config,
             payment,
             viewers,
@@ -89,19 +89,19 @@ impl App {
         }
     }
 
-    fn tinyurl_token() -> Option<String> {
-        let tiny_url_token = std::env::var(env::ENV_TINY_TOKEN).ok();
+    fn weeme_key() -> Option<String> {
+        let key = std::env::var(env::ENV_WEEME_KEY).ok();
 
-        if tiny_url_token.clone().unwrap_or_default().trim().is_empty() {
-            tracing::warn!("no url shorten token set, use `ENV_TINY_TOKEN` to do so");
+        if key.clone().unwrap_or_default().trim().is_empty() {
+            tracing::warn!("no url shorten token set, use `WEEME_KEY` to do so");
         } else {
             tracing::info!(
-                "tinyurl-token set (len: {})",
-                tiny_url_token.clone().unwrap_or_default().trim().len()
+                "weeme-key set (len: {})",
+                key.clone().unwrap_or_default().trim().len()
             );
         }
 
-        tiny_url_token
+        key
     }
 
     #[instrument(skip(self))]
@@ -129,32 +129,25 @@ impl App {
 
     #[instrument(skip(self))]
     async fn shorten_url(&self, url: &str) -> String {
-        if let Some(tiny_url_token) = &self.tiny_url_token {
-            if !tiny_url_token.trim().is_empty() {
-                let tiny = TinyUrlAPI {
-                    token: tiny_url_token.clone(),
-                };
-
+        if let Some(weeme_key) = &self.weeme_key {
+            if !weeme_key.trim().is_empty() {
                 let now = Instant::now();
-                let res = tiny
-                    .create(CreateRequest::new(url.to_string()))
-                    .await
-                    .map(|res| res.data.map(|url| url.tiny_url).unwrap_or_default());
 
-                return match res {
-                    Ok(res) => {
-                        tracing::info!("tiny url: '{}' (in {}ms)", res, now.elapsed().as_millis());
-                        res
-                    }
-                    Err(e) => {
-                        tracing::error!("tiny url err: '{}' ", e);
-                        url.to_owned()
-                    }
-                };
+                if let Some(shortened_url) = weeme::create_short_url(weeme_key, url).await {
+                    tracing::info!(
+                        "short url: '{}' (in {}ms)",
+                        shortened_url,
+                        now.elapsed().as_millis()
+                    );
+                    return shortened_url;
+                } else {
+                    tracing::error!("failed to create short url");
+                }
             }
+        } else {
+            tracing::info!("no weeme key");
         }
 
-        tracing::info!("no tiny url token");
         url.to_owned()
     }
 
