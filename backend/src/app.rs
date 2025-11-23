@@ -31,7 +31,6 @@ use crate::{
     tracking::{EditEvent, Tracking},
     utils::timestamp_now,
     viewers::Viewers,
-    weeme,
 };
 
 pub type SharedApp = Arc<App>;
@@ -53,7 +52,7 @@ pub struct App {
     payment: Arc<Payment>,
     tracking: Tracking,
     base_url: String,
-    weeme_key: Option<String>,
+    ezlime_key: Option<String>,
     mail_config: MailConfig,
 }
 
@@ -71,8 +70,6 @@ impl App {
         tracking: Tracking,
         base_url: String,
     ) -> Self {
-        let weeme_key = Self::weeme_key();
-
         let mail_config = MailConfig::new();
 
         Self {
@@ -80,7 +77,7 @@ impl App {
             pubsub_publish,
             channels: Arc::default(),
             base_url,
-            weeme_key,
+            ezlime_key: Self::ezlime_key(),
             mail_config,
             payment,
             viewers,
@@ -89,14 +86,14 @@ impl App {
         }
     }
 
-    fn weeme_key() -> Option<String> {
+    fn ezlime_key() -> Option<String> {
         let key = std::env::var(env::ENV_WEEME_KEY).ok();
 
         if key.clone().unwrap_or_default().trim().is_empty() {
-            tracing::warn!("no url shorten token set, use `WEEME_KEY` to do so");
+            tracing::warn!("no url shorten token set");
         } else {
             tracing::info!(
-                "weeme-key set (len: {})",
+                "link shortener token set (len: {})",
                 key.clone().unwrap_or_default().trim().len()
             );
         }
@@ -129,11 +126,15 @@ impl App {
 
     #[instrument(skip(self))]
     async fn shorten_url(&self, url: &str) -> String {
-        if let Some(weeme_key) = &self.weeme_key {
-            if !weeme_key.trim().is_empty() {
-                let now = Instant::now();
+        if let Some(ezlime_key) = &self.ezlime_key
+            && !ezlime_key.trim().is_empty()
+        {
+            let now = Instant::now();
 
-                if let Some(shortened_url) = weeme::create_short_url(weeme_key, url).await {
+            let ezlime = ezlime_rs::EzlimeApi::new(ezlime_key.clone());
+
+            match ezlime.create_short_url(url).await {
+                Ok(shortened_url) => {
                     tracing::info!(
                         "short url: '{}' (in {}ms)",
                         shortened_url,
@@ -141,8 +142,9 @@ impl App {
                     );
                     return shortened_url;
                 }
-
-                tracing::error!("failed to create short url");
+                Err(e) => {
+                    tracing::error!("failed to create short url: {}", e);
+                }
             }
         } else {
             tracing::info!("no weeme key");
