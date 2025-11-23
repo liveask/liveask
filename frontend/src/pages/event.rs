@@ -489,11 +489,7 @@ impl Event {
     #[allow(clippy::if_not_else)]
     fn view_event(&self, ctx: &Context<Self>) -> Html {
         self.state.event.as_ref().map_or_else(|| html! {}, |e| {
-            let share_url = if e.info.data.short_url.is_empty() {
-                e.info.data.long_url.clone().unwrap_or_default()
-            } else {
-                e.info.data.short_url.clone()
-            };
+            let share_url = e.info.data.long_url.clone().unwrap_or_default();
 
             let background = classes!(match self.mode {
                 Mode::Moderator => "bg-mod",
