@@ -17,6 +17,7 @@ mod stripe_webhooks;
 mod tracking;
 mod utils;
 mod viewers;
+mod weeme;
 
 use async_redis_session::RedisSessionStore;
 use aws_config::BehaviorVersion;

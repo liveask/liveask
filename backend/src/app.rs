@@ -31,6 +31,7 @@ use crate::{
     tracking::{EditEvent, Tracking},
     utils::timestamp_now,
     viewers::Viewers,
+    weeme,
 };
 
 pub type SharedApp = Arc<App>;
