@@ -128,11 +128,15 @@ impl App {
 
     #[instrument(skip(self))]
     async fn shorten_url(&self, url: &str) -> String {
-        if let Some(ezlime_key) = &self.ezlime_key {
-            if !ezlime_key.trim().is_empty() {
-                let now = Instant::now();
+        if let Some(ezlime_key) = &self.ezlime_key
+            && !ezlime_key.trim().is_empty()
+        {
+            let now = Instant::now();
 
-                if let Some(shortened_url) = ezlime_rs::create_short_url(ezlime_key, url).await {
+            let ezlime = ezlime_rs::EzlimeApi::new(ezlime_key.clone());
+
+            match ezlime.create_short_url(url).await {
+                Ok(shortened_url) => {
                     tracing::info!(
                         "short url: '{}' (in {}ms)",
                         shortened_url,
@@ -140,8 +144,9 @@ impl App {
                     );
                     return shortened_url;
                 }
-
-                tracing::error!("failed to create short url");
+                Err(e) => {
+                    tracing::error!("failed to create short url: {}", e);
+                }
             }
         } else {
             tracing::info!("no weeme key");

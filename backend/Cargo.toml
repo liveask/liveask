@@ -24,7 +24,7 @@ axum = { version = "0.6", features = ["ws"] }
 axum-login = "0.6"
 axum-sessions = "0.5"
 chrono = { workspace = true }
-ezlime-rs = "0.1"
+ezlime-rs = "0.2"
 futures-util = "0.3"
 handlebars = { workspace = true }
 posthog-core = { git = "https://github.com/rivet-gg/posthog-rs.git", rev = "fa4d39a" }
