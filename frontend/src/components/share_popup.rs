@@ -62,10 +62,12 @@ impl Component for SharePopup {
                 false
             }
             Msg::Close => {
+                self.copied_to_clipboard = false;
                 self.show = false;
                 true
             }
             Msg::OpenPrint => {
+                self.copied_to_clipboard = false;
                 self.show = false;
 
                 ctx.link().navigator().unwrap_throw().push(&Route::Print {
