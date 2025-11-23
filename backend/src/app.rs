@@ -31,7 +31,6 @@ use crate::{
     tracking::{EditEvent, Tracking},
     utils::timestamp_now,
     viewers::Viewers,
-    weeme,
 };
 
 pub type SharedApp = Arc<App>;
@@ -71,8 +70,6 @@ impl App {
         tracking: Tracking,
         base_url: String,
     ) -> Self {
-        let weeme_key = Self::weeme_key();
-
         let mail_config = MailConfig::new();
 
         Self {
@@ -80,7 +77,7 @@ impl App {
             pubsub_publish,
             channels: Arc::default(),
             base_url,
-            ezlime_key: weeme_key,
+            ezlime_key: Self::ezlime_key(),
             mail_config,
             payment,
             viewers,
@@ -89,14 +86,14 @@ impl App {
         }
     }
 
-    fn weeme_key() -> Option<String> {
+    fn ezlime_key() -> Option<String> {
         let key = std::env::var(env::ENV_WEEME_KEY).ok();
 
         if key.clone().unwrap_or_default().trim().is_empty() {
-            tracing::warn!("no url shorten token set, use `WEEME_KEY` to do so");
+            tracing::warn!("no url shorten token set");
         } else {
             tracing::info!(
-                "weeme-key set (len: {})",
+                "link shortener token set (len: {})",
                 key.clone().unwrap_or_default().trim().len()
             );
         }
