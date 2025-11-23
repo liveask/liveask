@@ -31,7 +31,6 @@ use crate::{
     tracking::{EditEvent, Tracking},
     utils::timestamp_now,
     viewers::Viewers,
-    weeme,
 };
 
 pub type SharedApp = Arc<App>;
@@ -53,7 +52,7 @@ pub struct App {
     payment: Arc<Payment>,
     tracking: Tracking,
     base_url: String,
-    weeme_key: Option<String>,
+    ezlime_key: Option<String>,
     mail_config: MailConfig,
 }
 
@@ -80,7 +79,7 @@ impl App {
             pubsub_publish,
             channels: Arc::default(),
             base_url,
-            weeme_key,
+            ezlime_key: weeme_key,
             mail_config,
             payment,
             viewers,
@@ -129,11 +128,11 @@ impl App {
 
     #[instrument(skip(self))]
     async fn shorten_url(&self, url: &str) -> String {
-        if let Some(weeme_key) = &self.weeme_key {
-            if !weeme_key.trim().is_empty() {
+        if let Some(ezlime_key) = &self.ezlime_key {
+            if !ezlime_key.trim().is_empty() {
                 let now = Instant::now();
 
-                if let Some(shortened_url) = weeme::create_short_url(weeme_key, url).await {
+                if let Some(shortened_url) = ezlime_rs::create_short_url(ezlime_key, url).await {
                     tracing::info!(
                         "short url: '{}' (in {}ms)",
                         shortened_url,
