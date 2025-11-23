@@ -9,7 +9,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 * reset `copied` label in share popup after it got closed
-* use full non-shortened url in qr code
 
 ## [2.11.0] - 2025-11-23
 
