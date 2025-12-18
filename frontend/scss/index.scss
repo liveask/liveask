@@ -1,4 +1,4 @@
-@import 'buttons';
+@use 'buttons' as *;
 
 .feature-dark {
   background-color: #282828;
