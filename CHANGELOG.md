@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## [2.12.0] - 2025-12-18
+
 ### Changed
 * reset `copied` label in share popup after it got closed
 * show spinner to indicate `create-event` is in progress
