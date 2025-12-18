@@ -9,11 +9,10 @@ extern "C" {
 }
 
 pub fn track_event(fathom_idx: usize) {
-    if !matches!(la_env(Some(env!("LA_ENV"))), LiveAskEnv::Local) {
-        if let Err(e) = track_event_js(EVNT_FATHOM_IDS[fathom_idx]) {
+    if !matches!(la_env(Some(env!("LA_ENV"))), LiveAskEnv::Local)
+        && let Err(e) = track_event_js(EVNT_FATHOM_IDS[fathom_idx]) {
             log::error!("track_event_js error: {:?}", e);
         }
-    }
 }
 
 pub const EVNT_NEWEVENT_FINISH: usize = 0;

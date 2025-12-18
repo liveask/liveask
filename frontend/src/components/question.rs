@@ -218,8 +218,8 @@ impl Component for Question {
         let (elem, element_y) = self.get_elem_y();
         let elem: HtmlElement = elem.dyn_into::<HtmlElement>().unwrap_throw();
 
-        if let Some(last_pos) = self.last_pos {
-            if self.reorder_animation_timeout.is_none()
+        if let Some(last_pos) = self.last_pos
+            && self.reorder_animation_timeout.is_none()
                 && self.timeout.is_none()
                 && last_pos != element_y
             {
@@ -243,7 +243,6 @@ impl Component for Question {
 
                 self.timeout = Some(handle);
             }
-        }
 
         //do not save pos while animating
         if self.reorder_animation_timeout.is_none() {
