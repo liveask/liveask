@@ -180,7 +180,7 @@ impl Component for NewEvent {
 }
 
 impl NewEvent {
-    fn can_create(&self) -> bool {
+    const fn can_create(&self) -> bool {
         !self.errors.has_any() && !self.name.is_empty() && !self.desc.is_empty()
     }
 

@@ -1083,14 +1083,15 @@ impl Event {
 
     fn handle_fetched(&mut self, res: Option<GetEventResponse>, ctx: &Context<Self>) -> bool {
         self.on_fetched(res.as_ref());
-        if let Some(e) = res {
-            if !e.info.is_premium() && self.query_params.paypal_token.is_some() {
-                request_capture(
-                    e.info.tokens.public_token,
-                    self.query_params.paypal_token.clone().unwrap_throw(),
-                    ctx.link(),
-                );
-            }
+        if let Some(e) = res
+            && !e.info.is_premium()
+            && self.query_params.paypal_token.is_some()
+        {
+            request_capture(
+                e.info.tokens.public_token,
+                self.query_params.paypal_token.clone().unwrap_throw(),
+                ctx.link(),
+            );
         }
         true
     }

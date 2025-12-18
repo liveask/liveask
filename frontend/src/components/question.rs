@@ -218,31 +218,30 @@ impl Component for Question {
         let (elem, element_y) = self.get_elem_y();
         let elem: HtmlElement = elem.dyn_into::<HtmlElement>().unwrap_throw();
 
-        if let Some(last_pos) = self.last_pos {
-            if self.reorder_animation_timeout.is_none()
-                && self.timeout.is_none()
-                && last_pos != element_y
-            {
-                let diff = last_pos - element_y;
+        if let Some(last_pos) = self.last_pos
+            && self.reorder_animation_timeout.is_none()
+            && self.timeout.is_none()
+            && last_pos != element_y
+        {
+            let diff = last_pos - element_y;
 
-                let style = elem.style();
+            let style = elem.style();
 
-                style
-                    .set_property("transition-duration", "0s")
-                    .unwrap_throw();
-                style
-                    .set_property("transform", &format!("translate(0px,{diff}px)"))
-                    .unwrap_throw();
+            style
+                .set_property("transition-duration", "0s")
+                .unwrap_throw();
+            style
+                .set_property("transform", &format!("translate(0px,{diff}px)"))
+                .unwrap_throw();
 
-                let handle = {
-                    let link = ctx.link().clone();
-                    Timeout::new(0, move || {
-                        link.send_message(Msg::ReorderAnimation(AnimationState::Start));
-                    })
-                };
+            let handle = {
+                let link = ctx.link().clone();
+                Timeout::new(0, move || {
+                    link.send_message(Msg::ReorderAnimation(AnimationState::Start));
+                })
+            };
 
-                self.timeout = Some(handle);
-            }
+            self.timeout = Some(handle);
         }
 
         //do not save pos while animating
