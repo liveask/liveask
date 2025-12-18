@@ -1,5 +1,6 @@
-@import 'colors';
-@import 'text-macros';
+@use 'colors' as *;
+@use 'text-macros' as *;
+@use 'buttons' as *;
 
 .password {
 	display: flex;
