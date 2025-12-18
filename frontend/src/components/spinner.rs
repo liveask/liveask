@@ -1,6 +1,6 @@
 use yew::prelude::*;
 
-#[derive(Clone, Debug, PartialEq, Properties)]
+#[derive(Clone, Debug, PartialEq, Eq, Properties)]
 pub struct SpinnerProps {
     #[prop_or_default]
     pub id: Option<AttrValue>,
