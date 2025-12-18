@@ -13,9 +13,13 @@ args = ["c", "--target=wasm32-unknown-unknown"]
 command = "cargo"
 args = ["clippy", "--target=wasm32-unknown-unknown"]
 
-[tasks.fix]
+[tasks.carg-fix]
 command = "cargo"
-args = ["fix", "--target=wasm32-unknown-unknown"]
+args = ["fix", "--allow-dirty", "--target=wasm32-unknown-unknown"]
+
+[tasks.clippy-fix]
+command = "cargo"
+args = ["clippy", "--fix", "--allow-dirty", "--target=wasm32-unknown-unknown"]
 
 [tasks.clippy-nightly]
 script_runner = "@shell"
@@ -47,6 +51,9 @@ args = ["udeps", "--target=wasm32-unknown-unknown"]
 install_crate = "fmt"
 command = "cargo"
 args = ["fmt", "--", "--check"]
+
+[tasks.fix]
+dependencies = ["cargo-fix", "clippy-fix"]
 
 [tasks.checks]
 dependencies = ["cargo-sort", "format", "cargo-check", "clippy", "udeps"]
