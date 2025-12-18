@@ -1,4 +1,9 @@
-use crate::{components::TextArea, fetch, routes::Route, tracking};
+use crate::{
+    components::{Spinner, TextArea},
+    fetch,
+    routes::Route,
+    tracking,
+};
 use shared::{CreateEventError, CreateEventValidation, EventInfo};
 use wasm_bindgen::UnwrapThrowExt;
 use web_sys::{HtmlInputElement, HtmlTextAreaElement};
@@ -13,6 +18,7 @@ pub struct NewEvent {
     email: String,
     name_ref: NodeRef,
     errors: CreateEventValidation,
+    loading: bool,
 }
 
 #[derive(Debug)]
@@ -42,6 +48,7 @@ impl Component for NewEvent {
             email: String::new(),
             name_ref: NodeRef::default(),
             errors: CreateEventValidation::default(),
+            loading: false,
         }
     }
 
@@ -58,6 +65,8 @@ impl Component for NewEvent {
 
                 tracking::track_event(tracking::EVNT_NEWEVENT_FINISH);
 
+                self.loading = true;
+
                 ctx.link().send_future(async move {
                     let res = fetch::create_event(BASE_API, name, desc, email).await;
 
@@ -69,10 +78,11 @@ impl Component for NewEvent {
                         }
                     }
                 });
-                false
+                true
             }
 
             Msg::CreatedResult(event) => {
+                self.loading = false;
                 if let Some(event) = event {
                     ctx.link()
                         .navigator()
@@ -166,14 +176,21 @@ impl Component for NewEvent {
                             { Self::desc_error(self.errors.desc.as_ref()).unwrap_or_default() }
                         </div>
                     </div>
-                    <button
-                        class="button-finish"
-                        disabled={!self.can_create()}
-                        onclick={ctx.link().callback(|_| Msg::Create)}
-                    >
-                        { "finish" }
-                    </button>
+                    if !self.loading {
+                        <button
+                            class="button-finish"
+                            disabled={!self.can_create()}
+                            onclick={ctx.link().callback(|_| Msg::Create)}
+                        >
+                            { "finish" }
+                        </button>
+                    } else {
+                        <div id="spinner">
+                            <Spinner />
+                        </div>
+                    }
                 </div>
+
             </div>
         }
     }

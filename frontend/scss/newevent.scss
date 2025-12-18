@@ -119,3 +119,13 @@
 		color: #A0A0A0;
 	}
 }
+
+#spinner {
+    .lds-roller {
+        margin: auto;
+    }
+
+    .lds-roller div:after {
+        background: $pink-button;
+    }
+}
