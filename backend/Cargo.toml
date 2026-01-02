@@ -7,7 +7,6 @@ rust-version = "1.85"
 # ############################
 
 [dependencies]
-axum-prometheus = "0.4"
 async-posthog = { git = "https://github.com/rivet-gg/posthog-rs.git", rev = "fa4d39a" }
 async-redis-session = { path = "../async-redis-session" }
 async-stripe = { version = "0.31", default-features = false, features = [
@@ -23,6 +22,7 @@ aws-sdk-ses = "1.2"
 aws-smithy-http = "0.60"
 axum = { version = "0.6", features = ["ws"] }
 axum-login = "0.6"
+axum-prometheus = "0.4"
 axum-sessions = "0.5"
 chrono = { workspace = true }
 ezlime-rs = "0.2"
