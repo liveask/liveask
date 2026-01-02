@@ -296,6 +296,8 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
         .route("/questionmod/:id/:secret/:question_id", post(handle::mod_edit_question))
         .route("/:id/:secret", post(handle::mod_edit_event));
 
+    let (prometheus_layer, metrics_handler) = axum_prometheus::PrometheusMetricLayer::pair();
+
     #[rustfmt::skip]
     let router = Router::new()
         .route("/api/ping", get(handle::ping_handler))
@@ -306,6 +308,7 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
         .nest("/api/event", event_routes)
         .nest("/api/mod/event", mod_routes)
         .nest("/api/admin", admin_routes)
+        .route("/metrics", get(async move || metrics_handler.render()))
         .layer(auth_layer)
         .layer(session_layer)
         .layer(SetSensitiveRequestHeadersLayer::new(once(header::COOKIE)))
@@ -313,6 +316,7 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
         .layer(NewSentryLayer::new_from_top())
         .layer(TraceLayer::new_for_http())
         .layer(setup_cors())
+        .layer(prometheus_layer)
         .with_state(Arc::clone(&app));
 
     let addr = SocketAddr::from(([0, 0, 0, 0], get_port()));
