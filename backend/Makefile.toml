@@ -20,7 +20,7 @@ args = ["sort", "-c"]
 
 [tasks.tests]
 command = "cargo"
-args = ["t"]
+args = ["nextest", "run", "-p", "liveask-server", "-p", "shared"]
 
 [tasks.test-nightly]
 command = "cargo"

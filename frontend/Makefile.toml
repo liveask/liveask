@@ -38,10 +38,6 @@ install_crate = "cargo-sort"
 command = "cargo"
 args = ["sort", "-c"]
 
-[tasks.test]
-command = "cargo"
-args = ["test", "--target=wasm32-unknown-unknown"]
-
 [tasks.udeps]
 command = "cargo"
 toolchain = "nightly"

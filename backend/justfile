@@ -1,28 +1,32 @@
 default:
-  just --list
+    just --list
 
 docker-compose:
-	docker compose -f docker-compose.local.yml up
+    docker compose -f docker-compose.local.yml up
 
 run:
-	cargo make --env-file=env/local.env run
+    cargo make --env-file=env/local.env run
+
+test:
+    cargo make tests
 
 check:
-	cargo make checks
-	cargo make clippy-nightly
+    cargo make checks
+    cargo make clippy-nightly
 
 # URL := "http://127.0.0.1:8090"
 # URL := "https://prod.www.live-ask.com"
+
 URL := "https://beta.www.live-ask.com"
 
 test-version:
-	xh {{URL}}/api/version
+    xh {{ URL }}/api/version
 
 test-payment:
-	xh "{{URL}}/api/mod/event/upgrade/eventexample/eventexamplemod"
+    xh "{{ URL }}/api/mod/event/upgrade/eventexample/eventexamplemod"
 
 header-test:
-	xh "{{URL}}/api/event/eventexample" my-header:foobar
+    xh "{{ URL }}/api/event/eventexample" my-header:foobar
 
 test-create-event:
-	echo '{"eventData":{"name":"testfooo","description":"baaaa rrrrrr asdadadadasdads asdasda","shortUrl":""},"test":true}' | xh POST "{{URL}}/api/event/add" content-type:application/json
+    echo '{"eventData":{"name":"testfooo","description":"baaaa rrrrrr asdadadadasdads asdasda","shortUrl":""},"test":true}' | xh POST "{{ URL }}/api/event/add" content-type:application/json

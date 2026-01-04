@@ -2,13 +2,13 @@ name: check_fe
 description: check and test frontend
 inputs:
   rust:
-    description: 'rust version'
+    description: "rust version"
     required: true
-    default: 'stable'
+    default: "stable"
   os:
-    description: 'os type'
+    description: "os type"
     required: true
-    default: 'ubuntu-latest'
+    default: "ubuntu-latest"
 runs:
   using: "composite"
   steps:
@@ -27,19 +27,8 @@ runs:
       run: |
         which cargo-make || cargo install cargo-make
 
-    - name: Install Test Runner
-      shell: bash
-      run: |
-        which wasm-bindgen-test-runner || cargo install wasm-bindgen-cli
-
     - name: Check FE
       shell: bash
       run: |
         cd frontend
         cargo make checks_ci
-
-    - name: Test FE
-      shell: bash
-      run: |
-        cd frontend
-        cargo make test

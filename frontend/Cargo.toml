@@ -67,8 +67,5 @@ handlebars = { workspace = true }
 konst = "0.3"
 vergen = { version = "8", features = ["git", "gitcl", "build"] }
 
-[dev-dependencies]
-wasm-bindgen-test = "0.3.0"
-
 [lints]
 workspace = true
