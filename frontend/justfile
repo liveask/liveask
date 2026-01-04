@@ -1,24 +1,25 @@
 default:
-	just --list
+    just --list
 
 clean:
-	rm -rf dist
-	rm -rf ../target
+    rm -rf dist
+    rm -rf ../target
 
 serve:
-	cargo make serve --disable-check-for-updates
+    cargo make serve --disable-check-for-updates
+
 serve-prod:
-	LA_ENV="prod" cargo make serve-release --disable-check-for-updates
+    LA_ENV="prod" cargo make serve-release --disable-check-for-updates
 
 serve-release:
-	cargo make serve-release --disable-check-for-updates
+    cargo make serve-release --disable-check-for-updates
 
 clippy:
-	cargo make clippy
+    cargo make clippy
 
 check:
-	cargo make checks
-	cargo make clippy-nightly
+    cargo make checks
+    cargo make clippy-nightly
 
 release:
-	LA_ENV="prod" cargo make build-and-check
+    LA_ENV="prod" cargo make build-and-check

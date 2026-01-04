@@ -2,13 +2,13 @@ name: check_be
 description: check and test backend
 inputs:
   rust:
-    description: 'rust version'
+    description: "rust version"
     required: true
-    default: 'stable'
+    default: "stable"
   os:
-    description: 'os type'
+    description: "os type"
     required: true
-    default: 'ubuntu-latest'
+    default: "ubuntu-latest"
 runs:
   using: "composite"
   steps:
@@ -21,19 +21,12 @@ runs:
         toolchain: ${{ inputs.rust }}
         components: clippy
 
-    - name: Install cargo-make
-      shell: bash
-      run: |
-        which cargo-make || cargo install cargo-make
+    - uses: taiki-e/install-action@v2
+      with:
+        tool: cargo-make,nextest
 
     - name: Check BE
       shell: bash
       run: |
         cd backend
         cargo make checks_ci
-
-    - name: Test BE
-      shell: bash
-      run: |
-        cd backend
-        cargo t
