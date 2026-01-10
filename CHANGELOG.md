@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## [2.13.0] - 2026-01-10
+
+### Changed
+* update footer and date
+* dependency cleanups
+* switch unittest runner to nextest
+* emit prometheus metrics
+
 ## [2.12.0] - 2025-12-18
 
 ### Changed
