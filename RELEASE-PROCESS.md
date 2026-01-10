@@ -3,4 +3,4 @@
 - [ ] Update CHANGELOG.md
 - [ ] Update `VERSION_STR` in lib.rs
 - [ ] Create git tag `v...`
-- [ ] Wait for CI/CD
+- [ ] Run [prod_cd](https://github.com/liveask/liveask/actions/workflows/prod_cd.yml) for tag
