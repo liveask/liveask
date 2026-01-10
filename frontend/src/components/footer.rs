@@ -63,7 +63,7 @@ impl Component for Footer {
                         </text>
                     </svg>
                 </a>
-                <div class="copyright">{ "© 2025 Rustunit B.V. All right reserved." }</div>
+                <div class="copyright">{ "© 2026 Rustunit. All right reserved." }</div>
                 { Self::view_social() }
                 <a class="about" href="https://github.com/liveask/liveask" target="_blank">
                     { "About" }
