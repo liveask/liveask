@@ -271,6 +271,7 @@ pub struct AddEvent {
     #[serde(rename = "moderatorEmail", default)]
     pub moderator_email: Option<String>,
     pub test: bool,
+    pub customer: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
