@@ -4,13 +4,19 @@ use crate::{
     routes::Route,
     tracking,
 };
+use serde::Deserialize;
 use shared::{CreateEventError, CreateEventValidation, EventInfo};
 use wasm_bindgen::UnwrapThrowExt;
 use web_sys::{HtmlInputElement, HtmlTextAreaElement};
 use yew::prelude::*;
-use yew_router::prelude::*;
+use yew_router::scope_ext::RouterScopeExt;
 
 use super::event::BASE_API;
+
+#[derive(Debug, Default, Deserialize)]
+struct QueryParams {
+    pub customer: Option<String>,
+}
 
 pub struct NewEvent {
     name: String,
@@ -65,10 +71,18 @@ impl Component for NewEvent {
 
                 tracking::track_event(tracking::EVNT_NEWEVENT_FINISH);
 
+                let query_params = ctx
+                    .link()
+                    .location()
+                    .and_then(|loc| loc.query::<QueryParams>().ok())
+                    .unwrap_or_default();
+
+                let customer = query_params.customer.clone();
+
                 self.loading = true;
 
                 ctx.link().send_future(async move {
-                    let res = fetch::create_event(BASE_API, name, desc, email).await;
+                    let res = fetch::create_event(BASE_API, name, desc, email, customer).await;
 
                     match res {
                         Ok(e) => Msg::CreatedResult(Some(e)),

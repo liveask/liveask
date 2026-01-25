@@ -193,6 +193,7 @@ pub async fn create_event(
     name: String,
     desc: String,
     email: Option<String>,
+    customer: Option<String>,
 ) -> Result<EventInfo, FetchError> {
     let url = format!("{base_api}/api/event/add");
 
@@ -205,6 +206,7 @@ pub async fn create_event(
             color: None,
         },
         test: false,
+        customer,
         moderator_email: email,
     })?);
 
