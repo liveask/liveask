@@ -20,6 +20,7 @@ use super::{Error, event_key};
 pub enum PremiumOrder {
     PaypalOrderId(String),
     StripeSessionId(String),
+    StripeSubscriptionId(String),
     Admin(String),
 }
 

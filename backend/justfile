@@ -30,3 +30,6 @@ header-test:
 
 test-create-event:
     echo '{"eventData":{"name":"testfooo","description":"baaaa rrrrrr asdadadadasdads asdasda","shortUrl":""},"test":true}' | xh POST "{{ URL }}/api/event/add" content-type:application/json
+
+test-create-with-customer:
+    echo '{"eventData":{"name":"testfooo","description":"baaaa rrrrrr asdadadadasdads asdasda","shortUrl":""},"test":true,"customer": "cus_TrCHcdMaNTae6F"}' | xh POST "{{ URL }}/api/event/add" content-type:application/json

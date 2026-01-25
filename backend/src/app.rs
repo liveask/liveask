@@ -168,6 +168,15 @@ impl App {
             }));
         }
 
+        let premium_id = if let Some(customer) = request.customer {
+            tracing::info!("customer supplied: {}", customer);
+            Some(PremiumOrder::StripeSubscriptionId(
+                self.payment.verify_customer(customer.as_str()).await?,
+            ))
+        } else {
+            None
+        };
+
         let now = timestamp_now();
 
         let request_mod_mail = request.moderator_email.clone();
@@ -180,7 +189,7 @@ impl App {
             delete_time_unix: 0,
             last_edit_unix: now,
             deleted: false,
-            premium_id: None,
+            premium_id,
             password: shared::EventPassword::Disabled,
             questions: Vec::new(),
             do_screening: false,
