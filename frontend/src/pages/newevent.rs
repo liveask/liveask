@@ -77,7 +77,7 @@ impl Component for NewEvent {
                     .and_then(|loc| loc.query::<QueryParams>().ok())
                     .unwrap_or_default();
 
-                let customer = query_params.customer.clone();
+                let customer = query_params.customer;
 
                 self.loading = true;
 

@@ -402,6 +402,7 @@ mod test_db_item_not_found {
                 },
                 moderator_email: None,
                 test: false,
+                customer: None,
             })
             .await
             .unwrap();
@@ -454,6 +455,7 @@ mod test_db_item_not_found {
                 },
                 moderator_email: None,
                 test: false,
+                customer: None,
             })
             .await
             .unwrap();

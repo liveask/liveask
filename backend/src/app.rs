@@ -1127,6 +1127,7 @@ mod test {
                 },
                 moderator_email: None,
                 test: false,
+                customer: None,
             })
             .await;
 
@@ -1154,6 +1155,7 @@ mod test {
                 },
                 moderator_email: Option::Some("a@a".to_string()),
                 test: false,
+                customer: None,
             })
             .await;
 
@@ -1181,6 +1183,7 @@ mod test {
                 },
                 moderator_email: Option::Some("testuser@live-ask.com".to_string()),
                 test: false,
+                customer: None,
             })
             .await;
 
@@ -1208,6 +1211,7 @@ mod test {
             },
             moderator_email: None,
             test: false,
+            customer: None,
         })
         .await
         .unwrap();
@@ -1239,6 +1243,7 @@ mod test {
                 },
                 moderator_email: None,
                 test: false,
+                customer: None,
             })
             .await
             .unwrap();
@@ -1303,6 +1308,7 @@ mod test {
                 },
                 moderator_email: None,
                 test: false,
+                customer: None,
             })
             .await
             .unwrap();
@@ -1394,6 +1400,7 @@ mod test {
                 },
                 moderator_email: None,
                 test: false,
+                customer: None,
             })
             .await
             .unwrap();
@@ -1469,6 +1476,7 @@ mod test {
                 },
                 moderator_email: None,
                 test: false,
+                customer: None,
             })
             .await
             .unwrap();
@@ -1522,6 +1530,7 @@ mod test {
                 },
                 moderator_email: None,
                 test: false,
+                customer: None,
             })
             .await
             .unwrap();
@@ -1577,6 +1586,7 @@ mod test {
                 },
                 moderator_email: None,
                 test: false,
+                customer: None,
             })
             .await
             .unwrap();
@@ -1648,6 +1658,7 @@ mod test {
                 },
                 moderator_email: None,
                 test: false,
+                customer: None,
             })
             .await
             .unwrap();
