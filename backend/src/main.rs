@@ -43,7 +43,7 @@ use crate::{
     env::session_secret,
     error::Result,
     eventsdb::DynamoEventsDB,
-    handle::push_handler,
+    handle::{push_handler, subscription_handler},
     payment::Payment,
     pubsub::PubSubRedis,
     redis_pool::{create_pool, ping_test_redis},
@@ -305,6 +305,7 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
         .route("/api/error", get(handle::error_handler))
         .route("/api/payment/stripe/webhook", post(stripe_webhooks::handle_webhook))
         .route("/push/:id", get(push_handler))
+        .route("/api/subscription", post(subscription_handler))
         .nest("/api/event", event_routes)
         .nest("/api/mod/event", mod_routes)
         .nest("/api/admin", admin_routes)

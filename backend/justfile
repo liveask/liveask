@@ -30,3 +30,9 @@ header-test:
 
 test-create-event:
     echo '{"eventData":{"name":"testfooo","description":"baaaa rrrrrr asdadadadasdads asdasda","shortUrl":""},"test":true}' | xh POST "{{ URL }}/api/event/add" content-type:application/json
+
+test-sub:
+    echo '{"checkout":"cs_test_a1TrSYLCLcwmmAIGKWi74lBdHpRfmNdBH7Zu0y45GJPbJA1kfN0gam9spp"}' | xh POST "{{ URL }}/api/subscription" content-type:application/json
+
+test-create-with-customer:
+    echo '{"eventData":{"name":"testfooo","description":"baaaa rrrrrr asdadadadasdads asdasda","shortUrl":""},"test":true,"customer": "cus_TrCHcdMaNTae6F"}' | xh POST "{{ URL }}/api/event/add" content-type:application/json

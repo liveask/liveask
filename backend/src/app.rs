@@ -3,7 +3,7 @@ use axum::extract::ws::{CloseFrame, Message, WebSocket, close_code::RESTART};
 use shared::{
     AddEvent, Color, ContextValidation, EventInfo, EventResponseFlags, EventState, EventTags,
     EventTokens, EventUpgradeResponse, GetEventResponse, ModEvent, ModInfo, ModQuestion,
-    PasswordValidation, PaymentCapture, QuestionItem, States, TagValidation,
+    PasswordValidation, PaymentCapture, QuestionItem, States, SubscriptionResponse, TagValidation,
 };
 use std::{
     collections::HashMap,
@@ -168,6 +168,15 @@ impl App {
             }));
         }
 
+        let premium_id = if let Some(customer) = request.customer {
+            tracing::info!("customer supplied: {}", customer);
+            Some(PremiumOrder::StripeSubscriptionId(
+                self.payment.verify_customer(customer.as_str()).await?,
+            ))
+        } else {
+            None
+        };
+
         let now = timestamp_now();
 
         let request_mod_mail = request.moderator_email.clone();
@@ -180,7 +189,7 @@ impl App {
             delete_time_unix: 0,
             last_edit_unix: now,
             deleted: false,
-            premium_id: None,
+            premium_id,
             password: shared::EventPassword::Disabled,
             questions: Vec::new(),
             do_screening: false,
@@ -492,6 +501,18 @@ impl App {
         self.notify_subscribers(&id, Notification::Event).await;
 
         Ok(result.into())
+    }
+
+    pub async fn subscription_checkout(&self, checkout: String) -> Result<SubscriptionResponse> {
+        let customer = self.payment.subscription_checkout(checkout).await?;
+
+        tracing::info!(customer, "customer id retrieved");
+
+        let email = self.payment.customer_email(customer.as_str()).await?;
+
+        tracing::info!(email_found = %email.is_some(), "customer email retrieved");
+
+        Ok(SubscriptionResponse { customer, email })
     }
 
     pub async fn delete_event(&self, id: String, secret: String) -> Result<()> {
@@ -1118,6 +1139,7 @@ mod test {
                 },
                 moderator_email: None,
                 test: false,
+                customer: None,
             })
             .await;
 
@@ -1145,6 +1167,7 @@ mod test {
                 },
                 moderator_email: Option::Some("a@a".to_string()),
                 test: false,
+                customer: None,
             })
             .await;
 
@@ -1172,6 +1195,7 @@ mod test {
                 },
                 moderator_email: Option::Some("testuser@live-ask.com".to_string()),
                 test: false,
+                customer: None,
             })
             .await;
 
@@ -1199,6 +1223,7 @@ mod test {
             },
             moderator_email: None,
             test: false,
+            customer: None,
         })
         .await
         .unwrap();
@@ -1230,6 +1255,7 @@ mod test {
                 },
                 moderator_email: None,
                 test: false,
+                customer: None,
             })
             .await
             .unwrap();
@@ -1294,6 +1320,7 @@ mod test {
                 },
                 moderator_email: None,
                 test: false,
+                customer: None,
             })
             .await
             .unwrap();
@@ -1385,6 +1412,7 @@ mod test {
                 },
                 moderator_email: None,
                 test: false,
+                customer: None,
             })
             .await
             .unwrap();
@@ -1460,6 +1488,7 @@ mod test {
                 },
                 moderator_email: None,
                 test: false,
+                customer: None,
             })
             .await
             .unwrap();
@@ -1513,6 +1542,7 @@ mod test {
                 },
                 moderator_email: None,
                 test: false,
+                customer: None,
             })
             .await
             .unwrap();
@@ -1568,6 +1598,7 @@ mod test {
                 },
                 moderator_email: None,
                 test: false,
+                customer: None,
             })
             .await
             .unwrap();
@@ -1639,6 +1670,7 @@ mod test {
                 },
                 moderator_email: None,
                 test: false,
+                customer: None,
             })
             .await
             .unwrap();
