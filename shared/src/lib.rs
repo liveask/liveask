@@ -402,6 +402,16 @@ pub struct ModEvent {
     pub color: Option<EditColor>,
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Default)]
+pub struct SubscriptionCheckout {
+    pub checkout: String,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq)]
+pub struct SubscriptionResponse {
+    pub customer: String,
+}
+
 #[derive(Serialize, Deserialize, Debug, Copy, Clone, Eq, PartialEq, Default)]
 pub struct EventState {
     pub state: States,

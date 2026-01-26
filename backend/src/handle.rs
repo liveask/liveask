@@ -187,6 +187,16 @@ pub async fn mod_edit_event(
     Ok(Json(app.mod_edit_event(id, secret, payload).await?))
 }
 
+#[instrument(skip(app))]
+pub async fn subscription_handler(
+    State(app): State<SharedApp>,
+    Json(payload): Json<shared::SubscriptionCheckout>,
+) -> std::result::Result<impl IntoResponse, InternalError> {
+    tracing::info!("subscription_handler");
+
+    Ok(Json(app.subscription_checkout(payload.checkout).await?))
+}
+
 #[instrument]
 pub async fn ping_handler() -> Html<&'static str> {
     Html("pong")
