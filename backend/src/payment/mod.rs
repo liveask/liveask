@@ -78,6 +78,21 @@ impl Payment {
     }
 
     #[instrument(skip(self))]
+    pub async fn subscription_checkout(&self, checkout: String) -> PaymentResult<String> {
+        let sess = CheckoutSessionId::from_str(checkout.as_str())?;
+
+        let sess = CheckoutSession::retrieve(&self.client, &sess, &[]).await?;
+
+        if let Some(customer) = sess.customer {
+            let id = customer.id();
+
+            return Ok(id.as_str().to_string());
+        }
+
+        Err(PaymentError::Generic(String::from("no customer found")))
+    }
+
+    #[instrument(skip(self))]
     pub async fn verify_customer(&self, customer_id: &str) -> PaymentResult<String> {
         tracing::info!("verify_customer");
         let id = CustomerId::from_str(customer_id)?;

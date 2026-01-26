@@ -3,7 +3,7 @@ use axum::extract::ws::{CloseFrame, Message, WebSocket, close_code::RESTART};
 use shared::{
     AddEvent, Color, ContextValidation, EventInfo, EventResponseFlags, EventState, EventTags,
     EventTokens, EventUpgradeResponse, GetEventResponse, ModEvent, ModInfo, ModQuestion,
-    PasswordValidation, PaymentCapture, QuestionItem, States, TagValidation,
+    PasswordValidation, PaymentCapture, QuestionItem, States, SubscriptionResponse, TagValidation,
 };
 use std::{
     collections::HashMap,
@@ -501,6 +501,14 @@ impl App {
         self.notify_subscribers(&id, Notification::Event).await;
 
         Ok(result.into())
+    }
+
+    pub async fn subscription_checkout(&self, checkout: String) -> Result<SubscriptionResponse> {
+        let customer = self.payment.subscription_checkout(checkout).await?;
+
+        tracing::info!("customer: {}", customer);
+
+        Ok(SubscriptionResponse { customer })
     }
 
     pub async fn delete_event(&self, id: String, secret: String) -> Result<()> {
