@@ -128,11 +128,11 @@ impl Component for IconBar {
         };
 
         let has_event = self.state.event.is_some();
-        let is_newevent_page = ctx
+        let hide_create_event = ctx
             .link()
             .route::<Route>()
             .as_ref()
-            .is_some_and(|route| route == &Route::NewEvent);
+            .is_some_and(|route| matches!(route, Route::NewEvent | Route::Subscribe));
 
         html! {
             <div
@@ -166,7 +166,7 @@ impl Component for IconBar {
                         { if has_event {
                                 self.view_ask_question(ctx)
                             }
-                            else if !is_newevent_page {html!{
+                            else if !hide_create_event {html!{
                             <Link<Route> to={Route::NewEvent}>
                                 <div class="createevent">
                                     {"Create Event"}

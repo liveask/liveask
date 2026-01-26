@@ -96,7 +96,7 @@ impl Payment {
     pub async fn customer_email(&self, customer: &str) -> PaymentResult<Option<String>> {
         let id = CustomerId::from_str(customer)?;
         let customer = Customer::retrieve(&self.client, &id, &[]).await?;
-        Ok(customer.email.clone())
+        Ok(customer.email)
     }
 
     #[instrument(skip(self))]

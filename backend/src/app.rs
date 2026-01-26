@@ -506,9 +506,11 @@ impl App {
     pub async fn subscription_checkout(&self, checkout: String) -> Result<SubscriptionResponse> {
         let customer = self.payment.subscription_checkout(checkout).await?;
 
-        tracing::info!("customer: {}", customer);
+        tracing::info!(customer, "customer id retrieved");
 
         let email = self.payment.customer_email(customer.as_str()).await?;
+
+        tracing::info!(email_found = %email.is_some(), "customer email retrieved");
 
         Ok(SubscriptionResponse { customer, email })
     }
