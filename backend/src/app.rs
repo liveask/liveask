@@ -508,7 +508,9 @@ impl App {
 
         tracing::info!("customer: {}", customer);
 
-        Ok(SubscriptionResponse { customer })
+        let email = self.payment.customer_email(customer.as_str()).await?;
+
+        Ok(SubscriptionResponse { customer, email })
     }
 
     pub async fn delete_event(&self, id: String, secret: String) -> Result<()> {

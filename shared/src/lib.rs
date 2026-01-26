@@ -410,6 +410,7 @@ pub struct SubscriptionCheckout {
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq)]
 pub struct SubscriptionResponse {
     pub customer: String,
+    pub email: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Copy, Clone, Eq, PartialEq, Default)]
