@@ -833,7 +833,7 @@ impl Event {
                         <button class="button-blue">
                             <a
                                 class="feedback-anchor"
-                                href="https://josephhillco.notion.site/037e452ab13c451b8e24161b115c8d00?pvs=105"
+                                href="https://tally.so/r/Pd5RXb"
                                 target="_blank"
                                 onclick={ctx.link().callback(|_| Msg::FeedbackClick)}
                             >
