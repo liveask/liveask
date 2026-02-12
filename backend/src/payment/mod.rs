@@ -1,11 +1,13 @@
 mod error;
 
+use futures_util::TryStreamExt;
 use std::str::FromStr;
-
 use stripe::{
     CheckoutSession, CheckoutSessionId, CheckoutSessionMode, CheckoutSessionStatus, Client,
-    CreateCheckoutSession, CreateCheckoutSessionLineItems, ListProducts,
+    CreateCheckoutSession, CreateCheckoutSessionLineItems, Customer, CustomerId, ListProducts,
+    ListSubscriptions, SubscriptionStatus,
 };
+use tracing::instrument;
 
 pub use self::error::PaymentError;
 use self::error::PaymentResult;
@@ -72,6 +74,49 @@ impl Payment {
 
         Err(PaymentError::Generic(String::from(
             "no premium product found",
+        )))
+    }
+
+    #[instrument(skip(self))]
+    pub async fn subscription_checkout(&self, checkout: String) -> PaymentResult<String> {
+        let sess = CheckoutSessionId::from_str(checkout.as_str())?;
+
+        let sess = CheckoutSession::retrieve(&self.client, &sess, &[]).await?;
+
+        if let Some(customer) = sess.customer {
+            let id = customer.id();
+
+            return Ok(id.as_str().to_string());
+        }
+
+        Err(PaymentError::Generic(String::from("no customer found")))
+    }
+
+    #[instrument(skip(self))]
+    pub async fn customer_email(&self, customer: &str) -> PaymentResult<Option<String>> {
+        let id = CustomerId::from_str(customer)?;
+        let customer = Customer::retrieve(&self.client, &id, &[]).await?;
+        Ok(customer.email)
+    }
+
+    #[instrument(skip(self))]
+    pub async fn verify_customer(&self, customer_id: &str) -> PaymentResult<String> {
+        tracing::info!("verify_customer");
+        let id = CustomerId::from_str(customer_id)?;
+        let customer = Customer::retrieve(&self.client, &id, &["subscriptions"]).await?;
+        tracing::info!("customer: {customer:?}");
+
+        let list = ListSubscriptions::new();
+        let mut subscriptions = customer.subscriptions.paginate(list).stream(&self.client);
+
+        while let Some(subscription) = subscriptions.try_next().await? {
+            if subscription.status == SubscriptionStatus::Active {
+                return Ok(subscription.id.to_string());
+            }
+        }
+
+        Err(PaymentError::Generic(String::from(
+            "no active subscrption found",
         )))
     }
 
