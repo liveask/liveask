@@ -3,9 +3,10 @@ mod error;
 use futures_util::TryStreamExt;
 use std::str::FromStr;
 use stripe::{
-    CheckoutSession, CheckoutSessionId, CheckoutSessionMode, CheckoutSessionStatus, Client,
-    CreateCheckoutSession, CreateCheckoutSessionLineItems, Customer, CustomerId, ListCustomers,
-    ListProducts, ListSubscriptions, Subscription, SubscriptionStatus,
+    BillingPortalSession, CheckoutSession, CheckoutSessionId, CheckoutSessionMode,
+    CheckoutSessionStatus, Client, CreateBillingPortalSession, CreateCheckoutSession,
+    CreateCheckoutSessionLineItems, Customer, CustomerId, ListCustomers, ListProducts,
+    ListSubscriptions, Subscription, SubscriptionStatus,
 };
 use tracing::instrument;
 
@@ -126,6 +127,20 @@ impl Payment {
         self.subscription_url
             .as_deref()
             .ok_or_else(|| PaymentError::Generic(String::from("subscription url not found")))
+    }
+
+    #[instrument(skip(self))]
+    pub async fn customer_portal_url(
+        &self,
+        customer_id: &str,
+        return_url: &str,
+    ) -> PaymentResult<String> {
+        let customer = CustomerId::from_str(customer_id)?;
+        let mut params = CreateBillingPortalSession::new(customer);
+        params.return_url = Some(return_url);
+
+        let session = BillingPortalSession::create(&self.client, params).await?;
+        Ok(session.url)
     }
 
     fn checkout_email(sess: &CheckoutSession) -> Option<&str> {

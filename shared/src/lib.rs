@@ -413,11 +413,13 @@ pub enum SubscriptionCheckout {
 pub struct SubscriptionResponse {
     pub customer: String,
     pub email: Option<String>,
+    pub portal_url: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq)]
 pub struct SubscriptionUrlResponse {
     pub url: String,
+    pub portal_url: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Copy, Clone, Eq, PartialEq, Default)]

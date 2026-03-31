@@ -115,6 +115,14 @@ pub fn Subscribe() -> Html {
                                 <a href={newevent_url}>
                                     <button class="button-red">{"Open"}</button>
                                 </a>
+                                if let Some(portal_url) = &res.portal_url {
+                                    <div class="instructions" style="margin-top: 20px;">
+                                        {"Manage your subscription:"}
+                                    </div>
+                                    <a href={portal_url.clone()}>
+                                        <button class="button-red">{"Customer Portal"}</button>
+                                    </a>
+                                }
                             </div>
                         }
                     },

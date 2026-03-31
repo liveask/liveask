@@ -527,7 +527,23 @@ impl App {
 
         tracing::info!(email_found = %email.is_some(), "customer email retrieved");
 
-        Ok(SubscriptionResponse { customer, email })
+        let portal_url = match self
+            .payment
+            .customer_portal_url(&customer, &self.base_url)
+            .await
+        {
+            Ok(url) => Some(url),
+            Err(e) => {
+                tracing::warn!(error = %e, "failed to create customer portal session");
+                None
+            }
+        };
+
+        Ok(SubscriptionResponse {
+            customer,
+            email,
+            portal_url,
+        })
     }
 
     pub async fn delete_event(&self, id: String, secret: String) -> Result<()> {

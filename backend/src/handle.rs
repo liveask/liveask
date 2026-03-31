@@ -204,7 +204,10 @@ pub async fn subscription_url_handler(
     tracing::info!("subscription_url_handler");
 
     let url = app.subscription_url()?;
-    Ok(Json(shared::SubscriptionUrlResponse { url }))
+    Ok(Json(shared::SubscriptionUrlResponse {
+        url,
+        portal_url: None,
+    }))
 }
 
 #[instrument]
