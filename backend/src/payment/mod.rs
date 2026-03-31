@@ -153,10 +153,7 @@ impl Payment {
     pub async fn portal_login_url(&self) -> PaymentResult<Option<String>> {
         use serde_json::Value;
 
-        let response = self
-            .client
-            .get("/billing_portal/configurations")
-            .await?;
+        let response = self.client.get("/billing_portal/configurations").await?;
 
         if let Value::Object(obj) = response {
             if let Some(Value::Array(data)) = obj.get("data") {
