@@ -113,23 +113,26 @@ impl Payment {
 
     #[instrument(skip(self))]
     async fn fetch_payment_link_url(&self) -> PaymentResult<Option<String>> {
+        // Using raw HTTP because async-stripe 0.31 fails to deserialize
+        // `"type": "self"` in payment link subscription_data.invoice_settings.issuer
         use serde_json::Value;
 
-        let response = self.client.get("/payment_links").await?;
+        #[derive(serde::Serialize)]
+        struct Params {
+            active: bool,
+        }
+        let response = self
+            .client
+            .get_query("/payment_links", &Params { active: true })
+            .await?;
 
         if let Value::Object(obj) = response {
             if let Some(Value::Array(data)) = obj.get("data") {
-                tracing::info!("[stripe] found {} payment links", data.len());
+                tracing::info!("[stripe] found {} active payment links", data.len());
 
                 for item in data {
-                    if let Value::Object(link) = item {
-                        // Check if active
-                        if matches!(link.get("active"), Some(Value::Bool(true))) {
-                            // Get URL
-                            if let Some(Value::String(url)) = link.get("url") {
-                                return Ok(Some(url.clone()));
-                            }
-                        }
+                    if let Some(Value::String(url)) = item.get("url") {
+                        return Ok(Some(url.clone()));
                     }
                 }
             }
