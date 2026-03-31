@@ -9,6 +9,9 @@ inputs:
     description: "os type"
     required: true
     default: "ubuntu-latest"
+  github_token:
+    description: "GitHub token for downloading action dependencies"
+    required: true
 runs:
   using: "composite"
   steps:
@@ -18,7 +21,7 @@ runs:
     - name: tombi install
       uses: tombi-toml/setup-tombi@v1
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ inputs.github_token }}
       with:
         version: '0.9.0'
 
