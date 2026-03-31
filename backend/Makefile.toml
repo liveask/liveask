@@ -13,10 +13,9 @@ install_crate = "fmt"
 command = "cargo"
 args = ["fmt", "--", "--check"]
 
-[tasks.cargo-sort]
-install_crate = "cargo-sort"
-command = "cargo"
-args = ["sort", "-c"]
+[tasks.tombi]
+command = "tombi"
+args = ["format", "--check"]
 
 [tasks.tests]
 command = "cargo"
@@ -43,16 +42,16 @@ args = ["udeps"]
 
 [tasks.checks]
 dependencies = [
-    "cargo-sort",
-    "format",
-    "tests",
-    "clippy",
-    # cannot succeed as nightly is broken right now: #72
-    # "udeps"
+  "tombi",
+  "format",
+  "tests",
+  "clippy",
+  # cannot succeed as nightly is broken right now: #72
+  # "udeps"
 ]
 
 [tasks.checks_ci]
-dependencies = ["cargo-sort", "format", "tests", "clippy"]
+dependencies = ["tombi", "format", "tests", "clippy"]
 
 [tasks.run-release]
 command = "cargo"

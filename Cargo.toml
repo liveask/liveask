@@ -1,13 +1,13 @@
 [workspace]
-members = [
-    "async-redis-session",
-    "backend",
-    "backend-e2e",
-    "frontend",
-    "frontend/events",
-    "shared",
-]
 resolver = "2"
+members = [
+  "async-redis-session",
+  "backend",
+  "backend-e2e",
+  "frontend",
+  "frontend/events",
+  "shared",
+]
 
 [workspace.dependencies]
 anyhow = "1"
@@ -16,27 +16,15 @@ handlebars = "4.4"
 serde = "1"
 serde_json = "1"
 
-[workspace.lints.rust]
-warnings = "deny"
-unused_imports = "deny"
-unused_must_use = "deny"
-unused_variables = "deny"
-unused_mut = "deny"
-dead_code = "deny"
-
 [workspace.lints.clippy]
 all = { level = "deny", priority = -1 }
-perf = { level = "deny", priority = -1 }
-correctness = { level = "deny", priority = -1 }
-complexity = { level = "deny", priority = -1 }
-style = { level = "deny", priority = -1 }
-nursery = { level = "deny", priority = -1 }
-pedantic = { level = "deny", priority = -1 }
 # selected clippy::restriction (see https://rust-lang.github.io/rust-clippy/master/index.html#/?groups=restriction)
 # it is recommended to enable individually based on style and requirements
 as_underscore = "deny"
 assertions_on_result_states = "deny"
 clone_on_ref_ptr = "deny"
+complexity = { level = "deny", priority = -1 }
+correctness = { level = "deny", priority = -1 }
 create_dir = "deny"
 dbg_macro = "deny"
 decimal_literal_representation = "deny"
@@ -44,20 +32,33 @@ default_numeric_fallback = "deny"
 empty_drop = "deny"
 empty_structs_with_brackets = "deny"
 exit = "deny"
+#
+# which are these?
+expect_used = "deny"
 filetype_is_file = "deny"
 float_cmp_const = "deny"
 fn_to_numeric_cast_any = "deny"
 format_push_string = "deny"
+from_over_into = "deny"
 get_unwrap = "deny"
+if_then_some_else_none = "deny"
+implicit_clone = "deny"
 integer_division = "deny"
 lossy_float_literal = "deny"
+match_like_matches_macro = "deny"
 mem_forget = "deny"
 mixed_read_write_in_expression = "deny"
 mutex_atomic = "deny"
 needless_raw_strings = "deny"
+needless_update = "deny"
 non_ascii_literal = "deny"
+nursery = { level = "deny", priority = -1 }
 panic = "deny"
+partial_pub_fields = "deny"
+pedantic = { level = "deny", priority = -1 }
+perf = { level = "deny", priority = -1 }
 print_stderr = "deny"
+print_stdout = "deny"
 pub_without_shorthand = "deny"
 rc_buffer = "deny"
 rc_mutex = "deny"
@@ -68,7 +69,7 @@ same_name_method = "deny"
 string_add = "deny"
 string_lit_chars_any = "deny"
 string_slice = "deny"
-implicit_clone = "deny"
+style = { level = "deny", priority = -1 }
 suspicious_xor_used_as_pow = "deny"
 todo = "deny"
 try_err = "deny"
@@ -76,26 +77,25 @@ unimplemented = "deny"
 unnecessary_self_imports = "deny"
 unneeded_field_pattern = "deny"
 unseparated_literal_suffix = "deny"
-if_then_some_else_none = "deny"
-partial_pub_fields = "deny"
-print_stdout = "deny"
 unwrap_in_result = "deny"
 unwrap_used = "deny"
 use_debug = "deny"
-#
-# which are these?
-expect_used = "deny"
-needless_update = "deny"
-match_like_matches_macro = "deny"
-from_over_into = "deny"
 useless_conversion = "deny"
 verbose_file_reads = "deny"
 
 # exceptions
 module_name_repetitions = "allow"
 
+[workspace.lints.rust]
+dead_code = "deny"
+unused_imports = "deny"
+unused_must_use = "deny"
+unused_mut = "deny"
+unused_variables = "deny"
+warnings = "deny"
+
 [profile.release]
-lto = true
-opt-level = 'z'     # Optimize for size.
-codegen-units = 1
+opt-level = "z"  # Optimize for size.
 strip = "debuginfo"
+lto = true
+codegen-units = 1
