@@ -1,11 +1,13 @@
 mod error;
 
+use futures_util::TryStreamExt;
 use std::str::FromStr;
-
 use stripe::{
     CheckoutSession, CheckoutSessionId, CheckoutSessionMode, CheckoutSessionStatus, Client,
-    CreateCheckoutSession, CreateCheckoutSessionLineItems, ListProducts,
+    CreateCheckoutSession, CreateCheckoutSessionLineItems, Customer, CustomerId, ListProducts,
+    ListSubscriptions, SubscriptionStatus,
 };
+use tracing::instrument;
 
 pub use self::error::PaymentError;
 use self::error::PaymentResult;
@@ -14,6 +16,7 @@ use self::error::PaymentResult;
 pub struct Payment {
     client: Client,
     price: Option<String>,
+    subscription_url: Option<String>,
 }
 
 #[cfg(test)]
@@ -23,6 +26,7 @@ impl Default for Payment {
         Self {
             client: Client::new(String::new()),
             price: None,
+            subscription_url: None,
         }
     }
 }
@@ -33,11 +37,14 @@ impl Payment {
         Self {
             client,
             price: None,
+            subscription_url: None,
         }
     }
 
     pub async fn authenticate(&mut self, live: bool) -> PaymentResult<String> {
         let res = stripe::Product::list(&self.client, &ListProducts::new()).await?;
+
+        let mut premium_product: Option<String> = None;
 
         for p in &res.data {
             tracing::info!(
@@ -49,14 +56,14 @@ impl Payment {
                 p.default_price,
             );
 
-            if p.metadata
-                .as_ref()
-                .and_then(|meta| meta.get("id"))
-                .is_some_and(|id| id == "premium")
-            {
-                tracing::info!("[stripe] prod id: {:?} is premium package", p.id);
+            if p.livemode.unwrap_or_default() != live {
+                continue;
+            }
 
-                if p.livemode.unwrap_or_default() == live {
+            if let Some(meta) = &p.metadata {
+                if meta.get("id").is_some_and(|id| id == "premium") {
+                    tracing::info!("[stripe] prod id: {:?} is premium package", p.id);
+
                     self.price = Some(
                         p.default_price
                             .as_ref()
@@ -64,14 +71,103 @@ impl Payment {
                             .id()
                             .to_string(),
                     );
-
-                    return Ok(p.id.to_string());
+                    premium_product = Some(p.id.to_string());
                 }
             }
         }
 
+        // Fetch payment links via raw HTTP request (avoiding deserialization issues)
+        match self.fetch_payment_link_url().await {
+            Ok(Some(url)) => {
+                self.subscription_url = Some(url.clone());
+                tracing::info!("[stripe] using subscription payment link: {}", url);
+            }
+            Ok(None) => {
+                tracing::warn!("[stripe] no active payment links found for subscription");
+            }
+            Err(e) => {
+                tracing::error!("[stripe] failed to fetch payment links: {:?}", e);
+            }
+        }
+
+        premium_product
+            .ok_or_else(|| PaymentError::Generic(String::from("no premium product found")))
+    }
+
+    #[instrument(skip(self))]
+    async fn fetch_payment_link_url(&self) -> PaymentResult<Option<String>> {
+        use serde_json::Value;
+
+        let response = self.client.get("/payment_links").await?;
+
+        if let Value::Object(obj) = response {
+            if let Some(Value::Array(data)) = obj.get("data") {
+                tracing::info!("[stripe] found {} payment links", data.len());
+
+                for item in data {
+                    if let Value::Object(link) = item {
+                        // Check if active
+                        if matches!(link.get("active"), Some(Value::Bool(true))) {
+                            // Get URL
+                            if let Some(Value::String(url)) = link.get("url") {
+                                return Ok(Some(url.clone()));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        Ok(None)
+    }
+
+    #[instrument(skip(self))]
+    pub fn subscription_url(&self) -> PaymentResult<&str> {
+        self.subscription_url
+            .as_deref()
+            .ok_or_else(|| PaymentError::Generic(String::from("subscription url not found")))
+    }
+
+    #[instrument(skip(self))]
+    pub async fn subscription_checkout(&self, checkout: String) -> PaymentResult<String> {
+        let sess = CheckoutSessionId::from_str(checkout.as_str())?;
+
+        let sess = CheckoutSession::retrieve(&self.client, &sess, &[]).await?;
+
+        if let Some(customer) = sess.customer {
+            let id = customer.id();
+
+            return Ok(id.as_str().to_string());
+        }
+
+        Err(PaymentError::Generic(String::from("no customer found")))
+    }
+
+    #[instrument(skip(self))]
+    pub async fn customer_email(&self, customer: &str) -> PaymentResult<Option<String>> {
+        let id = CustomerId::from_str(customer)?;
+        let customer = Customer::retrieve(&self.client, &id, &[]).await?;
+        Ok(customer.email)
+    }
+
+    #[instrument(skip(self))]
+    pub async fn verify_customer(&self, customer_id: &str) -> PaymentResult<String> {
+        tracing::info!("verify_customer");
+        let id = CustomerId::from_str(customer_id)?;
+        let customer = Customer::retrieve(&self.client, &id, &["subscriptions"]).await?;
+        tracing::info!("customer: {customer:?}");
+
+        let list = ListSubscriptions::new();
+        let mut subscriptions = customer.subscriptions.paginate(list).stream(&self.client);
+
+        while let Some(subscription) = subscriptions.try_next().await? {
+            if subscription.status == SubscriptionStatus::Active {
+                return Ok(subscription.id.to_string());
+            }
+        }
+
         Err(PaymentError::Generic(String::from(
-            "no premium product found",
+            "no active subscription found",
         )))
     }
 

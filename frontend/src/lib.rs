@@ -22,7 +22,7 @@ use yewdux::{prelude::Dispatch, store::Store};
 
 use crate::{
     components::IconBar,
-    pages::{Event, Home, NewEvent, Print, Privacy},
+    pages::{Event, Home, NewEvent, Print, Privacy, Subscribe},
 };
 
 pub const VERSION_STR: &str = "2.13.1";
@@ -133,6 +133,9 @@ fn switch(switch: Route) -> Html {
         }
         Route::Print { id } => {
             html! { <Print {id} /> }
+        }
+        Route::Subscribe => {
+            html! { <Subscribe /> }
         }
         Route::EventMod { id, secret } => {
             html! { <Event {id} {secret} /> }

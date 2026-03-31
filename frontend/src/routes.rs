@@ -4,6 +4,8 @@ use yew_router::prelude::*;
 pub enum Route {
     #[at("/newevent")]
     NewEvent,
+    #[at("/subscribe")]
+    Subscribe,
     #[at("/privacy")]
     Privacy,
     #[at("/event/:id")]
