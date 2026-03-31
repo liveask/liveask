@@ -18,6 +18,7 @@ pub struct Payment {
     client: Client,
     price: Option<String>,
     subscription_url: Option<String>,
+    portal_login_url: Option<String>,
 }
 
 #[cfg(test)]
@@ -28,6 +29,7 @@ impl Default for Payment {
             client: Client::new(String::new()),
             price: None,
             subscription_url: None,
+            portal_login_url: None,
         }
     }
 }
@@ -39,6 +41,7 @@ impl Payment {
             client,
             price: None,
             subscription_url: None,
+            portal_login_url: None,
         }
     }
 
@@ -91,6 +94,19 @@ impl Payment {
             }
         }
 
+        match self.portal_login_url().await {
+            Ok(Some(url)) => {
+                self.portal_login_url = Some(url.clone());
+                tracing::info!("[stripe] portal login url: {}", url);
+            }
+            Ok(None) => {
+                tracing::warn!("[stripe] no portal login page configured");
+            }
+            Err(e) => {
+                tracing::error!("[stripe] failed to fetch portal login url: {:?}", e);
+            }
+        }
+
         premium_product
             .ok_or_else(|| PaymentError::Generic(String::from("no premium product found")))
     }
@@ -127,6 +143,38 @@ impl Payment {
         self.subscription_url
             .as_deref()
             .ok_or_else(|| PaymentError::Generic(String::from("subscription url not found")))
+    }
+
+    pub fn portal_login_url_cached(&self) -> Option<&str> {
+        self.portal_login_url.as_deref()
+    }
+
+    #[instrument(skip(self))]
+    pub async fn portal_login_url(&self) -> PaymentResult<Option<String>> {
+        use serde_json::Value;
+
+        let response = self
+            .client
+            .get("/billing_portal/configurations")
+            .await?;
+
+        if let Value::Object(obj) = response {
+            if let Some(Value::Array(data)) = obj.get("data") {
+                for item in data {
+                    if let Value::Object(config) = item {
+                        if let Some(Value::Object(login_page)) = config.get("login_page") {
+                            if matches!(login_page.get("enabled"), Some(Value::Bool(true))) {
+                                if let Some(Value::String(url)) = login_page.get("url") {
+                                    return Ok(Some(url.clone()));
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        Ok(None)
     }
 
     #[instrument(skip(self))]

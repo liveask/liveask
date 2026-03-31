@@ -3,7 +3,8 @@ use axum::extract::ws::{CloseFrame, Message, WebSocket, close_code::RESTART};
 use shared::{
     AddEvent, Color, ContextValidation, EventInfo, EventResponseFlags, EventState, EventTags,
     EventTokens, EventUpgradeResponse, GetEventResponse, ModEvent, ModInfo, ModQuestion,
-    PasswordValidation, PaymentCapture, QuestionItem, States, SubscriptionResponse, TagValidation,
+    PasswordValidation, PaymentCapture, QuestionItem, States, SubscriptionResponse,
+    SubscriptionUrlResponse, TagValidation,
 };
 use std::{
     collections::HashMap,
@@ -503,9 +504,10 @@ impl App {
         Ok(result.into())
     }
 
-    pub fn subscription_url(&self) -> Result<String> {
-        let url = self.payment.subscription_url()?;
-        Ok(url.to_string())
+    pub fn subscription_url(&self) -> Result<SubscriptionUrlResponse> {
+        let url = self.payment.subscription_url()?.to_string();
+        let portal_url = self.payment.portal_login_url_cached().map(String::from);
+        Ok(SubscriptionUrlResponse { url, portal_url })
     }
 
     pub async fn subscription_checkout(

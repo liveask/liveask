@@ -1,5 +1,5 @@
 use serde::Deserialize;
-use shared::{SubscriptionCheckout, SubscriptionResponse};
+use shared::{SubscriptionCheckout, SubscriptionResponse, SubscriptionUrlResponse};
 use yew::{prelude::*, suspense::use_future_with};
 use yew_router::hooks::use_location;
 
@@ -32,15 +32,16 @@ pub fn Subscribe() -> Html {
 
     let checkout = params.into_checkout();
 
-    // State for subscription URL
-    let subscription_url: UseStateHandle<Option<Result<String, String>>> = use_state(|| None);
+    // State for subscription URL response
+    let url_response: UseStateHandle<Option<Result<SubscriptionUrlResponse, String>>> =
+        use_state(|| None);
 
     // State for checkout response
     let response: UseStateHandle<Option<Result<SubscriptionResponse, String>>> = use_state(|| None);
     let copied = use_state(|| false);
 
     let _ = use_future_with(checkout.clone(), {
-        let subscription_url = subscription_url.clone();
+        let url_response = url_response.clone();
         let response = response.clone();
 
         |checkout| async move {
@@ -53,18 +54,25 @@ pub fn Subscribe() -> Html {
                 let result = fetch::subscription_url(BASE_API)
                     .await
                     .map_err(|e| format!("{e:?}"));
-                subscription_url.set(Some(result));
+                url_response.set(Some(result));
             }
         }
     });
 
     if checkout.is_none() {
-        return match &*subscription_url {
+        return match &*url_response {
             None => html! { <div>{"Loading..."}</div> },
-            Some(Ok(url)) => html! {
-                <a href={url.clone()}>
-                    <button class="button-red">{"Subscribe"}</button>
-                </a>
+            Some(Ok(res)) => html! {
+                <>
+                    <a href={res.url.clone()}>
+                        <button class="button-red">{"Subscribe"}</button>
+                    </a>
+                    if let Some(portal_url) = &res.portal_url {
+                        <a href={portal_url.clone()}>
+                            <button class="button-red">{"Manage Subscription"}</button>
+                        </a>
+                    }
+                </>
             },
             Some(Err(e)) => html! {
                 <div class="subscribe-success">
