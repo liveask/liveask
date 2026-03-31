@@ -197,6 +197,16 @@ pub async fn subscription_handler(
     Ok(Json(app.subscription_checkout(payload.checkout).await?))
 }
 
+#[instrument(skip(app))]
+pub async fn subscription_url_handler(
+    State(app): State<SharedApp>,
+) -> std::result::Result<impl IntoResponse, InternalError> {
+    tracing::info!("subscription_url_handler");
+
+    let url = app.subscription_url()?;
+    Ok(Json(shared::SubscriptionUrlResponse { url }))
+}
+
 #[instrument]
 pub async fn ping_handler() -> Html<&'static str> {
     Html("pong")

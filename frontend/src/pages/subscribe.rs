@@ -6,8 +6,6 @@ use yew_router::hooks::use_location;
 use super::BASE_API;
 use crate::fetch;
 
-const STRIPE_PURCHASE_URL: &str = "https://buy.stripe.com/test_5kQbJ1bUHdh52ntb9A7Vm00";
-
 #[derive(Debug, Default, Deserialize)]
 struct QueryParams {
     pub checkout: Option<String>,
@@ -21,32 +19,60 @@ pub fn Subscribe() -> Html {
         .and_then(|loc| loc.query::<QueryParams>().ok())
         .unwrap_or_default();
 
-    let checkout_id = params.checkout;
+    let checkout_id = params.checkout.clone();
 
-    // No checkout param - show purchase button
-    if checkout_id.is_none() {
-        return html! {
-            <a href={STRIPE_PURCHASE_URL}>
-                <button class="button-red">{"Subscribe"}</button>
-            </a>
-        };
-    }
+    // State for subscription URL
+    let subscription_url: UseStateHandle<Option<Result<String, String>>> = use_state(|| None);
 
+    // State for checkout response
     let response: UseStateHandle<Option<Result<SubscriptionResponse, String>>> = use_state(|| None);
     let copied = use_state(|| false);
 
-    let _ = use_future_with(checkout_id, {
+    // Fetch subscription URL if no checkout param
+    let _ = use_future_with(checkout_id.clone(), {
+        let subscription_url = subscription_url.clone();
         let response = response.clone();
 
         |checkout_id| async move {
             if let Some(checkout) = (*checkout_id).clone() {
+                // Process checkout
                 let result = fetch::subscription_checkout(BASE_API, checkout)
                     .await
                     .map_err(|e| format!("{e:?}"));
                 response.set(Some(result));
+            } else {
+                // Fetch subscription URL
+                let result = fetch::subscription_url(BASE_API)
+                    .await
+                    .map_err(|e| format!("{e:?}"));
+                subscription_url.set(Some(result));
             }
         }
     });
+
+    // No checkout param - show purchase button
+    if checkout_id.is_none() {
+        return match &*subscription_url {
+            None => html! { <div>{"Loading..."}</div> },
+            Some(Ok(url)) => html! {
+                <a href={url.clone()}>
+                    <button class="button-red">{"Subscribe"}</button>
+                </a>
+            },
+            Some(Err(e)) => html! {
+                <div class="subscribe-success">
+                    <div class="title">{"Subscription Not Available"}</div>
+                    <div class="instructions">
+                        {"Subscription feature is not configured. "}
+                        {"Please create an active payment link in Stripe."}
+                    </div>
+                    <div style="margin-top: 20px; color: #666; font-size: 12px;">
+                        {format!("Error: {}", e)}
+                    </div>
+                </div>
+            },
+        };
+    }
 
     html! {
         <>

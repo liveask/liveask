@@ -413,6 +413,11 @@ pub struct SubscriptionResponse {
     pub email: Option<String>,
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq)]
+pub struct SubscriptionUrlResponse {
+    pub url: String,
+}
+
 #[derive(Serialize, Deserialize, Debug, Copy, Clone, Eq, PartialEq, Default)]
 pub struct EventState {
     pub state: States,

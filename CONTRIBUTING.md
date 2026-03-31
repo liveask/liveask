@@ -75,6 +75,21 @@ cd backend/env
 cp default.env local.env
 ```
 
+### Premium Features Configuration
+The application supports premium features through Stripe payments and subscriptions.
+
+**Stripe Configuration:**
+- `LA_STRIPE_SECRET`: Your Stripe secret key
+- `LA_STRIPE_HOOK_SECRET`: Webhook secret for Stripe events
+
+**Stripe Product Setup:**
+1. **One-time Premium Payment**: Create a product with metadata `id=premium`
+2. **Subscription**: Create any active payment link in Stripe - the first active one will be used
+
+The application automatically scans Stripe and uses the first active payment link it finds for subscriptions.
+
+For local development, you can use Stripe test mode credentials.
+
 ## Notes
 - When doing local development set `RELAX_CORS` to `"1"` in `local.env`, otherwise the backend will not get requests
 - Do not commit the `index.html` if only the release id has changed.

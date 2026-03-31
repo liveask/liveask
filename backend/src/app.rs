@@ -503,6 +503,11 @@ impl App {
         Ok(result.into())
     }
 
+    pub fn subscription_url(&self) -> Result<String> {
+        let url = self.payment.subscription_url()?;
+        Ok(url.to_string())
+    }
+
     pub async fn subscription_checkout(&self, checkout: String) -> Result<SubscriptionResponse> {
         let customer = self.payment.subscription_checkout(checkout).await?;
 

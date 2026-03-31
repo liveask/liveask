@@ -2,19 +2,19 @@
 name = "liveask-server"
 version = "0.1.0"
 edition = "2024"
-build = "build.rs"
 rust-version = "1.85"
+build = "build.rs"
 # ############################
 
 [dependencies]
 async-posthog = { git = "https://github.com/rivet-gg/posthog-rs.git", rev = "fa4d39a" }
 async-redis-session = { path = "../async-redis-session" }
 async-stripe = { version = "0.31", default-features = false, features = [
-    "checkout",
-    "webhook-events",
-    "connect",
-    "stream",
-    "runtime-tokio-hyper",
+  "checkout",
+  "connect",
+  "runtime-tokio-hyper",
+  "stream",
+  "webhook-events",
 ] }
 async-trait = "0.1"
 aws-config = "1.0"
@@ -32,10 +32,10 @@ handlebars = { workspace = true }
 posthog-core = { git = "https://github.com/rivet-gg/posthog-rs.git", rev = "fa4d39a" }
 rand = { version = "0.8", features = ["min_const_gen"] }
 reqwest = { version = "0.11", features = ["json"] }
-sentry = { version = "0.31", features = ["tracing", "tower", "tower-http"] }
+sentry = { version = "0.31", features = ["tower", "tower-http", "tracing"] }
 serde = { workspace = true }
 serde_dynamo = { version = "4.2", default-features = false, features = [
-    "aws-sdk-dynamodb+1",
+  "aws-sdk-dynamodb+1",
 ] }
 serde_json = { workspace = true }
 shared = { path = "../shared" }
@@ -56,15 +56,11 @@ features = ["rt_tokio_1"]
 [dependencies.redis]
 version = "0.23"
 default-features = false
-features = ["tokio-comp", "connection-manager"]
+features = ["connection-manager", "tokio-comp"]
 
 [dependencies.tower-http]
 version = "0.4"
-features = ["cors", "trace", "auth", "sensitive-headers"]
-# ############################
-
-[build-dependencies]
-vergen-gitcl = "1.0"
+features = ["auth", "cors", "sensitive-headers", "trace"]
 # ############################
 
 [dev-dependencies]
@@ -73,6 +69,10 @@ mime = "0.3"
 mockall = "0.11"
 pretty_assertions = "1"
 tracing-test = "0.2"
+
+[build-dependencies]
+vergen-gitcl = "1.0"
+# ############################
 
 [lints]
 workspace = true

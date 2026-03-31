@@ -233,6 +233,19 @@ pub async fn admin_login(base_api: &str, name: String, pwd_hash: String) -> Resu
     }
 }
 
+pub async fn subscription_url(base_api: &str) -> Result<String, FetchError> {
+    let url = format!("{base_api}/api/subscription/url");
+    let request = Request::get(&url);
+    let resp = request.send().await?;
+
+    if resp.ok() {
+        let response: shared::SubscriptionUrlResponse = resp.json().await?;
+        Ok(response.url)
+    } else {
+        Err(FetchError::Generic("request failed".into()))
+    }
+}
+
 pub async fn subscription_checkout(
     base_api: &str,
     checkout_id: String,
