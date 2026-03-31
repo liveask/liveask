@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Unreleased
 
 ### Changed
-* add stripe subscription support ([#106](https://github.com/liveask/liveas
+* add subscription support ([#106](https://github.com/liveask/liveas
 
 ## [2.13.1] - 2026-02-11
 
