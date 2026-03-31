@@ -107,7 +107,7 @@ impl Payment {
                 for item in data {
                     if let Value::Object(link) = item {
                         // Check if active
-                        if let Some(Value::Bool(true)) = link.get("active") {
+                        if matches!(link.get("active"), Some(Value::Bool(true))) {
                             // Get URL
                             if let Some(Value::String(url)) = link.get("url") {
                                 return Ok(Some(url.clone()));

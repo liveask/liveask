@@ -19,7 +19,7 @@ pub fn Subscribe() -> Html {
         .and_then(|loc| loc.query::<QueryParams>().ok())
         .unwrap_or_default();
 
-    let checkout_id = params.checkout.clone();
+    let checkout_id = params.checkout;
 
     // State for subscription URL
     let subscription_url: UseStateHandle<Option<Result<String, String>>> = use_state(|| None);
