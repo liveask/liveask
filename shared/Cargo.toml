@@ -16,8 +16,8 @@ chrono = { version = "0.4", default-features = false, features = ["clock"] }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 chrono = { version = "0.4", default-features = false, features = [
-    "clock",
-    "wasmbind",
+  "clock",
+  "wasmbind",
 ] }
 
 [lints]

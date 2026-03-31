@@ -9,11 +9,21 @@ inputs:
     description: "os type"
     required: true
     default: "ubuntu-latest"
+  github_token:
+    description: "GitHub token for downloading action dependencies"
+    required: true
 runs:
   using: "composite"
   steps:
     - name: Restore cargo cache
       uses: Swatinem/rust-cache@v2
+
+    - name: tombi install
+      uses: tombi-toml/setup-tombi@v1
+      env:
+        GITHUB_TOKEN: ${{ inputs.github_token }}
+      with:
+        version: '0.9.0'
 
     - name: Install Rust
       uses: dtolnay/rust-toolchain@master

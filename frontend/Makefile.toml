@@ -33,10 +33,9 @@ script = '''
 cargo +nightly test --target=wasm32-unknown-unknown
 '''
 
-[tasks.cargo-sort]
-install_crate = "cargo-sort"
-command = "cargo"
-args = ["sort", "-c"]
+[tasks.tombi]
+command = "tombi"
+args = ["format", "--check"]
 
 [tasks.udeps]
 command = "cargo"
@@ -52,10 +51,10 @@ args = ["fmt", "--", "--check"]
 dependencies = ["cargo-fix", "clippy-fix"]
 
 [tasks.checks]
-dependencies = ["cargo-sort", "format", "cargo-check", "clippy", "udeps"]
+dependencies = ["tombi", "format", "cargo-check", "clippy", "udeps"]
 
 [tasks.checks_ci]
-dependencies = ["cargo-sort", "format", "cargo-check", "clippy"]
+dependencies = ["tombi", "format", "cargo-check", "clippy"]
 
 [tasks.serve]
 install_crate = "trunk"

@@ -51,6 +51,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/check_be
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
 
   check_and_test_frontend:
     needs: ["changes"]
@@ -59,6 +61,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/check_fe
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
 
   # DEPLOY
 
