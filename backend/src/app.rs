@@ -3,7 +3,8 @@ use axum::extract::ws::{CloseFrame, Message, WebSocket, close_code::RESTART};
 use shared::{
     AddEvent, Color, ContextValidation, EventInfo, EventResponseFlags, EventState, EventTags,
     EventTokens, EventUpgradeResponse, GetEventResponse, ModEvent, ModInfo, ModQuestion,
-    PasswordValidation, PaymentCapture, QuestionItem, States, SubscriptionResponse, TagValidation,
+    PasswordValidation, PaymentCapture, QuestionItem, States, SubscriptionResponse,
+    SubscriptionUrlResponse, TagValidation,
 };
 use std::{
     collections::HashMap,
@@ -503,13 +504,24 @@ impl App {
         Ok(result.into())
     }
 
-    pub fn subscription_url(&self) -> Result<String> {
-        let url = self.payment.subscription_url()?;
-        Ok(url.to_string())
+    pub fn subscription_url(&self) -> Result<SubscriptionUrlResponse> {
+        let url = self.payment.subscription_url()?.to_string();
+        let portal_url = self.payment.portal_login_url_cached().map(String::from);
+        Ok(SubscriptionUrlResponse { url, portal_url })
     }
 
-    pub async fn subscription_checkout(&self, checkout: String) -> Result<SubscriptionResponse> {
-        let customer = self.payment.subscription_checkout(checkout).await?;
+    pub async fn subscription_checkout(
+        &self,
+        payload: shared::SubscriptionCheckout,
+    ) -> Result<SubscriptionResponse> {
+        let customer = match payload {
+            shared::SubscriptionCheckout::CheckoutId(checkout) => {
+                self.payment.subscription_checkout(checkout).await?
+            }
+            shared::SubscriptionCheckout::CustomerEmail(email) => {
+                self.payment.subscription_customer_by_email(&email).await?
+            }
+        };
 
         tracing::info!(customer, "customer id retrieved");
 
@@ -517,7 +529,23 @@ impl App {
 
         tracing::info!(email_found = %email.is_some(), "customer email retrieved");
 
-        Ok(SubscriptionResponse { customer, email })
+        let portal_url = match self
+            .payment
+            .customer_portal_url(&customer, &self.base_url)
+            .await
+        {
+            Ok(url) => Some(url),
+            Err(e) => {
+                tracing::warn!(error = %e, "failed to create customer portal session");
+                None
+            }
+        };
+
+        Ok(SubscriptionResponse {
+            customer,
+            email,
+            portal_url,
+        })
     }
 
     pub async fn delete_event(&self, id: String, secret: String) -> Result<()> {

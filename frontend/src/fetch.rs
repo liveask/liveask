@@ -5,7 +5,7 @@ use shared::{
     AddEvent, AddQuestion, EditLike, EventData, EventInfo, EventPasswordRequest,
     EventPasswordResponse, EventUpgradeResponse, GetEventResponse, GetUserInfo, ModEvent,
     ModQuestion, ModRequestPremium, PaymentCapture, QuestionItem, SubscriptionCheckout,
-    SubscriptionResponse, TagId, UserLogin,
+    SubscriptionResponse, SubscriptionUrlResponse, TagId, UserLogin,
 };
 use std::{
     error::Error,
@@ -233,14 +233,13 @@ pub async fn admin_login(base_api: &str, name: String, pwd_hash: String) -> Resu
     }
 }
 
-pub async fn subscription_url(base_api: &str) -> Result<String, FetchError> {
+pub async fn subscription_url(base_api: &str) -> Result<SubscriptionUrlResponse, FetchError> {
     let url = format!("{base_api}/api/subscription/url");
     let request = Request::get(&url);
     let resp = request.send().await?;
 
     if resp.ok() {
-        let response: shared::SubscriptionUrlResponse = resp.json().await?;
-        Ok(response.url)
+        Ok(resp.json().await?)
     } else {
         Err(FetchError::Generic("request failed".into()))
     }
@@ -248,12 +247,10 @@ pub async fn subscription_url(base_api: &str) -> Result<String, FetchError> {
 
 pub async fn subscription_checkout(
     base_api: &str,
-    checkout_id: String,
+    checkout: SubscriptionCheckout,
 ) -> Result<SubscriptionResponse, FetchError> {
     let url = format!("{base_api}/api/subscription");
-    let body = JsValue::from_str(&serde_json::to_string(&SubscriptionCheckout {
-        checkout: checkout_id,
-    })?);
+    let body = JsValue::from_str(&serde_json::to_string(&checkout)?);
 
     let request = Request::post(&url).body(body)?;
     set_content_type_json(&request);

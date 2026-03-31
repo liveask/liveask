@@ -402,20 +402,24 @@ pub struct ModEvent {
     pub color: Option<EditColor>,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Default)]
-pub struct SubscriptionCheckout {
-    pub checkout: String,
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq)]
+#[serde(rename_all = "snake_case")]
+pub enum SubscriptionCheckout {
+    CheckoutId(String),
+    CustomerEmail(String),
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq)]
 pub struct SubscriptionResponse {
     pub customer: String,
     pub email: Option<String>,
+    pub portal_url: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq)]
 pub struct SubscriptionUrlResponse {
     pub url: String,
+    pub portal_url: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Copy, Clone, Eq, PartialEq, Default)]
