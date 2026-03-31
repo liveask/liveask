@@ -2,8 +2,8 @@
 name = "frontend"
 version = "0.1.0"
 edition = "2024"
-build = "build.rs"
 rust-version = "1.92"
+build = "build.rs"
 
 [dependencies]
 anyhow = { workspace = true }
@@ -40,32 +40,32 @@ yewdux = "0.11"
 [dependencies.web-sys]
 version = "0.3"
 features = [
-    "Clipboard",
-    "Navigator",
-    "Document",
-    "Window",
-    "DomRect",
-    "CssStyleDeclaration",
-    "Request",
-    "RequestInit",
-    "RequestCredentials",
-    "RequestMode",
-    "Response",
-    "Headers",
-    "DomTokenList",
-    "HtmlSelectElement",
-    "HtmlAnchorElement",
-    "ScrollIntoViewOptions",
-    "ScrollLogicalPosition",
-    "ScrollBehavior",
-    "KeyboardEvent",
+  "Clipboard",
+  "CssStyleDeclaration",
+  "Document",
+  "DomRect",
+  "DomTokenList",
+  "Headers",
+  "HtmlAnchorElement",
+  "HtmlSelectElement",
+  "KeyboardEvent",
+  "Navigator",
+  "Request",
+  "RequestCredentials",
+  "RequestInit",
+  "RequestMode",
+  "Response",
+  "ScrollBehavior",
+  "ScrollIntoViewOptions",
+  "ScrollLogicalPosition",
+  "Window",
 ]
 
 [build-dependencies]
 anyhow = { workspace = true }
 handlebars = { workspace = true }
 konst = "0.3"
-vergen = { version = "8", features = ["git", "gitcl", "build"] }
+vergen = { version = "8", features = ["build", "git", "gitcl"] }
 
 [lints]
 workspace = true

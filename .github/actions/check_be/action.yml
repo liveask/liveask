@@ -21,6 +21,13 @@ runs:
         toolchain: ${{ inputs.rust }}
         components: clippy
 
+    - name: tombi install
+      uses: tombi-toml/setup-tombi@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        version: '0.9.0'
+
     - uses: taiki-e/install-action@v2
       with:
         tool: cargo-make,nextest
