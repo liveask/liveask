@@ -1,5 +1,5 @@
 use serde::Deserialize;
-use shared::SubscriptionResponse;
+use shared::{SubscriptionCheckout, SubscriptionResponse};
 use yew::{prelude::*, suspense::use_future_with};
 use yew_router::hooks::use_location;
 
@@ -9,6 +9,17 @@ use crate::fetch;
 #[derive(Debug, Default, Deserialize)]
 struct QueryParams {
     pub checkout: Option<String>,
+    pub customer_email: Option<String>,
+}
+
+impl QueryParams {
+    fn into_checkout(self) -> Option<SubscriptionCheckout> {
+        if let Some(id) = self.checkout {
+            Some(SubscriptionCheckout::CheckoutId(id))
+        } else {
+            self.customer_email.map(SubscriptionCheckout::CustomerEmail)
+        }
+    }
 }
 
 #[function_component]
@@ -19,7 +30,7 @@ pub fn Subscribe() -> Html {
         .and_then(|loc| loc.query::<QueryParams>().ok())
         .unwrap_or_default();
 
-    let checkout_id = params.checkout;
+    let checkout = params.into_checkout();
 
     // State for subscription URL
     let subscription_url: UseStateHandle<Option<Result<String, String>>> = use_state(|| None);
@@ -28,20 +39,17 @@ pub fn Subscribe() -> Html {
     let response: UseStateHandle<Option<Result<SubscriptionResponse, String>>> = use_state(|| None);
     let copied = use_state(|| false);
 
-    // Fetch subscription URL if no checkout param
-    let _ = use_future_with(checkout_id.clone(), {
+    let _ = use_future_with(checkout.clone(), {
         let subscription_url = subscription_url.clone();
         let response = response.clone();
 
-        |checkout_id| async move {
-            if let Some(checkout) = (*checkout_id).clone() {
-                // Process checkout
+        |checkout| async move {
+            if let Some(checkout) = (*checkout).clone() {
                 let result = fetch::subscription_checkout(BASE_API, checkout)
                     .await
                     .map_err(|e| format!("{e:?}"));
                 response.set(Some(result));
             } else {
-                // Fetch subscription URL
                 let result = fetch::subscription_url(BASE_API)
                     .await
                     .map_err(|e| format!("{e:?}"));
@@ -50,8 +58,7 @@ pub fn Subscribe() -> Html {
         }
     });
 
-    // No checkout param - show purchase button
-    if checkout_id.is_none() {
+    if checkout.is_none() {
         return match &*subscription_url {
             None => html! { <div>{"Loading..."}</div> },
             Some(Ok(url)) => html! {

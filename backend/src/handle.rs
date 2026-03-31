@@ -194,7 +194,7 @@ pub async fn subscription_handler(
 ) -> std::result::Result<impl IntoResponse, InternalError> {
     tracing::info!("subscription_handler");
 
-    Ok(Json(app.subscription_checkout(payload.checkout).await?))
+    Ok(Json(app.subscription_checkout(payload).await?))
 }
 
 #[instrument(skip(app))]

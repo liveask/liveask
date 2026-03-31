@@ -4,8 +4,8 @@ use futures_util::TryStreamExt;
 use std::str::FromStr;
 use stripe::{
     CheckoutSession, CheckoutSessionId, CheckoutSessionMode, CheckoutSessionStatus, Client,
-    CreateCheckoutSession, CreateCheckoutSessionLineItems, Customer, CustomerId, ListProducts,
-    ListSubscriptions, SubscriptionStatus,
+    CreateCheckoutSession, CreateCheckoutSessionLineItems, Customer, CustomerId, ListCustomers,
+    ListProducts, ListSubscriptions, Subscription, SubscriptionStatus,
 };
 use tracing::instrument;
 
@@ -128,16 +128,75 @@ impl Payment {
             .ok_or_else(|| PaymentError::Generic(String::from("subscription url not found")))
     }
 
+    fn checkout_email(sess: &CheckoutSession) -> Option<&str> {
+        sess.customer_details
+            .as_ref()
+            .and_then(|details| details.email.as_deref())
+            .or(sess.customer_email.as_deref())
+    }
+
+    #[instrument(skip(self, email))]
+    async fn active_customer_by_email(&self, email: &str) -> PaymentResult<Option<String>> {
+        let params = ListCustomers {
+            email: Some(email),
+            limit: Some(100),
+            ..Default::default()
+        };
+
+        for customer in Customer::list(&self.client, &params).await?.data {
+            let customer_id = customer.id.to_string();
+
+            if self.verify_customer(customer_id.as_str()).await.is_ok() {
+                return Ok(Some(customer_id));
+            }
+        }
+
+        Ok(None)
+    }
+
+    #[instrument(skip(self, email))]
+    pub async fn subscription_customer_by_email(&self, email: &str) -> PaymentResult<String> {
+        self.active_customer_by_email(email).await?.ok_or_else(|| {
+            PaymentError::Generic(String::from(
+                "no active subscription customer found for email",
+            ))
+        })
+    }
+
     #[instrument(skip(self))]
     pub async fn subscription_checkout(&self, checkout: String) -> PaymentResult<String> {
         let sess = CheckoutSessionId::from_str(checkout.as_str())?;
 
         let sess = CheckoutSession::retrieve(&self.client, &sess, &[]).await?;
 
-        if let Some(customer) = sess.customer {
-            let id = customer.id();
+        tracing::info!(
+            has_customer = %sess.customer.is_some(),
+            has_subscription = %sess.subscription.is_some(),
+            has_checkout_email = %Self::checkout_email(&sess).is_some(),
+            status = ?sess.status,
+            payment_status = ?sess.payment_status,
+            "subscription checkout session retrieved"
+        );
 
-            return Ok(id.as_str().to_string());
+        if let Some(customer) = &sess.customer {
+            return Ok(customer.id().to_string());
+        }
+
+        if let Some(subscription) = &sess.subscription {
+            let subscription_id = subscription.id();
+            let subscription = Subscription::retrieve(&self.client, &subscription_id, &[]).await?;
+
+            return Ok(subscription.customer.id().to_string());
+        }
+
+        if let Some(email) = Self::checkout_email(&sess) {
+            tracing::info!(
+                "checkout session missing customer; looking up existing customer by email"
+            );
+
+            if let Some(customer_id) = self.active_customer_by_email(email).await? {
+                return Ok(customer_id);
+            }
         }
 
         Err(PaymentError::Generic(String::from("no customer found")))
@@ -221,5 +280,41 @@ impl Payment {
             .is_some_and(|status| status == CheckoutSessionStatus::Complete);
 
         Ok((event, completed))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Payment;
+    use stripe::{CheckoutSession, PaymentPagesCheckoutSessionCustomerDetails};
+
+    #[test]
+    fn checkout_email_prefers_customer_details() {
+        let session = CheckoutSession {
+            customer_details: Some(PaymentPagesCheckoutSessionCustomerDetails {
+                email: Some(String::from("details@example.com")),
+                ..Default::default()
+            }),
+            customer_email: Some(String::from("fallback@example.com")),
+            ..Default::default()
+        };
+
+        assert_eq!(
+            Payment::checkout_email(&session),
+            Some("details@example.com")
+        );
+    }
+
+    #[test]
+    fn checkout_email_falls_back_to_customer_email() {
+        let session = CheckoutSession {
+            customer_email: Some(String::from("fallback@example.com")),
+            ..Default::default()
+        };
+
+        assert_eq!(
+            Payment::checkout_email(&session),
+            Some("fallback@example.com")
+        );
     }
 }

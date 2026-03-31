@@ -508,8 +508,18 @@ impl App {
         Ok(url.to_string())
     }
 
-    pub async fn subscription_checkout(&self, checkout: String) -> Result<SubscriptionResponse> {
-        let customer = self.payment.subscription_checkout(checkout).await?;
+    pub async fn subscription_checkout(
+        &self,
+        payload: shared::SubscriptionCheckout,
+    ) -> Result<SubscriptionResponse> {
+        let customer = match payload {
+            shared::SubscriptionCheckout::CheckoutId(checkout) => {
+                self.payment.subscription_checkout(checkout).await?
+            }
+            shared::SubscriptionCheckout::CustomerEmail(email) => {
+                self.payment.subscription_customer_by_email(&email).await?
+            }
+        };
 
         tracing::info!(customer, "customer id retrieved");
 
