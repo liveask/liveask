@@ -5150,8 +5150,9 @@ dependencies = [
 
 [[package]]
 name = "yewdux"
-version = "0.12.0"
-source = "git+https://github.com/png85/yewdux.git?branch=yew-0.23#e33def5d3312056aa3297c021c4ab592455957ab"
+version = "0.13.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5b37ed5309a91e585402d80a5fbaa136e467ffa2c2f7d8a3eb9d3d87eebf7b4b"
 dependencies = [
  "log",
  "serde",
@@ -5166,8 +5167,9 @@ dependencies = [
 
 [[package]]
 name = "yewdux-macros"
-version = "0.12.0"
-source = "git+https://github.com/png85/yewdux.git?branch=yew-0.23#e33def5d3312056aa3297c021c4ab592455957ab"
+version = "0.13.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f7351c294ea148bf8c2009ea545d21032617524eb376a98d9d8b824022f3ec21"
 dependencies = [
  "darling",
  "proc-macro-error",
