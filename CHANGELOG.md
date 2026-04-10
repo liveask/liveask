@@ -7,8 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## [2.14.0] - 2026-04-10
+
 ### Changed
-* add subscription support ([#106](https://github.com/liveask/liveas
+* add subscription support ([#106](https://github.com/liveask/liveask/pull/106))
 
 ## [2.13.1] - 2026-02-11
 
