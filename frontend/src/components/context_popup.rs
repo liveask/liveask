@@ -231,7 +231,7 @@ impl ContextPopup {
                 "Title must be at least {max} characters long. ({len}/{max})",
             )),
             ValidationState::Invalid(ContextLabelError::MaxLength(_, max)) => {
-                Some(format!("Title cannot be longer than {max} characters.",))
+                Some(format!("Title cannot be longer than {max} characters."))
             }
             _ => None,
         }

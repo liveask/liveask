@@ -43,7 +43,7 @@ impl Component for Footer {
         let branch = if GIT_BRANCH == "main" {
             String::new()
         } else {
-            format!("({GIT_BRANCH})",)
+            format!("({GIT_BRANCH})")
         };
 
         let git_sha = env!("VERGEN_GIT_SHA");

@@ -112,7 +112,7 @@ impl Component for Event {
 
         request_fetch(event_id.clone(), ctx.props().secret.clone(), ctx.link());
 
-        let socket_url = format!("{BASE_SOCKET}/push/{event_id}",);
+        let socket_url = format!("{BASE_SOCKET}/push/{event_id}");
 
         let query_params = ctx
             .link()
@@ -885,7 +885,7 @@ impl Event {
 
         if let Some(e) = &self.state.event {
             let mut questions = e.info.questions.clone();
-            questions.sort_by(|a, b| b.likes.cmp(&a.likes));
+            questions.sort_by_key(|b| std::cmp::Reverse(b.likes));
 
             let local_unscreened =
                 LocalCache::unscreened_questions(&e.info.tokens.public_token, &questions);
