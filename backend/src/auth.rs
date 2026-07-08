@@ -20,7 +20,7 @@ use crate::{env::admin_pwd_hash, error::InternalError};
 const AUTH_COOKIE: &str = "auth";
 const ADMIN_NAME: &str = "admin";
 /// Token / cookie lifetime (was the session ttl).
-const COOKIE_TTL: Duration = Duration::from_hours(2);
+const COOKIE_TTL: Duration = Duration::from_secs(2 * 60 * 60);
 
 /// JWT signing key + cookie flags, shared via request extension so the handlers and the
 /// `OptionalUser` extractor can verify tokens without any session store.
