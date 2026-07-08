@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Changed
+* add moderator url into stripe receipt
+
 ## [2.14.0] - 2026-04-10
 
 ### Changed
