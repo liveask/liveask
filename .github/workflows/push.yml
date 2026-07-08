@@ -133,7 +133,7 @@ jobs:
   be_deploy_beta:
     runs-on: ubuntu-latest
     environment: beta
-    needs: ["check_and_test_backend"]
+    needs: ["check_and_test_backend", "check_and_test_backend_e2e"]
     steps:
       - uses: actions/checkout@v5
       - name: Restore cargo cache
