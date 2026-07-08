@@ -16,11 +16,11 @@ use tracing::instrument;
 
 use crate::{env::admin_pwd_hash, error::InternalError};
 
-/// Cookie carrying the admin JWT. Verified statelessly on every request — no Redis lookup.
+/// Cookie carrying the admin JWT.
 const AUTH_COOKIE: &str = "auth";
 const ADMIN_NAME: &str = "admin";
 /// Token / cookie lifetime (was the session ttl).
-const COOKIE_TTL: Duration = Duration::from_secs(60 * 60 * 2);
+const COOKIE_TTL: Duration = Duration::from_hours(2);
 
 /// JWT signing key + cookie flags, shared via request extension so the handlers and the
 /// `OptionalUser` extractor can verify tokens without any session store.
