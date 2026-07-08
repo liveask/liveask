@@ -113,15 +113,14 @@ impl Payment {
 
     #[instrument(skip(self))]
     async fn fetch_payment_link_url(&self) -> PaymentResult<Option<String>> {
-        // 0.31 needed raw HTTP here: it deserialized the payment link issuer's
-        // `"type": "self"` as `"self_"` and failed. 0.41 fixed ConnectAccountReferenceType,
-        // so the typed API works.
-        let params = ListPaymentLinks {
-            active: Some(true),
-            ..Default::default()
-        };
-
-        let links = PaymentLink::list(&self.client, &params).await?;
+        let links = PaymentLink::list(
+            &self.client,
+            &ListPaymentLinks {
+                active: Some(true),
+                ..Default::default()
+            },
+        )
+        .await?;
         tracing::info!("[stripe] found {} active payment links", links.data.len());
 
         Ok(links.data.into_iter().next().map(|link| link.url))
