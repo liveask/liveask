@@ -6,7 +6,8 @@ use stripe::{
     BillingPortalSession, CheckoutSession, CheckoutSessionId, CheckoutSessionMode,
     CheckoutSessionStatus, Client, CreateBillingPortalSession, CreateCheckoutSession,
     CreateCheckoutSessionLineItems, CreateCheckoutSessionPaymentIntentData, Customer, CustomerId,
-    ListCustomers, ListProducts, ListSubscriptions, Subscription, SubscriptionStatus,
+    ListCustomers, ListPaymentLinks, ListProducts, ListSubscriptions, PaymentLink, Subscription,
+    SubscriptionStatus,
 };
 use tracing::instrument;
 
@@ -80,7 +81,6 @@ impl Payment {
             }
         }
 
-        // Fetch payment links via raw HTTP request (avoiding deserialization issues)
         match self.fetch_payment_link_url().await {
             Ok(Some(url)) => {
                 self.subscription_url = Some(url.clone());
@@ -113,32 +113,18 @@ impl Payment {
 
     #[instrument(skip(self))]
     async fn fetch_payment_link_url(&self) -> PaymentResult<Option<String>> {
-        // Using raw HTTP because async-stripe 0.31 fails to deserialize
-        // `"type": "self"` in payment link subscription_data.invoice_settings.issuer
-        use serde_json::Value;
+        // 0.31 needed raw HTTP here: it deserialized the payment link issuer's
+        // `"type": "self"` as `"self_"` and failed. 0.41 fixed ConnectAccountReferenceType,
+        // so the typed API works.
+        let params = ListPaymentLinks {
+            active: Some(true),
+            ..Default::default()
+        };
 
-        #[derive(serde::Serialize)]
-        struct Params {
-            active: bool,
-        }
-        let response = self
-            .client
-            .get_query("/payment_links", &Params { active: true })
-            .await?;
+        let links = PaymentLink::list(&self.client, &params).await?;
+        tracing::info!("[stripe] found {} active payment links", links.data.len());
 
-        if let Value::Object(obj) = response {
-            if let Some(Value::Array(data)) = obj.get("data") {
-                tracing::info!("[stripe] found {} active payment links", data.len());
-
-                for item in data {
-                    if let Some(Value::String(url)) = item.get("url") {
-                        return Ok(Some(url.clone()));
-                    }
-                }
-            }
-        }
-
-        Ok(None)
+        Ok(links.data.into_iter().next().map(|link| link.url))
     }
 
     #[instrument(skip(self))]
@@ -279,8 +265,15 @@ impl Payment {
         let customer = Customer::retrieve(&self.client, &id, &["subscriptions"]).await?;
         tracing::info!("customer: {customer:?}");
 
+        // async-stripe 0.41 models `customer.subscriptions` as Option; absent means no subs.
+        let Some(subscriptions) = customer.subscriptions else {
+            return Err(PaymentError::Generic(String::from(
+                "no active subscription found",
+            )));
+        };
+
         let list = ListSubscriptions::new();
-        let mut subscriptions = customer.subscriptions.paginate(list).stream(&self.client);
+        let mut subscriptions = subscriptions.paginate(list).stream(&self.client);
 
         while let Some(subscription) = subscriptions.try_next().await? {
             if subscription.status == SubscriptionStatus::Active {
