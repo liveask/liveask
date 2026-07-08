@@ -66,30 +66,44 @@ jobs:
       # test-only admin credential, shared by the booted server and the test process so the
       # controlled-server-only admin tests can authenticate.
       LA_ADMIN_PWD_HASH: e2e-controlled-admin-hash
+    # Service containers (not docker-compose) so nothing gets bind-mounted into the source
+    # tree — the compose file mounts ./db, which lands root-owned dirs in backend/ and breaks
+    # cargo's package-file enumeration during the build.
+    services:
+      redis:
+        image: redis:alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+      dynamodb:
+        image: amazon/dynamodb-local
+        ports:
+          - 8000:8000
     steps:
       - uses: actions/checkout@v5
       - name: Restore cargo cache
         uses: Swatinem/rust-cache@v2
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
-      - name: Start infra (dynamodb-local + redis)
+      - name: Wait for dynamodb-local
         run: |
-          docker compose -f backend/docker-compose.local.yml up -d ddb redis
-          echo "waiting for redis:6379 and dynamodb-local:8000 ..."
+          echo "waiting for dynamodb-local:8000 ..."
           ready=""
           for _ in $(seq 1 60); do
-            if (echo > /dev/tcp/localhost/6379) 2>/dev/null \
-               && (echo > /dev/tcp/localhost/8000) 2>/dev/null; then
+            if (echo > /dev/tcp/localhost/8000) 2>/dev/null; then
               ready=1; break
             fi
             sleep 1
           done
           if [ -z "$ready" ]; then
-            echo "infra did not become ready in time"
-            docker compose -f backend/docker-compose.local.yml logs
+            echo "dynamodb-local did not become ready in time"
             exit 1
           fi
-          echo "infra ready"
+          echo "dynamodb-local ready"
       - name: Build server
         run: cargo build -p liveask-server
       - name: Run e2e suite against booted server
