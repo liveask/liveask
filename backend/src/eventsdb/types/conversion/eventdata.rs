@@ -25,10 +25,7 @@ pub fn eventdata_to_attributes(value: EventData) -> AttributeMap {
         );
     }
 
-    if let Some(long_url) = value
-        .long_url
-        .and_then(|url| if url.is_empty() { None } else { Some(url) })
-    {
+    if let Some(long_url) = value.long_url.filter(|url| !url.is_empty()) {
         map.insert(ATTR_EVENT_DATA_URL_LONG.into(), AttributeValue::S(long_url));
     }
 
