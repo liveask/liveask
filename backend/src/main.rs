@@ -22,7 +22,7 @@ use async_redis_session::RedisSessionStore;
 use aws_config::BehaviorVersion;
 use aws_sdk_dynamodb::config::Credentials;
 use axum::{
-    Router,
+    Extension, Router,
     http::header,
     routing::{get, post},
 };
@@ -267,8 +267,8 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let secret = session_secret()
         .ok_or_else(|| error::InternalError::General(String::from("invalid session secret")))?;
 
-    let (session_layer, auth_layer) = auth::setup(
-        secret.as_ref(),
+    let (session_layer, auth_config) = auth::setup(
+        secret,
         RedisSessionStore::new(redis_url)?.with_prefix("session/"),
         is_prod(),
     );
@@ -311,7 +311,7 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
         .nest("/api/mod/event", mod_routes)
         .nest("/api/admin", admin_routes)
         .route("/metrics", get(async move || metrics_handler.render()))
-        .layer(auth_layer)
+        .layer(Extension(auth_config))
         .layer(session_layer)
         .layer(SetSensitiveRequestHeadersLayer::new(once(header::COOKIE)))
         .layer(SentryHttpLayer::with_transaction())
