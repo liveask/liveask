@@ -280,7 +280,7 @@ impl App {
         id: String,
         secret: Option<String>,
         admin: bool,
-        password: Option<String>,
+        unlocked: bool,
     ) -> Result<GetEventResponse> {
         tracing::info!("get_event");
 
@@ -320,9 +320,7 @@ impl App {
 
         let time_out_masked = if admin { false } else { e.adapt_if_timedout() };
 
-        let password_matches = e.password.matches(&password);
-
-        let pwd_masked = if (e.password.is_enabled() && !password_matches) && !admin && !is_mod {
+        let pwd_masked = if (e.password.is_enabled() && !unlocked) && !admin && !is_mod {
             e.mask_data();
             true
         } else {
@@ -1388,7 +1386,7 @@ mod test {
         assert_eq!(q.screening, true);
 
         let e = app
-            .get_event(res.tokens.public_token.clone(), None, false, None)
+            .get_event(res.tokens.public_token.clone(), None, false, false)
             .await
             .unwrap();
 
@@ -1399,7 +1397,7 @@ mod test {
                 res.tokens.public_token.clone(),
                 Some(res.tokens.moderator_token.clone().unwrap()),
                 false,
-                None,
+                false,
             )
             .await
             .unwrap();
@@ -1420,7 +1418,7 @@ mod test {
         .unwrap();
 
         let e = app
-            .get_event(res.tokens.public_token.clone(), None, false, None)
+            .get_event(res.tokens.public_token.clone(), None, false, false)
             .await
             .unwrap();
 
@@ -1480,7 +1478,7 @@ mod test {
         assert_eq!(q.screening, true);
 
         let e = app
-            .get_event(res.tokens.public_token.clone(), None, false, None)
+            .get_event(res.tokens.public_token.clone(), None, false, false)
             .await
             .unwrap();
 
@@ -1668,16 +1666,18 @@ mod test {
         .await
         .unwrap();
 
+        // locked: no grant -> masked + wrong-password flag
         let e = app
-            .get_event(event_id.clone(), None, false, None)
+            .get_event(event_id.clone(), None, false, false)
             .await
             .unwrap();
 
         assert_ne!(&e.info.questions[0].text, question_text);
         assert!(e.flags.contains(EventResponseFlags::WRONG_PASSWORD));
 
+        // unlocked: holds a valid pwd grant -> full data
         let e = app
-            .get_event(event_id.clone(), None, false, Some(String::from("pwd")))
+            .get_event(event_id.clone(), None, false, true)
             .await
             .unwrap();
 

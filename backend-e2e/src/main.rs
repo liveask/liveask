@@ -179,7 +179,8 @@ async fn hide_question(event: String, secret: String, question_id: i64) {
     assert_eq!(res.status(), StatusCode::OK);
 }
 
-/// reqwest client that keeps cookies across requests (needed for the password session flow).
+/// reqwest client that keeps cookies across requests (carries the admin / event-password
+/// JWT cookies between calls).
 fn cookie_client() -> reqwest::Client {
     reqwest::Client::builder()
         .cookie_store(true)

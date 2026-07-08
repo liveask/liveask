@@ -18,7 +18,6 @@ mod tracking;
 mod utils;
 mod viewers;
 
-use async_redis_session::RedisSessionStore;
 use aws_config::BehaviorVersion;
 use aws_sdk_dynamodb::config::Credentials;
 use axum::{
@@ -273,11 +272,7 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
         return Err("LA_SESSION_SECRET must be set to a non-default value in production".into());
     }
 
-    let (session_layer, auth_config) = auth::setup(
-        secret,
-        RedisSessionStore::new(redis_url)?.with_prefix("session/"),
-        is_prod(),
-    );
+    let auth_config = auth::setup(secret, is_prod());
 
     let admin_routes = Router::new()
         .route("/user", get(admin_user_handler))
@@ -318,7 +313,6 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
         .nest("/api/admin", admin_routes)
         .route("/metrics", get(async move || metrics_handler.render()))
         .layer(Extension(auth_config))
-        .layer(session_layer)
         .layer(SetSensitiveRequestHeadersLayer::new(once(header::COOKIE)))
         .layer(SentryHttpLayer::with_transaction())
         .layer(NewSentryLayer::new_from_top())

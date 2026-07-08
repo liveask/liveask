@@ -1,13 +1,18 @@
 use axum::{
-    Json,
+    Extension, Json,
     extract::{Path, State, WebSocketUpgrade, ws::WebSocket},
-    response::{Html, IntoResponse},
+    http::{HeaderMap, HeaderName, header},
+    response::{AppendHeaders, Html, IntoResponse},
 };
-use axum_sessions::extractors::{ReadableSession, WritableSession};
 use shared::EventPasswordResponse;
 use tracing::instrument;
 
-use crate::{GIT_HASH, app::SharedApp, auth::OptionalUser, error::InternalError};
+use crate::{
+    GIT_HASH,
+    app::SharedApp,
+    auth::{self, AuthConfig, OptionalUser},
+    error::InternalError,
+};
 
 async fn socket_handler(ws: WebSocket, id: String, app: SharedApp) {
     app.push_subscriber(ws, id).await;
@@ -56,40 +61,43 @@ pub async fn addquestion_handler(
     Ok(Json(app.add_question(id, payload).await?))
 }
 
-#[instrument(skip(app, session))]
+#[instrument(skip(app, cfg, headers))]
 pub async fn getevent_handler(
     Path(id): Path<String>,
     OptionalUser(user): OptionalUser,
-    session: ReadableSession,
+    Extension(cfg): Extension<AuthConfig>,
+    headers: HeaderMap,
     State(app): State<SharedApp>,
 ) -> std::result::Result<impl IntoResponse, InternalError> {
     tracing::info!("getevent_handler");
 
-    let password = session.get_raw("pwd");
+    let unlocked = auth::pwd_unlocked(&cfg, &headers, &id);
 
     Ok(Json(
-        app.get_event(id, None, user.is_some(), password).await?,
+        app.get_event(id, None, user.is_some(), unlocked).await?,
     ))
 }
 
-#[instrument(skip(app, session))]
+#[instrument(skip(app, cfg))]
 pub async fn set_event_password(
     Path(id): Path<String>,
-    mut session: WritableSession,
+    Extension(cfg): Extension<AuthConfig>,
     State(app): State<SharedApp>,
     Json(payload): Json<shared::EventPasswordRequest>,
 ) -> std::result::Result<impl IntoResponse, InternalError> {
     tracing::info!("set_event_password");
 
     let response = EventPasswordResponse {
-        ok: app.check_event_password(id, &payload.pwd).await?,
+        ok: app.check_event_password(id.clone(), &payload.pwd).await?,
     };
 
+    // on success hand back a grant cookie the browser re-sends on the event fetch
+    let mut cookies: Vec<(HeaderName, String)> = Vec::new();
     if response.ok {
-        session.insert_raw("pwd", payload.pwd);
+        cookies.push((header::SET_COOKIE, auth::pwd_grant_cookie(&cfg, &id)?));
     }
 
-    Ok(Json(response))
+    Ok((AppendHeaders(cookies), Json(response)))
 }
 
 #[instrument(skip(app))]
@@ -102,7 +110,7 @@ pub async fn mod_get_event(
 
     //TODO: special response type for mods to add more info
     Ok(Json(
-        app.get_event(id, Some(secret), user.is_some(), None)
+        app.get_event(id, Some(secret), user.is_some(), false)
             .await?,
     ))
 }
@@ -365,11 +373,10 @@ mod test_db_item_not_found {
                 String::new(),
             ));
 
-            let (session, auth) = auth::setup_test();
+            let auth = auth::setup_test();
 
             Router::new()
                 .route("/api/event/:id", get(getevent_handler))
-                .layer(session)
                 .layer(Extension(auth))
                 .layer(TraceLayer::new_for_http())
                 .with_state(app.clone())
@@ -403,10 +410,9 @@ mod test_db_item_not_found {
                 Tracking::default(),
                 String::new(),
             ));
-            let (session, auth) = auth::setup_test();
+            let auth = auth::setup_test();
             let router = Router::new()
                 .route("/api/event/:id", get(getevent_handler))
-                .layer(session)
                 .layer(Extension(auth))
                 .layer(TraceLayer::new_for_http())
                 .with_state(app.clone());
@@ -455,11 +461,10 @@ mod test_db_item_not_found {
                 Tracking::default(),
                 String::new(),
             ));
-            let (session, auth) = auth::setup_test();
+            let auth = auth::setup_test();
             let router = Router::new()
                 .route("/api/event/:id", get(getevent_handler))
                 .route("/api/event/:id/pwd", post(set_event_password))
-                .layer(session)
                 .layer(Extension(auth))
                 .layer(TraceLayer::new_for_http())
                 .with_state(app.clone());

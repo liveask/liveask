@@ -1,7 +1,6 @@
 [workspace]
 resolver = "2"
 members = [
-  "async-redis-session",
   "backend",
   "backend-e2e",
   "frontend",
