@@ -54,6 +54,82 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
+  # Real-infra e2e: boot dynamodb-local + redis + the server inside CI and run the FULL
+  # backend-e2e suite (incl. the controlled-server-only admin tests via --include-ignored).
+  # Unlike the post-deploy `backend-e2e` job (which hits deployed beta/prod), this exercises a
+  # server we boot, so it can define a known admin credential and gate PRs before deploy.
+  check_and_test_backend_e2e:
+    needs: changes
+    if: ${{ needs.changes.outputs.be == 'true' }}
+    runs-on: ubuntu-latest
+    env:
+      # test-only admin credential, shared by the booted server and the test process so the
+      # controlled-server-only admin tests can authenticate.
+      LA_ADMIN_PWD_HASH: e2e-controlled-admin-hash
+    # Service containers (not docker-compose) so nothing gets bind-mounted into the source
+    # tree — the compose file mounts ./db, which lands root-owned dirs in backend/ and breaks
+    # cargo's package-file enumeration during the build.
+    services:
+      redis:
+        image: redis:alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+      dynamodb:
+        image: amazon/dynamodb-local
+        ports:
+          - 8000:8000
+    steps:
+      - uses: actions/checkout@v5
+      - name: Restore cargo cache
+        uses: Swatinem/rust-cache@v2
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+      - name: Wait for dynamodb-local
+        run: |
+          echo "waiting for dynamodb-local:8000 ..."
+          ready=""
+          for _ in $(seq 1 60); do
+            if (echo > /dev/tcp/localhost/8000) 2>/dev/null; then
+              ready=1; break
+            fi
+            sleep 1
+          done
+          if [ -z "$ready" ]; then
+            echo "dynamodb-local did not become ready in time"
+            exit 1
+          fi
+          echo "dynamodb-local ready"
+      - name: Build server
+        run: cargo build -p liveask-server
+      - name: Run e2e suite against booted server
+        env:
+          DDB_LOCAL: "1"
+          DDB_URL: http://localhost:8000
+          REDIS_URL: redis://localhost:6379
+          LA_PORT: "8090"
+          LIVEASK_ENV: local
+          BASE_URL: http://localhost:8090
+          RELAX_CORS: "1"
+          RUST_LOG: warn,liveask_server=info
+          URL: http://localhost:8090
+          SOCKET_URL: ws://localhost:8090
+        run: |
+          ./target/debug/liveask-server > server.log 2>&1 &
+          trap 'kill $! 2>/dev/null || true' EXIT
+          echo "waiting for server /api/ping ..."
+          curl -sf --retry 60 --retry-connrefused --retry-delay 1 http://localhost:8090/api/ping \
+            || { echo '=== server failed to start ==='; cat server.log; exit 1; }
+          echo "server is up; running full e2e suite (including gated admin tests)"
+          cargo test -p backend_tests -- --include-ignored
+      - name: Server logs
+        if: always()
+        run: cat server.log 2>/dev/null || true
+
   check_and_test_frontend:
     needs: ["changes"]
     if: ${{ needs.changes.outputs.fe == 'true' }}
@@ -71,7 +147,7 @@ jobs:
   be_deploy_beta:
     runs-on: ubuntu-latest
     environment: beta
-    needs: ["check_and_test_backend"]
+    needs: ["check_and_test_backend", "check_and_test_backend_e2e"]
     steps:
       - uses: actions/checkout@v5
       - name: Restore cargo cache
@@ -147,7 +223,11 @@ jobs:
   fe_deploy_beta:
     runs-on: ubuntu-latest
     environment: beta
-    needs: ["check_and_test_frontend"]
+    needs: ["changes", "check_and_test_frontend", "be_deploy_beta"]
+    # Deploy the FE only when its own checks passed AND — if the backend also changed — its
+    # deploy succeeded. This never ships a new FE against a backend that failed to deploy,
+    # while still allowing frontend-only changes (where be_deploy_beta is skipped) to deploy.
+    if: ${{ !cancelled() && needs.check_and_test_frontend.result == 'success' && (needs.changes.outputs.be != 'true' || needs.be_deploy_beta.result == 'success') }}
     steps:
       - uses: actions/checkout@v5
       - name: Restore cargo cache

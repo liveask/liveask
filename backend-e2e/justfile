@@ -5,6 +5,10 @@ URL := "http://localhost:8090"
 # URL := "https://prod.www.live-ask.com"
 EVENT := "01J6YD3RNQTY0M2SN9ADDHMDY8"
 
+# admin credential shared between `serve` (server) and `e2e-test-local` (tests) so the
+# controlled-server-only admin tests can log in.
+ADMIN_PWD_HASH := "e2e-controlled-admin-hash"
+
 test-create-question:
 	echo '{"text": "asd asd dd 2"}' | xh POST "{{URL}}/api/event/addquestion/{{EVENT}}" content-type:application/json
 
@@ -17,5 +21,22 @@ e2e-test-remote:
 e2e-test-beta:
 	RUST_LOG=debug URL=https://beta.www.live-ask.com SOCKET_URL="wss://beta.www.live-ask.com" cargo test
 
+# boot a local backend with everything the FULL e2e suite needs (incl. admin credential).
+# requires local infra to be up first: `cd ../backend && just docker-compose`
+serve:
+	cd ../backend && \
+		DDB_LOCAL=1 \
+		DDB_URL=http://localhost:8000 \
+		REDIS_URL=redis://localhost:6379 \
+		LA_PORT=8090 \
+		LIVEASK_ENV=local \
+		BASE_URL=http://localhost:8090 \
+		RELAX_CORS=1 \
+		LA_ADMIN_PWD_HASH={{ADMIN_PWD_HASH}} \
+		RUST_LOG=warn,liveask_server=info \
+		cargo run
+
+# run the full local suite INCLUDING controlled-server-only tests (admin, ...).
+# expects a server booted via `just serve` (same ADMIN_PWD_HASH).
 e2e-test-local:
-	RUST_LOG=debug cargo test
+	RUST_LOG=debug LA_ADMIN_PWD_HASH={{ADMIN_PWD_HASH}} cargo test -- --include-ignored
