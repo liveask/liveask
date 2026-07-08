@@ -327,7 +327,7 @@ mod test_db_item_not_found {
     };
     use async_trait::async_trait;
     use axum::{
-        Router,
+        Extension, Router,
         body::Body,
         http::{self, Request, StatusCode},
         routing::{get, post},
@@ -369,8 +369,8 @@ mod test_db_item_not_found {
 
             Router::new()
                 .route("/api/event/:id", get(getevent_handler))
-                .layer(auth)
                 .layer(session)
+                .layer(Extension(auth))
                 .layer(TraceLayer::new_for_http())
                 .with_state(app.clone())
         };
@@ -406,8 +406,8 @@ mod test_db_item_not_found {
             let (session, auth) = auth::setup_test();
             let router = Router::new()
                 .route("/api/event/:id", get(getevent_handler))
-                .layer(auth)
                 .layer(session)
+                .layer(Extension(auth))
                 .layer(TraceLayer::new_for_http())
                 .with_state(app.clone());
             (app, router)
@@ -459,8 +459,8 @@ mod test_db_item_not_found {
             let router = Router::new()
                 .route("/api/event/:id", get(getevent_handler))
                 .route("/api/event/:id/pwd", post(set_event_password))
-                .layer(auth)
                 .layer(session)
+                .layer(Extension(auth))
                 .layer(TraceLayer::new_for_http())
                 .with_state(app.clone());
             (app, router)

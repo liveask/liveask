@@ -23,13 +23,13 @@ aws-sdk-dynamodb = "1.2"
 aws-sdk-ses = "1.2"
 aws-smithy-http = "0.60"
 axum = { version = "0.6", features = ["ws"] }
-axum-login = "0.6"
 axum-prometheus = "0.4"
 axum-sessions = "0.5"
 chrono = { workspace = true }
 ezlime-rs = "0.2"
 futures-util = "0.3"
 handlebars = { workspace = true }
+jsonwebtoken = "9"
 posthog-core = { git = "https://github.com/rivet-gg/posthog-rs.git", rev = "fa4d39a" }
 rand = { version = "0.8", features = ["min_const_gen"] }
 reqwest = { version = "0.11", features = ["json"] }
