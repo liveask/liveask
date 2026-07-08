@@ -12,7 +12,7 @@ use serde::{Deserialize, Serialize};
 use shared::{GetUserInfo, UserInfo};
 use tracing::instrument;
 
-use crate::{env::admin_pwd_hash, error::InternalError};
+use crate::{env::admin_pwd_hash, error::InternalError, utils::pwd_fingerprint};
 
 /// Cookie carrying the admin JWT.
 const AUTH_COOKIE: &str = "auth";
@@ -48,6 +48,10 @@ struct Claims {
     /// event a `pwd` grant is scoped to; absent on admin tokens.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     event: Option<String>,
+    /// fingerprint of the proven password; lets a `pwd` grant be re-locked when the password
+    /// is rotated. Absent on admin tokens.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pfp: Option<String>,
     exp: u64,
 }
 
@@ -90,6 +94,7 @@ fn issue_admin_token(cfg: &AuthConfig) -> Result<String, InternalError> {
         &Claims {
             sub: ADMIN_NAME.to_string(),
             event: None,
+            pfp: None,
             exp: now_secs() + COOKIE_TTL.as_secs(),
         },
     )
@@ -104,24 +109,27 @@ fn verify_admin(cfg: &AuthConfig, token: &str) -> Option<AdminUser> {
     })
 }
 
-/// `Set-Cookie` value granting the caller access to the (already password-validated) event.
-pub fn pwd_grant_cookie(cfg: &AuthConfig, event: &str) -> Result<String, InternalError> {
+/// `Set-Cookie` value granting the caller access to the event whose password (`pwd`) they just
+/// proved. The password fingerprint is bound in so the grant self-invalidates on rotation.
+pub fn pwd_grant_cookie(cfg: &AuthConfig, event: &str, pwd: &str) -> Result<String, InternalError> {
     let token = encode_token(
         cfg,
         &Claims {
             sub: PWD_KIND.to_string(),
             event: Some(event.to_string()),
+            pfp: Some(pwd_fingerprint(pwd)),
             exp: now_secs() + COOKIE_TTL.as_secs(),
         },
     )?;
     Ok(set_cookie(cfg, PWD_COOKIE, &token, COOKIE_TTL))
 }
 
-/// `true` iff the request carries a valid, unexpired pwd grant scoped to `event`.
-pub fn pwd_unlocked(cfg: &AuthConfig, headers: &HeaderMap, event: &str) -> bool {
-    read_cookie(headers, PWD_COOKIE)
-        .and_then(|token| decode_token(cfg, token))
-        .is_some_and(|claims| claims.sub == PWD_KIND && claims.event.as_deref() == Some(event))
+/// The password fingerprint proven by a valid, unexpired pwd grant for `event`, if any. The
+/// caller compares it against the event's current password so a rotated password re-locks.
+pub fn pwd_grant_fingerprint(cfg: &AuthConfig, headers: &HeaderMap, event: &str) -> Option<String> {
+    let claims = read_cookie(headers, PWD_COOKIE).and_then(|token| decode_token(cfg, token))?;
+
+    (claims.sub == PWD_KIND && claims.event.as_deref() == Some(event)).then_some(claims.pfp)?
 }
 
 /// Read a single cookie value out of the `Cookie` request header.
@@ -275,6 +283,7 @@ mod test {
             &Claims {
                 sub: PWD_KIND.to_string(),
                 event: Some("EVENT".to_string()),
+                pfp: Some(pwd_fingerprint("secret")),
                 exp: now_secs() + 60,
             },
         );
@@ -289,6 +298,7 @@ mod test {
             &Claims {
                 sub: ADMIN_NAME.to_string(),
                 event: None,
+                pfp: None,
                 exp: now_secs().saturating_sub(3600),
             },
         );
@@ -315,25 +325,29 @@ mod test {
     }
 
     #[test]
-    fn pwd_grant_is_event_scoped() {
+    fn pwd_grant_is_event_scoped_and_carries_fingerprint() {
         let cfg = cfg();
-        let headers = headers_with(&pwd_grant_cookie(&cfg, "EVENT_A").unwrap());
-        assert!(pwd_unlocked(&cfg, &headers, "EVENT_A"));
-        // a grant for one event must not unlock another
-        assert!(!pwd_unlocked(&cfg, &headers, "EVENT_B"));
+        let headers = headers_with(&pwd_grant_cookie(&cfg, "EVENT_A", "secret").unwrap());
+        // a valid grant returns the fingerprint of the proven password for its own event ...
+        assert_eq!(
+            pwd_grant_fingerprint(&cfg, &headers, "EVENT_A"),
+            Some(pwd_fingerprint("secret"))
+        );
+        // ... and nothing for a different event
+        assert_eq!(pwd_grant_fingerprint(&cfg, &headers, "EVENT_B"), None);
     }
 
     #[test]
     fn admin_token_is_not_accepted_as_pwd_grant() {
         let cfg = cfg();
         let headers = headers_with(&format!("pwd={}", issue_admin_token(&cfg).unwrap()));
-        assert!(!pwd_unlocked(&cfg, &headers, "EVENT_A"));
+        assert_eq!(pwd_grant_fingerprint(&cfg, &headers, "EVENT_A"), None);
     }
 
     #[test]
     fn pwd_grant_is_not_accepted_as_admin() {
         let cfg = cfg();
-        let cookie = pwd_grant_cookie(&cfg, "EVENT_A").unwrap();
+        let cookie = pwd_grant_cookie(&cfg, "EVENT_A", "secret").unwrap();
         let token = cookie
             .split(';')
             .next()

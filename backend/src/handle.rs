@@ -71,10 +71,10 @@ pub async fn getevent_handler(
 ) -> std::result::Result<impl IntoResponse, InternalError> {
     tracing::info!("getevent_handler");
 
-    let unlocked = auth::pwd_unlocked(&cfg, &headers, &id);
+    let pwd_grant = auth::pwd_grant_fingerprint(&cfg, &headers, &id);
 
     Ok(Json(
-        app.get_event(id, None, user.is_some(), unlocked).await?,
+        app.get_event(id, None, user.is_some(), pwd_grant).await?,
     ))
 }
 
@@ -94,7 +94,10 @@ pub async fn set_event_password(
     // on success hand back a grant cookie the browser re-sends on the event fetch
     let mut cookies: Vec<(HeaderName, String)> = Vec::new();
     if response.ok {
-        cookies.push((header::SET_COOKIE, auth::pwd_grant_cookie(&cfg, &id)?));
+        cookies.push((
+            header::SET_COOKIE,
+            auth::pwd_grant_cookie(&cfg, &id, &payload.pwd)?,
+        ));
     }
 
     Ok((AppendHeaders(cookies), Json(response)))
@@ -110,7 +113,7 @@ pub async fn mod_get_event(
 
     //TODO: special response type for mods to add more info
     Ok(Json(
-        app.get_event(id, Some(secret), user.is_some(), false)
+        app.get_event(id, Some(secret), user.is_some(), None)
             .await?,
     ))
 }

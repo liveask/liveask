@@ -27,6 +27,7 @@ chrono = { workspace = true }
 ezlime-rs = "0.2"
 futures-util = "0.3"
 handlebars = { workspace = true }
+hex = "0.4"
 jsonwebtoken = "9"
 posthog-core = { git = "https://github.com/rivet-gg/posthog-rs.git", rev = "fa4d39a" }
 rand = { version = "0.8", features = ["min_const_gen"] }
@@ -37,6 +38,7 @@ serde_dynamo = { version = "4.2", default-features = false, features = [
   "aws-sdk-dynamodb+1",
 ] }
 serde_json = { workspace = true }
+sha2 = "0.10"
 shared = { path = "../shared" }
 strum = { version = "0.26", features = ["derive"] }
 thiserror = "1.0"

@@ -280,7 +280,7 @@ impl App {
         id: String,
         secret: Option<String>,
         admin: bool,
-        unlocked: bool,
+        pwd_grant: Option<String>,
     ) -> Result<GetEventResponse> {
         tracing::info!("get_event");
 
@@ -319,6 +319,14 @@ impl App {
         }
 
         let time_out_masked = if admin { false } else { e.adapt_if_timedout() };
+
+        // a pwd grant unlocks only while its fingerprint still matches the current password,
+        // so rotating the password re-locks outstanding grants.
+        let unlocked = matches!(
+            &e.password,
+            shared::EventPassword::Enabled(pwd)
+                if pwd_grant.as_deref() == Some(crate::utils::pwd_fingerprint(pwd).as_str())
+        );
 
         let pwd_masked = if (e.password.is_enabled() && !unlocked) && !admin && !is_mod {
             e.mask_data();
@@ -1386,7 +1394,7 @@ mod test {
         assert_eq!(q.screening, true);
 
         let e = app
-            .get_event(res.tokens.public_token.clone(), None, false, false)
+            .get_event(res.tokens.public_token.clone(), None, false, None)
             .await
             .unwrap();
 
@@ -1397,7 +1405,7 @@ mod test {
                 res.tokens.public_token.clone(),
                 Some(res.tokens.moderator_token.clone().unwrap()),
                 false,
-                false,
+                None,
             )
             .await
             .unwrap();
@@ -1418,7 +1426,7 @@ mod test {
         .unwrap();
 
         let e = app
-            .get_event(res.tokens.public_token.clone(), None, false, false)
+            .get_event(res.tokens.public_token.clone(), None, false, None)
             .await
             .unwrap();
 
@@ -1478,7 +1486,7 @@ mod test {
         assert_eq!(q.screening, true);
 
         let e = app
-            .get_event(res.tokens.public_token.clone(), None, false, false)
+            .get_event(res.tokens.public_token.clone(), None, false, None)
             .await
             .unwrap();
 
@@ -1668,21 +1676,51 @@ mod test {
 
         // locked: no grant -> masked + wrong-password flag
         let e = app
-            .get_event(event_id.clone(), None, false, false)
+            .get_event(event_id.clone(), None, false, None)
             .await
             .unwrap();
 
         assert_ne!(&e.info.questions[0].text, question_text);
         assert!(e.flags.contains(EventResponseFlags::WRONG_PASSWORD));
 
-        // unlocked: holds a valid pwd grant -> full data
+        // unlocked: grant carries the fingerprint of the current password -> full data
         let e = app
-            .get_event(event_id.clone(), None, false, true)
+            .get_event(
+                event_id.clone(),
+                None,
+                false,
+                Some(crate::utils::pwd_fingerprint("pwd")),
+            )
             .await
             .unwrap();
 
         assert_eq!(&e.info.questions[0].text, question_text);
         assert!(!e.flags.contains(EventResponseFlags::WRONG_PASSWORD));
+
+        // rotated password -> the old grant fingerprint no longer matches -> re-masked
+        app.mod_edit_event(
+            event_id.clone(),
+            mod_token.clone(),
+            shared::ModEvent {
+                password: Some(shared::EventPassword::Enabled("rotated".into())),
+                ..Default::default()
+            },
+        )
+        .await
+        .unwrap();
+
+        let e = app
+            .get_event(
+                event_id.clone(),
+                None,
+                false,
+                Some(crate::utils::pwd_fingerprint("pwd")),
+            )
+            .await
+            .unwrap();
+
+        assert_ne!(&e.info.questions[0].text, question_text);
+        assert!(e.flags.contains(EventResponseFlags::WRONG_PASSWORD));
     }
 
     #[tokio::test]
