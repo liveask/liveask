@@ -267,6 +267,12 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let secret = session_secret()
         .ok_or_else(|| error::InternalError::General(String::from("invalid session secret")))?;
 
+    // auth is now a stateless JWT: knowing the signing key is enough to forge an admin token,
+    // so refuse to start in prod with the public dev fallback.
+    if is_prod() && env::is_default_session_secret(&secret) {
+        return Err("LA_SESSION_SECRET must be set to a non-default value in production".into());
+    }
+
     let (session_layer, auth_config) = auth::setup(
         secret,
         RedisSessionStore::new(redis_url)?.with_prefix("session/"),
