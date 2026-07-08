@@ -347,13 +347,48 @@ async fn admin_logout(client: &reqwest::Client) -> StatusCode {
         .status()
 }
 
+/// Request a premium upgrade for an event. With an admin session on `client` this hits the
+/// no-Stripe `AdminUpgrade` path.
+async fn premium_upgrade(
+    client: &reqwest::Client,
+    event: &str,
+    secret: &str,
+) -> shared::EventUpgradeResponse {
+    let res = client
+        .post(format!(
+            "{}/api/mod/event/upgrade/{}/{}",
+            server_rest(),
+            event,
+            secret
+        ))
+        .json(&shared::ModRequestPremium {
+            context: shared::ModRequestPremiumContext::Regular,
+        })
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(res.status(), StatusCode::OK);
+    res.json().await.unwrap()
+}
+
+/// POST an editlike returning only the status code — for state-gate error cases.
+async fn edit_like_status(event: &str, question_id: i64, like: bool) -> StatusCode {
+    reqwest::Client::new()
+        .post(format!("{}/api/event/editlike/{}", server_rest(), event))
+        .json(&shared::EditLike { question_id, like })
+        .send()
+        .await
+        .unwrap()
+        .status()
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
     use pretty_assertions::assert_eq;
     use reqwest::StatusCode;
     use shared::TEST_EVENT_NAME;
-    use tungstenite::connect;
+    use tungstenite::{connect, Message};
 
     #[tokio::test]
     #[tracing_test::traced_test]
@@ -783,5 +818,310 @@ mod test {
             StatusCode::FORBIDDEN
         );
         assert!(admin_get_user(&client).await.user.is_none());
+    }
+
+    // ---- state gates ---------------------------------------------------------------------
+
+    #[tokio::test]
+    #[tracing_test::traced_test]
+    async fn test_closed_event_rejects_add_and_like() {
+        let e = add_event(TEST_EVENT_NAME.to_string()).await;
+        let secret = e.tokens.moderator_token.clone().unwrap();
+        let public = e.tokens.public_token.clone();
+        let q = add_question(public.clone()).await; // while still Open
+
+        assert_eq!(
+            edit_event(
+                &public,
+                &secret,
+                &shared::ModEvent {
+                    state: Some(shared::EventState {
+                        state: shared::States::Closed,
+                    }),
+                    ..Default::default()
+                },
+            )
+            .await,
+            StatusCode::OK
+        );
+
+        // both mutations are gated off once the event is Closed (currently → 500)
+        assert_eq!(
+            add_question_status(&public, "a different valid question here").await,
+            StatusCode::INTERNAL_SERVER_ERROR
+        );
+        assert_eq!(
+            edit_like_status(&public, q.id, true).await,
+            StatusCode::INTERNAL_SERVER_ERROR
+        );
+    }
+
+    #[tokio::test]
+    #[tracing_test::traced_test]
+    async fn test_voting_only_blocks_add_but_allows_like() {
+        let e = add_event(TEST_EVENT_NAME.to_string()).await;
+        let secret = e.tokens.moderator_token.clone().unwrap();
+        let public = e.tokens.public_token.clone();
+        let q = add_question(public.clone()).await; // while still Open
+
+        assert_eq!(
+            edit_event(
+                &public,
+                &secret,
+                &shared::ModEvent {
+                    state: Some(shared::EventState {
+                        state: shared::States::VotingOnly,
+                    }),
+                    ..Default::default()
+                },
+            )
+            .await,
+            StatusCode::OK
+        );
+
+        // adding a question is blocked in VotingOnly (currently → 500) ...
+        assert_eq!(
+            add_question_status(&public, "another valid question here").await,
+            StatusCode::INTERNAL_SERVER_ERROR
+        );
+        // ... but liking is still allowed
+        let liked = like_question(public, q.id, true).await;
+        assert_eq!(liked.likes, q.likes + 1);
+    }
+
+    // ---- premium (free-event rejection is un-gated; the allow-side needs admin below) -----
+
+    #[tokio::test]
+    #[tracing_test::traced_test]
+    async fn test_premium_only_feature_rejected_on_free_event() {
+        let e = add_event(TEST_EVENT_NAME.to_string()).await;
+        let secret = e.tokens.moderator_token.clone().unwrap();
+        let public = e.tokens.public_token.clone();
+
+        // current_tag requires premium → 400 on a free event
+        assert_eq!(
+            edit_event(
+                &public,
+                &secret,
+                &shared::ModEvent {
+                    current_tag: Some(shared::CurrentTag::Enabled("keynote".into())),
+                    ..Default::default()
+                },
+            )
+            .await,
+            StatusCode::BAD_REQUEST
+        );
+
+        // context also requires premium → 400
+        assert_eq!(
+            edit_event(
+                &public,
+                &secret,
+                &shared::ModEvent {
+                    context: Some(shared::EditContextLink::Enabled(shared::ContextItem {
+                        label: "Slides".into(),
+                        url: "https://example.com/slides".into(),
+                    })),
+                    ..Default::default()
+                },
+            )
+            .await,
+            StatusCode::BAD_REQUEST
+        );
+    }
+
+    // ---- websocket protocol / fan-out ----------------------------------------------------
+
+    #[tokio::test]
+    #[tracing_test::traced_test]
+    async fn test_websocket_keepalive_and_disconnect_on_bad_frame() {
+        let e = add_event(TEST_EVENT_NAME.to_string()).await;
+        let public = e.tokens.public_token.clone();
+
+        let (mut socket, _) =
+            connect(&format!("{}/push/{}", server_socket(), public)).expect("connect");
+        assert_eq!(socket.read().unwrap().into_text().unwrap(), "v:1");
+
+        // "p" is the keepalive: ignored, connection stays open (a later question still arrives)
+        socket.send(Message::Text("p".into())).unwrap();
+        let q = add_question(public.clone()).await;
+        assert_eq!(
+            socket.read().unwrap().into_text().unwrap(),
+            format!("q:{}", q.id)
+        );
+
+        // any other frame is treated as a protocol violation → server disconnects us
+        socket.send(Message::Text("garbage".into())).unwrap();
+        let disconnected = loop {
+            match socket.read() {
+                Ok(Message::Close(_)) => break true,
+                Ok(_) => continue,
+                Err(_) => break true,
+            }
+        };
+        assert!(
+            disconnected,
+            "server should disconnect after an unexpected frame"
+        );
+    }
+
+    #[tokio::test]
+    #[tracing_test::traced_test]
+    async fn test_websocket_viewer_decrement_on_disconnect() {
+        let e = add_event(TEST_EVENT_NAME.to_string()).await;
+        let public = e.tokens.public_token.clone();
+
+        let (mut socket1, _) =
+            connect(&format!("{}/push/{}", server_socket(), public)).expect("connect 1");
+        assert_eq!(socket1.read().unwrap().into_text().unwrap(), "v:1");
+
+        let (socket2, _) =
+            connect(&format!("{}/push/{}", server_socket(), public)).expect("connect 2");
+        // the second viewer bumps socket1 to v:2 (also our barrier that socket2 is counted)
+        assert_eq!(socket1.read().unwrap().into_text().unwrap(), "v:2");
+
+        // dropping socket2 closes it; the survivor must observe the decrement
+        drop(socket2);
+        assert_eq!(socket1.read().unwrap().into_text().unwrap(), "v:1");
+    }
+
+    #[tokio::test]
+    #[tracing_test::traced_test]
+    async fn test_websocket_multi_event_isolation() {
+        let a = add_event(TEST_EVENT_NAME.to_string()).await;
+        let b = add_event(TEST_EVENT_NAME.to_string()).await;
+        let a_secret = a.tokens.moderator_token.clone().unwrap();
+
+        let (mut sa, _) = connect(&format!(
+            "{}/push/{}",
+            server_socket(),
+            a.tokens.public_token
+        ))
+        .expect("ws a");
+        assert_eq!(sa.read().unwrap().into_text().unwrap(), "v:1");
+        let (mut sb, _) = connect(&format!(
+            "{}/push/{}",
+            server_socket(),
+            b.tokens.public_token
+        ))
+        .expect("ws b");
+        assert_eq!(sb.read().unwrap().into_text().unwrap(), "v:1");
+
+        // mutate event A (state change → "e"); this must NOT reach event B's socket
+        assert_eq!(
+            edit_event(
+                &a.tokens.public_token,
+                &a_secret,
+                &shared::ModEvent {
+                    state: Some(shared::EventState {
+                        state: shared::States::Closed,
+                    }),
+                    ..Default::default()
+                },
+            )
+            .await,
+            StatusCode::OK
+        );
+        assert_eq!(sa.read().unwrap().into_text().unwrap(), "e");
+
+        // mutate event B; sb's next frame must be B's "q:" — if A had leaked, it would be "e"
+        let qb = add_question(b.tokens.public_token.clone()).await;
+        assert_eq!(
+            sb.read().unwrap().into_text().unwrap(),
+            format!("q:{}", qb.id)
+        );
+    }
+
+    // ---- premium allow-side (controlled-server-only: needs admin to reach the no-Stripe
+    //      AdminUpgrade path, so these are #[ignore]d like the admin login tests) -----------
+
+    #[tokio::test]
+    #[tracing_test::traced_test]
+    #[ignore = "needs a server we control (admin creds); run via `just e2e-test-local`"]
+    async fn test_admin_premium_upgrade() {
+        let Some(pwd_hash) = admin_pwd_hash() else {
+            eprintln!("skipping test_admin_premium_upgrade: LA_ADMIN_PWD_HASH not set");
+            return;
+        };
+        let e = add_event(TEST_EVENT_NAME.to_string()).await;
+        let secret = e.tokens.moderator_token.clone().unwrap();
+        let public = e.tokens.public_token.clone();
+
+        // subscribe so we can observe the upgrade notification
+        let (mut socket, _) =
+            connect(&format!("{}/push/{}", server_socket(), public)).expect("connect");
+        assert_eq!(socket.read().unwrap().into_text().unwrap(), "v:1");
+
+        // an admin session takes the no-Stripe AdminUpgrade path
+        let client = cookie_client();
+        assert_eq!(
+            admin_login(&client, ADMIN_NAME, &pwd_hash).await,
+            StatusCode::OK
+        );
+        assert_eq!(
+            premium_upgrade(&client, &public, &secret).await,
+            shared::EventUpgradeResponse::AdminUpgrade
+        );
+
+        // the event is now premium (real serde_dynamo round-trip of premium_id) ...
+        let ev = get_event(public.clone(), Some(secret)).await.unwrap();
+        assert!(ev.info.is_premium());
+
+        // ... and subscribers were notified with an "e" frame
+        assert_eq!(socket.read().unwrap().into_text().unwrap(), "e");
+    }
+
+    #[tokio::test]
+    #[tracing_test::traced_test]
+    #[ignore = "needs a server we control (admin creds); run via `just e2e-test-local`"]
+    async fn test_premium_feature_edits_persist() {
+        let Some(pwd_hash) = admin_pwd_hash() else {
+            eprintln!("skipping test_premium_feature_edits_persist: LA_ADMIN_PWD_HASH not set");
+            return;
+        };
+        let e = add_event(TEST_EVENT_NAME.to_string()).await;
+        let secret = e.tokens.moderator_token.clone().unwrap();
+        let public = e.tokens.public_token.clone();
+
+        let client = cookie_client();
+        assert_eq!(
+            admin_login(&client, ADMIN_NAME, &pwd_hash).await,
+            StatusCode::OK
+        );
+        assert_eq!(
+            premium_upgrade(&client, &public, &secret).await,
+            shared::EventUpgradeResponse::AdminUpgrade
+        );
+
+        // premium-gated (tag, context) + un-gated (color, meta) fields in one edit; this is
+        // the real-DB round-trip of the event fields that free events never persist.
+        assert_eq!(
+            edit_event(
+                &public,
+                &secret,
+                &shared::ModEvent {
+                    current_tag: Some(shared::CurrentTag::Enabled("keynote".into())),
+                    context: Some(shared::EditContextLink::Enabled(shared::ContextItem {
+                        label: "Slides".into(),
+                        url: "https://example.com/slides".into(),
+                    })),
+                    color: Some(shared::EditColor("#ff2c5e".into())),
+                    meta: Some(shared::EditMetaData {
+                        title: "Premium Title".into(),
+                        description: "a premium event description well over thirty chars".into(),
+                    }),
+                    ..Default::default()
+                },
+            )
+            .await,
+            StatusCode::OK
+        );
+
+        let info = get_event(public.clone(), Some(secret)).await.unwrap().info;
+        assert!(info.tags.tags.iter().any(|t| t.name == "keynote"));
+        assert_eq!(info.tags.current_tag, Some(shared::TagId(0)));
+        assert!(info.context.iter().any(|c| c.label == "Slides"));
+        assert_eq!(info.data.color, Some(shared::Color("#ff2c5e".into())));
+        assert_eq!(info.data.name, "Premium Title");
     }
 }
