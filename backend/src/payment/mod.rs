@@ -306,7 +306,7 @@ impl Payment {
             params.client_reference_id = Some(event);
             params.allow_promotion_codes = Some(true);
             params.payment_intent_data = Some(CreateCheckoutSessionPaymentIntentData {
-                description: Some(format!("Premium Event: {}", mod_url)),
+                description: Some(format!("Premium Event: {mod_url}")),
                 metadata: Some(
                     vec![
                         (String::from("event"), event.to_string()),
