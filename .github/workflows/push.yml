@@ -223,7 +223,11 @@ jobs:
   fe_deploy_beta:
     runs-on: ubuntu-latest
     environment: beta
-    needs: ["check_and_test_frontend"]
+    needs: ["changes", "check_and_test_frontend", "be_deploy_beta"]
+    # Deploy the FE only when its own checks passed AND — if the backend also changed — its
+    # deploy succeeded. This never ships a new FE against a backend that failed to deploy,
+    # while still allowing frontend-only changes (where be_deploy_beta is skipped) to deploy.
+    if: ${{ !cancelled() && needs.check_and_test_frontend.result == 'success' && (needs.changes.outputs.be != 'true' || needs.be_deploy_beta.result == 'success') }}
     steps:
       - uses: actions/checkout@v5
       - name: Restore cargo cache
