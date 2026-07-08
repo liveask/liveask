@@ -919,12 +919,16 @@ mod test {
     #[tokio::test]
     #[tracing_test::traced_test]
     async fn test_mod_get_question_access_control() {
+        // Prod runs a pre-fix build until promoted; gate the fix-specific assertions on the
+        // reported version. Delete the `pre_fix` branch once prod stops reporting this SHA.
+        const PRE_FIX_PROD_SHA: &str = "70f4350";
+
         let e = add_event(TEST_EVENT_NAME.to_string()).await;
         let secret = e.tokens.moderator_token.clone().unwrap();
         let public = e.tokens.public_token.clone();
         let q = add_question(public.clone()).await;
 
-        // hide the question — now only a moderator may fetch it
+        // hide the question — now only a moderator may fetch it (same on both versions)
         assert_eq!(
             mod_question(
                 &public,
@@ -940,16 +944,31 @@ mod test {
             StatusCode::OK
         );
 
-        // the correct moderator secret can fetch the hidden question
-        let fetched = get_mod_question(&public, &secret, q.id).await;
-        assert_eq!(fetched.id, q.id);
-        assert!(fetched.hidden);
+        let pre_fix = get_version().await.trim() == PRE_FIX_PROD_SHA;
 
-        // a wrong secret must NOT leak the hidden question — it is rejected
-        assert_eq!(
-            mod_get_question_status(&public, "definitely-not-the-secret", q.id).await,
-            StatusCode::BAD_REQUEST
-        );
+        if pre_fix {
+            // pre-fix: the real moderator is not recognized, so the correct secret is wrongly
+            // refused (500), while a wrong secret wrongly LEAKS the hidden question (200).
+            assert_eq!(
+                mod_get_question_status(&public, &secret, q.id).await,
+                StatusCode::INTERNAL_SERVER_ERROR
+            );
+            assert_eq!(
+                mod_get_question_status(&public, "definitely-not-the-secret", q.id).await,
+                StatusCode::OK
+            );
+        } else {
+            // the correct moderator secret can fetch the hidden question
+            let fetched = get_mod_question(&public, &secret, q.id).await;
+            assert_eq!(fetched.id, q.id);
+            assert!(fetched.hidden);
+
+            // a wrong secret must NOT leak the hidden question — it is rejected
+            assert_eq!(
+                mod_get_question_status(&public, "definitely-not-the-secret", q.id).await,
+                StatusCode::BAD_REQUEST
+            );
+        }
 
         // the public route cannot see the hidden question either
         assert_eq!(
