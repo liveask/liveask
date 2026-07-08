@@ -179,7 +179,8 @@ async fn hide_question(event: String, secret: String, question_id: i64) {
     assert_eq!(res.status(), StatusCode::OK);
 }
 
-/// reqwest client that keeps cookies across requests (needed for the password session flow).
+/// reqwest client that keeps cookies across requests (carries the admin / event-password
+/// JWT cookies between calls).
 fn cookie_client() -> reqwest::Client {
     reqwest::Client::builder()
         .cookie_store(true)
@@ -707,6 +708,25 @@ mod test {
             .flags
             .contains(shared::EventResponseFlags::WRONG_PASSWORD));
         assert_eq!(unlocked.info.questions[0].text, TEST_VALID_QUESTION);
+
+        // rotating the password re-locks the still-held grant (revocation parity with the old
+        // server-side session): the same client is masked again without re-entering a password
+        let status = edit_event(
+            &public,
+            &secret,
+            &shared::ModEvent {
+                password: Some(shared::EventPassword::Enabled("rotated-pwd".into())),
+                ..Default::default()
+            },
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK);
+
+        let relocked = get_event_with(&client, &public).await;
+        assert!(relocked
+            .flags
+            .contains(shared::EventResponseFlags::WRONG_PASSWORD));
+        assert_ne!(relocked.info.questions[0].text, TEST_VALID_QUESTION);
     }
 
     #[tokio::test]

@@ -1,6 +1,5 @@
 use std::{sync::Arc, time::Duration};
 
-use async_redis_session::RedisSessionStore;
 use async_trait::async_trait;
 use axum::{
     Extension, Json,
@@ -8,17 +7,20 @@ use axum::{
     http::{HeaderMap, header, request::Parts},
     response::{AppendHeaders, IntoResponse},
 };
-use axum_sessions::{PersistencePolicy, SameSite, SessionLayer};
 use jsonwebtoken::{Algorithm, DecodingKey, EncodingKey, Header, Validation, decode, encode};
 use serde::{Deserialize, Serialize};
 use shared::{GetUserInfo, UserInfo};
 use tracing::instrument;
 
-use crate::{env::admin_pwd_hash, error::InternalError};
+use crate::{env::admin_pwd_hash, error::InternalError, utils::pwd_fingerprint};
 
 /// Cookie carrying the admin JWT.
 const AUTH_COOKIE: &str = "auth";
+/// Cookie carrying a per-event "password proven" grant JWT.
+const PWD_COOKIE: &str = "pwd";
+/// `sub` values that scope a token to one purpose so it cannot be replayed as another.
 const ADMIN_NAME: &str = "admin";
+const PWD_KIND: &str = "pwd";
 /// Token / cookie lifetime (was the session ttl).
 const COOKIE_TTL: Duration = Duration::from_secs(2 * 60 * 60);
 
@@ -41,8 +43,15 @@ impl AuthConfig {
 
 #[derive(Serialize, Deserialize)]
 struct Claims {
-    /// token kind — `admin`; guards against a differently-scoped token being replayed here.
+    /// token kind (`admin` / `pwd`); guards against a token being replayed for another purpose.
     sub: String,
+    /// event a `pwd` grant is scoped to; absent on admin tokens.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    event: Option<String>,
+    /// fingerprint of the proven password; lets a `pwd` grant be re-locked when the password
+    /// is rotated. Absent on admin tokens.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pfp: Option<String>,
     exp: u64,
 }
 
@@ -60,31 +69,67 @@ fn validation() -> Validation {
     v
 }
 
-fn issue_admin_token(cfg: &AuthConfig) -> Result<String, InternalError> {
-    let claims = Claims {
-        sub: ADMIN_NAME.to_string(),
-        exp: now_secs() + COOKIE_TTL.as_secs(),
-    };
+fn encode_token(cfg: &AuthConfig, claims: &Claims) -> Result<String, InternalError> {
     encode(
         &Header::default(),
-        &claims,
+        claims,
         &EncodingKey::from_secret(cfg.secret.as_ref()),
     )
     .map_err(|e| InternalError::General(format!("jwt encode: {e}")))
 }
 
-fn verify_admin(cfg: &AuthConfig, token: &str) -> Option<AdminUser> {
-    let data = decode::<Claims>(
+fn decode_token(cfg: &AuthConfig, token: &str) -> Option<Claims> {
+    decode::<Claims>(
         token,
         &DecodingKey::from_secret(cfg.secret.as_ref()),
         &validation(),
     )
-    .ok()?;
+    .ok()
+    .map(|data| data.claims)
+}
 
-    (data.claims.sub == ADMIN_NAME).then(|| AdminUser {
-        name: data.claims.sub,
-        expires: Duration::from_secs(data.claims.exp.saturating_sub(now_secs())),
+fn issue_admin_token(cfg: &AuthConfig) -> Result<String, InternalError> {
+    encode_token(
+        cfg,
+        &Claims {
+            sub: ADMIN_NAME.to_string(),
+            event: None,
+            pfp: None,
+            exp: now_secs() + COOKIE_TTL.as_secs(),
+        },
+    )
+}
+
+fn verify_admin(cfg: &AuthConfig, token: &str) -> Option<AdminUser> {
+    let claims = decode_token(cfg, token)?;
+
+    (claims.sub == ADMIN_NAME).then(|| AdminUser {
+        name: claims.sub,
+        expires: Duration::from_secs(claims.exp.saturating_sub(now_secs())),
     })
+}
+
+/// `Set-Cookie` value granting the caller access to the event whose password (`pwd`) they just
+/// proved. The password fingerprint is bound in so the grant self-invalidates on rotation.
+pub fn pwd_grant_cookie(cfg: &AuthConfig, event: &str, pwd: &str) -> Result<String, InternalError> {
+    let token = encode_token(
+        cfg,
+        &Claims {
+            sub: PWD_KIND.to_string(),
+            event: Some(event.to_string()),
+            pfp: Some(pwd_fingerprint(pwd)),
+            exp: now_secs() + COOKIE_TTL.as_secs(),
+        },
+    )?;
+    Ok(set_cookie(cfg, PWD_COOKIE, &token, COOKIE_TTL))
+}
+
+/// The password fingerprint proven by a valid, unexpired pwd grant for `event`, if any. The
+/// caller compares it against the event's current password so a rotated password re-locks.
+pub fn pwd_grant_fingerprint(cfg: &AuthConfig, headers: &HeaderMap, event: &str) -> Option<String> {
+    let claims = read_cookie(headers, PWD_COOKIE).and_then(|token| decode_token(cfg, token))?;
+
+    (claims.sub == PWD_KIND && claims.event.as_deref() == Some(event)).then_some(claims.pfp)?
 }
 
 /// Read a single cookie value out of the `Cookie` request header.
@@ -176,39 +221,17 @@ where
     }
 }
 
-/// Builds the pwd-session layer (still Redis-backed) and the stateless JWT config.
-pub fn setup(
-    secret: Vec<u8>,
-    session_store: RedisSessionStore,
-    is_prod: bool,
-) -> (SessionLayer<RedisSessionStore>, AuthConfig) {
-    let same_site_policy = if is_prod {
-        SameSite::Strict
-    } else {
-        SameSite::None
-    };
-    let session_layer = SessionLayer::new(session_store, &secret)
-        .with_cookie_name("sid")
-        .with_persistence_policy(PersistencePolicy::ExistingOnly)
-        .with_same_site_policy(same_site_policy)
-        .with_session_ttl(Some(COOKIE_TTL));
-
-    (session_layer, AuthConfig::new(secret, is_prod))
+/// Stateless JWT config shared into the router as a request extension.
+pub fn setup(secret: Vec<u8>, is_prod: bool) -> AuthConfig {
+    AuthConfig::new(secret, is_prod)
 }
 
 #[cfg(test)]
-pub fn setup_test() -> (
-    SessionLayer<axum_sessions::async_session::MemoryStore>,
-    AuthConfig,
-) {
-    let secret = b"0123456789012345678901234567890123456789012345678901234567890123".to_vec();
-    let session_store = axum_sessions::async_session::MemoryStore::new();
-    let session_layer = SessionLayer::new(session_store, &secret)
-        .with_cookie_name("sid")
-        .with_persistence_policy(PersistencePolicy::ExistingOnly)
-        .with_session_ttl(Some(COOKIE_TTL));
-
-    (session_layer, AuthConfig::new(secret, false))
+pub fn setup_test() -> AuthConfig {
+    AuthConfig::new(
+        b"0123456789012345678901234567890123456789012345678901234567890123".to_vec(),
+        false,
+    )
 }
 
 #[cfg(test)]
@@ -258,7 +281,9 @@ mod test {
         let token = sign(
             &cfg,
             &Claims {
-                sub: "pwd".to_string(),
+                sub: PWD_KIND.to_string(),
+                event: Some("EVENT".to_string()),
+                pfp: Some(pwd_fingerprint("secret")),
                 exp: now_secs() + 60,
             },
         );
@@ -272,6 +297,8 @@ mod test {
             &cfg,
             &Claims {
                 sub: ADMIN_NAME.to_string(),
+                event: None,
+                pfp: None,
                 exp: now_secs().saturating_sub(3600),
             },
         );
@@ -287,5 +314,46 @@ mod test {
         );
         assert_eq!(read_cookie(&headers, AUTH_COOKIE), Some("the-token"));
         assert_eq!(read_cookie(&headers, "missing"), None);
+    }
+
+    /// wraps the token from a `Set-Cookie` into a `Cookie` request header for verification.
+    fn headers_with(cookie: &str) -> HeaderMap {
+        let pair = cookie.split(';').next().unwrap();
+        let mut headers = HeaderMap::new();
+        headers.insert(header::COOKIE, pair.parse().unwrap());
+        headers
+    }
+
+    #[test]
+    fn pwd_grant_is_event_scoped_and_carries_fingerprint() {
+        let cfg = cfg();
+        let headers = headers_with(&pwd_grant_cookie(&cfg, "EVENT_A", "secret").unwrap());
+        // a valid grant returns the fingerprint of the proven password for its own event ...
+        assert_eq!(
+            pwd_grant_fingerprint(&cfg, &headers, "EVENT_A"),
+            Some(pwd_fingerprint("secret"))
+        );
+        // ... and nothing for a different event
+        assert_eq!(pwd_grant_fingerprint(&cfg, &headers, "EVENT_B"), None);
+    }
+
+    #[test]
+    fn admin_token_is_not_accepted_as_pwd_grant() {
+        let cfg = cfg();
+        let headers = headers_with(&format!("pwd={}", issue_admin_token(&cfg).unwrap()));
+        assert_eq!(pwd_grant_fingerprint(&cfg, &headers, "EVENT_A"), None);
+    }
+
+    #[test]
+    fn pwd_grant_is_not_accepted_as_admin() {
+        let cfg = cfg();
+        let cookie = pwd_grant_cookie(&cfg, "EVENT_A", "secret").unwrap();
+        let token = cookie
+            .split(';')
+            .next()
+            .and_then(|p| p.split_once('='))
+            .unwrap()
+            .1;
+        assert!(verify_admin(&cfg, token).is_none());
     }
 }
