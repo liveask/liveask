@@ -5,8 +5,8 @@ use std::str::FromStr;
 use stripe::{
     BillingPortalSession, CheckoutSession, CheckoutSessionId, CheckoutSessionMode,
     CheckoutSessionStatus, Client, CreateBillingPortalSession, CreateCheckoutSession,
-    CreateCheckoutSessionLineItems, Customer, CustomerId, ListCustomers, ListProducts,
-    ListSubscriptions, Subscription, SubscriptionStatus,
+    CreateCheckoutSessionLineItems, CreateCheckoutSessionPaymentIntentData, Customer, CustomerId,
+    ListCustomers, ListProducts, ListSubscriptions, Subscription, SubscriptionStatus,
 };
 use tracing::instrument;
 
@@ -305,14 +305,18 @@ impl Payment {
             params.success_url = Some(return_url);
             params.client_reference_id = Some(event);
             params.allow_promotion_codes = Some(true);
-            params.metadata = Some(
-                vec![
-                    (String::from("event"), event.to_string()),
-                    (String::from("url"), mod_url.to_string()),
-                ]
-                .into_iter()
-                .collect(),
-            );
+            params.payment_intent_data = Some(CreateCheckoutSessionPaymentIntentData {
+                description: Some(format!("Premium Event: {mod_url}")),
+                metadata: Some(
+                    vec![
+                        (String::from("event"), event.to_string()),
+                        (String::from("mod"), mod_url.to_string()),
+                    ]
+                    .into_iter()
+                    .collect(),
+                ),
+                ..Default::default()
+            });
             params.mode = Some(CheckoutSessionMode::Payment);
             params.line_items = Some(vec![CreateCheckoutSessionLineItems {
                 quantity: Some(1),
