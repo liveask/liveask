@@ -371,6 +371,33 @@ async fn premium_upgrade(
     res.json().await.unwrap()
 }
 
+/// GET a single question via the public route, returning only the status code.
+async fn public_get_question_status(event: &str, question_id: i64) -> StatusCode {
+    reqwest::get(format!(
+        "{}/api/event/question/{}/{}",
+        server_rest(),
+        event,
+        question_id
+    ))
+    .await
+    .unwrap()
+    .status()
+}
+
+/// GET a single question via the moderator route, returning only the status code.
+async fn mod_get_question_status(event: &str, secret: &str, question_id: i64) -> StatusCode {
+    reqwest::get(format!(
+        "{}/api/mod/event/question/{}/{}/{}",
+        server_rest(),
+        event,
+        secret,
+        question_id
+    ))
+    .await
+    .unwrap()
+    .status()
+}
+
 /// POST an editlike returning only the status code — for state-gate error cases.
 async fn edit_like_status(event: &str, question_id: i64, like: bool) -> StatusCode {
     reqwest::Client::new()
@@ -887,6 +914,48 @@ mod test {
         // ... but liking is still allowed
         let liked = like_question(public, q.id, true).await;
         assert_eq!(liked.likes, q.likes + 1);
+    }
+
+    #[tokio::test]
+    #[tracing_test::traced_test]
+    async fn test_mod_get_question_access_control() {
+        let e = add_event(TEST_EVENT_NAME.to_string()).await;
+        let secret = e.tokens.moderator_token.clone().unwrap();
+        let public = e.tokens.public_token.clone();
+        let q = add_question(public.clone()).await;
+
+        // hide the question — now only a moderator may fetch it
+        assert_eq!(
+            mod_question(
+                &public,
+                &secret,
+                q.id,
+                shared::ModQuestion {
+                    hide: true,
+                    answered: false,
+                    screened: false,
+                },
+            )
+            .await,
+            StatusCode::OK
+        );
+
+        // the correct moderator secret can fetch the hidden question
+        let fetched = get_mod_question(&public, &secret, q.id).await;
+        assert_eq!(fetched.id, q.id);
+        assert!(fetched.hidden);
+
+        // a wrong secret must NOT leak the hidden question — it is rejected
+        assert_eq!(
+            mod_get_question_status(&public, "definitely-not-the-secret", q.id).await,
+            StatusCode::BAD_REQUEST
+        );
+
+        // the public route cannot see the hidden question either
+        assert_eq!(
+            public_get_question_status(&public, q.id).await,
+            StatusCode::INTERNAL_SERVER_ERROR
+        );
     }
 
     // ---- premium (free-event rejection is un-gated; the allow-side needs admin below) -----

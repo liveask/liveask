@@ -365,12 +365,19 @@ impl App {
             return Err(InternalError::AccessingDeletedEvent(id));
         }
 
-        let is_mod = e
-            .tokens
-            .moderator_token
-            .clone()
-            .zip(secret.clone())
-            .is_some_and(|tokens| tokens.0 != tokens.1);
+        // A provided-but-wrong moderator token is rejected (matches get_event / delete_event);
+        // only a correct secret counts as a moderator and may see hidden/screening questions.
+        if let Some(secret) = &secret {
+            if e.tokens
+                .moderator_token
+                .as_ref()
+                .is_some_and(|mod_token| mod_token != secret)
+            {
+                return Err(InternalError::WrongModeratorToken(id));
+            }
+        }
+
+        let is_mod = secret.is_some();
 
         let q = e
             .questions
