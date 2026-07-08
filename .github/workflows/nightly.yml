@@ -14,7 +14,7 @@ jobs:
   # check_udeps:
   #   runs-on: ubuntu-latest
   #   steps:
-  #     - uses: actions/checkout@v4
+  #     - uses: actions/checkout@v5
   #     - uses: ./.github/actions/check_udeps
 
   check_backend:
@@ -25,7 +25,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     continue-on-error: ${{ matrix.rust == 'nightly' }} # nightly is ok to fail
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: ./.github/actions/check_be
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
@@ -40,7 +40,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     continue-on-error: ${{ matrix.rust == 'nightly' }} # nightly is ok to fail
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: ./.github/actions/check_fe
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}

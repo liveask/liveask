@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: prod
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Login to Docker Hub
         run: |
           docker login \
@@ -34,7 +34,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: prod
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Restore cargo cache
         uses: Swatinem/rust-cache@v2
       - name: Install Rust
