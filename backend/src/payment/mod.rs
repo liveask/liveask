@@ -4,10 +4,10 @@ use futures_util::TryStreamExt;
 use std::str::FromStr;
 use stripe::{
     BillingPortalSession, CheckoutSession, CheckoutSessionId, CheckoutSessionMode,
-    CheckoutSessionStatus, Client, CreateBillingPortalSession, CreateCheckoutSession,
-    CreateCheckoutSessionLineItems, CreateCheckoutSessionPaymentIntentData, Customer, CustomerId,
-    ListCustomers, ListPaymentLinks, ListProducts, ListSubscriptions, PaymentLink, Subscription,
-    SubscriptionStatus,
+    CheckoutSessionPaymentStatus, CheckoutSessionStatus, Client, CreateBillingPortalSession,
+    CreateCheckoutSession, CreateCheckoutSessionLineItems, CreateCheckoutSessionPaymentIntentData,
+    Customer, CustomerId, ListCustomers, ListPaymentLinks, ListProducts, ListSubscriptions,
+    PaymentLink, Subscription, SubscriptionStatus,
 };
 use tracing::instrument;
 
@@ -334,9 +334,16 @@ impl Payment {
         let sess = CheckoutSession::retrieve(&self.client, &sess, &[]).await?;
 
         let event = sess.client_reference_id.unwrap_or_default();
+        // require both a completed session AND cleared payment; a completed session can
+        // still be `Unpaid` for async payment methods, which must not capture as premium
         let completed = sess
             .status
-            .is_some_and(|status| status == CheckoutSessionStatus::Complete);
+            .is_some_and(|status| status == CheckoutSessionStatus::Complete)
+            && matches!(
+                sess.payment_status,
+                CheckoutSessionPaymentStatus::Paid
+                    | CheckoutSessionPaymentStatus::NoPaymentRequired
+            );
 
         Ok((event, completed))
     }
