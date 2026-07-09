@@ -4,7 +4,7 @@ use axum::{
     response::{Html, IntoResponse, Response},
 };
 use reqwest::StatusCode;
-use stripe::{Event, EventObject, EventType};
+use stripe::{CheckoutSessionPaymentStatus, Event, EventObject, EventType};
 
 use crate::{app::SharedApp, env, error::InternalError};
 
@@ -33,6 +33,13 @@ where
         //TODO: do not read env everytime
         let secret = std::env::var(env::ENV_STRIPE_HOOK_SECRET).unwrap_or_default();
 
+        // Fail closed: an empty signing secret makes the webhook HMAC publicly computable,
+        // so anyone could forge a paid checkout. Never verify against an empty key.
+        if secret.is_empty() {
+            tracing::error!("stripe webhook secret not configured; rejecting webhook");
+            return Err(StatusCode::INTERNAL_SERVER_ERROR.into_response());
+        }
+
         Ok(Self(
             stripe::Webhook::construct_event(
                 &payload,
@@ -53,12 +60,29 @@ pub async fn handle_webhook(
     match event.type_ {
         EventType::CheckoutSessionCompleted => {
             if let EventObject::CheckoutSession(session) = event.data.object {
-                tracing::info!("[hooks] CheckoutSessionCompleted: {:?}", session.id);
+                tracing::info!(
+                    "[hooks] CheckoutSessionCompleted: {:?} (payment_status: {:?})",
+                    session.id,
+                    session.payment_status
+                );
 
-                if let Some(event) = session.client_reference_id {
-                    if let Err(e) = app.payment_webhook(session.id.to_string(), event).await {
-                        tracing::error!("[hooks] failed: {e}");
+                // a completed session can still be `Unpaid` for async/delayed payment
+                // methods; only fulfil once Stripe reports the money actually cleared
+                if matches!(
+                    session.payment_status,
+                    CheckoutSessionPaymentStatus::Paid
+                        | CheckoutSessionPaymentStatus::NoPaymentRequired
+                ) {
+                    if let Some(event) = session.client_reference_id {
+                        // propagate so a transient failure returns 5xx and Stripe retries,
+                        // instead of silently dropping an upgrade the customer paid for
+                        app.payment_webhook(session.id.to_string(), event).await?;
                     }
+                } else {
+                    tracing::warn!(
+                        "[hooks] checkout completed but not paid ({:?}); skipping upgrade",
+                        session.payment_status
+                    );
                 }
             }
         }

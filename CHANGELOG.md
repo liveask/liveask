@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Changed
+* stripe webhook hardening [#118](https://github.com/liveask/liveask/pull/118)
+
 ## [2.15.0] - 2026-07-08
 
 ### Changed

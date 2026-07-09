@@ -4,10 +4,10 @@ use futures_util::TryStreamExt;
 use std::str::FromStr;
 use stripe::{
     BillingPortalSession, CheckoutSession, CheckoutSessionId, CheckoutSessionMode,
-    CheckoutSessionStatus, Client, CreateBillingPortalSession, CreateCheckoutSession,
-    CreateCheckoutSessionLineItems, CreateCheckoutSessionPaymentIntentData, Customer, CustomerId,
-    ListCustomers, ListPaymentLinks, ListProducts, ListSubscriptions, PaymentLink, Subscription,
-    SubscriptionStatus,
+    CheckoutSessionPaymentStatus, CheckoutSessionStatus, Client, CreateBillingPortalSession,
+    CreateCheckoutSession, CreateCheckoutSessionLineItems, CreateCheckoutSessionPaymentIntentData,
+    Customer, CustomerId, ListCustomers, ListPaymentLinks, ListProducts, ListSubscriptions,
+    PaymentLink, Subscription, SubscriptionStatus,
 };
 use tracing::instrument;
 
@@ -333,19 +333,43 @@ impl Payment {
 
         let sess = CheckoutSession::retrieve(&self.client, &sess, &[]).await?;
 
+        let completed = Self::checkout_is_paid(&sess);
         let event = sess.client_reference_id.unwrap_or_default();
-        let completed = sess
-            .status
-            .is_some_and(|status| status == CheckoutSessionStatus::Complete);
 
         Ok((event, completed))
+    }
+
+    // require both a completed session AND cleared payment; a completed session can
+    // still be `Unpaid` for async payment methods, which must not capture as premium
+    fn checkout_is_paid(sess: &CheckoutSession) -> bool {
+        sess.status
+            .is_some_and(|status| status == CheckoutSessionStatus::Complete)
+            && matches!(
+                sess.payment_status,
+                CheckoutSessionPaymentStatus::Paid
+                    | CheckoutSessionPaymentStatus::NoPaymentRequired
+            )
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::Payment;
-    use stripe::{CheckoutSession, PaymentPagesCheckoutSessionCustomerDetails};
+    use stripe::{
+        CheckoutSession, CheckoutSessionPaymentStatus, CheckoutSessionStatus,
+        PaymentPagesCheckoutSessionCustomerDetails,
+    };
+
+    fn session(
+        status: Option<CheckoutSessionStatus>,
+        payment_status: CheckoutSessionPaymentStatus,
+    ) -> CheckoutSession {
+        CheckoutSession {
+            status,
+            payment_status,
+            ..Default::default()
+        }
+    }
 
     #[test]
     fn checkout_email_prefers_customer_details() {
@@ -375,5 +399,40 @@ mod tests {
             Payment::checkout_email(&session),
             Some("fallback@example.com")
         );
+    }
+
+    #[test]
+    fn checkout_is_paid_requires_complete_and_cleared() {
+        assert!(Payment::checkout_is_paid(&session(
+            Some(CheckoutSessionStatus::Complete),
+            CheckoutSessionPaymentStatus::Paid,
+        )));
+        // free upgrades legitimately need no payment
+        assert!(Payment::checkout_is_paid(&session(
+            Some(CheckoutSessionStatus::Complete),
+            CheckoutSessionPaymentStatus::NoPaymentRequired,
+        )));
+    }
+
+    #[test]
+    fn checkout_is_paid_rejects_completed_but_unpaid() {
+        // the regression this branch guards: async payment methods can complete a
+        // session while the money is still `Unpaid` — must not capture as premium
+        assert!(!Payment::checkout_is_paid(&session(
+            Some(CheckoutSessionStatus::Complete),
+            CheckoutSessionPaymentStatus::Unpaid,
+        )));
+    }
+
+    #[test]
+    fn checkout_is_paid_rejects_incomplete_session() {
+        assert!(!Payment::checkout_is_paid(&session(
+            None,
+            CheckoutSessionPaymentStatus::Paid,
+        )));
+        assert!(!Payment::checkout_is_paid(&session(
+            Some(CheckoutSessionStatus::Open),
+            CheckoutSessionPaymentStatus::Paid,
+        )));
     }
 }
