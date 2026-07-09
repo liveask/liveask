@@ -118,6 +118,10 @@ jobs:
           RUST_LOG: warn,liveask_server=info
           URL: http://localhost:8090
           SOCKET_URL: ws://localhost:8090
+          # test-only value so the webhook signature-verification path is actually
+          # exercised (test_stripe_webhook_bad_signature_rejected). The server now fails
+          # closed when this is empty, which would otherwise 500 before the signature check.
+          LA_STRIPE_HOOK_SECRET: whsec_e2e_test_secret_do_not_use
         run: |
           ./target/debug/liveask-server > server.log 2>&1 &
           trap 'kill $! 2>/dev/null || true' EXIT
