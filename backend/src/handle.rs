@@ -40,7 +40,9 @@ pub async fn editlike_handler(
     Ok(Json(app.edit_like(id, payload).await?))
 }
 
-#[instrument(skip(app))]
+// skip(payload): AddEvent carries the moderator's email (PII); #[instrument] would
+// otherwise record it as a span field and ship it to logs/Sentry
+#[instrument(skip(app, payload))]
 pub async fn addevent_handler(
     State(app): State<SharedApp>,
     Json(payload): Json<shared::AddEvent>,
@@ -78,7 +80,9 @@ pub async fn getevent_handler(
     ))
 }
 
-#[instrument(skip(app, cfg))]
+// skip(payload): the request carries the cleartext event password; #[instrument] would
+// otherwise record it as a span field and ship it to logs/Sentry (cf. login_handler)
+#[instrument(skip(app, cfg, payload))]
 pub async fn set_event_password(
     Path(id): Path<String>,
     Extension(cfg): Extension<AuthConfig>,
@@ -198,7 +202,9 @@ pub async fn mod_edit_event(
     Ok(Json(app.mod_edit_event(id, secret, payload).await?))
 }
 
-#[instrument(skip(app))]
+// skip(payload): SubscriptionCheckout can carry the customer's email (PII); keep it off
+// the span so it never reaches logs/Sentry
+#[instrument(skip(app, payload))]
 pub async fn subscription_handler(
     State(app): State<SharedApp>,
     Json(payload): Json<shared::SubscriptionCheckout>,
