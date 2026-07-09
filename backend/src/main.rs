@@ -88,7 +88,14 @@ fn is_prod() -> bool {
 }
 
 fn use_relaxed_cors() -> bool {
-    std::env::var(env::ENV_RELAX_CORS).is_ok_and(|var| var == "1")
+    let relaxed = std::env::var(env::ENV_RELAX_CORS).is_ok_and(|var| var == "1");
+    // relaxed CORS mirrors any origin AND allows credentials; never permit that in prod,
+    // regardless of RELAX_CORS, so a stray env var cannot open production up
+    if relaxed && is_prod() {
+        tracing::warn!("RELAX_CORS is ignored in production");
+        return false;
+    }
+    relaxed
 }
 
 fn get_port() -> u16 {
