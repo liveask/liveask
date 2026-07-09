@@ -59,7 +59,7 @@ impl Component for EventContext {
 impl EventContext {
     fn view_item(item: &ContextItem) -> Html {
         html! {
-            <a class="item" href={item.url.clone()} target="_blank">
+            <a class="item" href={item.url.clone()} target="_blank" rel="noopener noreferrer">
                 <img src="assets/context.svg" />
                 <div class="label">{ item.label.clone() }</div>
             </a>
