@@ -9,6 +9,9 @@ pub enum ContextLabelError {
 #[derive(Debug)]
 pub enum ContextUrlError {
     Invalid(url::ParseError),
+    /// scheme other than http/https (e.g. `javascript:`, `data:`) — refused because the
+    /// url is rendered as a clickable link for every event viewer.
+    DisallowedScheme,
 }
 
 const LABEL_TRIMMED_MIN_LEN: usize = 4;
@@ -47,7 +50,40 @@ impl ContextValidation {
     fn check_url(v: &str) -> ValidationState<ContextUrlError> {
         match url::Url::parse(v) {
             Err(e) => ValidationState::Invalid(ContextUrlError::Invalid(e)),
+            // only http(s) may be stored: the url becomes a clickable href for every event
+            // viewer, so `javascript:`/`data:`/etc. would be a stored-XSS vector
+            Ok(url) if !matches!(url.scheme(), "http" | "https") => {
+                ValidationState::Invalid(ContextUrlError::DisallowedScheme)
+            }
             Ok(_) => ValidationState::Valid,
         }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    fn valid(v: &str) -> bool {
+        ContextValidation::check_url(v).is_valid()
+    }
+
+    #[test]
+    fn accepts_http_and_https() {
+        assert!(valid("https://example.com"));
+        assert!(valid("http://example.com/path?q=1"));
+    }
+
+    #[test]
+    fn rejects_dangerous_schemes() {
+        assert!(!valid("javascript:alert(1)"));
+        assert!(!valid("data:text/html,<script>alert(1)</script>"));
+        assert!(!valid("vbscript:msgbox(1)"));
+        assert!(!valid("file:///etc/passwd"));
+    }
+
+    #[test]
+    fn rejects_unparseable() {
+        assert!(!valid("not a url"));
     }
 }

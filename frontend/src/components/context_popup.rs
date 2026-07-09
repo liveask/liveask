@@ -245,6 +245,9 @@ impl ContextPopup {
             ValidationState::Invalid(ContextUrlError::Invalid(_)) => {
                 Some("Invalid URL".to_string())
             }
+            ValidationState::Invalid(ContextUrlError::DisallowedScheme) => {
+                Some("Only http/https links are allowed".to_string())
+            }
             _ => None,
         }
     }
