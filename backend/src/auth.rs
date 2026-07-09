@@ -29,14 +29,15 @@ const COOKIE_TTL: Duration = Duration::from_secs(2 * 60 * 60);
 #[derive(Clone)]
 pub struct AuthConfig {
     secret: Arc<[u8]>,
-    prod: bool,
+    /// harden cookies (SameSite=Strict) — true on every public deployment, not just prod.
+    secure: bool,
 }
 
 impl AuthConfig {
-    fn new(secret: Vec<u8>, prod: bool) -> Self {
+    fn new(secret: Vec<u8>, secure: bool) -> Self {
         Self {
             secret: secret.into(),
-            prod,
+            secure,
         }
     }
 }
@@ -145,7 +146,7 @@ fn read_cookie<'a>(headers: &'a HeaderMap, name: &str) -> Option<&'a str> {
 
 /// `Set-Cookie` value for `name`, expiring in `max_age` (zero clears it).
 fn set_cookie(cfg: &AuthConfig, name: &str, value: &str, max_age: Duration) -> String {
-    let same_site = if cfg.prod { "Strict" } else { "None" };
+    let same_site = if cfg.secure { "Strict" } else { "None" };
     format!(
         "{name}={value}; HttpOnly; Path=/; Max-Age={}; SameSite={same_site}; Secure",
         max_age.as_secs()
@@ -221,9 +222,10 @@ where
     }
 }
 
-/// Stateless JWT config shared into the router as a request extension.
-pub fn setup(secret: Vec<u8>, is_prod: bool) -> AuthConfig {
-    AuthConfig::new(secret, is_prod)
+/// Stateless JWT config shared into the router as a request extension. `secure` hardens
+/// cookies (SameSite=Strict) and is set for every public (non-local) deployment.
+pub fn setup(secret: Vec<u8>, secure: bool) -> AuthConfig {
+    AuthConfig::new(secret, secure)
 }
 
 #[cfg(test)]

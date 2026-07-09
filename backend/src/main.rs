@@ -87,6 +87,12 @@ fn is_prod() -> bool {
     production_env() == "prod"
 }
 
+/// Whether we run the local dev/test environment. Any other `LIVEASK_ENV` (prod, beta, ...)
+/// is a publicly reachable deployment that must be hardened.
+fn is_local() -> bool {
+    production_env() == "local"
+}
+
 fn use_relaxed_cors() -> bool {
     let relaxed = std::env::var(env::ENV_RELAX_CORS).is_ok_and(|var| var == "1");
     // relaxed CORS mirrors any origin AND allows credentials; never permit that in prod,
@@ -274,12 +280,15 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
         .ok_or_else(|| error::InternalError::General(String::from("invalid session secret")))?;
 
     // auth is now a stateless JWT: knowing the signing key is enough to forge an admin token,
-    // so refuse to start in prod with the public dev fallback.
-    if is_prod() && env::is_default_session_secret(&secret) {
-        return Err("LA_SESSION_SECRET must be set to a non-default value in production".into());
+    // so refuse to start on any public (non-local) env with the well-known dev fallback.
+    if !is_local() && env::is_default_session_secret(&secret) {
+        return Err(
+            "LA_SESSION_SECRET must be set to a non-default value outside local dev".into(),
+        );
     }
 
-    let auth_config = auth::setup(secret, is_prod());
+    // harden cookies (SameSite=Strict) on every public env, not just prod
+    let auth_config = auth::setup(secret, !is_local());
 
     let admin_routes = Router::new()
         .route("/user", get(admin_user_handler))
