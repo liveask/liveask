@@ -22,6 +22,12 @@ pub fn admin_pwd_hash() -> String {
 /// anyone who reads the repo could otherwise forge an admin token (see [`is_default_session_secret`]).
 const DEFAULT_DEV_SECRET: &str = "0123456789012345678901234567890123456789012345678901234567890123";
 
+/// JWT signing key from `LA_SESSION_SECRET`. The raw string bytes are the HMAC key (no
+/// base64/hex decoding), so any high-entropy string works — e.g. `openssl rand -hex 64`.
+/// Must be **at least 64 bytes**; shorter yields `None` and the server refuses to start.
+///
+/// Unset falls back to the insecure [`DEFAULT_DEV_SECRET`], which [`is_default_session_secret`]
+/// rejects on any non-local env — so beta/prod must set a real value.
 pub fn session_secret() -> Option<Vec<u8>> {
     let vec: Vec<_> = std::env::var(ENV_SESSION_SECRET)
         .unwrap_or_else(|_| String::from(DEFAULT_DEV_SECRET))
