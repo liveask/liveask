@@ -319,7 +319,6 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let router = Router::new()
         .route("/api/ping", get(handle::ping_handler))
         .route("/api/version", get(handle::version_handler))
-        .route("/api/error", get(handle::error_handler))
         .route("/api/payment/stripe/webhook", post(stripe_webhooks::handle_webhook))
         .route("/push/:id", get(push_handler))
         .route("/api/subscription", post(subscription_handler))
