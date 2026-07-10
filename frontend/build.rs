@@ -74,7 +74,7 @@ fn process_html_template(git_hash: &str) {
 
     let content = hb.render("template", &data).unwrap();
 
-    if file_content_changed(INDEX_FILE, &content) {
+    if should_write_file(INDEX_FILE, &content) {
         use std::io::Write;
 
         let mut output_file = fs::File::create(INDEX_FILE).unwrap();
@@ -83,8 +83,10 @@ fn process_html_template(git_hash: &str) {
     }
 }
 
-fn file_content_changed(path: &str, content: &str) -> bool {
-    read_to_string(path).is_ok_and(|current_content| content != current_content)
+// index.html is a generated, git-ignored artifact: (re)write it when absent (fresh checkout)
+// or when the rendered content changed.
+fn should_write_file(path: &str, content: &str) -> bool {
+    read_to_string(path).map_or(true, |current_content| content != current_content)
 }
 
 // build.rs main func
