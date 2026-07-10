@@ -287,11 +287,8 @@ impl App {
         let mut e = self.eventsdb.get(&id).await?.event;
 
         if let Some(secret) = &secret {
-            if e.tokens
-                .moderator_token
-                .as_ref()
-                .is_some_and(|mod_token| mod_token != secret)
-            {
+            // fail closed: a provided secret must match a present token (a `None` token rejects).
+            if e.tokens.moderator_token.as_deref() != Some(secret.as_str()) {
                 return Err(InternalError::WrongModeratorToken(id));
             }
         }
@@ -374,11 +371,8 @@ impl App {
         // A provided-but-wrong moderator token is rejected (matches get_event / delete_event);
         // only a correct secret counts as a moderator and may see hidden/screening questions.
         if let Some(secret) = &secret {
-            if e.tokens
-                .moderator_token
-                .as_ref()
-                .is_some_and(|mod_token| mod_token != secret)
-            {
+            // fail closed: a provided secret must match a present token (a `None` token rejects).
+            if e.tokens.moderator_token.as_deref() != Some(secret.as_str()) {
                 return Err(InternalError::WrongModeratorToken(id));
             }
         }
@@ -420,11 +414,8 @@ impl App {
                 return Err(InternalError::TimedOutFreeEvent(id));
             }
 
-            if e.tokens
-                .moderator_token
-                .as_ref()
-                .is_some_and(|mod_token| mod_token != &secret)
-            {
+            // fail closed: reject unless a present token equals the secret (a `None` token rejects).
+            if e.tokens.moderator_token.as_deref() != Some(secret.as_str()) {
                 return Err(InternalError::WrongModeratorToken(id));
             }
 
@@ -476,11 +467,8 @@ impl App {
             return Err(InternalError::TimedOutFreeEvent(id));
         }
 
-        if e.tokens
-            .moderator_token
-            .as_ref()
-            .is_some_and(|mod_token| mod_token != &secret)
-        {
+        // fail closed: reject unless a present token equals the secret (a `None` token rejects).
+        if e.tokens.moderator_token.as_deref() != Some(secret.as_str()) {
             return Err(InternalError::WrongModeratorToken(id));
         }
 
@@ -566,11 +554,8 @@ impl App {
 
         let e = &mut entry.event;
 
-        if e.tokens
-            .moderator_token
-            .as_ref()
-            .is_some_and(|mod_token| mod_token != &secret)
-        {
+        // fail closed: reject unless a present token equals the secret (a `None` token rejects).
+        if e.tokens.moderator_token.as_deref() != Some(secret.as_str()) {
             return Err(InternalError::WrongModeratorToken(id));
         }
 
@@ -610,11 +595,8 @@ impl App {
             }
             EventUpgradeResponse::AdminUpgrade
         } else {
-            if e.tokens
-                .moderator_token
-                .as_ref()
-                .is_some_and(|mod_token| mod_token != &secret)
-            {
+            // fail closed: reject unless a present token equals the secret (a `None` token rejects).
+            if e.tokens.moderator_token.as_deref() != Some(secret.as_str()) {
                 return Err(InternalError::WrongModeratorToken(id));
             }
 
@@ -1218,6 +1200,54 @@ mod test {
             .await;
 
         assert!(res.is_err());
+    }
+
+    #[tokio::test]
+    #[tracing_test::traced_test]
+    async fn test_mod_auth_fails_closed_on_missing_token() {
+        // Regression: a moderator guard must reject a provided secret when the stored
+        // moderator_token is None, instead of silently treating the caller as a mod.
+        let events = Arc::new(InMemoryEventsDB::default());
+        let app = App::new(
+            events.clone(),
+            Arc::new(PubSubInMemory::default()),
+            Arc::new(MockViewers::new()),
+            Arc::new(Payment::default()),
+            Tracking::default(),
+            String::new(),
+        );
+
+        let res = app
+            .create_event(AddEvent {
+                data: EventData {
+                    name: TEST_EVENT_NAME.to_string(),
+                    description: TEST_EVENT_DESC.to_string(),
+                    ..EventData::default()
+                },
+                moderator_email: None,
+                test: false,
+                customer: None,
+            })
+            .await
+            .unwrap();
+
+        let id = res.tokens.public_token.clone();
+        let secret = res.tokens.moderator_token.clone().unwrap();
+
+        // Simulate a stored event that has no moderator token.
+        events
+            .db
+            .lock()
+            .await
+            .get_mut(&event_key(&id))
+            .unwrap()
+            .event
+            .tokens
+            .moderator_token = None;
+
+        // The previously-valid secret must now be rejected, not accepted.
+        let err = app.delete_event(id, secret).await.unwrap_err();
+        assert!(matches!(err, InternalError::WrongModeratorToken(_)));
     }
 
     #[tokio::test]
