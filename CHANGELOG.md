@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * hardening context url [#119](https://github.com/liveask/liveask/pull/119)
 * keep passwords and PII out of tracing spans [#120](https://github.com/liveask/liveask/pull/120)
 * refuse relaxed CORS in production [#121](https://github.com/liveask/liveask/pull/121)
+* limit event desc length [#126](https://github.com/liveask/liveask/pull/126)
 
 ## [2.15.0] - 2026-07-08
 
