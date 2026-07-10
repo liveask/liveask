@@ -1,6 +1,6 @@
 [package]
 name = "frontend"
-version = "2.16.0"
+version = "2.16.1"
 edition = "2024"
 rust-version = "1.92"
 build = "build.rs"

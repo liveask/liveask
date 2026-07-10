@@ -22,7 +22,7 @@ use aws_config::BehaviorVersion;
 use aws_sdk_dynamodb::config::Credentials;
 use axum::{
     Extension, Router,
-    http::header,
+    http::{HeaderValue, Method, header},
     routing::{get, post},
 };
 use sentry::integrations::{
@@ -70,8 +70,25 @@ fn setup_cors() -> CorsLayer {
         tracing::info!("cors setup: very_permissive");
         CorsLayer::very_permissive().allow_credentials(true)
     } else {
-        tracing::info!("cors setup: default");
-        CorsLayer::new()
+        // The frontend is served from a different origin than the API
+        // (e.g. www.live-ask.com -> prod.www.live-ask.com) and requests carry auth/pwd cookies,
+        // so we must allow the site origin explicitly with credentials -- a wildcard origin is
+        // invalid for credentialed requests, and CorsLayer::new() would send no CORS headers at all.
+        let origin = base_url();
+        match origin.parse::<HeaderValue>() {
+            Ok(origin) => {
+                tracing::info!(?origin, "cors setup: allow site origin");
+                CorsLayer::new()
+                    .allow_origin(origin)
+                    .allow_credentials(true)
+                    .allow_methods([Method::GET, Method::POST])
+                    .allow_headers([header::CONTENT_TYPE])
+            }
+            Err(e) => {
+                tracing::error!(error = %e, %origin, "invalid BASE_URL for CORS origin");
+                CorsLayer::new()
+            }
+        }
     }
 }
 
