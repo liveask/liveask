@@ -79,18 +79,15 @@ impl Component for EventSocket {
             }
             Msg::Disconnected => {
                 // log::info!("<EventSocket> update:disconnected");
-                let do_reconnect = self.connected;
-
                 self.disconnect();
 
-                if do_reconnect {
-                    let duration = self.set_reconnect();
-                    self.emit(SocketResponse::Disconnected {
-                        reconnect: Some(duration),
-                    });
-                } else {
-                    self.emit(SocketResponse::Disconnected { reconnect: None });
-                }
+                // Always re-arm reconnect, even if the first connect never succeeded
+                // (cold start while the backend is briefly down). On teardown, destroy()
+                // drops the reconnect interval with the component, so this can't leak.
+                let duration = self.set_reconnect();
+                self.emit(SocketResponse::Disconnected {
+                    reconnect: Some(duration),
+                });
             }
             Msg::Reconnect => {
                 if self.reconnect_interval.is_some() && !self.connected {

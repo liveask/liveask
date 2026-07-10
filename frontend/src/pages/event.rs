@@ -998,6 +998,22 @@ impl Event {
                     timeout_secs: None,
                 });
 
+                // A real connection means the backend is reachable again: if the initial
+                // fetch failed (or never completed) while it was down, retry it now so the
+                // page recovers instead of being stuck on "event not found".
+                if matches!(msg, SocketResponse::Connected)
+                    && matches!(
+                        self.loading_state,
+                        LoadingState::Loading | LoadingState::NotFound
+                    )
+                {
+                    request_fetch(
+                        self.current_event_id.clone(),
+                        ctx.props().secret.clone(),
+                        ctx.link(),
+                    );
+                }
+
                 false
             }
             SocketResponse::Disconnected { reconnect } => {
