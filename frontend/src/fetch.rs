@@ -170,8 +170,13 @@ pub async fn mod_question(
 
     let request = Request::post(&url).body(body)?;
     set_content_type_json(&request);
-    let _ = request.send().await?;
-    Ok(())
+    let resp = request.send().await?;
+
+    if resp.ok() {
+        Ok(())
+    } else {
+        Err(FetchError::Generic("request failed".into()))
+    }
 }
 
 pub async fn add_question(
