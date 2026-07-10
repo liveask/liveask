@@ -17,7 +17,7 @@ use std::{
 use tokio::{
     sync::{RwLock, mpsc},
     task,
-    time::sleep,
+    time::{sleep, timeout},
 };
 use tracing::instrument;
 use ulid::Ulid;
@@ -108,21 +108,49 @@ impl App {
 
         self.shutdown.store(true, Ordering::Relaxed);
 
-        loop {
-            let count = self.channels.read().await.len();
+        // Proactively close every client: a backgrounded tab won't send a message to trip
+        // the in-loop close, so waiting for the socket to speak first can hang until SIGKILL.
+        self.close_all_connections().await;
 
-            if count == 0 {
-                break;
+        // Bounded drain: let the close handshakes land, but don't block the ECS grace
+        // window forever on a client that never finishes closing.
+        let drain = async {
+            loop {
+                let count = self.channels.read().await.len();
+
+                if count == 0 {
+                    break;
+                }
+
+                tracing::info!("shutting down: {count} ws connections remain");
+
+                sleep(Duration::from_secs(1)).await;
             }
+        };
 
-            tracing::info!("shutting down: {count} ws connections remain");
-
-            sleep(Duration::from_secs(1)).await;
+        if timeout(Duration::from_secs(20), drain).await.is_err() {
+            let remaining = self.channels.read().await.len();
+            tracing::warn!("shutdown drain timed out; {remaining} ws connections still open");
         }
 
         tracing::info!("shutting down.. done");
 
         Ok(())
+    }
+
+    /// Send a RESTART close frame to every open WS connection (mirrors `notify`'s fan-out).
+    async fn close_all_connections(&self) {
+        let msg = Message::Close(Some(CloseFrame {
+            code: RESTART,
+            reason: "server shutdown".into(),
+        }));
+
+        let channels = self.channels.read().await;
+        for (user_id, (_id, c)) in channels.iter() {
+            if let Err(e) = c.send(Ok(msg.clone())) {
+                tracing::error!("shutdown close send err [{user_id}]: {e}");
+            }
+        }
     }
 
     #[instrument(skip(self))]
@@ -1369,6 +1397,36 @@ mod test {
             pubsubreceiver.log.read().await[1].clone(),
             (res.tokens.public_token.clone(), format!("q:{}", q.id))
         );
+    }
+
+    #[tokio::test]
+    async fn test_shutdown_closes_all_connections_with_restart() {
+        let app = App::new(
+            Arc::new(InMemoryEventsDB::default()),
+            Arc::new(PubSubInMemory::default()),
+            Arc::new(MockViewers::new()),
+            Arc::new(Payment::default()),
+            Tracking::default(),
+            String::new(),
+        );
+
+        let (tx_a, mut rx_a) = mpsc::unbounded_channel();
+        let (tx_b, mut rx_b) = mpsc::unbounded_channel();
+        {
+            let mut channels = app.channels.write().await;
+            channels.insert(1, ("event-a".to_string(), tx_a));
+            channels.insert(2, ("event-b".to_string(), tx_b));
+        }
+
+        // proactively closes every socket regardless of topic, without waiting for a client msg
+        app.close_all_connections().await;
+
+        for rx in [&mut rx_a, &mut rx_b] {
+            match rx.try_recv().unwrap().unwrap() {
+                Message::Close(Some(frame)) => assert_eq!(frame.code, RESTART),
+                other => panic!("expected RESTART close frame, got {other:?}"),
+            }
+        }
     }
 
     #[tokio::test]
