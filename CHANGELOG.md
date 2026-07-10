@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## [2.16.0] - 2026-07-10
+
 ### Changed
 * simplified codebase by switching from sessio cookies based auth to JWT for both (admin and password protection)
 * stripe webhook hardening [#118](https://github.com/liveask/liveask/pull/118)
