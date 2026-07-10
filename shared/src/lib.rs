@@ -24,6 +24,24 @@ pub const TEST_EVENT_NAME: &str = "min name";
 
 pub const MAX_TAGS: usize = 15;
 
+/// A semver triplet (no pre-release/build metadata). Fields are declared major → minor →
+/// patch, so the derived `Ord` yields correct version precedence.
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, Eq, PartialEq, Ord, PartialOrd)]
+pub struct Semver {
+    pub major: u16,
+    pub minor: u16,
+    pub patch: u16,
+}
+
+/// Returned by `GET /api/version`: the backend's crate semver (as a triplet) plus the short
+/// git hash it was built from, so the frontend can reason about versions and not just the hash.
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct VersionInfo {
+    pub version: Semver,
+    pub git_hash: String,
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Default)]
 pub struct EventTokens {
     #[serde(rename = "publicToken")]

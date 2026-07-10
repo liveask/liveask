@@ -5,7 +5,7 @@ use shared::{
     AddEvent, AddQuestion, EditLike, EventData, EventInfo, EventPasswordRequest,
     EventPasswordResponse, EventUpgradeResponse, GetEventResponse, GetUserInfo, ModEvent,
     ModQuestion, ModRequestPremium, PaymentCapture, QuestionItem, SubscriptionCheckout,
-    SubscriptionResponse, SubscriptionUrlResponse, TagId, UserLogin,
+    SubscriptionResponse, SubscriptionUrlResponse, TagId, UserLogin, VersionInfo,
 };
 use std::{
     error::Error,
@@ -55,10 +55,10 @@ fn set_content_type_json(request: &Request) {
     request.headers().set("content-type", "application/json");
 }
 
-pub async fn fetch_version(base_api: &str) -> Result<String, FetchError> {
+pub async fn fetch_version(base_api: &str) -> Result<VersionInfo, FetchError> {
     let url = format!("{base_api}/api/version");
 
-    Ok(Request::get(&url).send().await?.text().await?)
+    Ok(Request::get(&url).send().await?.json().await?)
 }
 
 pub async fn fetch_event(

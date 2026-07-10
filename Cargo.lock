@@ -1227,7 +1227,7 @@ checksum = "6c2141d6d6c8512188a7891b4b01590a45f6dac67afb4f255c4124dbb86d4eaa"
 
 [[package]]
 name = "frontend"
-version = "0.1.0"
+version = "2.16.2"
 dependencies = [
  "anyhow",
  "base64 0.21.7",
@@ -2222,7 +2222,7 @@ checksum = "92daf443525c4cce67b150400bc2316076100ce0b3686209eb8cf3c31612e6f0"
 
 [[package]]
 name = "liveask-server"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "async-posthog",
  "async-stripe",
