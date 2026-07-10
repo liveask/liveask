@@ -455,7 +455,7 @@ impl App {
         secret: String,
         changes: ModEvent,
     ) -> Result<EventInfo> {
-        let mut entry = self.eventsdb.get(&id).await?.clone();
+        let mut entry = self.eventsdb.get(&id).await?;
 
         let e = &mut entry.event;
 
@@ -768,7 +768,7 @@ impl App {
     }
 
     pub async fn edit_like(&self, id: String, edit: shared::EditLike) -> Result<QuestionItem> {
-        let mut entry = self.eventsdb.get(&id).await?.clone();
+        let mut entry = self.eventsdb.get(&id).await?;
 
         let e = &mut entry.event;
 
