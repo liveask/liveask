@@ -20,7 +20,11 @@ impl Viewers for RedisViewers {
     #[instrument(skip(self))]
     async fn count(&self, key: &str) -> i64 {
         if let Ok(mut db) = self.redis.get().await {
-            db.get::<_, i64>(create_key(key)).await.unwrap_or_default()
+            // a drifted counter can be negative (missed INCR / expired key) — never report < 0
+            db.get::<_, i64>(create_key(key))
+                .await
+                .unwrap_or_default()
+                .max(0)
         } else {
             0
         }
@@ -30,8 +34,15 @@ impl Viewers for RedisViewers {
     async fn add(&self, key: &str) {
         if let Ok(mut db) = self.redis.get().await {
             let key = create_key(key);
-            db.incr::<_, isize, isize>(key.clone(), 1).await.ok();
-            db.expire::<_, isize>(key, KEY_TTL).await.ok();
+            // INCR + refresh TTL in a single round-trip
+            redis::pipe()
+                .incr(&key, 1_i64)
+                .ignore()
+                .expire(&key, KEY_TTL)
+                .ignore()
+                .query_async::<_, ()>(&mut db)
+                .await
+                .ok();
         }
     }
 
@@ -39,8 +50,15 @@ impl Viewers for RedisViewers {
     async fn remove(&self, key: &str) {
         if let Ok(mut db) = self.redis.get().await {
             let key = create_key(key);
-            db.decr::<_, isize, isize>(key.clone(), 1).await.ok();
-            db.expire::<_, isize>(key, KEY_TTL).await.ok();
+            // DECR + refresh TTL in a single round-trip
+            redis::pipe()
+                .decr(&key, 1_i64)
+                .ignore()
+                .expire(&key, KEY_TTL)
+                .ignore()
+                .query_async::<_, ()>(&mut db)
+                .await
+                .ok();
         }
     }
 }

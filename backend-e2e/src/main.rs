@@ -812,6 +812,43 @@ mod test {
         assert_eq!(socket1.read().unwrap().into_text().unwrap(), "v:2");
     }
 
+    #[tokio::test]
+    #[tracing_test::traced_test]
+    #[ignore = "seeds the server's redis directly; run via `just e2e-test-local`"]
+    async fn test_viewer_count_never_reports_negative() {
+        // The counter can drift below zero (a missed INCR / expired key) and the WS `v:` frame
+        // is computed from `count()`, which now clamps to >= 0. The drift can only be forced by
+        // seeding redis, so this needs the local redis the server we booted talks to.
+        let redis_url =
+            std::env::var("REDIS_URL").unwrap_or_else(|_| "redis://localhost:6379".into());
+        let Ok(client) = redis::Client::open(redis_url) else {
+            eprintln!("skipping test_viewer_count_never_reports_negative: invalid REDIS_URL");
+            return;
+        };
+        let Ok(mut con) = client.get_async_connection().await else {
+            eprintln!("skipping test_viewer_count_never_reports_negative: no redis reachable");
+            return;
+        };
+
+        let e = add_event(TEST_EVENT_NAME.to_string()).await;
+        let public = e.tokens.public_token.clone();
+
+        // force the stored counter negative (backend key format is `viewers/<id>`)
+        let _: () = redis::cmd("SET")
+            .arg(format!("viewers/{public}"))
+            .arg(-5_i64)
+            .query_async(&mut con)
+            .await
+            .unwrap();
+
+        // a fresh subscriber INCRs to -4, then the broadcast runs count() -> clamped to 0.
+        // without the clamp this first frame would be `v:-4`.
+        let (mut socket, resp) =
+            connect(&format!("{}/push/{}", server_socket(), public)).expect("connect");
+        assert_eq!(resp.status(), StatusCode::SWITCHING_PROTOCOLS);
+        assert_eq!(socket.read().unwrap().into_text().unwrap(), "v:0");
+    }
+
     // ---------------------------------------------------------------------------------------
     // Controlled-server-only tests.
     //

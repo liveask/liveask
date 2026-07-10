@@ -5,6 +5,7 @@ edition = "2021"
 rust-version = "1.74"
 
 [dependencies]
+redis = { version = "0.23", default-features = false, features = ["tokio-comp"] }
 reqwest = { version = "0.11", features = ["json", "cookies"] }
 serde_json = "1"
 shared = { path = "../shared" }
