@@ -4,7 +4,7 @@ use axum::{
     http::{HeaderMap, HeaderName, header},
     response::{AppendHeaders, Html, IntoResponse},
 };
-use shared::{EventPasswordResponse, VersionInfo};
+use shared::{EventPasswordResponse, Semver, VersionInfo};
 use tracing::instrument;
 
 use crate::{
@@ -232,7 +232,12 @@ pub async fn ping_handler() -> Html<&'static str> {
 #[instrument]
 pub async fn version_handler() -> Json<VersionInfo> {
     Json(VersionInfo {
-        version: env!("CARGO_PKG_VERSION").to_owned(),
+        // Cargo splits the crate version into these numeric parts for us
+        version: Semver {
+            major: env!("CARGO_PKG_VERSION_MAJOR").parse().unwrap_or(0),
+            minor: env!("CARGO_PKG_VERSION_MINOR").parse().unwrap_or(0),
+            patch: env!("CARGO_PKG_VERSION_PATCH").parse().unwrap_or(0),
+        },
         git_hash: GIT_HASH.to_owned(),
     })
 }

@@ -544,8 +544,9 @@ mod test {
     #[tracing_test::traced_test]
     async fn test_version() {
         let version = get_version().await;
-        assert!(!version.version.trim().is_empty());
         assert!(!version.git_hash.trim().is_empty());
+        // backend reports a real (non-zero) semver triplet
+        assert!(version.version > shared::Semver { major: 0, minor: 0, patch: 0 });
     }
 
     #[tokio::test]
