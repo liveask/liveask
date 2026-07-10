@@ -1227,7 +1227,7 @@ checksum = "6c2141d6d6c8512188a7891b4b01590a45f6dac67afb4f255c4124dbb86d4eaa"
 
 [[package]]
 name = "frontend"
-version = "2.16.1"
+version = "2.16.2"
 dependencies = [
  "anyhow",
  "base64 0.21.7",
