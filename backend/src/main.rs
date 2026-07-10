@@ -75,16 +75,20 @@ fn setup_cors() -> CorsLayer {
         // so we must allow the site origin explicitly with credentials -- a wildcard origin is
         // invalid for credentialed requests, and CorsLayer::new() would send no CORS headers at all.
         let origin = base_url();
-        tracing::info!(%origin, "cors setup: allow site origin");
-        CorsLayer::new()
-            .allow_origin(
-                origin
-                    .parse::<HeaderValue>()
-                    .expect("BASE_URL must be a valid CORS origin"),
-            )
-            .allow_credentials(true)
-            .allow_methods([Method::GET, Method::POST])
-            .allow_headers([header::CONTENT_TYPE])
+        match origin.parse::<HeaderValue>() {
+            Ok(origin) => {
+                tracing::info!(?origin, "cors setup: allow site origin");
+                CorsLayer::new()
+                    .allow_origin(origin)
+                    .allow_credentials(true)
+                    .allow_methods([Method::GET, Method::POST])
+                    .allow_headers([header::CONTENT_TYPE])
+            }
+            Err(e) => {
+                tracing::error!(error = %e, %origin, "invalid BASE_URL for CORS origin");
+                CorsLayer::new()
+            }
+        }
     }
 }
 
