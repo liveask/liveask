@@ -2,7 +2,6 @@ use gloo_storage::{LocalStorage, Storage};
 use serde::{Deserialize, Serialize};
 use shared::QuestionItem;
 use std::collections::HashSet;
-use wasm_bindgen::UnwrapThrowExt;
 
 #[derive(Serialize, Deserialize, Debug, Default, Clone)]
 struct EventStore {
@@ -81,6 +80,9 @@ impl LocalCache {
     }
 
     fn set_state(event: &str, data: EventStore) {
-        LocalStorage::set(event, data).unwrap_throw();
+        // tolerate write failure (private-browsing / quota) like the read path does; don't throw
+        if let Err(e) = LocalStorage::set(event, data) {
+            log::error!("localStorage set failed: {e}");
+        }
     }
 }
