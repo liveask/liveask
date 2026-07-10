@@ -74,22 +74,44 @@ fn setup_cors() -> CorsLayer {
         // (e.g. www.live-ask.com -> prod.www.live-ask.com) and requests carry auth/pwd cookies,
         // so we must allow the site origin explicitly with credentials -- a wildcard origin is
         // invalid for credentialed requests, and CorsLayer::new() would send no CORS headers at all.
-        let origin = base_url();
-        match origin.parse::<HeaderValue>() {
-            Ok(origin) => {
-                tracing::info!(?origin, "cors setup: allow site origin");
-                CorsLayer::new()
-                    .allow_origin(origin)
-                    .allow_credentials(true)
-                    .allow_methods([Method::GET, Method::POST])
-                    .allow_headers([header::CONTENT_TYPE])
-            }
-            Err(e) => {
-                tracing::error!(error = %e, %origin, "invalid BASE_URL for CORS origin");
-                CorsLayer::new()
-            }
+        // The site answers on both the apex and www host, so allow both variants.
+        let origins = cors_origins();
+        if origins.is_empty() {
+            tracing::error!(base_url = %base_url(), "no valid CORS origin from BASE_URL");
+            CorsLayer::new()
+        } else {
+            tracing::info!(?origins, "cors setup: allow site origins");
+            CorsLayer::new()
+                .allow_origin(origins)
+                .allow_credentials(true)
+                .allow_methods([Method::GET, Method::POST])
+                .allow_headers([header::CONTENT_TYPE])
         }
     }
+}
+
+/// Allowed CORS origins derived from `BASE_URL`: the configured origin plus its
+/// apex/www sibling, since the site answers on both `live-ask.com` and `www.live-ask.com`.
+fn cors_origins() -> Vec<HeaderValue> {
+    let base = base_url();
+    let mut variants = vec![base.clone()];
+    if let Some((scheme, host)) = base.split_once("://") {
+        let sibling = host.strip_prefix("www.").map_or_else(
+            || format!("{scheme}://www.{host}"),
+            |apex| format!("{scheme}://{apex}"),
+        );
+        variants.push(sibling);
+    }
+    variants
+        .into_iter()
+        .filter_map(|origin| match origin.parse::<HeaderValue>() {
+            Ok(value) => Some(value),
+            Err(e) => {
+                tracing::error!(error = %e, %origin, "invalid CORS origin");
+                None
+            }
+        })
+        .collect()
 }
 
 fn use_local_db() -> bool {
