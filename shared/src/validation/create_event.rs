@@ -10,6 +10,7 @@ pub enum CreateEventError {
 }
 
 const DESC_TRIMMED_MIN_LEN: usize = 30;
+const DESC_TRIMMED_MAX_LEN: usize = 1000;
 const NAME_TRIMMED_MIN_LEN: usize = 8;
 const NAME_TRIMMED_MAX_LEN: usize = 30;
 const NAME_TRIMMED_MAX_WORDS: usize = 13;
@@ -69,6 +70,11 @@ impl CreateEventValidation {
                 trimmed_len,
                 DESC_TRIMMED_MIN_LEN,
             ))
+        } else if trimmed_len > DESC_TRIMMED_MAX_LEN {
+            Some(CreateEventError::MaxLength(
+                trimmed_len,
+                DESC_TRIMMED_MAX_LEN,
+            ))
         } else {
             None
         }
@@ -90,5 +96,35 @@ impl CreateEventValidation {
         } else {
             None
         }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn desc_rejects_empty_and_too_short() {
+        assert!(matches!(
+            CreateEventValidation::check_desc(""),
+            Some(CreateEventError::Empty)
+        ));
+        assert!(matches!(
+            CreateEventValidation::check_desc("too short"),
+            Some(CreateEventError::MinLength(..))
+        ));
+    }
+
+    #[test]
+    fn desc_accepts_within_bounds() {
+        assert!(CreateEventValidation::check_desc(&"a".repeat(DESC_TRIMMED_MAX_LEN)).is_none());
+    }
+
+    #[test]
+    fn desc_rejects_over_max_length() {
+        assert!(matches!(
+            CreateEventValidation::check_desc(&"a".repeat(DESC_TRIMMED_MAX_LEN + 1)),
+            Some(CreateEventError::MaxLength(_, DESC_TRIMMED_MAX_LEN))
+        ));
     }
 }
