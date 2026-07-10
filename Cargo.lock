@@ -593,6 +593,7 @@ name = "backend_tests"
 version = "0.1.0"
 dependencies = [
  "pretty_assertions",
+ "redis",
  "reqwest 0.11.27",
  "serde_json",
  "shared",
