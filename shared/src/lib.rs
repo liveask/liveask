@@ -24,6 +24,15 @@ pub const TEST_EVENT_NAME: &str = "min name";
 
 pub const MAX_TAGS: usize = 15;
 
+/// Returned by `GET /api/version`: the backend's crate semver plus the short git hash it was
+/// built from, so the frontend can reason about versions and not just the hash.
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct VersionInfo {
+    pub version: String,
+    pub git_hash: String,
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Default)]
 pub struct EventTokens {
     #[serde(rename = "publicToken")]

@@ -169,7 +169,8 @@ fn request_version(link: &html::Scope<Footer>) {
                 log::error!("fetch_version error: {e}");
                 Msg::VersionReceived(None)
             }
-            Ok(res) => Msg::VersionReceived(Some(res)),
+            // footer only surfaces the api git hash; the semver is available for other logic
+            Ok(res) => Msg::VersionReceived(Some(res.git_hash)),
         }
     });
 }

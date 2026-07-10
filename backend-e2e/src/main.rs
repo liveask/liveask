@@ -188,12 +188,12 @@ fn cookie_client() -> reqwest::Client {
         .unwrap()
 }
 
-async fn get_version() -> String {
+async fn get_version() -> shared::VersionInfo {
     let res = reqwest::get(format!("{}/api/version", server_rest()))
         .await
         .unwrap();
     assert_eq!(res.status(), StatusCode::OK);
-    res.text().await.unwrap()
+    res.json().await.unwrap()
 }
 
 async fn get_public_question(event: &str, question_id: i64) -> shared::QuestionItem {
@@ -544,7 +544,8 @@ mod test {
     #[tracing_test::traced_test]
     async fn test_version() {
         let version = get_version().await;
-        assert!(!version.trim().is_empty());
+        assert!(!version.version.trim().is_empty());
+        assert!(!version.git_hash.trim().is_empty());
     }
 
     #[tokio::test]
@@ -1001,7 +1002,7 @@ mod test {
             StatusCode::OK
         );
 
-        let pre_fix = get_version().await.trim() == PRE_FIX_PROD_SHA;
+        let pre_fix = get_version().await.git_hash.trim() == PRE_FIX_PROD_SHA;
 
         if pre_fix {
             // pre-fix: the real moderator is not recognized, so the correct secret is wrongly
