@@ -1107,27 +1107,20 @@ impl App {
 #[async_trait]
 impl PubSubReceiver for App {
     async fn notify(&self, topic: &str, payload: &str) {
-        let topic = topic.to_string();
         let msg = Message::Text(payload.to_string());
 
-        let channels = Arc::clone(&self.channels);
-
-        if let Err(e) = tokio::spawn(async move {
-            //TODO: lookup subscriber based on topic name
-            let receivers = channels.read().await.clone();
-            for (_user_id, (_id, c)) in receivers.iter().filter(|(_, (id, _))| id == &topic) {
-                if let Err(e) = c.send(Ok(msg.clone())) {
-                    if let Err(inner_err) = &e.0 {
-                        tracing::error!("pubsub send err: {} ({})", e, inner_err);
-                    } else {
-                        tracing::info!("pubsub not sent: {}", e);
-                    }
+        //TODO: lookup subscriber based on topic name
+        // send() is sync, so we hold the read guard across the loop instead of cloning the map;
+        // the caller already spawns notify(), so no inner spawn.
+        let receivers = self.channels.read().await;
+        for (_user_id, (_id, c)) in receivers.iter().filter(|(_, (id, _))| id.as_str() == topic) {
+            if let Err(e) = c.send(Ok(msg.clone())) {
+                if let Err(inner_err) = &e.0 {
+                    tracing::error!("pubsub send err: {} ({})", e, inner_err);
+                } else {
+                    tracing::info!("pubsub not sent: {}", e);
                 }
             }
-        })
-        .await
-        {
-            tracing::error!("pubsub notify error: {e}");
         }
     }
 }
@@ -1369,6 +1362,36 @@ mod test {
             pubsubreceiver.log.read().await[1].clone(),
             (res.tokens.public_token.clone(), format!("q:{}", q.id))
         );
+    }
+
+    #[tokio::test]
+    async fn test_notify_fans_out_only_to_matching_topic() {
+        let app = App::new(
+            Arc::new(InMemoryEventsDB::default()),
+            Arc::new(PubSubInMemory::default()),
+            Arc::new(MockViewers::new()),
+            Arc::new(Payment::default()),
+            Tracking::default(),
+            String::new(),
+        );
+
+        let (tx_match, mut rx_match) = mpsc::unbounded_channel();
+        let (tx_other, mut rx_other) = mpsc::unbounded_channel();
+        {
+            let mut channels = app.channels.write().await;
+            channels.insert(1, ("topic-a".to_string(), tx_match));
+            channels.insert(2, ("topic-b".to_string(), tx_other));
+        }
+
+        app.notify("topic-a", "hello").await;
+
+        match rx_match.try_recv().unwrap().unwrap() {
+            Message::Text(t) => assert_eq!(t, "hello"),
+            other => panic!("unexpected message: {other:?}"),
+        }
+        // exactly one message to the matching topic, none to the other
+        assert!(rx_match.try_recv().is_err());
+        assert!(rx_other.try_recv().is_err());
     }
 
     #[tokio::test]
