@@ -4,6 +4,8 @@ target/
 .git/
 **/node_modules/
 frontend/dist/
+frontend/index.html
+
 backend/db/
 e2e-playwright/test-results/
 e2e-playwright/playwright-report/
