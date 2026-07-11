@@ -157,6 +157,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+      # Building the WASM app + the server from source in one image overruns the runner's ~14 GB
+      # free disk. Reclaim ~20 GB of preinstalled toolchains we don't use before building.
+      - name: Free disk space
+        run: |
+          df -h /
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/lib/android \
+            /opt/hostedtoolcache/CodeQL /usr/local/share/powershell /usr/share/swift
+          sudo docker image prune -af || true
+          df -h /
       - uses: docker/setup-buildx-action@v3
       - name: Build e2e image (GHA layer cache)
         uses: docker/build-push-action@v6
@@ -169,8 +178,10 @@ jobs:
           build-args: |
             PLAYWRIGHT_VERSION=1.61.1
             TRUNK_VERSION=0.21.14
+          # mode=min keeps the cache-export small (mode=max also stages the multi-GB Rust build
+          # layers to local disk, which contributed to the earlier out-of-space failure).
           cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-to: type=gha,mode=min
       - name: Run E2E
         run: |
           docker compose -f e2e-playwright/docker-compose.e2e.yml up \
