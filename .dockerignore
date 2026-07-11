@@ -1,1 +1,9 @@
 target/
+
+# keep the E2E build context (repo root) lean — none of these are build inputs
+.git/
+**/node_modules/
+frontend/dist/
+backend/db/
+e2e-playwright/test-results/
+e2e-playwright/playwright-report/

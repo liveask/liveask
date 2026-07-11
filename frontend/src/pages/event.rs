@@ -464,21 +464,21 @@ impl Event {
             LoadingState::Loaded => self.view_event(ctx),
             LoadingState::Loading => {
                 html! {
-                    <div class="noevent">
+                    <div class="noevent" data-testid="event-loadstate" data-state="loading">
                         <h2>{ "loading event..." }</h2>
                     </div>
                 }
             }
             LoadingState::NotFound => {
                 html! {
-                    <div class="noevent">
+                    <div class="noevent" data-testid="event-loadstate" data-state="notfound">
                         <h2>{ "event not found" }</h2>
                     </div>
                 }
             }
             LoadingState::Deleted => {
                 html! {
-                    <div class="noevent">
+                    <div class="noevent" data-testid="event-loadstate" data-state="deleted">
                         <h2>{ "event deleted" }</h2>
                     </div>
                 }
@@ -521,7 +521,7 @@ impl Event {
             let pending_payment = self.query_params.paypal_token.is_some() && payment_allowed;
 
             html! {
-                <div class="some-event">
+                <div class="some-event" data-testid="event-loaded">
                     <div class={background} />
                     <PasswordPopup
                         event={e.info.tokens.public_token.clone()}
@@ -576,6 +576,7 @@ impl Event {
                 <div class="addquestion" hidden={!e.info.state.is_open()}>
                     <button
                         class="button-red"
+                        data-testid="ask-button"
                         onclick={ctx.link().callback(|_| Msg::AskQuestionClick)}
                     >
                         { "Ask a Question" }
@@ -618,7 +619,7 @@ impl Event {
 
             return html! {
                 <div>
-                    <div class="questions-seperator">{ title }</div>
+                    <div class="questions-seperator" data-testid="questions-bucket" data-bucket={title.to_string()}>{ title }</div>
                     <div class="questions">
                         { for items.iter().enumerate().map(|(e,i)|self.view_item(ctx,can_vote,masked,e,i)) }
                     </div>
@@ -693,14 +694,14 @@ impl Event {
                     <DeletePopup tokens={e.info.tokens.clone()} />
                     { if timed_out {html!{}}else {html!{
                         <div class="state">
-                            <select onchange={ctx.link().callback(Msg::ModStateChange)} >
+                            <select onchange={ctx.link().callback(Msg::ModStateChange)} data-testid="mod-state-select" >
                                 <option value="0" selected={e.info.state.is_open()}>{"Event open"}</option>
                                 <option value="1" selected={e.info.state.is_vote_only()}>{"Event vote only"}</option>
                                 <option value="2" selected={e.info.state.is_closed()}>{"Event closed"}</option>
                             </select>
                         </div>
                         }} }
-                    <button class="button-white" onclick={ctx.link().callback(|_|Msg::ModDelete)}>
+                    <button class="button-white" onclick={ctx.link().callback(|_|Msg::ModDelete)} data-testid="mod-delete">
                         { "Delete Event" }
                     </button>
                     <ModPassword tokens={e.info.tokens.clone()} {pwd} />

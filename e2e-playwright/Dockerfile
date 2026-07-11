@@ -1,0 +1,73 @@
+# syntax=docker/dockerfile:1
+#
+# Hermetic browser-E2E image: builds the WASM frontend + the liveask-server binary from source,
+# then runs Playwright against them. Backend + FE run in THIS container (single localhost), because
+# the local WASM bundle hard-codes http://localhost:8090 / ws://localhost:8090 — the browser must
+# reach the backend at localhost. Redis + DynamoDB-local are compose sidecars (server-side DNS).
+#
+# Build context is the REPO ROOT (see docker-compose.e2e.yml).
+
+# Global build args (declared before the first FROM so compose `args` bind and they're usable in FROM lines).
+ARG PLAYWRIGHT_VERSION=1.61.1
+ARG TRUNK_VERSION=0.21.14
+
+########################  Stage 1 — build FE dist + backend binary  ########################
+FROM rust:1-bookworm AS builder
+
+# openssl for reqwest(native-tls); pkg-config to find it
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      pkg-config libssl-dev ca-certificates curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# wasm target + Trunk (pinned to the repo's version). uname -m -> aarch64|x86_64 matches release assets.
+ARG TRUNK_VERSION
+RUN rustup target add wasm32-unknown-unknown \
+    && curl -fsSL "https://github.com/trunk-rs/trunk/releases/download/v${TRUNK_VERSION}/trunk-$(uname -m)-unknown-linux-gnu.tar.gz" \
+       | tar -xzf - -C /usr/local/bin trunk \
+    && trunk --version
+
+WORKDIR /src
+# Copy only what the Rust builds need — so editing e2e test code (copied later, in the runtime
+# stage) doesn't invalidate these expensive build layers. Covers all workspace members
+# (backend, backend-e2e, frontend, frontend/events, shared).
+COPY Cargo.toml Cargo.lock ./
+COPY .cargo .cargo
+COPY shared shared
+COPY frontend frontend
+COPY backend backend
+COPY backend-e2e backend-e2e
+
+# FE bundle: LA_ENV=local bakes localhost:8090; RUSTFLAGS enables the unstable web_sys clipboard API.
+RUN cd frontend \
+    && RUSTFLAGS="--cfg=web_sys_unstable_apis" LA_ENV=local trunk build
+
+# Backend server (debug = faster build; behaviour identical for E2E).
+RUN cargo build -p liveask-server \
+    && cp target/debug/liveask-server /usr/local/bin/liveask-server
+
+########################  Stage 2 — runtime (Playwright + browsers)  ########################
+FROM mcr.microsoft.com/playwright:v${PLAYWRIGHT_VERSION}-jammy AS runtime
+
+# Runtime libs the server links against (browsers/fonts already in the Playwright image).
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      libssl3 ca-certificates curl \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+COPY --from=builder /usr/local/bin/liveask-server /app/liveask-server
+COPY --from=builder /src/frontend/dist /app/dist
+
+# Install node deps first (layer-cached); browsers are already baked into the base image.
+COPY e2e-playwright/package.json e2e-playwright/package-lock.json /app/e2e/
+RUN cd /app/e2e && npm ci
+COPY e2e-playwright /app/e2e
+COPY e2e-playwright/docker/entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
+
+# In the container Playwright serves the prebuilt dist statically (no cargo/trunk at runtime).
+ENV E2E_WEBSERVER_CMD="npx serve -s /app/dist -l 8080"
+ENV E2E_WEBSERVER_CWD="/app/e2e"
+ENV CI=1
+
+ENTRYPOINT ["/app/entrypoint.sh"]

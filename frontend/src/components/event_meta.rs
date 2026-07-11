@@ -83,7 +83,7 @@ impl Component for EventMeta {
         html! {
             <>
                 <div class="event-name-label">{"The Event"}{ Self::mod_view_edit(ctx) }</div>
-                <div class="event-name">{name}</div>
+                <div class="event-name" data-testid="event-name">{name}</div>
                 <EventContext {context} tokens={ctx.props().tokens.clone()} {is_premium} />
                 <MetaPopup tokens={ctx.props().tokens.clone()} on_close={on_close_popup.clone()} show={self.show_meta_popup} {meta} />
                 <ColorPopup tokens={ctx.props().tokens.clone()} on_close={on_close_popup} open={self.show_color_edit} {color} {is_premium} {pending_payment}/>
@@ -91,6 +91,7 @@ impl Component for EventMeta {
                 //TODO: collapsable event desc
                 <div
                     class={classes!("event-desc",is_masked.then_some("blurr"))}
+                    data-testid="event-desc"
                 >
                     { {desc} }
                 </div>
