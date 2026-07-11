@@ -40,18 +40,24 @@ cd e2e-playwright && npm test
 
 ## Running in Docker (no local toolchains)
 
-If you'd rather not install Node/cargo/trunk/browsers, run the whole thing in containers — the only
-requirement is Docker:
+If you'd rather not install Node/cargo/trunk/browsers, run the whole thing in containers. The only
+requirement is Docker — everything else (Node, cargo, trunk, Chromium) is built and run inside the
+image. From the repo root:
 
 ```bash
-npm run docker:e2e        # from e2e-playwright/
-# or, from the repo root:
 docker compose -f e2e-playwright/docker-compose.e2e.yml up --build \
     --abort-on-container-exit --exit-code-from e2e
 ```
 
 The exit code is Playwright's, and the HTML report + traces are written to
-`e2e-playwright/{playwright-report,test-results}` on the host. Clean up with `npm run docker:clean`.
+`e2e-playwright/{playwright-report,test-results}` on the host. Tear down with:
+
+```bash
+docker compose -f e2e-playwright/docker-compose.e2e.yml down -v
+```
+
+(If you *do* have Node, `npm run docker:e2e` / `npm run docker:clean` from `e2e-playwright/` are
+thin aliases for the two commands above — but they're just for convenience, not required.)
 
 How it works: a multi-stage build compiles the **WASM frontend and the `liveask-server` binary from
 source** (so it reflects your local code), then a Playwright runtime image runs the backend + serves
