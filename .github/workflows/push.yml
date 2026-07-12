@@ -149,8 +149,9 @@ jobs:
   # and run Playwright against it, with redis + dynamodb-local as compose sidecars. This is the
   # exact same `docker compose -f e2e-playwright/docker-compose.e2e.yml up` used locally — so
   # local == CI. Runs on fe OR be changes (it exercises both). No secrets → works on fork PRs.
-  # NOTE: not (yet) a dependency of any deploy job, so it reports status without blocking merges.
-  # To gate deploys on it, add it to `fe_deploy_beta.needs` + the `if`.
+  # Gates both beta deploys: it's in be_deploy_beta.needs and fe_deploy_beta (needs + if), so a
+  # failing browser E2E blocks the beta deploy. It always runs whenever either deploy runs (be
+  # deploy implies be==true; fe deploy implies fe==true), so it is never skipped under a deploy.
   check_and_test_frontend_e2e:
     needs: changes
     if: ${{ needs.changes.outputs.fe == 'true' || needs.changes.outputs.be == 'true' }}
@@ -206,7 +207,7 @@ jobs:
   be_deploy_beta:
     runs-on: ubuntu-latest
     environment: beta
-    needs: ["check_and_test_backend", "check_and_test_backend_e2e"]
+    needs: ["check_and_test_backend", "check_and_test_backend_e2e", "check_and_test_frontend_e2e"]
     steps:
       - uses: actions/checkout@v5
       - name: Restore cargo cache
@@ -282,11 +283,12 @@ jobs:
   fe_deploy_beta:
     runs-on: ubuntu-latest
     environment: beta
-    needs: ["changes", "check_and_test_frontend", "be_deploy_beta"]
-    # Deploy the FE only when its own checks passed AND — if the backend also changed — its
-    # deploy succeeded. This never ships a new FE against a backend that failed to deploy,
-    # while still allowing frontend-only changes (where be_deploy_beta is skipped) to deploy.
-    if: ${{ !cancelled() && needs.check_and_test_frontend.result == 'success' && (needs.changes.outputs.be != 'true' || needs.be_deploy_beta.result == 'success') }}
+    needs: ["changes", "check_and_test_frontend", "check_and_test_frontend_e2e", "be_deploy_beta"]
+    # Deploy the FE only when its own checks + the browser E2E passed AND — if the backend also
+    # changed — its deploy succeeded. This never ships a new FE against a backend that failed to
+    # deploy, while still allowing frontend-only changes (where be_deploy_beta is skipped) to
+    # deploy. The E2E job always runs on an fe change, so its result is a real gate here (never skipped).
+    if: ${{ !cancelled() && needs.check_and_test_frontend.result == 'success' && needs.check_and_test_frontend_e2e.result == 'success' && (needs.changes.outputs.be != 'true' || needs.be_deploy_beta.result == 'success') }}
     steps:
       - uses: actions/checkout@v5
       - name: Restore cargo cache
