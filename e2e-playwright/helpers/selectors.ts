@@ -61,3 +61,20 @@ export const LOAD_STATE = {
   deleted: 'deleted',
   loaded: 'loaded',
 } as const;
+
+/**
+ * Question bucket separator labels (event.rs `view_questions`). The mod and viewer see the same
+ * buckets, except the "review" separator whose label differs by role. Note the backend filters
+ * hidden + screening questions out of the *viewer* fetch, so a viewer never sees the "Hidden" bucket.
+ */
+export const BUCKET = {
+  reviewMod: 'For review',
+  reviewViewer: 'Your Questions in review by host',
+  hot: 'Hot Questions',
+  answered: 'Answered',
+  hidden: 'Hidden',
+} as const;
+
+/** CSS selector for a specific question-bucket separator by its data-bucket label. */
+export const bucketSelector = (bucket: string): string =>
+  `[data-testid="${TID.questionsBucket}"][data-bucket="${bucket}"]`;

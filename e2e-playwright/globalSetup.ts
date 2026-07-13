@@ -12,6 +12,11 @@ import { BACKEND_URL } from './helpers/env';
  *   cd backend-e2e && just serve           # liveask-server :8090 (RELAX_CORS=1)
  */
 async function globalSetup(_config: FullConfig): Promise<void> {
+  // The reconnect canary owns the :8090 lifecycle itself (it boots liveask-server via
+  // fixtures/backend.ts in a beforeAll, so it can SIGKILL/relaunch it). Don't pre-require the
+  // backend here in that opt-in mode — run it with only redis + dynamodb-local up.
+  if (process.env.E2E_RECONNECT_CANARY === '1') return;
+
   if (!(await BackendServer.isUp())) {
     throw new Error(
       `Backend not reachable at ${BACKEND_URL}/api/ping.\n` +

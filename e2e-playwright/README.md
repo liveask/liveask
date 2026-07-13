@@ -82,11 +82,36 @@ helpers/
   env.ts               URLs, CDN host list, admin creds/hash
   net.ts               blockCdns / clearStorage / abortApi / gateWebSocket (routeWebSocket)
 fixtures/
-  event.ts             createEvent() via POST /api/event/add (test:false) + route builders
-  backend.ts           BackendServer: start/stop(SIGKILL)/waitForPing for the reconnect fallback
+  event.ts             createEvent() + addQuestion() via the API (test:false) + route builders
+  admin.ts             adminLogin() + upgradeToPremium() (no-Stripe admin path) for premium specs
+  backend.ts           BackendServer: start/stop(SIGKILL)/waitForPing for the reconnect canary
 tests/
+  smoke.spec.ts             per-route DOM rendering + create/ask happy paths
+  reconnect.spec.ts         flagship: cold down-at-load recovery, warm mid-session drop, restart canary
+  realtime.spec.ts          two-context cross-client reactivity (ask/answer/hide/upvote/viewer-count)
   reconnect-spike.spec.ts   proves routeWebSocket intercepts the wasm_sockets WS + the down→up recovery
 ```
+
+## Reconnect canary (nightly, opt-in)
+
+`reconnect.spec.ts` includes a highest-fidelity case that SIGKILLs and relaunches the **real**
+`liveask-server`. It must own :8090, so it's defined only when `E2E_RECONNECT_CANARY=1` and runs in
+isolation — boot only the deps (no external server), then:
+
+```bash
+cd backend && just docker-compose            # redis + dynamodb-local ONLY
+cd e2e-playwright && E2E_RECONNECT_CANARY=1 npx playwright test reconnect.spec.ts -g canary
+```
+
+In that mode `globalSetup` skips its up-front backend check (the canary boots the server itself via
+`fixtures/backend.ts`). It belongs in nightly, not the PR smoke.
+
+## Premium / admin specs
+
+The premium viewer-count spec upgrades an event via the no-Stripe admin path, which needs the backend
+booted with the **real** `sha256("pwd")` admin hash (`ADMIN_PWD_HASH` in `helpers/env.ts`) — what
+`fixtures/backend.ts` uses. `backend-e2e just serve` boots a placeholder hash instead, so that spec
+**skips cleanly** there rather than failing.
 
 ## Test hooks
 
