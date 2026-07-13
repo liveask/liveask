@@ -61,6 +61,38 @@ export async function createEvent(
   return { id, secret, name, description };
 }
 
+/** A question provisioned via the backend API. */
+export interface CreatedQuestion {
+  id: number;
+  text: string;
+  /** Server-assigned initial like count (the backend seeds new questions with 1). */
+  likes: number;
+}
+
+/**
+ * Add a question via `POST /api/event/addquestion/:id` (body `shared::AddQuestion`, response
+ * `shared::QuestionItem`). The event must be Open and the text must clear AddQuestionValidation
+ * (>=10 trimmed chars, >=3 words, each word <=30) or the backend rejects it.
+ *
+ * Provisions a question without driving the UI, so realtime specs can start from a known state.
+ */
+export async function addQuestion(
+  request: APIRequestContext,
+  eventId: string,
+  text: string,
+): Promise<CreatedQuestion> {
+  const res = await request.post(`${BACKEND_URL}/api/event/addquestion/${eventId}`, {
+    data: { text },
+  });
+
+  if (!res.ok()) {
+    throw new Error(`add_question failed: ${res.status()} ${res.statusText()} — ${await res.text()}`);
+  }
+
+  const q = (await res.json()) as { id: number; text: string; likes: number };
+  return { id: q.id, text: q.text, likes: q.likes };
+}
+
 /** Route builders (mirror frontend/src/routes.rs). */
 export const routes = {
   home: () => '/',

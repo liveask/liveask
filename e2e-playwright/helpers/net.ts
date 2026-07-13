@@ -1,4 +1,4 @@
-import type { Page } from '@playwright/test';
+import type { Page, WebSocketRoute } from '@playwright/test';
 import { CDN_HOST_SUFFIXES, WS_ROUTE_GLOB } from './env';
 
 /**
@@ -45,21 +45,37 @@ export async function restoreApi(page: Page): Promise<void> {
   await page.unroute('**/api/**');
 }
 
-/** Mutable gate for the WS route: flip `.down` to control whether reconnect attempts proxy through. */
+/** Mutable gate for the WS route. */
 export interface SocketGate {
+  /** While true, every NEW socket the app opens is closed immediately (held offline). */
   down: boolean;
+  /**
+   * Close the currently-established socket to simulate a MID-SESSION drop. The app then re-arms its
+   * 4s reconnect (socket.rs) and re-creates a socket, which obeys `down`. Use this for the warm
+   * "already-loaded → drop → recover" path: `context.setOffline` does NOT tear down an already-open
+   * WebSocket (it only gates new connections), so it can't drop a live socket — this can.
+   */
+  dropCurrent(): void;
 }
 
 /**
  * Intercept the app's WebSocket (`ws://.../push/:id`). While `gate.down`, each new socket
  * (the app re-creates one every 4s — socket.rs) is closed immediately, keeping the app
  * offline. Once `gate.down` is false, attempts proxy to the real backend and recovery fires.
+ * `gate.dropCurrent()` closes the live socket for mid-session drop tests.
  *
  * Returns the gate so a test can toggle it mid-run. `down` defaults to false (transparent proxy).
  */
 export async function gateWebSocket(page: Page, down = false): Promise<SocketGate> {
-  const gate: SocketGate = { down };
+  let current: WebSocketRoute | undefined;
+  const gate: SocketGate = {
+    down,
+    dropCurrent() {
+      current?.close();
+    },
+  };
   await page.routeWebSocket(WS_ROUTE_GLOB, (ws) => {
+    current = ws;
     if (gate.down) {
       ws.close();
     } else {
