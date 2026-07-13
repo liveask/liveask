@@ -68,5 +68,6 @@ export const routes = {
   event: (id: string) => `/event/${id}`,
   eventMod: (id: string, secret: string) => `/eventmod/${id}/${secret}`,
   print: (id: string) => `/event/print/${id}`,
+  privacy: () => '/privacy',
   login: () => '/login',
 };
