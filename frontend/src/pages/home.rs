@@ -41,14 +41,14 @@ impl Component for Home {
 
     fn view(&self, ctx: &Context<Self>) -> Html {
         html! {
-            <div id="home">
+            <div id="home" data-testid="home">
                 <div class="feature-dark">
                     <h1 id="firstheader">{ "Real-Time questions from your audience" }</h1>
                     <p>
                         { "Have you ever organized a meetup, conference, or moderated a panel discussion and wanted an easy way to receive real-time
                         questions from your audience? Welcome to Live-Ask." }
                     </p>
-                    <button class="button-red" onclick={ctx.link().callback(|_| Msg::CreateEvent)}>
+                    <button class="button-red" data-testid="home-create-event" onclick={ctx.link().callback(|_| Msg::CreateEvent)}>
                         { "Create your Event" }
                     </button>
                     <button class="button-dark" onclick={ctx.link().callback(|_| Msg::Example)}>

@@ -13,6 +13,9 @@ pub struct TextAreaProps {
     pub required: bool,
     #[prop_or_default]
     pub autosize: bool,
+    /// Optional `data-testid` for E2E; omitted from the DOM when unset so shared call-sites stay clean.
+    #[prop_or_default]
+    pub testid: Option<AttrValue>,
     pub oninput: Callback<InputEvent>,
 }
 
@@ -60,6 +63,7 @@ impl Component for TextArea {
                 placeholder={props.placeholder}
                 value={props.value}
                 maxlength={props.maxlength}
+                data-testid={props.testid.clone()}
                 required={props.required}
                 oninput={ctx.link().callback(Msg::Input)}
             />

@@ -148,6 +148,7 @@ impl Component for NewEvent {
                     <div class="newevent">
                         <div class="input-box">
                             <input
+                                data-testid="newevent-name"
                                 ref={self.name_ref.clone()}
                                 type="text"
                                 name="eventname"
@@ -163,6 +164,7 @@ impl Component for NewEvent {
                         </div>
                         <div class="input-box">
                             <input
+                                data-testid="newevent-email"
                                 type="email"
                                 name="mail"
                                 placeholder="email (optional)"
@@ -177,6 +179,7 @@ impl Component for NewEvent {
                         <div class="input-box">
                             <TextArea
                                 id="input-desc"
+                                testid="newevent-desc"
                                 name="desc"
                                 placeholder="event description"
                                 value={self.desc.clone()}
@@ -192,6 +195,7 @@ impl Component for NewEvent {
                     </div>
                     if !self.loading {
                         <button
+                            data-testid="newevent-finish"
                             class="button-finish"
                             disabled={!self.can_create()}
                             onclick={ctx.link().callback(|_| Msg::Create)}

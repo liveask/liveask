@@ -139,6 +139,7 @@ impl Component for QuestionPopup {
                         <div class="add-question" onkeydown={on_key}>
                             <TextArea
                                 id="questiontext"
+                                testid="question-input"
                                 name="questiontext"
                                 maxlength="200"
                                 value={self.text.clone()}
@@ -163,6 +164,7 @@ impl Component for QuestionPopup {
                         </div>
                         <button
                             class="dlg-button"
+                            data-testid="question-submit"
                             onclick={on_click_ask}
                             disabled={self.errors.has_any()}
                         >

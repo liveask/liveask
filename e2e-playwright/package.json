@@ -1,0 +1,23 @@
+{
+  "name": "liveask-e2e-playwright",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Browser E2E for the LiveAsk WASM app: DOM rendering, WS lifecycle, cross-client UX, reconnect/refetch.",
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:ui": "playwright test --ui",
+    "test:chromium": "playwright test --project=chromium",
+    "report": "playwright show-report",
+    "typecheck": "tsc --noEmit",
+    "install:browsers": "playwright install --with-deps chromium",
+    "docker:e2e": "docker compose -f docker-compose.e2e.yml up --build --abort-on-container-exit --exit-code-from e2e",
+    "docker:clean": "docker compose -f docker-compose.e2e.yml down -v"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.55.0",
+    "@types/node": "^20.19.0",
+    "serve": "^14.2.0",
+    "typescript": "^5.6.0"
+  }
+}

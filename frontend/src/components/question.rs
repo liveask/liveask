@@ -277,9 +277,10 @@ impl Component for Question {
         );
 
         html! {
-            <div class={main_classes} ref={self.node_ref.clone()}>
+            <div class={main_classes} ref={self.node_ref.clone()} data-testid="question-item" data-qid={self.data.item.id.to_string()}>
                 <div
                     class={classes!("questionanchor",self.highlighted.then_some("highlighted"),)}
+                    data-testid="question-like"
                     onclick={ctx.link().callback(|_| Msg::QuestionClick(QuestionClickType::Like))}
                 >
                     <div class="time-since">{ self.get_age() }</div>
@@ -341,6 +342,7 @@ impl Question {
                 <div class="options">
                     <button
                         class={classes!("button-hide",hidden.then_some("reverse"))}
+                        data-testid="question-hide"
                         onclick={ctx.link().callback(|_| Msg::QuestionClick(QuestionClickType::Hide))}
                         hidden={answered}
                     >
@@ -352,6 +354,7 @@ impl Question {
                     </button>
                     <button
                         class={classes!("button-answered",answered.then_some("reverse"))}
+                        data-testid="question-answer"
                         onclick={ctx.link().callback(|_| Msg::QuestionClick(QuestionClickType::Answer))}
                         hidden={hidden}
                     >
@@ -368,6 +371,7 @@ impl Question {
                 <div class="options">
                     <button
                         class={classes!("button-hide",hidden.then_some("reverse"))}
+                        data-testid="question-hide"
                         onclick={ctx.link().callback(|_| Msg::QuestionClick(QuestionClickType::Hide))}
                     >
                         { "hide" }
@@ -432,7 +436,7 @@ impl Question {
                                         letter-spacing="0.15625"
                                         fill="#FFFFFF"
                                     >
-                                        <tspan class="like-count-text" x="16" y="11">
+                                        <tspan class="like-count-text" data-testid="question-like-count" x="16" y="11">
                                             { likes }
                                         </tspan>
                                     </text>
@@ -488,7 +492,7 @@ impl Question {
                                         letter-spacing="0.15625"
                                         fill="#FFFFFF"
                                     >
-                                        <tspan class="like-count-text" x="16" y="11">
+                                        <tspan class="like-count-text" data-testid="question-like-count" x="16" y="11">
                                             { likes }
                                         </tspan>
                                     </text>

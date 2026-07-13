@@ -1,0 +1,53 @@
+name: liveask-e2e
+
+# Fully containerised browser E2E — the only local dependency is Docker.
+#   docker compose -f e2e-playwright/docker-compose.e2e.yml up --build \
+#       --abort-on-container-exit --exit-code-from e2e
+# Exit code == Playwright's. HTML report + traces land in ./e2e-playwright/{playwright-report,test-results}.
+
+services:
+  redis:
+    image: redis:alpine
+    command: redis-server --save "" --appendonly no
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  ddb:
+    image: dwmkerr/dynamodb
+    # ephemeral, in-container storage (tmpfs) — fresh state per run, no host ./db pollution.
+    command: -port 8000 -sharedDb -dbPath /var/lib/db
+    tmpfs:
+      - /var/lib/db
+
+  e2e:
+    # Stable tag so CI can build once (with layer cache) and `up --no-build` reuses it.
+    image: liveask-e2e:latest
+    build:
+      context: ..
+      dockerfile: e2e-playwright/Dockerfile
+      args:
+        PLAYWRIGHT_VERSION: "1.61.1"
+        TRUNK_VERSION: "0.21.14"
+    depends_on:
+      redis:
+        condition: service_healthy
+      ddb:
+        condition: service_started
+    environment:
+      # backend (mirrors backend-e2e `just serve`, but with the real admin hash for browser login)
+      DDB_LOCAL: "1"
+      DDB_URL: http://ddb:8000
+      REDIS_URL: redis://redis:6379
+      LA_PORT: "8090"
+      LIVEASK_ENV: local
+      BASE_URL: http://localhost:8090
+      RELAX_CORS: "1"
+      LA_ADMIN_PWD_HASH: oRWenfNnDVSdBFJFMmKfVHfOt97sm0XkfowAlQbsssg
+      RUST_LOG: warn,liveask_server=info
+    volumes:
+      # surface the report + traces on the host (dirs are gitignored)
+      - ./playwright-report:/app/e2e/playwright-report
+      - ./test-results:/app/e2e/test-results

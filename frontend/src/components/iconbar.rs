@@ -137,6 +137,8 @@ impl Component for IconBar {
         html! {
             <div
                 class={classes!(vec!["topbar", "shrink"],self.connected.not().then_some("offline"))}
+                data-testid="topbar"
+                data-connected={self.connected.to_string()}
             >
                 { self.view_offline_bar(ctx) }
                 <div class="innerbox">
@@ -191,7 +193,7 @@ impl IconBar {
 
         if is_open {
             return html! {
-                <div class="link createevent" onclick={ctx.link().callback(|_| Msg::Ask)}>
+                <div class="link createevent" data-testid="ask-button-topbar" onclick={ctx.link().callback(|_| Msg::Ask)}>
                     { "Ask a question" }
                 </div>
             };
@@ -211,6 +213,7 @@ impl IconBar {
         html! {
             <div
                 id="ico-offline"
+                data-testid="offline-indicator"
                 class={classes!(is_online.then_some("hidden"))}
                 onclick={ctx.link().callback(|_| Msg::Reconnect)}
             >

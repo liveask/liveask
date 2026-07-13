@@ -132,9 +132,9 @@ impl Component for SharePopup {
             html! {
                 <Popup class="share-popup" {on_close}>
                     <div class="title">{ "Share this Link" }</div>
-                    <div class="link-box" onclick={on_click_copy}>
+                    <div class="link-box" data-testid="share-linkbox" onclick={on_click_copy}>
                         <div class="link">{ self.url.clone() }</div>
-                        <div class="copy">
+                        <div class="copy" data-testid="share-copy">
                             { if self.copied_to_clipboard {"Copied"} else {"Copy"} }
                         </div>
                     </div>

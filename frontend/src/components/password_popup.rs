@@ -96,10 +96,11 @@ impl Component for PasswordPopup {
 
             html! {
                 <Popup class="share-popup">
-                    <div class="pwd-popup">
+                    <div class="pwd-popup" data-testid="password-popup">
                         <div class="">
                             <input
                                 class="passwordtext"
+                                data-testid="password-input"
                                 ref={self.input.clone()}
                                 maxlength="30"
                                 value={self.text.clone()}
