@@ -1,7 +1,7 @@
-import { type Browser, type BrowserContext, type Page, expect, test } from '@playwright/test';
+import { type BrowserContext, expect, test } from '@playwright/test';
 import { adminLogin, upgradeToPremium } from '../fixtures/admin';
 import { addQuestion, createEvent, routes } from '../fixtures/event';
-import { blockCdns } from '../helpers/net';
+import { openLoaded } from '../helpers/app';
 import { BUCKET, TID, bucketSelector } from '../helpers/selectors';
 
 /**
@@ -25,57 +25,11 @@ test.afterEach(async () => {
   await Promise.all(opened.splice(0).map((c) => c.close()));
 });
 
-/**
- * Moderators get the ColorPopup auto-opened on their first visit to an event (event_meta.rs
- * `create()`, gated by a per-event LocalCache flag that a fresh context never has). Its full-screen
- * `.popup-bg` intercepts pointer events, so mod controls aren't clickable until it's dismissed —
- * click outside the centered content to trigger the Popup's outside-click close. No-op for viewer
- * tabs (no auto-popup) and for already-dismissed state.
- */
-async function dismissAutoPopup(page: Page): Promise<void> {
-  const bg = page.locator('.popup-bg');
-  if ((await bg.count()) > 0) {
-    await bg.first().click({ position: { x: 5, y: 5 } });
-    await expect(bg).toHaveCount(0);
-  }
-}
-
-/**
- * Open `url` in a fresh context and wait until (a) the event is Loaded and (b) this client's push
- * socket has received a frame. The server broadcasts a viewer-count frame to each socket on its own
- * connect (app.rs `push_subscriber`: insert channel → notify), so a received frame proves THIS client
- * is subscribed and will get subsequent `q:`/`e` broadcasts. Gating on it removes the race where an
- * observer misses a fire-and-forget broadcast because its socket hadn't subscribed yet.
- * (topbar[data-connected] can't be used for this — IconBar initialises `connected: true`, so it's
- * already "true" before the socket ever connects.)
- */
-async function openLoaded(browser: Browser, url: string): Promise<Page> {
-  const context = await browser.newContext();
-  opened.push(context);
-  const page = await context.newPage();
-  await blockCdns(page);
-
-  // Latch the push socket's first received frame. Set up before goto so the connect frame can't slip
-  // past — the listener is attached the instant the WS is created.
-  const subscribed = new Promise<void>((resolve) => {
-    page.on('websocket', (ws) => {
-      if (ws.url().includes('/push/')) ws.once('framereceived', () => resolve());
-    });
-  });
-
-  await page.goto(url);
-  await expect(page.getByTestId(TID.eventLoaded)).toBeVisible();
-  await dismissAutoPopup(page);
-  await subscribed;
-
-  return page;
-}
-
 test('viewer asks → the question appears in the moderator tab without a reload', async ({ browser, request }) => {
   const event = await createEvent(request);
 
-  const mod = await openLoaded(browser, routes.eventMod(event.id, event.secret));
-  const viewer = await openLoaded(browser, routes.event(event.id));
+  const mod = await openLoaded(browser, routes.eventMod(event.id, event.secret), opened);
+  const viewer = await openLoaded(browser, routes.event(event.id), opened);
 
   // Marker survives a WS-driven refetch but not a full reload → proves the mod tab didn't reload.
   await mod.evaluate(() => ((globalThis as Record<string, unknown>).__noReload = true));
@@ -98,8 +52,8 @@ test('moderator answers → the question moves to the Answered bucket in the vie
   const event = await createEvent(request);
   await addQuestion(request, event.id, Q_SEED);
 
-  const mod = await openLoaded(browser, routes.eventMod(event.id, event.secret));
-  const viewer = await openLoaded(browser, routes.event(event.id));
+  const mod = await openLoaded(browser, routes.eventMod(event.id, event.secret), opened);
+  const viewer = await openLoaded(browser, routes.event(event.id), opened);
 
   // Both start with the sole question under "Hot Questions".
   await expect(viewer.locator(bucketSelector(BUCKET.hot))).toBeVisible();
@@ -121,8 +75,8 @@ test('moderator hides → the question leaves the viewer tab (moderator keeps it
   const event = await createEvent(request);
   await addQuestion(request, event.id, Q_SEED);
 
-  const mod = await openLoaded(browser, routes.eventMod(event.id, event.secret));
-  const viewer = await openLoaded(browser, routes.event(event.id));
+  const mod = await openLoaded(browser, routes.eventMod(event.id, event.secret), opened);
+  const viewer = await openLoaded(browser, routes.event(event.id), opened);
 
   await expect(viewer.getByTestId(TID.questionItem).filter({ hasText: Q_SEED })).toBeVisible();
 
@@ -140,8 +94,8 @@ test('upvote in one tab → like count increments and the bubble wiggles in the 
   const event = await createEvent(request);
   await addQuestion(request, event.id, Q_SEED); // backend seeds it with likes = 1
 
-  const observer = await openLoaded(browser, routes.event(event.id));
-  const voter = await openLoaded(browser, routes.event(event.id));
+  const observer = await openLoaded(browser, routes.event(event.id), opened);
+  const voter = await openLoaded(browser, routes.event(event.id), opened);
 
   // Single-question event → these locators are unambiguous.
   const observerQuestion = observer.getByTestId(TID.questionItem);
@@ -167,10 +121,10 @@ test('premium event: viewer count reflects both connected clients across context
   const event = await createEvent(request);
   expect(await upgradeToPremium(request, event.id, event.secret)).toBeTruthy();
 
-  const mod = await openLoaded(browser, routes.eventMod(event.id, event.secret));
+  const mod = await openLoaded(browser, routes.eventMod(event.id, event.secret), opened);
   await expect(mod.locator('.statistics')).toBeVisible(); // premium-only stats block
 
-  const viewer = await openLoaded(browser, routes.event(event.id));
+  const viewer = await openLoaded(browser, routes.event(event.id), opened);
 
   // A `v:` push does NOT re-render the Event component (handle_socket returns false), so the DOM count
   // only refreshes on the next fetch. Force one by having the viewer ask a question; the mod's refetch

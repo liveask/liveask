@@ -78,17 +78,22 @@ Notes:
 playwright.config.ts   baseURL :8080, chromium, webServer=cargo make serve, clipboard perms
 globalSetup.ts         asserts backend /api/ping is up
 helpers/
-  selectors.ts         central data-testid map (TID.*) + load-state values
+  selectors.ts         central data-testid map (TID.*) + load-state values + question buckets
   env.ts               URLs, CDN host list, admin creds/hash
   net.ts               blockCdns / clearStorage / abortApi / gateWebSocket (routeWebSocket)
+  app.ts               openLoaded() (context + WS-subscription gate + mod-popup dismiss), for multi-context specs
 fixtures/
   event.ts             createEvent() + addQuestion() via the API (test:false) + route builders
-  admin.ts             adminLogin() + upgradeToPremium() (no-Stripe admin path) for premium specs
+  admin.ts             adminLogin() + upgradeToPremium() (no-Stripe admin path) for premium/admin specs
   backend.ts           BackendServer: start/stop(SIGKILL)/waitForPing for the reconnect canary
 tests/
   smoke.spec.ts             per-route DOM rendering + create/ask happy paths
   reconnect.spec.ts         flagship: cold down-at-load recovery, warm mid-session drop, restart canary
   realtime.spec.ts          two-context cross-client reactivity (ask/answer/hide/upvote/viewer-count)
+  moderation.spec.ts        state gates (closed/vote-only banner + ask disabled), delete event
+  password.spec.ts          mod enables password → viewer gated → invalid/try-again/correct unblur
+  admin.spec.ts             /login form → logged-in → logout (cross-origin credentialed auth)
+  premium.spec.ts           free Upgrade banner; admin no-Stripe upgrade → premium affordances
   reconnect-spike.spec.ts   proves routeWebSocket intercepts the wasm_sockets WS + the down→up recovery
 ```
 
@@ -108,10 +113,12 @@ In that mode `globalSetup` skips its up-front backend check (the canary boots th
 
 ## Premium / admin specs
 
-The premium viewer-count spec upgrades an event via the no-Stripe admin path, which needs the backend
-booted with the **real** `sha256("pwd")` admin hash (`ADMIN_PWD_HASH` in `helpers/env.ts`) — what
-`fixtures/backend.ts` uses. `backend-e2e just serve` boots a placeholder hash instead, so that spec
-**skips cleanly** there rather than failing.
+The admin login (`admin.spec.ts`) and the premium specs (the `premium.spec.ts` upgrade + the
+`realtime.spec.ts` viewer-count) need the backend booted with the **real** `sha256("pwd")` admin hash
+(`ADMIN_PWD_HASH` in `helpers/env.ts`) — what `fixtures/backend.ts` uses. `backend-e2e just serve`
+boots a placeholder hash instead, so those specs **skip cleanly** there rather than failing. The
+no-Stripe upgrade is admin-gated (a regular moderator's Upgrade button goes through payment), so
+premium is provisioned out-of-band via `adminLogin` → `upgradeToPremium` in `fixtures/admin.ts`.
 
 ## Test hooks
 
