@@ -35,6 +35,30 @@ use tower_http::{
 };
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
+/// The `endpoint` label given to a request that matched no route.
+///
+/// The metrics registry never drops a series, so labelling 404s with the path
+/// they asked for lets anyone mint unbounded cardinality by guessing URLs — a
+/// routine credential scanner adds a thousand in a minute, and every scrape
+/// pays to serialise them from then on.
+const UNMATCHED_ENDPOINT: &str = "unmatched";
+
+/// The metrics layer and the handle `/metrics` renders from.
+///
+/// A function rather than an inline `pair()` because the test that checks what
+/// this labels has to build the same thing the server runs.
+fn metrics_pair() -> (
+    axum_prometheus::PrometheusMetricLayer<'static>,
+    axum_prometheus::metrics_exporter_prometheus::PrometheusHandle,
+) {
+    axum_prometheus::PrometheusMetricLayerBuilder::new()
+        .with_endpoint_label_type(axum_prometheus::EndpointLabel::MatchedPathWithFallbackFn(
+            |_| UNMATCHED_ENDPOINT.to_owned(),
+        ))
+        .with_default_metrics()
+        .build_pair()
+}
+
 use crate::{
     app::App,
     auth::{admin_user_handler, login_handler, logout_handler},
@@ -352,7 +376,7 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
         .route("/questionmod/:id/:secret/:question_id", post(handle::mod_edit_question))
         .route("/:id/:secret", post(handle::mod_edit_event));
 
-    let (prometheus_layer, metrics_handler) = axum_prometheus::PrometheusMetricLayer::pair();
+    let (prometheus_layer, metrics_handler) = metrics_pair();
 
     #[rustfmt::skip]
     let router = Router::new()
@@ -398,4 +422,74 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     }
 
     Ok(())
+}
+
+#[cfg(test)]
+mod metrics_test {
+    use super::{UNMATCHED_ENDPOINT, metrics_pair};
+    use axum::{Router, body::Body, http::Request, routing::get};
+    use tower::ServiceExt;
+
+    /// A path that matched no route must not reach the `endpoint` label.
+    ///
+    /// The registry never drops a series, so the alternative is any stranger
+    /// minting unbounded cardinality by guessing URLs — which is what a
+    /// credential scanner does by the thousand, and what every later scrape
+    /// then pays to serialise.
+    ///
+    /// The nested route is here because the fallback only fires when axum
+    /// exposes no `MatchedPath`, and `nest` is where that is documented to
+    /// happen. If nesting lost the real path, every route below `/api/event`
+    /// would collapse into one label and the metrics would go quiet in a way
+    /// this crate's own docs would explain away.
+    #[tokio::test]
+    async fn unmatched_paths_share_one_label_and_nesting_keeps_its_own() {
+        let (layer, handle) = metrics_pair();
+
+        let inner = Router::new().route("/:id", get(|| async { "ok" }));
+        let app = Router::new()
+            .route("/api/ping", get(|| async { "ok" }))
+            .nest("/api/event", inner)
+            .layer(layer);
+
+        for path in ["/api/ping", "/api/event/abc", "/.env", "/wp-login.php"] {
+            app.clone()
+                .oneshot(
+                    Request::builder()
+                        .uri(path)
+                        .body(Body::empty())
+                        .expect("request should be well formed"),
+                )
+                .await
+                .expect("router is infallible");
+        }
+
+        let rendered = handle.render();
+
+        for probed in [".env", "wp-login"] {
+            assert!(
+                !rendered.contains(probed),
+                "a probed path reached a label:\n{rendered}",
+            );
+        }
+        assert!(
+            rendered.contains(&format!("endpoint=\"{UNMATCHED_ENDPOINT}\"")),
+            "unmatched requests were not folded together:\n{rendered}",
+        );
+
+        // The routes that do exist keep reporting themselves — including the
+        // nested one, as its pattern rather than the id that was passed.
+        assert!(
+            rendered.contains("endpoint=\"/api/ping\""),
+            "a real route lost its label:\n{rendered}",
+        );
+        assert!(
+            rendered.contains("endpoint=\"/api/event/:id\""),
+            "nesting lost the matched path:\n{rendered}",
+        );
+        assert!(
+            !rendered.contains("/api/event/abc"),
+            "a path parameter leaked into a label:\n{rendered}",
+        );
+    }
 }
