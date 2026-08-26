@@ -5,43 +5,28 @@ use crate::environment::{LiveAskEnv, la_env};
 #[wasm_bindgen]
 extern "C" {
     #[wasm_bindgen(js_namespace = window,catch)]
-    fn track_event_js(fathom: &str) -> Result<(), JsValue>;
+    fn track_event_js(name: &str) -> Result<(), JsValue>;
 }
 
-pub fn track_event(fathom_idx: usize) {
+pub fn track_event(name: &str) {
     if !matches!(la_env(Some(env!("LA_ENV"))), LiveAskEnv::Local)
-        && let Err(e) = track_event_js(EVNT_FATHOM_IDS[fathom_idx])
+        && let Err(e) = track_event_js(name)
     {
         log::error!("track_event_js error: {:?}", e);
     }
 }
 
-pub const EVNT_NEWEVENT_FINISH: usize = 0;
-pub const EVNT_ASK_OPEN: usize = 1;
-pub const EVNT_ASK_SENT: usize = 2;
-pub const EVNT_EVENT_DELETE: usize = 3;
-pub const EVNT_SHARE_OPEN: usize = 4;
-pub const EVNT_QUESTION_LIKE: usize = 5;
-pub const EVNT_QUESTION_UNLIKE: usize = 6;
-pub const EVNT_PREMIUM_EXPAND: usize = 7;
-pub const EVNT_PREMIUM_UPGRADE: usize = 8;
-pub const EVNT_EXPORT: usize = 9;
-pub const EVNT_SURVEY_OPENED: usize = 10;
-
-const EVNT_FATHOM_IDS_BETA: &[&str] = &[
-    "FGTHLILK", "PTYICP9D", "2QLZ08FA", "RPUPYLYB", "MNJ3ZBU9", "1O6TRFHR", "D56OBEJZ", "PZMXZBMP",
-    "KW4PIK1U", "XMK8M2CD", "BQOVFVM5",
-];
-const EVNT_FATHOM_IDS_PROD: &[&str] = &[
-    "CE3E5DQE", "YJOUOV25", "Z6JYJXLR", "IWTNGV5P", "KPLTI4YY", "BUFQIMQI", "VNYQXL7D", "ZHOUYH0B",
-    "LYLSJMGT", "OAZVXYRC", "KH51IDSN",
-];
-
-const EVNT_FATHOM_IDS: &[&str] = fathom_ids();
-
-const fn fathom_ids() -> &'static [&'static str] {
-    match la_env(Some(env!("LA_ENV"))) {
-        LiveAskEnv::Prod => EVNT_FATHOM_IDS_PROD,
-        LiveAskEnv::Beta | LiveAskEnv::Local => EVNT_FATHOM_IDS_BETA,
-    }
-}
+// Central list of Fathom event names. With the new event system these are plain
+// strings sent via `trackEvent` - no dashboard pre-setup and no per-env goal ids.
+// Adding an event is just a new const here; names are permanent once fired.
+pub const EVNT_NEWEVENT_FINISH: &str = "new-event-finish";
+pub const EVNT_ASK_OPEN: &str = "ask-open";
+pub const EVNT_ASK_SENT: &str = "ask-sent";
+pub const EVNT_EVENT_DELETE: &str = "event-delete";
+pub const EVNT_SHARE_OPEN: &str = "share-open";
+pub const EVNT_QUESTION_LIKE: &str = "question-like";
+pub const EVNT_QUESTION_UNLIKE: &str = "question-unlike";
+pub const EVNT_PREMIUM_EXPAND: &str = "premium-expand";
+pub const EVNT_PREMIUM_UPGRADE: &str = "premium-upgrade";
+pub const EVNT_EXPORT: &str = "export";
+pub const EVNT_SURVEY_OPENED: &str = "survey-opened";
